@@ -62,7 +62,9 @@ def _privatize_name(cls_name, name):
 class AttributeDelegate(Slotted):
     """Attribute fget/fset/fdel delegate."""
 
-    __slots__ = ("__func", "__gets", "__sets", "__deletes")
+    __slots__ = (
+        "__owner", "__name", "__access_type", "__func", "__gets", "__sets", "__deletes"
+    )
 
     @classmethod
     def get_decorator(
@@ -103,6 +105,11 @@ class AttributeDelegate(Slotted):
         # type: (...) -> None
         """Initialize with dependencies."""
 
+        # Ownership
+        self.__owner = None
+        self.__name = None
+        self.__access_type = None
+
         # Make sure 'func' is a callable, but not an AttributeDelegate
         if not callable(func):
             raise TypeError(
@@ -137,14 +144,66 @@ class AttributeDelegate(Slotted):
         """Call the function."""
         return self.__func(*args, **kwargs)
 
-    def __privatize__(self, owner_name):
-        # type: (str) -> None
-        """Privatize names."""
-        self.__gets = frozenset(_privatize_name(owner_name, n) for n in self.__gets)
-        self.__sets = frozenset(_privatize_name(owner_name, n) for n in self.__sets)
+    def __set_owner__(self, owner, name, access_type):
+        # type: (AttributeDescriptor, str, AttributeAccessType) -> None
+        """Set owner (attribute descriptor), attribute name, and access type."""
+
+        # Set ownership
+        if (
+                self.__owner is not None and
+                self.__name is not None and
+                self.__access_type is not None
+        ):
+            raise NameError(
+                "can't re-use '{}' delegate from attribute '{}.{}' as a '{}' delegate "
+                "of '{}.{}'".format(
+                    self.__access_type.value,
+                    self.__owner.owner.__name__,
+                    self.__name,
+                    access_type.value,
+                    owner.owner.__name__,
+                    name
+                )
+            )
+        if (
+                owner is self.__owner and
+                name == self.__name and
+                access_type is self.__access_type
+        ):
+            return
+        if owner.owner is None:
+            raise AssertionError("attribute descriptor is not owned by a class")
+        else:
+            model_cls = owner.owner
+            model_cls_name = model_cls.__name__
+        self.__owner = owner
+        self.__name = name
+        self.__access_type = access_type
+
+        # Privatize names
+        self.__gets = frozenset(_privatize_name(model_cls_name, n) for n in self.__gets)
+        self.__sets = frozenset(_privatize_name(model_cls_name, n) for n in self.__sets)
         self.__deletes = frozenset(
-            _privatize_name(owner_name, n) for n in self.__deletes
+            _privatize_name(model_cls_name, n) for n in self.__deletes
         )
+
+    @property
+    def owner(self):
+        # type: () -> Optional[AttributeDescriptor]
+        """Owner attribute descriptor."""
+        return self.__owner
+
+    @property
+    def name(self):
+        # type: () -> Optional[str]
+        """Attribute name."""
+        return self.__name
+
+    @property
+    def access_type(self):
+        # type: () -> Optional[AttributeAccessType]
+        """Access type."""
+        return self.__access_type
 
     @property
     def func(self):
@@ -320,14 +379,6 @@ class AttributeDescriptor(Slotted):
                 if not self.__private:
                     self.__protected = True
 
-        # Privatize attribute dependency names
-        if self.__fget is not None:
-            self.__fget.__privatize__(owner.__name__)
-        if self.__fset is not None:
-            self.__fset.__privatize__(owner.__name__)
-        if self.__fdel is not None:
-            self.__fdel.__privatize__(owner.__name__)
-
         # Collapse deferred boolean parameters based on access type
         if self.__parent is None:
             self.__parent = self.__public
@@ -340,12 +391,23 @@ class AttributeDescriptor(Slotted):
         if self.__pprint is None:
             self.__pprint = self.__public
 
+        # Take ownership of attribute delegates
+        if self.__fget is not None:
+            self.__fget.__set_owner__(self, name, AttributeAccessType.GETTER)
+        if self.__fset is not None:
+            self.__fset.__set_owner__(self, name, AttributeAccessType.SETTER)
+        if self.__fdel is not None:
+            self.__fdel.__set_owner__(self, name, AttributeAccessType.DELETER)
+
     def __get__(self, model, model_cls=None):
         # type: (Optional[Model], Optional[Type[Model]]) -> Any
         """Descriptor 'get' access."""
+        name = self.__name
         if model is None:
+            if name is not None and model_cls is not None:
+                if name in model_cls.__constants__:
+                    return model_cls.__constants__[name]
             return self
-        name = self.name
         if name is None:
             raise RuntimeError("attribute has no owner")
         try:
@@ -358,7 +420,7 @@ class AttributeDescriptor(Slotted):
     def __set__(self, model, value):
         # type: (Model, Any) -> None
         """Descriptor 'set' access."""
-        name = self.name
+        name = self.__name
         if name is None:
             raise RuntimeError("attribute has no owner")
         model[name] = value
@@ -366,7 +428,7 @@ class AttributeDescriptor(Slotted):
     def __delete__(self, model):
         # type: (Model) -> None
         """Descriptor 'delete' access."""
-        name = self.name
+        name = self.__name
         if name is None:
             raise RuntimeError("attribute has no owner")
         try:
@@ -423,10 +485,16 @@ class AttributeDescriptor(Slotted):
             raise RuntimeError("already defined a getter")
 
         if not isinstance(func, AttributeDelegate):
-            self.__fget = AttributeDelegate(func)
+            fget = AttributeDelegate(func)
         else:
-            self.__fget = func
+            fget = func
 
+        if fget.sets:
+            raise ValueError("getter delegate can't have 'sets' dependencies")
+        if fget.deletes:
+            raise ValueError("getter delegate can't have 'deletes' dependencies")
+
+        self.__fget = fget
         return self
 
     def setter(self, func):
@@ -438,10 +506,11 @@ class AttributeDescriptor(Slotted):
             raise RuntimeError("already defined a setter")
 
         if not isinstance(func, AttributeDelegate):
-            self.__fset = AttributeDelegate(func)
+            fset = AttributeDelegate(func)
         else:
-            self.__fset = func
+            fset = func
 
+        self.__fset = fset
         return self
 
     def deleter(self, func):
@@ -453,10 +522,11 @@ class AttributeDescriptor(Slotted):
             raise RuntimeError("already defined a deleter")
 
         if not isinstance(func, AttributeDelegate):
-            self.__fdel = AttributeDelegate(func)
+            fdel = AttributeDelegate(func)
         else:
-            self.__fdel = func
+            fdel = func
 
+        self.__fdel = fdel
         return self
 
     @property
@@ -512,6 +582,24 @@ class AttributeDescriptor(Slotted):
         # type: () -> Optional[bool]
         """Whether attribute access is considered 'protected'."""
         return self.__protected
+
+    @property
+    def readable(self):
+        # type: () -> bool
+        """Whether this attribute is readable."""
+        return not self.__property or self.__fget is not None
+
+    @property
+    def settable(self):
+        # type: () -> bool
+        """Whether this attribute is settable."""
+        return not self.__property or self.__fget is not None
+
+    @property
+    def deletable(self):
+        # type: () -> bool
+        """Whether this attribute is deletable."""
+        return not self.__property or self.__fget is not None
 
     @property
     def factory(self):
@@ -633,7 +721,6 @@ class UpdateState(SlottedMutableMapping):
         "__model",
         "__model_cls",
         "__attributes",
-        "__constants",
         "__dependencies",
     )
 
@@ -646,7 +733,6 @@ class UpdateState(SlottedMutableMapping):
         self.__model = model
         self.__model_cls = type(model)
         self.__attributes = self.__model_cls.__attributes__
-        self.__constants = self.__model_cls.__constants__
         self.__dependencies = self.__model_cls.__dependencies__
 
     def __repr__(self):
@@ -749,7 +835,6 @@ def _make_access_object(
     # Get attributes
     model_cls = type(model)
     attributes = model_cls.__attributes__
-    constants = model_cls.__constants__
 
     # Build properties' functions according to dependencies declared in the delegate
     properties_functions = {}
@@ -758,20 +843,7 @@ def _make_access_object(
         def fget(_, _get=get):
             # type: (object, str) -> Any
             """Property's 'fget' function."""
-            try:
-                return constants[_get]
-            except KeyError:
-                try:
-                    get_attribute = attributes[_get]
-                except KeyError:
-                    exc = AttributeError(
-                        "'{}' object has no attribute descriptor '{}'".format(
-                            model_cls.__name__, _get
-                        )
-                    )
-                    raise_from(exc, None)
-                    raise exc
-
+            get_attribute = attributes[_get]
             if get_attribute.fget is not None:
                 get_access = _make_access_object(
                     state, model, get_attribute, access_type=AttributeAccessType.GETTER
@@ -838,7 +910,62 @@ def _make_access_object(
             fdel=members.get("fdel")
         )
 
-    return type("AttributeAccess", (Slotted,), dct)()
+    return type("{}AttributeAccess".format(model_cls.__name__), (Slotted,), dct)()
+
+
+def _is_attribute_constant(
+    attribute_name,  # type: str
+    attributes  # type: Dict[str, AttributeDescriptor]
+):
+    # type: (...) -> bool
+    """Get whether an attribute is a constant or not."""
+    attribute = attributes[attribute_name]
+    if attribute.fget is not None:
+        if not attribute.fget.gets:
+            return True
+        else:
+            return bool(
+                all(_is_attribute_constant(g, attributes) for g in attribute.fget.gets)
+            )
+    return False
+
+
+def _make_constant_access_object(
+    state,  # type: coll.MutableMapping[str, Any]
+    model_cls,  # type: Type[Model]
+    attribute,  # type: AttributeDescriptor
+):
+    # type: (...) -> object
+    """Make access object that can be provided to a constant attribute fget function."""
+    dct = {}
+
+    # Get attributes
+    attributes = model_cls.__attributes__
+
+    # Build properties
+    for get in attribute.fget.gets:
+
+        def fget(_, _get=get):
+            # type: (object, str) -> Any
+            """Property's 'fget' function."""
+            get_attribute = attributes[_get]
+            if get_attribute.fget is not None:
+                get_access = _make_constant_access_object(
+                    state, model_cls, get_attribute
+                )
+                value = get_attribute.fget.func(get_access)
+                if value in (SpecialValue.MISSING, SpecialValue.DELETED):
+                    raise ValueError(
+                        "getter for attribute '{}' cannot return {}".format(_get, value)
+                    )
+                state[_get] = value
+            else:
+                value = state[_get]
+            return value
+
+        dct[get] = property(fget=fget)
+
+    return type("{}ConstantAccess".format(model_cls.__name__), (Slotted,), dct)()
 
 
 def _assemble_tree(name, dependencies, all_dependencies=None):
@@ -869,8 +996,8 @@ def _make_model_class(mcs, name, bases, dct):
 
     # Prepare dictionaries
     attributes = dct["__attributes__"] = {}
-    constants = dct["__constants__"] = {}
     dependencies = dct["__dependencies__"] = {}
+    constants = dct["__constants__"] = {}
 
     # Make class
     cls = super(ModelMeta, mcs).__new__(mcs, name, bases, dct)
@@ -887,62 +1014,78 @@ def _make_model_class(mcs, name, bases, dct):
                 attributes[member_name] = member
                 if base is cls:
                     if member_name == "self":
-                        raise NameError("attribute cannot be named 'self'")
+                        raise NameError("attribute can't be named 'self'")
                     member.__set_owner__(cls, member_name)
             elif member_name in attributes:
-                del attributes[member_name]
+                raise TypeError(
+                    "can't override attribute '{}' with a non-attribute".format(
+                        member_name
+                    )
+                )
 
-    # Collect constant dependencies, check dependencies as we go
+    # Check dependencies
     for attribute_name, attribute in iteritems(attributes):
+        if not attribute.property:
+            continue
+
         get_dependencies = set()
         set_dependencies = set()
         delete_dependencies = set()
+
         if attribute.fget is not None:
-            get_dependencies.update(attribute.fget.gets)
             if not attribute.fget.gets:
-                constants[attribute_name] = attribute.fget.func(None)
+                if attribute.parent:
+                    raise ValueError(
+                        "the 'fget' delegate for attribute '{}' does not declare any"
+                        "'get' dependencies (constant), so its 'parent' parameter "
+                        "can't be set to True".format(attribute_name)
+                    )
+                if attribute.history:
+                    raise ValueError(
+                        "the 'fget' delegate for attribute '{}' does not declare any"
+                        "'get' dependencies (constant), so its 'history' parameter "
+                        "can't be set to True".format(attribute_name)
+                    )
+            get_dependencies.update(attribute.fget.gets)
+
+        if attribute.fset is None and attribute.fdel is None:
+            for parameter in ("type", "exact_type", "factory"):
+                if getattr(attribute, parameter) is not None:
+                    raise ValueError(
+                        "neither 'fset' or 'fdel' delegates were declared for "
+                        "attribute '{}', so the '{}' parameter shouldn't be "
+                        "provided".format(attribute_name, parameter)
+                    )
+            if not attribute.accepts_none:
+                raise ValueError(
+                    "neither 'fset' or 'fdel' delegates were declared for attribute "
+                    "'{}', so the 'accepts_none' parameter can't be set to "
+                    "False".format(attribute_name)
+                )
+
         if attribute.fset is not None:
             get_dependencies.update(attribute.fset.gets)
             set_dependencies.update(attribute.fset.sets)
             delete_dependencies.update(attribute.fset.deletes)
+
         if attribute.fdel is not None:
             get_dependencies.update(attribute.fdel.gets)
             set_dependencies.update(attribute.fdel.sets)
             delete_dependencies.update(attribute.fdel.deletes)
 
         for get_dependency in get_dependencies:
-            if get_dependency in constants:
-                continue
             if get_dependency not in attributes:
-                try:
-                    value = getattr(cls, get_dependency)
-                except AttributeError:
-                    exc = NameError(
-                        "attribute '{}' declares '{}' as a 'get' dependency, "
-                        "but it's not present in the class '{}'".format(
-                            attribute_name, get_dependency, cls.__name__
-                        )
+                raise NameError(
+                    "attribute '{}' declares '{}' as a 'get' dependency, "
+                    "but it's not present in the class '{}'".format(
+                        attribute_name, get_dependency, cls.__name__
                     )
-                    raise_from(exc, None)
-                    raise exc
-                if (
-                    hasattr(value, "__get__")
-                    or hasattr(value, "__set__")
-                    or hasattr(value, "__delete__")
-                ):
-                    raise NameError(
-                        "attribute '{}' declares '{}' as a 'get' constant dependency, "
-                        "but can't have descriptors/properties as class "
-                        "constants".format(attribute_name, get_dependency, cls.__name__)
-                    )
-                if callable(value):
-                    raise NameError(
-                        "attribute '{}' declares '{}' as a 'get' constant dependency, "
-                        "but can't have callables/functions/methods as class "
-                        "constants".format(attribute_name, get_dependency, cls.__name__)
-                    )
-                constants[get_dependency] = value
-
+                )
+            if not attributes[get_dependency].readable:
+                raise ValueError(
+                    "attribute '{}' declares '{}' as a 'get' dependency, "
+                    "but it's not readable".format(attribute_name, get_dependency)
+                )
         for set_dependency in set_dependencies:
             if set_dependency not in attributes:
                 raise NameError(
@@ -951,7 +1094,11 @@ def _make_model_class(mcs, name, bases, dct):
                         attribute_name, set_dependency, cls.__name__
                     )
                 )
-
+            if not attributes[set_dependency].settable:
+                raise ValueError(
+                    "attribute '{}' declares '{}' as a 'set' dependency, "
+                    "but it's not settable".format(attribute_name, set_dependency)
+                )
         for delete_dependency in set_dependencies:
             if delete_dependency not in attributes:
                 raise NameError(
@@ -959,6 +1106,11 @@ def _make_model_class(mcs, name, bases, dct):
                     "but it's not present in the class '{}'".format(
                         attribute_name, delete_dependency, cls.__name__
                     )
+                )
+            if not attributes[delete_dependency].settable:
+                raise ValueError(
+                    "attribute '{}' declares '{}' as a 'delete' dependency, "
+                    "but it's not deletable".format(attribute_name, delete_dependency)
                 )
 
     # Build fget 'gets' dependency tree
@@ -975,6 +1127,13 @@ def _make_model_class(mcs, name, bases, dct):
             member_name, dependency_tree
         )
     dependencies.update(_invert_tree(inverse_flat_dependencies))
+
+    # Populate 'constants' state
+    for attribute_name, attribute in iteritems(attributes):
+        if _is_attribute_constant(attribute_name, attributes):
+            constants[attribute_name] = attribute.fget.func(
+                _make_constant_access_object(constants, cls, attribute)
+            )
 
     return cls
 
@@ -1008,8 +1167,8 @@ class Model(with_metaclass(ModelMeta, EventListenerMixin, SlottedHashable, BaseM
 
     __slots__ = ("___state",)
     __attributes__ = {}  # type: Dict[str, AttributeDescriptor]
-    __constants__ = {}  # type: Dict[str, Any]
     __dependencies__ = {}  # type: Dict[str, Set[str, ...]]
+    __constants__ = {}  # type: Dict[str, Any]
     __event_types__ = frozenset({AttributesUpdateEvent})
 
     def __hash__(self):
@@ -1021,23 +1180,12 @@ class Model(with_metaclass(ModelMeta, EventListenerMixin, SlottedHashable, BaseM
         # type: (str) -> Any
         """Get attribute value."""
         attribute = type(self).__attributes__[name]
-
-        if attribute.fget is None and (
-            attribute.fset is not None or attribute.fdel is not None
-        ):
+        if not attribute.readable:
             raise KeyError("attribute '{}' is not readable".format(name))
-
         value = self.__state[name]
         if value is SpecialValue.MISSING:
             if attribute.fget is not None:
                 gets = attribute.fget.gets
-                if not gets:
-                    value = self.__state[name] = attribute.fget.func(
-                        _make_access_object(
-                            self.__state, self, attribute, AttributeAccessType.GETTER
-                        )
-                    )
-                    return value
                 missing_gets = sorted(
                     get
                     for get in gets
@@ -1086,7 +1234,13 @@ class Model(with_metaclass(ModelMeta, EventListenerMixin, SlottedHashable, BaseM
         # Set values respecting order
         for name, value in name_value_pairs:
             attribute = attributes[name]
+
+            # Delete
             if value is SpecialValue.DELETED:
+                if not attribute.deletable:
+                    raise AttributeError(
+                        "attribute '{}' is not deletable".format(name)
+                    )
                 if attribute.fdel is not None:
                     attribute.fdel.func(
                         _make_access_object(
@@ -1096,15 +1250,15 @@ class Model(with_metaclass(ModelMeta, EventListenerMixin, SlottedHashable, BaseM
                             access_type=AttributeAccessType.DELETER,
                         )
                     )
-                elif attribute.fget is not None or attribute.fset is not None:
-                    raise AttributeError(
-                        "'{}' object attribute '{}' cannot be deleted".format(
-                            cls.__name__, name
-                        )
-                    )
                 else:
                     update_state[name] = value
+
+            # Set
             else:
+                if not attribute.settable:
+                    raise AttributeError(
+                        "attribute '{}' is not settable".format(name)
+                    )
                 value = attribute.__factory__(value)
                 if attribute.fset is not None:
                     attribute.fset.func(
@@ -1115,12 +1269,6 @@ class Model(with_metaclass(ModelMeta, EventListenerMixin, SlottedHashable, BaseM
                             access_type=AttributeAccessType.SETTER
                         ),
                         value
-                    )
-                elif attribute.fget is not None or attribute.fdel is not None:
-                    raise AttributeError(
-                        "'{}' object attribute '{}' is read-only".format(
-                            cls.__name__, name
-                        )
                     )
                 else:
                     update_state[name] = value
@@ -1202,6 +1350,5 @@ class Model(with_metaclass(ModelMeta, EventListenerMixin, SlottedHashable, BaseM
             state = self.___state
         except AttributeError:
             state = self.___state = defaultdict(lambda: SpecialValue.MISSING)
-            cls = type(self)
-            state.update(cls.__constants__)  # FIXME: parents and stuff
+            state.update(type(self).__constants__)
         return state

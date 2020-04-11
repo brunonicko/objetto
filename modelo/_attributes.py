@@ -3,7 +3,6 @@
 from typing import Any, Optional, Callable, Iterable, Union
 
 from ._type_checking import UType
-from ._constants import SpecialValue
 from ._model import AttributeDelegate, AttributeDescriptor
 
 
@@ -46,3 +45,10 @@ def attribute(
         repr=repr,
         property=property,
     )
+
+
+def constant_attribute(value, final=None):
+    # type: (Any, Optional[bool]) -> AttributeDescriptor
+    descriptor = AttributeDescriptor(final=final, property=True)
+    descriptor.getter(lambda _, _value=value: _value)
+    return descriptor

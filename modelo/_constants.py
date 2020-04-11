@@ -8,21 +8,22 @@ DEAD_REF = _ref(type("DeadRef", (object,), {"__slots__": ("__weakref__",)})())
 class EventPhase(_Enum):
     """Event phase."""
 
-    INTERNAL_PRE = 1
-    PRE = 2
-    POST = 3
-    INTERNAL_POST = 4
+    INTERNAL_PRE = "internal_pre"
+    PRE = "pre"
+    POST = "post"
+    INTERNAL_POST = "internal_post"
 
 
 class SpecialValue(_Enum):
     """Special Value."""
 
-    MISSING = 1
-    DELETED = 2
+    MISSING = "missing"
+    DELETED = "deleted"
 
 
 class AttributeAccessType(_Enum):
     """Attribute access type."""
-    GETTER = 1
-    SETTER = 2
-    DELETER = 3
+
+    GETTER = "getter"
+    SETTER = "setter"
+    DELETER = "deleter"
