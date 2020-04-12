@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Events."""
 
 from ._broadcaster import EventListenerMixin
 from ._events import Event, AttributesUpdateEvent, SequenceInsertEvent, SequencePopEvent

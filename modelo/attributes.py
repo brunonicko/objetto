@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Attribute factories."""
 
 from ._attributes import dependencies, attribute, constant_attribute
 

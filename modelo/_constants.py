@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+"""Constants."""
+
 from weakref import ref as _ref
 from enum import Enum as _Enum
 

@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+"""Type checking."""
+
 try:
     import collections.abc as coll
 except ImportError:

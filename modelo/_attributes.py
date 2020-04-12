@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+"""Attribute factories."""
 
 from typing import Any, Optional, Callable, Iterable, Union
 
 from ._type_checking import UType
-from ._model import AttributeDelegate, AttributeDescriptor
+from ._object_model import AttributeDelegate, AttributeDescriptor
 
 
 def dependencies(
@@ -13,7 +14,7 @@ def dependencies(
     reset=True,  # type: bool
 ):
     # type: (...) -> Callable
-    """Get a decorator to decorate a function with attribute dependencies."""
+    """Make a decorator that decorates a function into a delegate with dependencies."""
     return AttributeDelegate.get_decorator(
         gets=gets, sets=sets, deletes=deletes, reset=reset
     )
@@ -32,6 +33,8 @@ def attribute(
     repr=False,  # type: bool
     property=False,  # type: bool
 ):
+    # type: (...) -> AttributeDescriptor
+    """Make an attribute descriptor."""
     return AttributeDescriptor(
         type=type,
         factory=factory,
@@ -49,6 +52,7 @@ def attribute(
 
 def constant_attribute(value, final=None):
     # type: (Any, Optional[bool]) -> AttributeDescriptor
+    """Make a constant attribute descriptor."""
     descriptor = AttributeDescriptor(final=final, property=True)
     descriptor.getter(lambda _, _value=value: _value)
     return descriptor

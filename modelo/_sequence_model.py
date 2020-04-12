@@ -4,7 +4,7 @@ from collections import Counter, namedtuple
 from six import with_metaclass
 from slotted import SlottedSequence, SlottedHashable
 
-from ._base_model import BaseModelMeta, BaseModel
+from ._model import ModelMeta, Model
 from ._broadcaster import EventListenerMixin
 from ._partial import Partial
 from ._events import SequenceInsertEvent, SequencePopEvent
@@ -13,7 +13,7 @@ from ._events import SequenceInsertEvent, SequencePopEvent
 SequenceOptions = namedtuple("SequenceOptions", "parent history")
 
 
-class SequenceModelMeta(BaseModelMeta):
+class SequenceModelMeta(ModelMeta):
     pass
 
 
@@ -23,7 +23,7 @@ class SequenceModel(
         EventListenerMixin,
         SlottedHashable,
         SlottedSequence,
-        BaseModel,
+        Model,
     )
 ):
     __slots__ = ("__options", "__state")
@@ -58,7 +58,7 @@ class SequenceModel(
         # Count children in values
         child_count = Counter()
         for value in values:
-            if isinstance(value, BaseModel):
+            if isinstance(value, Model):
                 if self.__options.parent:
                     child_count[value] += 1
 
@@ -98,7 +98,7 @@ class SequenceModel(
         # Count children in values
         child_count = Counter()
         for value in values:
-            if isinstance(value, BaseModel):
+            if isinstance(value, Model):
                 if self.__options.parent:
                     child_count[value] -= 1
 

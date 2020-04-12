@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Command runner component."""
 
 from abc import abstractmethod
 from contextlib import contextmanager
@@ -25,8 +26,14 @@ class History(Slotted):
         "__flush_redo_later",
     )
 
-    def __init__(self):
-        self.__size = 500
+    def __init__(self, size=0):
+        # type: (int) -> None
+        """Initialize with size."""
+        size = int(size)
+        if size < -1:
+            size = -1
+
+        self.__size = size
         self.__undo_stack = []
         self.__redo_stack = []
         self.__executing = False

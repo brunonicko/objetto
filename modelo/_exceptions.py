@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Exceptions."""
 
 from typing import Optional, Callable
 
@@ -6,60 +7,65 @@ from typing import Optional, Callable
 
 
 class ModeloException(Exception):
-    pass
+    """Base exception."""
 
 
 class ModeloError(ModeloException):
-    pass
+    """Base error."""
 
 
 # Hierarchy
 
 
 class HierarchyException(ModeloException):
-    pass
+    """Hierarchy exception."""
 
 
 class HierarchyError(HierarchyException, ModeloError):
-    pass
+    """Hierarchy error."""
 
 
 class AlreadyParentedError(HierarchyError):
-    pass
+    """Raised when already parented to another parent."""
 
 
 class NotParentedError(HierarchyError):
-    pass
+    """Raised when not parented to given parent."""
 
 
 class ParentCycleError(HierarchyError):
-    pass
+    """Raised when a parent cycle is detected."""
 
 
 class MultipleParentingError(HierarchyError):
-    pass
+    """Raised when trying to parent more than once."""
 
 
 class MultipleUnparentingError(HierarchyError):
-    pass
+    """Raised when trying to un-parent more than once."""
 
 
 # Broadcaster
 
 
 class BroadcasterException(ModeloException):
-    pass
+    """Broadcaster exception."""
 
 
 class BroadcasterError(BroadcasterException, ModeloError):
-    pass
+    """Broadcaster error."""
 
 
 class StopEventPropagationException(BroadcasterException):
-    pass
+    """When raised during event emission, will prevent next listeners to react."""
 
 
 class RejectEventException(BroadcasterException):
+    """
+    When raised during event emission, will prevent the action that originated the
+    event from happening at all.
+    """
+
     __slots__ = ("__callback",)
 
     def __init__(self, callback=None):
@@ -77,16 +83,16 @@ class RejectEventException(BroadcasterException):
 
 
 class RunnerException(ModeloException):
-    pass
+    """Runner exception."""
 
 
 class RunnerError(RunnerException, ModeloError):
-    pass
+    """Runner error."""
 
 
 class CannotUndoError(RunnerError):
-    pass
+    """Raised when trying to undo but no more commands are available."""
 
 
 class CannotRedoError(RunnerError):
-    pass
+    """Raised when trying to redo but no more commands are available."""

@@ -9,11 +9,11 @@ class TestModel(unittest.TestCase):
     """Tests for '_model' module."""
 
     def test_model(self):
-        from modelo._model import Model
+        from modelo._object_model import ObjectModel
         from modelo._attributes import attribute
         from modelo._runner import History
 
-        class Person(Model):
+        class Person(ObjectModel):
             name = attribute()
             sibling = attribute()
 
@@ -45,9 +45,9 @@ class TestModel(unittest.TestCase):
         self.assertIs(bianca.__hierarchy__.last_parent, bruno)
 
     def test_attributes(self):
-        from modelo import Model, attribute, dependencies, constant_attribute
+        from modelo import ObjectModel, attribute, dependencies, constant_attribute
 
-        class Person(Model):
+        class Person(ObjectModel):
             first_name = attribute()
             last_name = attribute()
             _tested = attribute()
@@ -92,9 +92,9 @@ class TestModel(unittest.TestCase):
         print(p.tested)
 
     def test_attribute_b(self):
-        from modelo import Model, attribute, dependencies
+        from modelo import ObjectModel, attribute, dependencies
 
-        class Person(Model):
+        class Person(ObjectModel):
             first_name = attribute(str)  # type: str
             last_name = attribute(str)  # type: str
             full_name = attribute(str, property=True)

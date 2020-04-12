@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
+"""Parent-Child hierarchy component."""
 
 from weakref import ref
 from collections import Counter, namedtuple, deque
-from slotted import Slotted
+from typing import Iterator, Optional, FrozenSet
 
-from ._base_model import BaseModel
+from ._model import Model
+from ._component import Component
 from ._constants import DEAD_REF
 from ._exceptions import (
     AlreadyParentedError,
@@ -16,22 +18,30 @@ from ._exceptions import (
 
 
 class ChildrenUpdates(namedtuple("ChildrenUpdates", "adoptions releases")):
+    """Describes a change in children."""
+
     def __invert__(self):
-        return type(self)(adoptions=self.releases, releases=self.adoptions)
+        # type: () -> ChildrenUpdates
+        """Get inverted."""
+        return ChildrenUpdates(adoptions=self.releases, releases=self.adoptions)
 
 
-class Hierarchy(Slotted):
-    __slots__ = ("__model_ref", "__parent_ref", "__last_parent_ref", "__children")
+class Hierarchy(Component):
+    """Parent-child hierarchy node."""
+
+    __slots__ = ("__parent_ref", "__last_parent_ref", "__children")
 
     def __init__(self, model):
-        self.__model_ref = ref(model)
+        # type: (Model) -> None
+        """Initialize."""
+        super(Hierarchy, self).__init__(model)
         self.__parent_ref = DEAD_REF
         self.__last_parent_ref = DEAD_REF
         self.__children = set()
 
     def prepare_children_updates(self, children_count):
-        # type: (Counter[BaseModel, int]) -> ChildrenUpdates
-        """Pre-flight preparation before updating children."""
+        # type: (Counter[Model, int]) -> ChildrenUpdates
+        """Prepare children updates."""
         adoptions = set()
         releases = set()
         for child, count in children_count.items():
@@ -76,6 +86,7 @@ class Hierarchy(Slotted):
 
     def update_children(self, children_updates):
         # type: (ChildrenUpdates) -> None
+        """Perform children adoptions and/or releases."""
         for adoption in children_updates.adoptions:
             adoption_hierarchy = adoption.__hierarchy__
             adoption_hierarchy.__parent_ref = ref(self.model)
@@ -87,19 +98,29 @@ class Hierarchy(Slotted):
             self.__children.remove(release_hierarchy.model)
 
     def has_parent(self):
+        # type: () -> bool
+        """Whether has a parent."""
         return self.parent is not None
 
     def has_last_parent(self):
+        # type: () -> bool
+        """Whether had a parent."""
         return self.last_parent is not None
 
     def has_child(self, child):
+        # type: (Model) -> bool
+        """Whether has a specific child."""
         return child in self.__children
 
     def iter_children(self):
+        # type: () -> Iterator[Model, ...]
+        """Iterate over children."""
         for child in self.__children:
             yield child
 
     def iter_up(self, inclusive=True):
+        # type: (bool) -> Iterator[Model, ...]
+        """Iterate up the tree."""
         if inclusive:
             yield self.model
         parent = self.parent
@@ -109,6 +130,8 @@ class Hierarchy(Slotted):
             parent = parent_hierarchy.parent
 
     def iter_down(self, inclusive=False, depth_first=False):
+        # type: (bool, bool) -> Iterator[Model, ...]
+        """Iterate down the tree."""
         if inclusive:
             yield self.model
         if depth_first:
@@ -127,17 +150,19 @@ class Hierarchy(Slotted):
                 queue.extend(child_hierarchy.iter_children())
 
     @property
-    def model(self):
-        return self.__model_ref()
-
-    @property
     def parent(self):
+        # type: () -> Optional[Model]
+        """Parent."""
         return self.__parent_ref()
 
     @property
     def last_parent(self):
+        # type: () -> Optional[Model]
+        """Last parent."""
         return self.__last_parent_ref()
 
     @property
     def children(self):
+        # type: () -> FrozenSet[Model, ...]
+        """Children."""
         return frozenset(self.__children)
