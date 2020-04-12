@@ -5,18 +5,84 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from weakref import ref
 from six import raise_from
-from typing import Optional, ContextManager, Union, Any, List
-from slotted import SlottedABC, SlottedSequence, SlottedHashable
+from typing import Optional, ContextManager, Union, Any, List, Type, cast
+from slotted import Slotted, SlottedABC, SlottedSequence, SlottedHashable
+from componente import COMPONENTS_SLOT, CompositeMixin, Component
 
-from ._exceptions import CannotUndoError, CannotRedoError
-from ._component import Component, CompositeMixin
+from .._base.exceptions import ModeloException, ModeloError
+from .broadcaster import Broadcaster
+
+__all__ = [
+    "Runner",
+    "History",
+    "Command",
+    "UndoableCommand",
+    "BatchCommand",
+    "UndoableBatchCommand",
+    "RunnerException",
+    "RunnerError",
+    "CannotUndoError",
+    "CannotRedoError",
+]
 
 
-class History(SlottedHashable, SlottedSequence):
+class Runner(Slotted, Component):
+    __slots__ = ("__weakref__", "__history", "__executing")
+
+    @staticmethod
+    def get_type():
+        # type: () -> Type[Runner]
+        """Get component key type."""
+        return Runner
+
+    def __init__(self, obj):
+        # type: (CompositeMixin) -> None
+        """Initialize."""
+        super(Runner, self).__init__(obj)
+        self.__history = None
+        self.__executing = False
+
+    @classmethod
+    def get_component(cls, obj):
+        # type: (CompositeMixin) -> Runner
+        """Get hierarchy component of a composite object."""
+        return cast(Runner, super(Runner, cls).get_component(obj))
+
+    def run(self, command):
+        if self.__executing:
+            raise RuntimeError("already executing")
+        self.__executing = True
+        try:
+            if self.__history is None:
+                command.__attach__(self)
+                command.__redo__()
+            else:
+                self.__history.__push__(command)
+        finally:
+            self.__executing = False
+
+    @property
+    def history(self):
+        return self.__history
+
+    @history.setter
+    def history(self, history):
+        old_history = self.__history
+        if old_history is history:
+            return
+        if old_history is not None:
+            old_history.flush()
+        self.__history = history
+
+    @property
+    def executing(self):
+        return self.__executing
+
+
+class History(CompositeMixin, SlottedHashable, SlottedSequence):
     """Runs and keeps track of commands."""
 
     __slots__ = (
-        "__weakref__",
         "__size",
         "__undo_stack",
         "__redo_stack",
@@ -25,7 +91,7 @@ class History(SlottedHashable, SlottedSequence):
         "__batches",
         "__flush_later",
         "__flush_redo_later",
-        "__broadcaster"
+        COMPONENTS_SLOT
     )
 
     def __init__(self, size=0):
@@ -43,6 +109,8 @@ class History(SlottedHashable, SlottedSequence):
         self.__batches = []
         self.__flush_later = False
         self.__flush_redo_later = False
+
+        self._.add_component(Broadcaster)  # TODO: events
 
     def __hash__(self):
         # type: () -> int
@@ -496,42 +564,17 @@ class UndoableBatchCommand(BatchCommand, UndoableCommand):
             command.__undo__()
 
 
-class Runner(Component):
-    __slots__ = ("__weakref__", "__history", "__executing")
+class RunnerException(ModeloException):
+    """Runner exception."""
 
-    def __init__(self, obj):
-        # type: (CompositeMixin) -> None
-        """Initialize."""
-        super(Runner, self).__init__(obj)
-        self.__history = None
-        self.__executing = False
 
-    def run(self, command):
-        if self.__executing:
-            raise RuntimeError("already executing")
-        self.__executing = True
-        try:
-            if self.__history is None:
-                command.__attach__(self)
-                command.__redo__()
-            else:
-                self.__history.__push__(command)
-        finally:
-            self.__executing = False
+class RunnerError(ModeloError, RunnerException):
+    """Runner error."""
 
-    @property
-    def history(self):
-        return self.__history
 
-    @history.setter
-    def history(self, history):
-        old_history = self.__history
-        if old_history is history:
-            return
-        if old_history is not None:
-            old_history.flush()
-        self.__history = history
+class CannotUndoError(RunnerError):
+    """Raised when trying to undo but no more commands are available."""
 
-    @property
-    def executing(self):
-        return self.__executing
+
+class CannotRedoError(RunnerError):
+    """Raised when trying to redo but no more commands are available."""

@@ -1,4 +1,5 @@
 # TODO: break out a "componente" package?
+# TODO: remove '_constants.py' module
 # TODO: make sure can't set property with no setter from anywhere
 # TODO: docstrings and cleanup
 # TODO: history propagation

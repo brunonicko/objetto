@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/x-rst",
     url="https://github.com/brunonicko/modelo",
     packages=setuptools.find_packages(),
-    install_requires=["slotted", "six", "typing", "enum34"],
+    install_requires=["six", "slotted", "componente", "typing", "enum34"],
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "License :: OSI Approved :: MIT License",

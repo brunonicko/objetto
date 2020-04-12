@@ -6,6 +6,7 @@ try:
 except ImportError:
     import collections as coll
 
+from enum import Enum
 from six import with_metaclass, iteritems, raise_from, string_types
 from typing import (
     Type,
@@ -31,14 +32,25 @@ from slotted import (
 )
 from collections import Counter, defaultdict
 
-from ._model import ModelMeta, Model
-from ._type_checking import UType, assert_is_instance
-from ._constants import SpecialValue, AttributeAccessType, EventPhase
-from ._broadcaster import EventListenerMixin
-from ._events import Event
-from ._partial import Partial
-from ._events import AttributesUpdateEvent
-from ._hierarchy import Hierarchy
+# from ._model import ModelMeta, Model
+# from ._type_checking import UType, assert_is_instance
+# from ._broadcaster import EventListenerMixin
+# from ._events import Event
+# from ._partial import Partial
+# from ._events import AttributesUpdateEvent
+# from ._hierarchy import Hierarchy
+
+__all__ = [
+    "AttributeDelegate",
+    "AttributeDescriptor",
+    "AttributeUpdates",
+    "UpdateState",
+    "ObjectModelMeta",
+    "ObjectModel",
+    "SpecialValue",
+    "AttributeAccessType",
+    "AttributesUpdateEvent"
+]
 
 
 def _is_type_parameter_value_valid(value):
@@ -1363,3 +1375,50 @@ class ObjectModel(
             state = self.___state = defaultdict(lambda: SpecialValue.MISSING)
             state.update(type(self).__constants__)
         return state
+
+
+class SpecialValue(Enum):
+    """Special Value."""
+
+    MISSING = "missing"
+    DELETED = "deleted"
+
+
+class AttributeAccessType(Enum):
+    """Attribute access type."""
+
+    GETTER = "getter"
+    SETTER = "setter"
+    DELETER = "deleter"
+
+
+class AttributesUpdateEvent(ModelEvent):
+    """Emitted when values for an object model's attributes change."""
+
+    __slots__ = ("__new_values", "__old_values")
+
+    def __init__(
+        self,
+        adoptions,  # type: FrozenSet["modelo.Model", ...]
+        releases,  # type: FrozenSet["modelo.Model", ...]
+        new_values,  # type: Mapping[str, Any]
+        old_values,  # type: Mapping[str, Any]
+    ):
+        # type: (...) -> None
+        """Initialize with new values and old values."""
+        super(AttributesUpdateEvent, self).__init__(adoptions, releases)
+        self.__new_values = new_values
+        self.__old_values = old_values
+
+    @property
+    def new_values(self):
+        # type: () -> Mapping[str, Any]
+        """New values."""
+        return self.__new_values
+
+    @property
+    def old_values(self):
+        # type: () -> Mapping[str, Any]
+        """Old values."""
+        return self.__old_values
+

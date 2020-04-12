@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
-"""Type checking."""
+"""Type checking utilities."""
 
 try:
-    import collections.abc as coll
+    import collections.abc as collections_abc
 except ImportError:
-    import collections as coll
+    import collections as collections_abc
 from os import environ
 from itertools import chain
 from six import string_types
 from typing import Any, Union, Type, Iterable, Tuple, Optional
 
-from ._constants import PACKAGE_LOADER_DOT_PATH_ENV_VAR, SpecialValue
-
+PACKAGE_LOADER_DOT_PATH_ENV_VAR = "DOT_PATH_PACKAGE_LOADER"
 _PACKAGE_LOADER_DOT_PATH = environ.get(PACKAGE_LOADER_DOT_PATH_ENV_VAR)
-_PACKAGE_LOADER = SpecialValue.MISSING
+_MISSING = object()
+_PACKAGE_LOADER = _MISSING
 
-UType = Union[str, Type]
+UnresolvedType = Union[str, Type]
 
 
 def resolve_dot_path(dot_path, default_module_name=None):
@@ -44,7 +44,7 @@ def resolve_dot_path(dot_path, default_module_name=None):
     except ImportError:
         if _PACKAGE_LOADER_DOT_PATH is None or _PACKAGE_LOADER is None:
             raise
-        if _PACKAGE_LOADER is SpecialValue.MISSING:
+        if _PACKAGE_LOADER is _MISSING:
             _PACKAGE_LOADER = None
             _PACKAGE_LOADER = resolve_dot_path(_PACKAGE_LOADER_DOT_PATH)
         _PACKAGE_LOADER(package_name)
@@ -60,7 +60,7 @@ def resolve_dot_path(dot_path, default_module_name=None):
 
 
 def resolve_types(
-    unresolved_types,  # type: Union[UType, Iterable[UType, ...]]
+    unresolved_types,  # type: Union[UnresolvedType, Iterable[UnresolvedType, ...]]
     default_module_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Tuple[Type, ...]
@@ -77,7 +77,7 @@ def resolve_types(
         )
 
     # It's an iterable, resolve recursively and return a flat tuple
-    elif isinstance(unresolved_types, coll.Iterable):
+    elif isinstance(unresolved_types, collections_abc.Iterable):
         return tuple(
             chain(
                 *(
@@ -92,7 +92,7 @@ def resolve_types(
 
 def is_instance(
     obj,  # type: Any
-    types,  # type: Union[UType, Iterable[UType, ...]]
+    types,  # type: Union[UnresolvedType, Iterable[UnresolvedType, ...]]
     optional=False,  # type: bool
     exact=False,  # type: bool
     error=False,  # type: bool
@@ -128,7 +128,7 @@ def is_instance(
 
 def assert_is_instance(
     obj,  # type: Any
-    types,  # type: Union[UType, Iterable[UType, ...]]
+    types,  # type: Union[UnresolvedType, Iterable[UnresolvedType, ...]]
     optional=False,  # type: bool
     exact=False,  # type: bool
     default_module_name=None,  # type: Optional[str]

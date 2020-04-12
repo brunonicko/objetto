@@ -128,3 +128,77 @@ class SequenceModel(
     @property
     def _options(self):
         return self.__options
+
+
+class SequenceInsertEvent(ModelEvent):
+    """Emitted when new values are inserted into a sequence model."""
+
+    __slots__ = ("__index", "__index", "__new_values")
+
+    def __init__(
+        self,
+        adoptions,  # type: FrozenSet["modelo.Model", ...]
+        releases,  # type: FrozenSet["modelo.Model", ...]
+        index,  # type: int
+        new_values,  # type: Tuple
+    ):
+        # type: (...) -> None
+        """Initialize with index and new values."""
+        super(SequenceInsertEvent, self).__init__(adoptions, releases)
+        self.__index = index
+        self.__new_values = new_values
+
+    @property
+    def index(self):
+        # type: () -> int
+        """Index."""
+        return self.__index
+
+    @property
+    def new_values(self):
+        # type: () -> Tuple
+        """New values."""
+        return self.__new_values
+
+    @property
+    def count(self):
+        # type: () -> int
+        """Value count."""
+        return len(self.__new_values)
+
+
+class SequencePopEvent(ModelEvent):
+    """Emitted when values are removed from a sequence model"""
+
+    __slots__ = ("__index", "__index", "__old_values")
+
+    def __init__(
+        self,
+        adoptions,  # type: FrozenSet["modelo.Model", ...]
+        releases,  # type: FrozenSet["modelo.Model", ...]
+        index,  # type: int
+        old_values,  # type: Tuple
+    ):
+        # type: (...) -> None
+        """Initialize with index and old values."""
+        super(SequencePopEvent, self).__init__(adoptions, releases)
+        self.__index = index
+        self.__old_values = old_values
+
+    @property
+    def index(self):
+        # type: () -> int
+        """Index."""
+        return self.__index
+
+    @property
+    def old_values(self):
+        # type: () -> Tuple
+        """Old values."""
+        return self.__old_values
+
+    @property
+    def count(self):
+        # type: () -> int
+        """Value count."""
+        return len(self.__old_values)

@@ -5,15 +5,21 @@ from contextlib import contextmanager
 from six import with_metaclass
 from typing import FrozenSet, Type, ContextManager, Optional, Dict
 from slotted import SlottedABCMeta, SlottedABC
+from componente import COMPONENTS_SLOT, CompositeMixin, Component
 
-from ._constants import EventPhase
-from ._partial import Partial
-from ._runner import UndoableCommand
-from ._events import ModelEvent
-from ._component import Component, CompositeMixin
-from ._hierarchy import Hierarchy
-from ._broadcaster import Broadcaster
-from ._runner import Runner
+from .._components.broadcaster import (
+    Broadcaster, InternalBroadcaster, EventPhase, Event
+)
+from .._components.hierarchy import Hierarchy, ChildrenUpdates
+from .._components.runner import Runner, UndoableCommand, History
+from ..utils.partial import Partial
+
+__all__ = [
+    "ModelMeta",
+    "Model",
+    "ModelEvent",
+    "ModelCommand",
+]
 
 
 class ModelMeta(SlottedABCMeta):
@@ -23,15 +29,7 @@ class ModelMeta(SlottedABCMeta):
 class Model(with_metaclass(ModelMeta, CompositeMixin, SlottedABC)):
     """Abstract model."""
 
-    __slots__ = (
-        "___components",
-        "___hierarchy",
-        "___internal_broadcaster",
-        "___broadcaster",
-        "___runner",
-    )
-
-    # Supported event types
+    __slots__ = (COMPONENTS_SLOT,)
     __event_types__ = frozenset()  # type: FrozenSet[Type[ModelEvent], ...]
 
     def __dispatch__(self, name, redo, redo_event, undo, undo_event):
@@ -143,6 +141,30 @@ class Model(with_metaclass(ModelMeta, CompositeMixin, SlottedABC)):
         # type: () -> "modelo._broadcaster.Events"
         """Event emitters mapped by event type."""
         return self.__broadcaster.events
+
+
+class ModelEvent(Event):
+    """Abstract event. Describes the adoption and/or release of child models."""
+
+    __slots__ = ("__adoptions", "__releases")
+
+    def __init__(self, adoptions, releases):
+        # type: (FrozenSet["modelo.Model", ...], FrozenSet["modelo.Model", ...]) -> None
+        """Initialize with adoptions and releases."""
+        self.__adoptions = adoptions
+        self.__releases = releases
+
+    @property
+    def adoptions(self):
+        # type: () -> FrozenSet["modelo.Model", ...]
+        """Adoptions."""
+        return self.__adoptions
+
+    @property
+    def releases(self):
+        # type: () -> FrozenSet["modelo.Model", ...]
+        """Releases."""
+        return self.__releases
 
 
 class ModelCommand(UndoableCommand):
