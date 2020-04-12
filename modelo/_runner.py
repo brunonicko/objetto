@@ -5,13 +5,14 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from weakref import ref
 from six import raise_from
-from typing import Optional, ContextManager
-from slotted import Slotted, SlottedABC
+from typing import Optional, ContextManager, Union, Any, List
+from slotted import SlottedABC, SlottedSequence, SlottedHashable
 
 from ._exceptions import CannotUndoError, CannotRedoError
+from ._component import Component, CompositeMixin
 
 
-class History(Slotted):
+class History(SlottedHashable, SlottedSequence):
     """Runs and keeps track of commands."""
 
     __slots__ = (
@@ -24,6 +25,7 @@ class History(Slotted):
         "__batches",
         "__flush_later",
         "__flush_redo_later",
+        "__broadcaster"
     )
 
     def __init__(self, size=0):
@@ -42,14 +44,20 @@ class History(Slotted):
         self.__flush_later = False
         self.__flush_redo_later = False
 
-    # def __getitem__(self, item):
-    #     """Get command/commands at index/slice."""
-    #     return ([None] + (self.__undo_stack + list(reversed(self.__redo_stack))))[item]
-    #
-    # def __len__(self):
-    #     # type: () -> int
-    #     """Get command count."""
-    #     return len(self.__undo_stack) + len(self.__redo_stack) + 1
+    def __hash__(self):
+        # type: () -> int
+        """Get object hash."""
+        return object.__hash__(self)
+
+    def __getitem__(self, item):
+        # type: (Union[int, slice]) -> Union[Any, List]
+        """Get command/commands at index/slice."""
+        return ([None] + (self.__undo_stack + list(reversed(self.__redo_stack))))[item]
+
+    def __len__(self):
+        # type: () -> int
+        """Get command count."""
+        return len(self.__undo_stack) + len(self.__redo_stack) + 1
 
     def flush_redo(self):
         # type: () -> None
@@ -488,11 +496,13 @@ class UndoableBatchCommand(BatchCommand, UndoableCommand):
             command.__undo__()
 
 
-class Runner(Slotted):
-    __slots__ = ("__weakref__", "__model_ref", "__history", "__executing")
+class Runner(Component):
+    __slots__ = ("__weakref__", "__history", "__executing")
 
-    def __init__(self, model):
-        self.__model_ref = ref(model)
+    def __init__(self, obj):
+        # type: (CompositeMixin) -> None
+        """Initialize."""
+        super(Runner, self).__init__(obj)
         self.__history = None
         self.__executing = False
 
@@ -508,10 +518,6 @@ class Runner(Slotted):
                 self.__history.__push__(command)
         finally:
             self.__executing = False
-
-    @property
-    def model(self):
-        return self.__model_ref()
 
     @property
     def history(self):

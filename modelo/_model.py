@@ -3,24 +3,28 @@
 
 from contextlib import contextmanager
 from six import with_metaclass
-from typing import FrozenSet, Type, ContextManager, Optional
+from typing import FrozenSet, Type, ContextManager, Optional, Dict
 from slotted import SlottedABCMeta, SlottedABC
 
 from ._constants import EventPhase
 from ._partial import Partial
 from ._runner import UndoableCommand
 from ._events import ModelEvent
+from ._component import Component, CompositeMixin
+from ._hierarchy import Hierarchy
+from ._broadcaster import Broadcaster
+from ._runner import Runner
 
 
 class ModelMeta(SlottedABCMeta):
     """Metaclass for 'Model'."""
 
 
-class Model(with_metaclass(ModelMeta, SlottedABC)):
+class Model(with_metaclass(ModelMeta, CompositeMixin, SlottedABC)):
     """Abstract model."""
 
     __slots__ = (
-        "__weakref__",
+        "___components",
         "___hierarchy",
         "___internal_broadcaster",
         "___broadcaster",
@@ -51,15 +55,32 @@ class Model(with_metaclass(ModelMeta, SlottedABC)):
         self.__internal_broadcaster.emit(event, EventPhase.POST)
         self.__broadcaster.emit(event, EventPhase.POST)
 
+    def __get_component__(self, key):
+        # type: (Type[Component]) -> Component
+        """Get component by its unique type."""
+        return self.__components[key]
+
     @property
-    def __hierarchy__(self):
+    def __components(self):
+        # type: () -> Dict[Type[Component], Component]
+        """Component map."""
+        try:
+            components = self.___components
+        except AttributeError:
+            components = self.___components = {
+                Hierarchy: self.__hierarchy,
+                Broadcaster: self.__broadcaster,
+                Runner: self.__runner
+            }
+        return components
+
+    @property
+    def __hierarchy(self):
         # type: () -> "modelo._hierarchy.Hierarchy"
         """Hierarchy component."""
         try:
             hierarchy = self.___hierarchy
         except AttributeError:
-            from ._hierarchy import Hierarchy
-
             hierarchy = self.___hierarchy = Hierarchy(self)
         return hierarchy
 
@@ -70,8 +91,6 @@ class Model(with_metaclass(ModelMeta, SlottedABC)):
         try:
             broadcaster = self.___internal_broadcaster
         except AttributeError:
-            from ._broadcaster import Broadcaster
-
             cls = type(self)
             broadcaster = self.___internal_broadcaster = Broadcaster(
                 self, internal=True, event_types=cls.__event_types__,
@@ -85,8 +104,6 @@ class Model(with_metaclass(ModelMeta, SlottedABC)):
         try:
             broadcaster = self.___broadcaster
         except AttributeError:
-            from ._broadcaster import Broadcaster
-
             cls = type(self)
             broadcaster = self.___broadcaster = Broadcaster(
                 self, internal=False, event_types=cls.__event_types__,
@@ -100,8 +117,6 @@ class Model(with_metaclass(ModelMeta, SlottedABC)):
         try:
             runner = self.___runner
         except AttributeError:
-            from ._runner import Runner
-
             runner = self.___runner = Runner(self)
         return runner
 

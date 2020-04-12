@@ -8,10 +8,9 @@ from six import raise_from
 from typing import Type, FrozenSet, Optional, Iterator
 
 from ._type_checking import assert_is_instance
-from ._component import Component
+from ._component import Component, CompositeMixin
 from ._exceptions import StopEventPropagationException, RejectEventException
 from ._constants import EventPhase
-from ._model import Model
 from ._events import Event
 
 
@@ -21,6 +20,8 @@ class EventListenerMixin(object):
     __slots__ = ("__weakref__",)
 
     def __hash__(self):
+        # type: () -> int
+        """Make sure 'super' object has a valid hash method."""
         try:
             hash_method = super(EventListenerMixin, self).__hash__
             if hash_method is None:
@@ -32,8 +33,8 @@ class EventListenerMixin(object):
         return hash_method()
 
     @abstractmethod
-    def __react__(self, model, event, phase):
-        # type: (Model, Event, EventPhase) -> None
+    def __react__(self, obj, event, phase):
+        # type: (CompositeMixin, Event, EventPhase) -> None
         """React to an event."""
         raise NotImplementedError()
 
@@ -109,13 +110,13 @@ class EventEmitter(Slotted):
         """Wait for the token's listener to react before continuing."""
         if self.__emitting is None:
             return
-        model = self.model
-        if model is None:
+        obj = self.obj
+        if obj is None:
             return
         listener = token.listener
         if listener in self.__reacting:
             self.__reacting.remove(listener)
-            listener.__react__(model, self.__emitting, self.__emitting_phase)
+            listener.__react__(obj, self.__emitting, self.__emitting_phase)
 
     def __emit__(self, event, phase):
         # type: (Event, EventPhase) -> bool
@@ -139,10 +140,7 @@ class EventEmitter(Slotted):
                         phase
                     )
                 )
-        model = self.model
-        if model is None:
-            raise RuntimeError("model is no longer available")
-
+        obj = self.obj
         self.__emitting = event
         self.__emitting_phase = phase
         self.__reacting = reacting = set(self.__listeners)
@@ -152,7 +150,7 @@ class EventEmitter(Slotted):
             while reacting:
                 listener = reacting.pop()
                 try:
-                    listener.__react__(model, event, phase)
+                    listener.__react__(obj, event, phase)
                 except StopEventPropagationException:
                     break
                 except RejectEventException as exc:
@@ -234,12 +232,12 @@ class EventEmitter(Slotted):
         return self.__internal
 
     @property
-    def model(self):
-        # type: () -> Model
-        """Model."""
+    def obj(self):
+        # type: () -> CompositeMixin
+        """Source object."""
         broadcaster = self.__broadcaster
         if broadcaster is not None:
-            return broadcaster.model
+            return broadcaster.obj
 
     @property
     def event_type(self):
@@ -296,7 +294,7 @@ class Events(SlottedMapping):
         except KeyError:
             if event_type in self.__event_types:
                 broadcaster = self.__broadcaster_ref()
-                if broadcaster is None or broadcaster.model is None:
+                if broadcaster is None or broadcaster.obj is None:
                     raise ReferenceError("object is no longer alive")
                 emitter = self.__emitters[event_type] = EventEmitter(
                     broadcaster, event_type
@@ -322,11 +320,10 @@ class Broadcaster(Component):
 
     __slots__ = ("__weakref__", "__internal", "__events")
 
-    def __init__(self, model, internal=False, event_types=frozenset()):
-        # type: (Model, bool, FrozenSet[Type[Event], ...]) -> None
+    def __init__(self, obj, internal=False, event_types=frozenset()):
+        # type: (CompositeMixin, bool, FrozenSet[Type[Event], ...]) -> None
         """Initialize with internal flag and supported event types."""
-        super(Broadcaster, self).__init__(model)
-        self.__model_ref = ref(model)
+        super(Broadcaster, self).__init__(obj)
         self.__internal = bool(internal)
         self.__events = Events(self, event_types)
 

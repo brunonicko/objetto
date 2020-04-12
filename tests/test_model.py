@@ -12,12 +12,14 @@ class TestModel(unittest.TestCase):
         from modelo._object_model import ObjectModel
         from modelo._attributes import attribute
         from modelo._runner import History
+        from modelo._hierarchy import Hierarchy
+        from typing import cast
 
         class Person(ObjectModel):
             name = attribute()
             sibling = attribute()
 
-        history = History()
+        history = History(size=500)
 
         bruno = Person()
         bruno._history = history
@@ -28,21 +30,22 @@ class TestModel(unittest.TestCase):
         bianca = Person()
         bianca.name = "Bianca"
         self.assertEqual(bianca.name, "Bianca")
-        self.assertIs(bianca.__hierarchy__.last_parent, None)
+        bianca_hierarchy = cast(Hierarchy, bianca.__get_component__(Hierarchy))
+        self.assertIs(bianca_hierarchy.last_parent, None)
 
         bruno.sibling = bianca
         self.assertIs(bruno.sibling, bianca)
-        self.assertIs(bianca.__hierarchy__.parent, bruno)
-        self.assertIs(bianca.__hierarchy__.last_parent, bruno)
+        self.assertIs(bianca_hierarchy.parent, bruno)
+        self.assertIs(bianca_hierarchy.last_parent, bruno)
 
         bruno.sibling = None
-        self.assertIs(bianca.__hierarchy__.parent, None)
-        self.assertIs(bianca.__hierarchy__.last_parent, bruno)
+        self.assertIs(bianca_hierarchy.parent, None)
+        self.assertIs(bianca_hierarchy.last_parent, bruno)
 
         history.undo()
         self.assertIs(bruno.sibling, bianca)
-        self.assertIs(bianca.__hierarchy__.parent, bruno)
-        self.assertIs(bianca.__hierarchy__.last_parent, bruno)
+        self.assertIs(bianca_hierarchy.parent, bruno)
+        self.assertIs(bianca_hierarchy.last_parent, bruno)
 
     def test_attributes(self):
         from modelo import ObjectModel, attribute, dependencies, constant_attribute

@@ -20,6 +20,7 @@ from typing import (
     FrozenSet,
     Union,
     AnyStr,
+    cast
 )
 from slotted import (
     Slotted,
@@ -37,6 +38,7 @@ from ._broadcaster import EventListenerMixin
 from ._events import Event
 from ._partial import Partial
 from ._events import AttributesUpdateEvent
+from ._hierarchy import Hierarchy
 
 
 def _is_type_parameter_value_valid(value):
@@ -1329,14 +1331,16 @@ class ObjectModel(
                     child_count[old_value] -= 1
                 if isinstance(value, Model):
                     child_count[value] += 1
-        redo_children = self.__hierarchy__.prepare_children_updates(child_count)
+        hierarchy = cast(Hierarchy, self.__get_component__(Hierarchy))
+
+        redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
 
         # Create partials and events
-        redo = Partial(self.__hierarchy__.update_children, redo_children) + Partial(
+        redo = Partial(hierarchy.update_children, redo_children) + Partial(
             self.__state.update, redo_updates
         )
-        undo = Partial(self.__hierarchy__.update_children, undo_children) + Partial(
+        undo = Partial(hierarchy.update_children, undo_children) + Partial(
             self.__state.update, undo_updates
         )
         redo_event = AttributesUpdateEvent(

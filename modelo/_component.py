@@ -1,27 +1,42 @@
 # -*- coding: utf-8 -*-
-"""Base model component."""
+"""Base component (simple composite pattern)."""
 
+try:
+    import collections.abc as collections_abc
+except ImportError:
+    import collections as collections_abc
+from abc import abstractmethod
 from weakref import ref
 from slotted import Slotted
 
-from ._model import Model
-
 
 class Component(Slotted):
-    """Adds functionality to a model."""
+    """Adds functionality to a composite object."""
 
-    __slots__ = ("__model_ref", "__internal")
+    __slots__ = ("__obj_ref", "__internal")
 
-    def __init__(self, model):
-        # type: (Model) -> None
-        """Initialize with model."""
-        self.__model_ref = ref(model)
+    def __init__(self, obj):
+        # type: (CompositeMixin) -> None
+        """Initialize with composite object."""
+        self.__obj_ref = ref(obj)
 
     @property
-    def model(self):
-        # type: () -> Model
-        """Model."""
-        model = self.__model_ref()
-        if model is not None:
-            return model
-        raise ReferenceError("model is no longer alive")
+    def obj(self):
+        # type: () -> CompositeMixin
+        """Composite object."""
+        obj = self.__obj_ref()
+        if obj is not None:
+            return obj
+        raise ReferenceError("object is no longer alive")
+
+
+class CompositeMixin(object):
+    """Composite object."""
+
+    __slots__ = ("__weakref__",)
+
+    @abstractmethod
+    def __get_component__(self, key):
+        # type: (collections_abc.Hashable) -> Component
+        """Get component by its unique, hashable key."""
+        raise NotImplementedError()
