@@ -3,8 +3,8 @@
 
 from typing import Any, Optional, Callable, Iterable, Union
 
+from ._models.object import AttributeDelegate, AttributeDescriptor
 from .utils.type_checking import UnresolvedType
-from .models.object import AttributeDelegate, AttributeDescriptor
 
 __all__ = ["dependencies", "attribute", "constant_attribute"]
 

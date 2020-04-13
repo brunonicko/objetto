@@ -13,6 +13,7 @@ from .._base.exceptions import ModeloException, ModeloError
 from ..utils.type_checking import assert_is_instance
 
 __all__ = [
+    "EventPhase",
     "Broadcaster",
     "InternalBroadcaster",
     "EventListenerMixin",
@@ -20,12 +21,20 @@ __all__ = [
     "EventEmitter",
     "Events",
     "Event",
-    "EventPhase",
     "BroadcasterException",
     "BroadcasterError",
     "StopEventPropagationException",
-    "RejectEventException"
+    "RejectEventException",
 ]
+
+
+class EventPhase(Enum):
+    """Event phase."""
+
+    INTERNAL_PRE = "internal_pre"
+    PRE = "pre"
+    POST = "post"
+    INTERNAL_POST = "internal_post"
 
 
 class Broadcaster(Slotted, Component):
@@ -406,15 +415,6 @@ class Event(Slotted):
         # type: () -> Type[Event]
         """Event type."""
         return type(self)
-
-
-class EventPhase(Enum):
-    """Event phase."""
-
-    INTERNAL_PRE = "internal_pre"
-    PRE = "pre"
-    POST = "post"
-    INTERNAL_POST = "internal_post"
 
 
 class BroadcasterException(ModeloException):

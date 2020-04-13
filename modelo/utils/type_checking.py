@@ -10,6 +10,17 @@ from itertools import chain
 from six import string_types
 from typing import Any, Union, Type, Iterable, Tuple, Optional
 
+__all__ = [
+    "PACKAGE_LOADER_DOT_PATH_ENV_VAR",
+    "UnresolvedType",
+    "resolve_dot_path",
+    "resolve_types",
+    "is_instance",
+    "assert_is_instance",
+    "is_unresolved_type",
+    "assert_is_unresolved_type",
+]
+
 PACKAGE_LOADER_DOT_PATH_ENV_VAR = "DOT_PATH_PACKAGE_LOADER"
 _PACKAGE_LOADER_DOT_PATH = environ.get(PACKAGE_LOADER_DOT_PATH_ENV_VAR)
 _MISSING = object()
@@ -143,3 +154,26 @@ def assert_is_instance(
         error=True,
         default_module_name=default_module_name,
     )
+
+
+def is_unresolved_type(types):
+    # type: (Union[UnresolvedType, Iterable[UnresolvedType, ...]]) -> bool
+    """Get whether value provided to 'types' parameter is valid."""
+    if isinstance(types, (type,) + string_types):
+        return True
+    if isinstance(types, collections_abc.Iterable):
+        for v in types:
+            if v is not None and not is_unresolved_type(v):
+                return False
+        return True
+    return False
+
+
+def assert_is_unresolved_type(types):
+    # type: (Union[UnresolvedType, Iterable[UnresolvedType, ...]]) -> None
+    """Assert value provided to 'types' parameter is valid."""
+    if not is_unresolved_type(types):
+        raise TypeError(
+            "expected valid type(s) and/or dot path(s) for type checking, "
+            "got {}".format(types)
+        )
