@@ -3,8 +3,9 @@
 
 from typing import Any, Optional, Callable, Iterable, Union
 
-from ._models.object import AttributeDelegate, AttributeDescriptor
-from .utils.type_checking import UnresolvedType
+from ._components.state.object import AttributeDelegate
+from ._models.object import AttributeDescriptor
+from .utils.type_checking import UnresolvedType as UType
 
 __all__ = ["dependencies", "attribute", "constant_attribute"]
 
@@ -23,38 +24,38 @@ def dependencies(
 
 
 def attribute(
-    type=None,  # type: Optional[Union[UnresolvedType, Iterable[UnresolvedType, ...]]]
-    factory=None,  # type: Optional[Callable]
-    exact_type=None,  # type: Optional[bool]
+    value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    value_factory=None,  # type: Optional[Callable]
+    exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    default_module=None,  # type: Optional[str]
     accepts_none=None,  # type: Optional[bool]
+    comparable=None,  # type: Optional[bool]
+    representable=None,  # type: Optional[bool]
+    delegated=False,  # type: bool
     parent=None,  # type: Optional[bool]
     history=None,  # type: Optional[bool]
     final=None,  # type: Optional[bool]
-    eq=None,  # type: Optional[bool]
-    pprint=None,  # type: Optional[bool]
-    repr=False,  # type: bool
-    property=False,  # type: bool
 ):
     # type: (...) -> AttributeDescriptor
     """Make an attribute descriptor."""
     return AttributeDescriptor(
-        type=type,
-        factory=factory,
-        exact_type=exact_type,
+        value_type=value_type,
+        value_factory=value_factory,
+        exact_value_type=exact_value_type,
+        default_module=default_module,
         accepts_none=accepts_none,
+        comparable=comparable,
+        representable=representable,
+        delegated=delegated,
         parent=parent,
         history=history,
         final=final,
-        eq=eq,
-        pprint=pprint,
-        repr=repr,
-        property=property,
     )
 
 
 def constant_attribute(value, final=None):
     # type: (Any, Optional[bool]) -> AttributeDescriptor
     """Make a constant attribute descriptor."""
-    descriptor = AttributeDescriptor(final=final, property=True)
+    descriptor = AttributeDescriptor(final=final, delegated=True)
     descriptor.getter(lambda _, _value=value: _value)
     return descriptor

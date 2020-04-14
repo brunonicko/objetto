@@ -38,6 +38,7 @@ __all__ = [
     "make_object_state_class",
     "Attribute",
     "AttributeDelegate",
+    "AttributeUpdates",
     "ObjectStateException",
     "ObjectStateError",
 ]
@@ -79,10 +80,12 @@ def _make_constant_access_object(
 ):
     # type: (...) -> object
     """Make access object that can be provided to a constant attribute fget function."""
-    dct = {"__slots__": ()}
     attribute = attributes[attribute_name]
+    if not attribute.delegated:
+        raise ValueError("attribute '{}' is not delegated".format(attribute_name))
 
     # Build properties
+    dct = {"__slots__": ()}
     for get in attribute.fget.gets:
 
         def fget(_, _get=get):
@@ -115,6 +118,8 @@ def _make_access_object(
     # type: (...) -> object
     """Make access object that can be provided to an attribute delegate's function."""
     attribute = attributes[attribute_name]
+    if not attribute.delegated:
+        raise ValueError("attribute '{}' is not delegated".format(attribute_name))
 
     # Get delegate according to the access type
     if access_type is AttributeAccessType.GETTER:
@@ -127,6 +132,7 @@ def _make_access_object(
         raise ValueError(access_type)
 
     # Build properties' functions according to dependencies declared in the delegate
+    dct = {"__slots__": ()}
     properties_functions = {}
     for get in delegate.gets:
 
@@ -159,10 +165,10 @@ def _make_access_object(
         def fset(_, value, _set=set_):
             # type: (object, Any, str) -> None
             """Property's 'fset' function."""
-            if value in (SpecialValue.MISSING, SpecialValue.DELETED):
-                raise ValueError("cannot set attribute value to {}".format(value))
             set_attribute = attributes[_set]
             value = set_attribute.__factory__(value)
+            if value in (SpecialValue.MISSING, SpecialValue.DELETED):
+                raise ValueError("cannot set attribute value to {}".format(value))
             if set_attribute.fset is not None:
                 set_access = _make_access_object(
                     state, _set, attributes, access_type=AttributeAccessType.SETTER
@@ -189,7 +195,7 @@ def _make_access_object(
 
         properties_functions.setdefault(delete, {})["fdel"] = fdel
 
-    dct = {"__slots__": ()}
+    # Populate dct
     for name, members in iteritems(properties_functions):
         dct[name] = property(
             fget=members.get("fget"), fset=members.get("fset"), fdel=members.get("fdel")
@@ -267,7 +273,7 @@ def _make_object_state_class(
             get_dependencies.update(attribute.fget.gets)
 
         if attribute.fset is None and attribute.fdel is None:
-            for parameter in ("value_type", "exact_type", "factory"):
+            for parameter in ("value_type", "value_factory", "exact_value_type"):
                 if getattr(attribute, parameter) is not None:
                     raise ValueError(
                         "neither 'fset' or 'fdel' delegates were declared for "
@@ -437,12 +443,20 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
         try:
             attribute = attributes[name]
         except KeyError:
-            exc = AttributeError("object has no attribute '{}'".format(name))
+            exc = AttributeError(
+                "'{}' object has no attribute '{}'".format(
+                    type(self.obj).__name__, name
+                )
+            )
             raise_from(exc, None)
             raise exc
 
         if not attribute.readable:
-            raise AttributeError("attribute '{}' is not readable".format(name))
+            raise AttributeError(
+                "attribute '{}.{}' is not readable".format(
+                    type(self.obj).__name__, name
+                )
+            )
 
         value = self.__state[name]
         if value is SpecialValue.MISSING:
@@ -549,10 +563,12 @@ class Attribute(Slotted):
     __slots__ = (
         "__name",
         "__value_type",
-        "__factory",
-        "__exact_type",
+        "__value_factory",
+        "__exact_value_type",
         "__default_module",
         "__accepts_none",
+        "__comparable",
+        "__representable",
         "__delegated",
         "__fget",
         "__fset",
@@ -567,17 +583,24 @@ class Attribute(Slotted):
         self,
         name,  # type: str
         value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
-        factory=None,  # type: Optional[Callable]
-        exact_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+        value_factory=None,  # type: Optional[Callable]
+        exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
         default_module=None,  # type: Optional[str]
         accepts_none=None,  # type: Optional[bool]
+        comparable=None,  # type: Optional[bool]
+        representable=None,  # type: Optional[bool]
         delegated=False,  # type: bool
     ):
         # type: (...) -> None
         """Initialize with parameters."""
 
         # Name
-        self.__name = name = str(name)
+        name = str(name)
+        if name == "self":
+            raise AttributeError("attribute can't named 'self'")
+        elif not name:
+            raise AttributeError("attribute needs a valid name")
+        self.__name = name
 
         # Default module
         if default_module is None:
@@ -585,40 +608,48 @@ class Attribute(Slotted):
         else:
             self.__default_module = str(default_module)
 
-        # Check, and store 'value_type', 'exact_type', and 'accepts_none'
-        if value_type is not None and exact_type is not None:
+        # Check, and store 'value_type', 'exact_value_type', and 'accepts_none'
+        if value_type is not None and exact_value_type is not None:
             raise ValueError(
-                "cannot specify bot 'value_type' and 'exact_type' arguments"
+                "cannot specify bot 'value_type' and 'exact_value_type' arguments"
             )
         if value_type is not None:
             assert_is_unresolved_type(value_type)
             self.__value_type = value_type
-            self.__exact_type = None
+            self.__exact_value_type = None
             self.__accepts_none = bool(
                 accepts_none if accepts_none is not None else False
             )
-        elif exact_type is not None:
-            assert_is_unresolved_type(exact_type)
+        elif exact_value_type is not None:
+            assert_is_unresolved_type(exact_value_type)
             self.__value_type = None
-            self.__exact_type = exact_type
+            self.__exact_value_type = exact_value_type
             self.__accepts_none = bool(
                 accepts_none if accepts_none is not None else False
             )
         else:
             self.__value_type = None
-            self.__exact_type = None
+            self.__exact_value_type = None
             self.__accepts_none = bool(
                 accepts_none if accepts_none is not None else True
             )
 
-        # Check and store 'factory'
-        if factory is not None and not callable(factory):
+        # Check and store 'value_factory'
+        if value_factory is not None and not callable(value_factory):
             raise TypeError(
-                "expected a callable for 'factory', got '{}'".format(
-                    type(factory).__name__
+                "expected a callable for 'value_factory', got '{}'".format(
+                    type(value_factory).__name__
                 )
             )
-        self.__factory = factory
+        self.__value_factory = value_factory
+
+        # Store 'comparable' and 'representable'
+        self.__comparable = bool(
+            comparable if comparable is not None else not name.startswith("_")
+        )
+        self.__representable = bool(
+            representable if representable is not None else not name.startswith("_")
+        )
 
         # Delegated
         self.__delegated = bool(delegated)
@@ -642,9 +673,9 @@ class Attribute(Slotted):
 
     def __factory__(self, value):
         # type: (Any) -> Any
-        """Fabricate value."""
-        if self.__factory is not None:
-            value = self.__factory(value)
+        """Fabricate value by running it through type checks and factory."""
+        if self.__value_factory is not None:
+            value = self.__value_factory(value)
         try:
             if self.__value_type is not None:
                 assert_is_instance(
@@ -654,18 +685,20 @@ class Attribute(Slotted):
                     exact=False,
                     default_module_name=self.__default_module,
                 )
-            elif self.__exact_type is not None:
+            elif self.__exact_value_type is not None:
                 assert_is_instance(
                     value,
-                    self.__exact_type,
+                    self.__exact_value_type,
                     optional=self.__accepts_none,
                     exact=True,
                     default_module_name=self.__default_module,
                 )
             elif not self.__accepts_none and value is None:
-                raise TypeError("attribute does not accept None as a value")
+                raise TypeError(
+                    "attribute '{}' does not accept None as a value".format(self.__name)
+                )
         except TypeError as e:
-            exc = TypeError("{} while setting attribute".format(e))
+            exc = TypeError("{} while setting attribute '{}'".format(e, self.__name))
             raise_from(exc, None)
             raise exc
         return value
@@ -674,9 +707,15 @@ class Attribute(Slotted):
         # type: (Union[Callable, AttributeDelegate]) -> Attribute
         """Assign a 'getter' function/delegate by decorating it."""
         if not self.__delegated:
-            raise RuntimeError("cannot define a getter for a non-delegated attribute")
+            raise RuntimeError(
+                "cannot define a getter for a non-delegated attribute '{}'".format(
+                    self.__name
+                )
+            )
         if self.__fget is not None:
-            raise RuntimeError("already defined a getter")
+            raise RuntimeError(
+                "already defined a getter for attribute '{}'".format(self.__name)
+            )
 
         if not isinstance(func, AttributeDelegate):
             fget = AttributeDelegate(func)
@@ -684,9 +723,15 @@ class Attribute(Slotted):
             fget = func
 
         if fget.sets:
-            raise ValueError("getter delegate can't have 'sets' dependencies")
+            raise ValueError(
+                "error while defining a getter delegate for attribute '{}', can't "
+                "have 'sets' dependencies".format(self.__name)
+            )
         if fget.deletes:
-            raise ValueError("getter delegate can't have 'deletes' dependencies")
+            raise ValueError(
+                "error while defining a getter delegate for attribute '{}', can't "
+                "have 'deletes' dependencies".format(self.__name)
+            )
 
         self.__fget = fget
         return self
@@ -695,9 +740,15 @@ class Attribute(Slotted):
         # type: (Callable) -> Attribute
         """Assign a 'setter' function/delegate by decorating it."""
         if not self.__delegated:
-            raise RuntimeError("cannot define a setter for a non-delegated attribute")
+            raise RuntimeError(
+                "cannot define a setter for a non-delegated attribute '{}'".format(
+                    self.__name
+                )
+            )
         if self.__fset is not None:
-            raise RuntimeError("already defined a setter")
+            raise RuntimeError(
+                "already defined a setter for attribute '{}'".format(self.__name)
+            )
 
         if not isinstance(func, AttributeDelegate):
             fset = AttributeDelegate(func)
@@ -711,9 +762,15 @@ class Attribute(Slotted):
         # type: (Callable) -> Attribute
         """Assign a 'deleter' function/delegate by decorating it."""
         if not self.__delegated:
-            raise RuntimeError("cannot define a deleter for a non-delegated attribute")
+            raise RuntimeError(
+                "cannot define a deleter for a non-delegated attribute '{}'".format(
+                    self.__name
+                )
+            )
         if self.__fdel is not None:
-            raise RuntimeError("already defined a deleter")
+            raise RuntimeError(
+                "already defined a deleter for attribute '{}'".format(self.__name)
+            )
 
         if not isinstance(func, AttributeDelegate):
             fdel = AttributeDelegate(func)
@@ -725,7 +782,7 @@ class Attribute(Slotted):
 
     @property
     def name(self):
-        # type: () -> Optional[str]
+        # type: () -> str
         """Name."""
         return self.__name
 
@@ -736,16 +793,16 @@ class Attribute(Slotted):
         return self.__value_type
 
     @property
-    def factory(self):
+    def value_factory(self):
         # type: () -> Optional[Callable]
         """Value factory."""
-        return self.__factory
+        return self.__value_factory
 
     @property
-    def exact_type(self):
+    def exact_value_type(self):
         # type: () -> Optional[Union[UType, Iterable[UType, ...]]]
         """Exact value type."""
-        return self.__exact_type
+        return self.__exact_value_type
 
     @property
     def default_module(self):
@@ -758,6 +815,18 @@ class Attribute(Slotted):
         # type: () -> bool
         """Whether None can be accepted as a value."""
         return self.__accepts_none
+
+    @property
+    def comparable(self):
+        # type: () -> bool
+        """Whether this is leveraged in state's '__eq__' method."""
+        return self.__comparable
+
+    @property
+    def representable(self):
+        # type: () -> bool
+        """Whether this is leveraged in state's '__repr__' and '__str__' methods."""
+        return self.__representable
 
     @property
     def delegated(self):
@@ -837,15 +906,7 @@ class Attribute(Slotted):
 class AttributeDelegate(Slotted):
     """Attribute fget/fset/fdel delegate."""
 
-    __slots__ = (
-        "__owner",
-        "__name",
-        "__access_type",
-        "__func",
-        "__gets",
-        "__sets",
-        "__deletes",
-    )
+    __slots__ = ("__func", "__gets", "__sets", "__deletes")
 
     @classmethod
     def get_decorator(
@@ -888,11 +949,6 @@ class AttributeDelegate(Slotted):
         # type: (...) -> None
         """Initialize with dependencies."""
 
-        # Ownership
-        self.__owner = None
-        self.__name = None
-        self.__access_type = None
-
         # Make sure 'func' is a callable, but not an AttributeDelegate
         if not callable(func):
             raise TypeError(
@@ -926,12 +982,6 @@ class AttributeDelegate(Slotted):
         # type: (Tuple[Any, ...], Dict[str, Any]) -> Optional[Any]
         """Call the function."""
         return self.__func(*args, **kwargs)
-
-    @property
-    def access_type(self):
-        # type: () -> Optional[AttributeAccessType]
-        """Access type."""
-        return self.__access_type
 
     @property
     def func(self):
@@ -977,7 +1027,7 @@ class AttributeUpdates(SlottedMapping):
     def __str__(self):
         # type: () -> str
         """String representation."""
-        return self.__repr__()
+        return str(self.__updates)
 
     def __getitem__(self, name):
         # type: (str) -> Any
@@ -1034,7 +1084,15 @@ class UpdateState(SlottedMutableMapping):
     def __str__(self):
         # type: () -> str
         """String representation."""
-        return self.__repr__()
+        return str(dict(self))
+
+    def __getitem__(self, name):
+        # type: (str) -> Any
+        """Get attribute value."""
+        try:
+            return self.__updates[name]
+        except KeyError:
+            return self.__state[name]
 
     def __setitem__(self, name, value):
         # type: (str, Any) -> None
@@ -1049,14 +1107,6 @@ class UpdateState(SlottedMutableMapping):
         # type: (str) -> None
         """Set attribute value to special 'DELETED' value."""
         self.__setitem__(name, SpecialValue.DELETED)
-
-    def __getitem__(self, name):
-        # type: (str) -> Any
-        """Get attribute value."""
-        try:
-            return self.__updates[name]
-        except KeyError:
-            return self.__state[name]
 
     def __len__(self):
         # type: () -> int

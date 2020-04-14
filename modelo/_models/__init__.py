@@ -3,13 +3,13 @@
 
 from .base import ModelMeta, Model
 from .object import ObjectModelMeta, ObjectModel
-from .sequence import SequenceModelMeta, SequenceModel
+# from .sequence import SequenceModelMeta, SequenceModel
 
 __all__ = [
     "ModelMeta",
     "Model",
     "ObjectModelMeta",
     "ObjectModel",
-    "SequenceModelMeta",
-    "SequenceModel"
+    # "SequenceModelMeta",
+    # "SequenceModel"
 ]

@@ -13,6 +13,7 @@ from .._base.exceptions import ModeloException, ModeloError
 __all__ = [
     "Hierarchy",
     "ChildrenUpdates",
+    "HierarchyAccess",
     "HierarchyException",
     "HierarchyError",
     "AlreadyParentedError",
@@ -184,6 +185,70 @@ class ChildrenUpdates(namedtuple("ChildrenUpdates", "adoptions releases")):
         # type: () -> ChildrenUpdates
         """Get inverted."""
         return ChildrenUpdates(adoptions=self.releases, releases=self.adoptions)
+
+
+class HierarchyAccess(Slotted):
+    """Provides read-only access to the hierarchy component."""
+
+    __slots__ = ("__hierarchy",)
+
+    def __init__(self, hierarchy):
+        # type: (Hierarchy) -> None
+        """Initialize with hierarchy."""
+        self.__hierarchy = hierarchy
+
+    def has_parent(self):
+        # type: () -> bool
+        """Whether has a parent."""
+        return self.__hierarchy.has_parent()
+
+    def has_last_parent(self):
+        # type: () -> bool
+        """Whether had a parent."""
+        return self.__hierarchy.has_last_parent()
+
+    def has_child(self, child):
+        # type: (CompositeMixin) -> bool
+        """Whether has a specific child."""
+        return self.__hierarchy.has_child(child)
+
+    def iter_children(self):
+        # type: () -> Iterator[CompositeMixin, ...]
+        """Iterate over children."""
+        for child in self.__hierarchy.iter_children():
+            yield child
+
+    def iter_up(self, inclusive=True):
+        # type: (bool) -> Iterator[CompositeMixin, ...]
+        """Iterate up the tree."""
+        for obj in self.__hierarchy.iter_up(inclusive=inclusive):
+            yield obj
+
+    def iter_down(self, inclusive=False, depth_first=False):
+        # type: (bool, bool) -> Iterator[CompositeMixin, ...]
+        """Iterate down the tree."""
+        for obj in self.__hierarchy.iter_down(
+            inclusive=inclusive, depth_first=depth_first
+        ):
+            yield obj
+
+    @property
+    def parent(self):
+        # type: () -> Optional[CompositeMixin]
+        """Parent."""
+        return self.__hierarchy.parent
+
+    @property
+    def last_parent(self):
+        # type: () -> Optional[CompositeMixin]
+        """Last parent."""
+        return self.__hierarchy.last_parent
+
+    @property
+    def children(self):
+        # type: () -> FrozenSet[CompositeMixin, ...]
+        """Children."""
+        return self.__hierarchy.children
 
 
 class HierarchyException(ModeloException):

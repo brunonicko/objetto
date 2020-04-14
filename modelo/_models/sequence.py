@@ -27,7 +27,7 @@ class SequenceModel(
     )
 ):
     __slots__ = ("__options", "__state")
-    __event_types__ = frozenset({SequenceInsertEvent, SequencePopEvent})
+    __events__ = frozenset({SequenceInsertEvent, SequencePopEvent})
 
     def __init__(self, parent=True, history=True):
         self.__options = SequenceOptions(parent=bool(parent), history=bool(history))

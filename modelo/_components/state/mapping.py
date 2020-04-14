@@ -12,14 +12,15 @@ __all__ = ["MappingState", "MappingStateException", "MappingStateError"]
 
 
 class MappingState(State):
-    """Holds values mapped by hashable keys."""
+    """Holds values in a mapping."""
 
-    __slots__ = ("__attributes",)
+    __slots__ = ("__state",)
 
     def __init__(self, obj):
         # type: (CompositeMixin) -> None
         """Initialize."""
         super(MappingState, self).__init__(obj)
+        self.__state = {}
 
 
 class MappingStateException(StateException):

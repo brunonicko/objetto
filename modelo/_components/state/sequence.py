@@ -14,12 +14,13 @@ __all__ = ["SequenceState", "SequenceStateException", "SequenceStateError"]
 class SequenceState(State):
     """Holds values in a sequence."""
 
-    __slots__ = ("__attributes",)
+    __slots__ = ("__state",)
 
     def __init__(self, obj):
         # type: (CompositeMixin) -> None
         """Initialize."""
         super(SequenceState, self).__init__(obj)
+        self.__state = []
 
 
 class SequenceStateException(StateException):

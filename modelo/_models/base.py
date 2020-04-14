@@ -10,11 +10,12 @@ from componente import COMPONENTS_SLOT, CompositeMixin
 from .._components.broadcaster import (
     Broadcaster,
     InternalBroadcaster,
+    EventListenerMixin,
     EventPhase,
     Events,
     Event,
 )
-from .._components.hierarchy import Hierarchy
+from .._components.hierarchy import Hierarchy, HierarchyAccess
 from .._components.runner import Runner, UndoableCommand, History
 from ..utils.partial import Partial
 
@@ -48,7 +49,7 @@ class ModelMeta(SlottedABCMeta):
         super(ModelMeta, cls).__delattr__(name)
 
 
-class Model(with_metaclass(ModelMeta, CompositeMixin, SlottedABC)):
+class Model(with_metaclass(ModelMeta, CompositeMixin, EventListenerMixin, SlottedABC)):
     """Abstract model."""
 
     __slots__ = (COMPONENTS_SLOT,)
@@ -101,6 +102,13 @@ class Model(with_metaclass(ModelMeta, CompositeMixin, SlottedABC)):
         """Set command history."""
         runner = cast(Runner, self._[Runner])
         runner.history = history
+
+    @property
+    def _hierarchy(self):
+        # type: () -> HierarchyAccess
+        """Parent-child hierarchy."""
+        hierarchy = cast(Hierarchy, self._[Hierarchy])
+        return HierarchyAccess(hierarchy)
 
     @property
     def _events(self):

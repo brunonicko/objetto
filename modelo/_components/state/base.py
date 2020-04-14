@@ -22,11 +22,6 @@ class State(Slotted, Component):
         """Get component key type."""
         return State
 
-    def __init__(self, obj):
-        # type: (CompositeMixin) -> None
-        """Initialize."""
-        super(State, self).__init__(obj)
-
     @classmethod
     def get_component(cls, obj):
         # type: (CompositeMixin) -> State
