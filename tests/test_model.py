@@ -15,7 +15,7 @@ class TestModel(unittest.TestCase):
 
         class Person(ObjectModel):
             name = attribute()
-            sibling = attribute()
+            sibling = attribute(parent=True)
 
         history = History(size=500)
 
@@ -89,9 +89,11 @@ class TestModel(unittest.TestCase):
         p.last_name = "Nicko"
         p.first_name = "Jack"
         p.tested = "Ha"
-        print(p.constantine)
-        print(p.full_name)
-        print(p.tested)
+
+        self.assertEqual(p.constantine, 12)
+        self.assertEqual(p.full_name, 'Jack Nicko 3')
+        self.assertEqual(p.tested, True)
+        self.assertEqual(Person.constantine, 12)
 
     def test_attribute_b(self):
         from modelo.models import ObjectModel
@@ -122,9 +124,9 @@ class TestModel(unittest.TestCase):
                 self.first_name, self.last_name = value.split(" ")
 
         p = Person("Jack", "Nicholson")
-        print(p.full_name)
+        self.assertEqual(p.full_name, 'Jack Nicholson')
         p.full_name = "Bruno Nicko"
-        print(p.full_name)
+        self.assertEqual(p.full_name, "Bruno Nicko")
 
 
 if __name__ == "__main__":

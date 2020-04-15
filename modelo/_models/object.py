@@ -5,7 +5,7 @@ try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
-from six import with_metaclass, iteritems, raise_from
+from six import with_metaclass, iteritems, itervalues, raise_from
 from typing import (
     Type,
     Tuple,
@@ -20,10 +20,9 @@ from typing import (
     cast,
 )
 from slotted import Slotted
-from componente import CompositeMixin
 from collections import Counter
 
-from .._components.broadcaster import EventListenerMixin, Event, EventPhase
+from .._components.broadcaster import Event, EventPhase
 from .._components.hierarchy import Hierarchy
 from .._components.state.base import State
 from .._components.state.object import (
@@ -102,9 +101,9 @@ class AttributeDescriptor(Slotted):
         comparable=None,  # type: Optional[bool]
         representable=None,  # type: Optional[bool]
         delegated=False,  # type: bool
-        parent=None,  # type: Optional[bool]
-        history=None,  # type: Optional[bool]
-        final=None,  # type: Optional[bool]
+        parent=False,  # type: bool
+        history=False,  # type: bool
+        final=False,  # type: bool
     ):
         # type: (...) -> None
         """Initialize with parameters."""
@@ -118,10 +117,10 @@ class AttributeDescriptor(Slotted):
         accepts_none = bool(accepts_none) if accepts_none is not None else None
         comparable = bool(comparable) if comparable is not None else None
         representable = bool(representable) if representable is not None else None
-        delegated = bool(delegated) if delegated is not None else None
-        parent = bool(parent) if parent is not None else None
-        history = bool(history) if history is not None else None
-        final = bool(final) if final is not None else None
+        delegated = bool(delegated)
+        parent = bool(parent)
+        history = bool(history)
+        final = bool(final)
 
         # Store keyword arguments
         self.__attribute_kwargs = attribute_kwargs = {
@@ -162,9 +161,10 @@ class AttributeDescriptor(Slotted):
         """Descriptor 'get' access."""
         name = self.__name
         if model is None:
-            if name is not None and model_cls is not None:  # FIXME: use state component class
-                if name in model_cls.__constants__:
-                    return model_cls.__constants__[name]
+            if name is not None and model_cls is not None:
+                constants = model_cls.constants
+                if name in constants:
+                    return constants[name]
             return self
         if name is None:
             raise RuntimeError("attribute has no owner")
@@ -213,14 +213,6 @@ class AttributeDescriptor(Slotted):
 
         # Build attribute
         self.__attribute = attribute = Attribute(name, **self.__attribute_kwargs)
-
-        # Collapse None-valued delegate attributes into booleans
-        if self.__parent is None:
-            self.__parent = attribute.public
-        if self.__history is None:
-            self.__history = attribute.public
-        if self.__final is None:
-            self.__final = attribute.private
 
         # Assign delegates to attribute
         if self.__delegated:
@@ -341,7 +333,39 @@ class AttributeDescriptor(Slotted):
     def copy(self):
         # type: () -> AttributeDescriptor
         """Get a new attribute descriptor with the same input original arguments."""
-        return type(self)(**self.__kwargs)
+        copy = type(self)(**self.__kwargs)
+        if self.__delegated:
+            if self.__fget is not None:
+                fget = AttributeDelegate(
+                    self.__fget.func,
+                    gets=self.__fget.gets
+                )
+                copy.getter(fget)
+            if self.__fset is not None:
+                fset = AttributeDelegate(
+                    self.__fset.func,
+                    gets=self.__fset.gets,
+                    sets=self.__fset.sets,
+                    deletes=self.__fset.deletes
+                )
+                copy.setter(fset)
+            if self.__fdel is not None:
+                fdel = AttributeDelegate(
+                    self.__fdel.func,
+                    gets=self.__fdel.gets,
+                    sets=self.__fdel.sets,
+                    deletes=self.__fdel.deletes
+                )
+                copy.deleter(fdel)
+        return copy
+
+    @property
+    def __attribute__(self):
+        # type: () -> Attribute
+        """State attribute."""
+        if self.__attribute is None:
+            raise RuntimeError("attribute descriptor has no owner")
+        return self.__attribute
 
     @property
     def owner(self):
@@ -358,14 +382,6 @@ class AttributeDescriptor(Slotted):
         if self.__name is None:
             raise RuntimeError("attribute descriptor has no owner")
         return self.__name
-
-    @property
-    def attribute(self):
-        # type: () -> Attribute
-        """Attribute."""
-        if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
-        return self.__attribute
 
     @property
     def value_type(self):
@@ -582,31 +598,29 @@ def _make_object_model_class(
                     "type '{}'".format(member_name, type(member).__name__)
                 )
 
-    # Check attribute rules (object model specific)
-    state_attributes = []
-    for attribute_name, attribute_descriptor in iteritems(attributes):
-        attribute = attribute_descriptor.attribute
-        state_attributes.append(attribute)
-
-        # Constant attribute rules
-        if attribute.delegated and attribute.fget is not None:
-            if not attribute.fget.gets:
-                if attribute_descriptor.parent:
-                    raise ValueError(
-                        "the 'fget' delegate for attribute '{}' does not declare any"
-                        "'get' dependencies (constant), so its 'parent' parameter "
-                        "can't be set to True".format(attribute_name)
-                    )
-                if attribute_descriptor.history:
-                    raise ValueError(
-                        "the 'fget' delegate for attribute '{}' does not declare any"
-                        "'get' dependencies (constant), so its 'history' parameter "
-                        "can't be set to True".format(attribute_name)
-                    )
-
     # Make object state class and store it
-    state_class = make_object_state_class(*state_attributes)
+    state_class = make_object_state_class(
+        *(a.__attribute__ for a in itervalues(attributes))
+    )
     type.__setattr__(cls, "__state_class__", state_class)
+
+    # Check delegate-specific attribute rules
+    for attribute_name, attribute in iteritems(attributes):
+
+        # Constant attribute
+        if attribute_name in state_class.constants:
+            if attribute.parent:
+                raise ValueError(
+                    "the 'fget' delegate for attribute '{}' does not declare any"
+                    "'get' dependencies (it is a constant), so its 'parent' parameter "
+                    "can't be set to True".format(attribute_name)
+                )
+            if attribute.history:
+                raise ValueError(
+                    "the 'fget' delegate for attribute '{}' does not declare any"
+                    "'get' dependencies (it is a constant), so its 'history' parameter "
+                    "can't be set to True".format(attribute_name)
+                )
 
     return cls
 
@@ -616,18 +630,45 @@ class ObjectModelMeta(ModelMeta):
 
     __new__ = staticmethod(_make_object_model_class)
 
+    __attributes__ = {}  # type: Mapping[str, AttributeDescriptor]
+    __state_class__ = ObjectState
+
+    @property
+    def attributes(cls):
+        # type: () -> Mapping[str, AttributeDescriptor]
+        """Get attribute descriptors mapped by name."""
+        return cls.__attributes__
+
+    @property
+    def dependencies(cls):
+        # type: () -> Mapping[str, FrozenSet[str, ...]]
+        """Get dependencies."""
+        return cls.__state_class__.dependencies
+
+    @property
+    def constants(cls):
+        # type: () -> Mapping[str, Any]
+        """Get constant values."""
+        return cls.__state_class__.constants
+
 
 class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
     """Model described by attributes."""
 
     __slots__ = ()
-    __attributes__ = {}  # type: Dict[str, AttributeDescriptor]
     __state_class__ = ObjectState
     __events__ = frozenset({AttributesUpdateEvent})
 
     def __init__(self):
+        # type: () -> None
+        """Initialize."""
         super(ObjectModel, self).__init__()
         self._.add_component(type(self).__state_class__)
+
+    # TODO: __repr__
+    # TODO: __str__
+    # TODO: __eq__
+    # TODO: __ne__
 
     def __getitem__(self, name):
         # type: (str) -> Any
@@ -646,15 +687,10 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         self.__getitem__(name)
         self.update((name, SpecialValue.DELETED))
 
-    def __react__(self, model, event, phase):
-        # type: (Model, Event, EventPhase) -> None
-        """React to an event."""
-        pass
-
     def keys(self):
         # type: () -> Iterable[str, ...]
         """Get/iterate over attribute names."""
-        return type(self).__attributes__.keys()
+        return type(self).attributes.keys()
 
     def update(self, *name_value_pairs):
         # type: (Tuple[Tuple[str, Any], ...]) -> None
@@ -665,13 +701,10 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         hierarchy = cast(Hierarchy, self._[Hierarchy])
         state = cast(ObjectState, self._[State])
 
-        cls = type(self)
-        attributes = cls.__attributes__
-
         # Check for invalid names and values
         invalid_names = set()
         for name, value in name_value_pairs:
-            if name not in attributes:
+            if name not in type(self).attributes:
                 invalid_names.add(name)
             if value is SpecialValue.MISSING:
                 raise ValueError("cannot set attribute value to {}".format(value))
@@ -693,7 +726,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         # Prepare children
         child_count = Counter()
         for name, value in iteritems(redo_update):
-            attribute = attributes[name]
+            attribute = type(self).attributes[name]
             if attribute.parent:
                 old_value = undo_update[name]
                 if isinstance(old_value, Model):

@@ -1,11 +1,13 @@
-# TODO: create 'State' component and 'ObjectState', 'SequenceState' subclasses
-# TODO: make sure can't set property with no setter from anywhere
-# TODO: docstrings and cleanup
+# TODO: single event emitter?
+# TODO: create 'SequenceState'
+# TODO: create 'MappingState'
+# TODO: create 'SetState'
+# TODO: sequence model
+# TODO: mapping model
+# TODO: set model
 # TODO: history propagation
 # TODO: history invalidation (flushing)
 # TODO: history model
-# TODO: sequence _models
-# TODO: mapping _models
-# TODO: set _models
 # TODO: immutable data?
+# TODO: docstrings and cleanup
 # TODO: write proper tests

@@ -76,6 +76,11 @@ class Model(with_metaclass(ModelMeta, CompositeMixin, EventListenerMixin, Slotte
         else:
             return False
 
+    def __react__(self, model, event, phase):
+        # type: (Model, Event, EventPhase) -> None
+        """React to an event."""
+        pass
+
     @contextmanager
     def __event_context__(self, event):
         # type: (ModelEvent) -> ContextManager

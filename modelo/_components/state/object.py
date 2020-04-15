@@ -256,20 +256,6 @@ def _make_object_state_class(
         delete_dependencies = set()
 
         if attribute.fget is not None:
-            # FIXME: figure this out?
-            # if not attribute.fget.gets:
-            #     if attribute.parent:
-            #         raise ValueError(
-            #             "the 'fget' delegate for attribute '{}' does not declare any"
-            #             "'get' dependencies (constant), so its 'parent' parameter "
-            #             "can't be set to True".format(attribute_name)
-            #         )
-            #     if attribute.history:
-            #         raise ValueError(
-            #             "the 'fget' delegate for attribute '{}' does not declare any"
-            #             "'get' dependencies (constant), so its 'history' parameter "
-            #             "can't be set to True".format(attribute_name)
-            #         )
             get_dependencies.update(attribute.fget.gets)
 
         if attribute.fset is None and attribute.fdel is None:
@@ -380,9 +366,10 @@ def _invert_tree(tree):
     for key, val in iteritems(tree):
         for dependency in val:
             new_tree.setdefault(dependency, set()).add(key)
+    frozen_new_tree = {}
     for key, val in iteritems(new_tree):
-        new_tree[key] = frozenset(val)
-    return new_tree
+        frozen_new_tree[key] = frozenset(val)
+    return frozen_new_tree
 
 
 class ObjectStateMeta(SlottedMeta):
@@ -433,6 +420,12 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
         super(ObjectState, self).__init__(obj)
         self.__state = defaultdict(lambda: SpecialValue.MISSING)
         self.__state.update(type(self).constants)
+
+    # TODO: __repr__
+    # TODO: __str__
+    # TODO: __eq__
+    # TODO: __ne__
+    # TODO: __reduce__
 
     def get(self, name):
         # type: (str) -> Any
