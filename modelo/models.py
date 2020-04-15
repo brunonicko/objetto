@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
+"""Models."""
 
-from ._model import Model
-from ._object_model import ObjectModel
-from ._sequence_model import SequenceModel
+from ._models.base import Model
+from ._models.object import ObjectModel
+# from ._models.sequence import SequenceModel
 
-__all__ = ["Model", "ObjectModel", "SequenceModel"]
+__all__ = [
+    "Model",
+    "ObjectModel",
+    # "SequenceModel"
+]

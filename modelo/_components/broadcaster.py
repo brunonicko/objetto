@@ -2,16 +2,106 @@
 """Event broadcasting component."""
 
 from abc import abstractmethod
+from enum import Enum
 from weakref import WeakKeyDictionary, ref
 from slotted import Slotted, SlottedMapping
 from six import raise_from
-from typing import Type, FrozenSet, Optional, Iterator
+from typing import Type, FrozenSet, Optional, Iterator, Callable, cast
+from componente import CompositeMixin, Component
 
-from ._type_checking import assert_is_instance
-from ._component import Component, CompositeMixin
-from ._exceptions import StopEventPropagationException, RejectEventException
-from ._constants import EventPhase
-from ._events import Event
+from .._base.exceptions import ModeloException, ModeloError
+from ..utils.type_checking import assert_is_instance
+
+__all__ = [
+    "EventPhase",
+    "Broadcaster",
+    "InternalBroadcaster",
+    "EventListenerMixin",
+    "ListenerToken",
+    "EventEmitter",
+    "Events",
+    "Event",
+    "BroadcasterException",
+    "BroadcasterError",
+    "StopEventPropagationException",
+    "RejectEventException",
+]
+
+
+class EventPhase(Enum):
+    """Event phase."""
+
+    INTERNAL_PRE = "internal_pre"
+    PRE = "pre"
+    POST = "post"
+    INTERNAL_POST = "internal_post"
+
+
+class Broadcaster(Slotted, Component):
+    """Emits events."""
+
+    __slots__ = ("__weakref__", "__events")
+
+    @staticmethod
+    def get_type():
+        # type: () -> Type[Broadcaster]
+        """Get component key type."""
+        return Broadcaster
+
+    def __init__(self, obj, event_types=frozenset()):
+        # type: (CompositeMixin, FrozenSet[Type[Event], ...]) -> None
+        """Initialize with supported event types."""
+        super(Broadcaster, self).__init__(obj)
+        self.__events = Events(self, event_types)
+
+    @classmethod
+    def get_component(cls, obj):
+        # type: (CompositeMixin) -> Broadcaster
+        """Get broadcaster component of a composite object."""
+        return cast(Broadcaster, super(Broadcaster, cls).get_component(obj))
+
+    def emit(self, event, phase):
+        # type: (Event, EventPhase) -> bool
+        """Emit event. Return False if event was rejected."""
+        return self.__events[event.type].__emit__(event, phase)
+
+    @property
+    def internal(self):
+        # type: () -> bool
+        """Whether this broadcaster is internal."""
+        return False
+
+    @property
+    def events(self):
+        # type: () -> Events
+        """Event emitters mapped by event type."""
+        return self.__events
+
+
+class InternalBroadcaster(Broadcaster):
+    """Emits internal events."""
+
+    __slots__ = ()
+
+    @staticmethod
+    def get_type():
+        # type: () -> Type[InternalBroadcaster]
+        """Get component key type."""
+        return InternalBroadcaster
+
+    @classmethod
+    def get_component(cls, obj):
+        # type: (CompositeMixin) -> InternalBroadcaster
+        """Get internal broadcaster component of a composite object."""
+        return cast(
+            InternalBroadcaster, super(InternalBroadcaster, cls).get_component(obj)
+        )
+
+    @property
+    def internal(self):
+        # type: () -> bool
+        """Whether this broadcaster is internal."""
+        return True
 
 
 class EventListenerMixin(object):
@@ -315,31 +405,44 @@ class Events(SlottedMapping):
         return len(self.__event_types)
 
 
-class Broadcaster(Component):
-    """Emits events."""
+class Event(Slotted):
+    """Abstract event."""
 
-    __slots__ = ("__weakref__", "__internal", "__events")
-
-    def __init__(self, obj, internal=False, event_types=frozenset()):
-        # type: (CompositeMixin, bool, FrozenSet[Type[Event], ...]) -> None
-        """Initialize with internal flag and supported event types."""
-        super(Broadcaster, self).__init__(obj)
-        self.__internal = bool(internal)
-        self.__events = Events(self, event_types)
-
-    def emit(self, event, phase):
-        # type: (Event, EventPhase) -> bool
-        """Emit event. Return False if event was rejected."""
-        return self.__events[event.type].__emit__(event, phase)
+    __slots__ = ()
 
     @property
-    def internal(self):
-        # type: () -> bool
-        """Whether this broadcaster is internal."""
-        return self.__internal
+    def type(self):
+        # type: () -> Type[Event]
+        """Event type."""
+        return type(self)
+
+
+class BroadcasterException(ModeloException):
+    """Broadcaster exception."""
+
+
+class BroadcasterError(ModeloError, BroadcasterException):
+    """Broadcaster error."""
+
+
+class StopEventPropagationException(BroadcasterException):
+    """When raised during event emission, will prevent next listeners to react."""
+
+
+class RejectEventException(BroadcasterException):
+    """
+    When raised during event emission, will prevent the action that originated the
+    event from happening at all.
+    """
+
+    __slots__ = ("__callback",)
+
+    def __init__(self, callback=None):
+        # type: (Optional[Callable]) -> None
+        super(RejectEventException, self).__init__()
+        self.__callback = callback
 
     @property
-    def events(self):
-        # type: () -> Events
-        """Event emitters mapped by event type."""
-        return self.__events
+    def callback(self):
+        # type: () -> Optional[Callable]
+        return self.__callback

@@ -9,15 +9,13 @@ class TestModel(unittest.TestCase):
     """Tests for '_model' module."""
 
     def test_model(self):
-        from modelo._object_model import ObjectModel
-        from modelo._attributes import attribute
-        from modelo._runner import History
-        from modelo._hierarchy import Hierarchy
-        from typing import cast
+        from modelo.models import ObjectModel
+        from modelo.attributes import attribute
+        from modelo._components.runner import History
 
         class Person(ObjectModel):
             name = attribute()
-            sibling = attribute()
+            sibling = attribute(parent=True)
 
         history = History(size=500)
 
@@ -30,7 +28,7 @@ class TestModel(unittest.TestCase):
         bianca = Person()
         bianca.name = "Bianca"
         self.assertEqual(bianca.name, "Bianca")
-        bianca_hierarchy = cast(Hierarchy, bianca.__get_component__(Hierarchy))
+        bianca_hierarchy = bianca._hierarchy
         self.assertIs(bianca_hierarchy.last_parent, None)
 
         bruno.sibling = bianca
@@ -48,17 +46,18 @@ class TestModel(unittest.TestCase):
         self.assertIs(bianca_hierarchy.last_parent, bruno)
 
     def test_attributes(self):
-        from modelo import ObjectModel, attribute, dependencies, constant_attribute
+        from modelo.models import ObjectModel
+        from modelo.attributes import attribute, dependencies, constant_attribute
 
         class Person(ObjectModel):
             first_name = attribute()
             last_name = attribute()
             _tested = attribute()
-            tested = attribute(property=True, factory=bool)
-            full_name = attribute(property=True)
+            tested = attribute(delegated=True, value_factory=bool)
+            full_name = attribute(delegated=True)
             __constant = constant_attribute(3)
-            constant = attribute(property=True)
-            constantine = attribute(property=True)
+            constant = attribute(delegated=True)
+            constantine = attribute(delegated=True)
 
             @constant.getter
             @dependencies(gets=("__constant",))
@@ -90,19 +89,23 @@ class TestModel(unittest.TestCase):
         p.last_name = "Nicko"
         p.first_name = "Jack"
         p.tested = "Ha"
-        print(p.constantine)
-        print(p.full_name)
-        print(p.tested)
+
+        self.assertEqual(p.constantine, 12)
+        self.assertEqual(p.full_name, 'Jack Nicko 3')
+        self.assertEqual(p.tested, True)
+        self.assertEqual(Person.constantine, 12)
 
     def test_attribute_b(self):
-        from modelo import ObjectModel, attribute, dependencies
+        from modelo.models import ObjectModel
+        from modelo.attributes import attribute, dependencies
 
         class Person(ObjectModel):
             first_name = attribute(str)  # type: str
             last_name = attribute(str)  # type: str
-            full_name = attribute(str, property=True)
+            full_name = attribute(str, delegated=True)
 
             def __init__(self, first_name, last_name):
+                super(Person, self).__init__()
                 self.update(
                     ("first_name", first_name),
                     ("last_name", last_name)
@@ -121,9 +124,9 @@ class TestModel(unittest.TestCase):
                 self.first_name, self.last_name = value.split(" ")
 
         p = Person("Jack", "Nicholson")
-        print(p.full_name)
+        self.assertEqual(p.full_name, 'Jack Nicholson')
         p.full_name = "Bruno Nicko"
-        print(p.full_name)
+        self.assertEqual(p.full_name, "Bruno Nicko")
 
 
 if __name__ == "__main__":

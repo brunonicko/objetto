@@ -3,32 +3,39 @@
 
 from weakref import ref
 from collections import Counter, namedtuple, deque
-from typing import Iterator, Optional, FrozenSet, cast
+from typing import Iterator, Optional, FrozenSet, Type, cast
 
-from ._component import Component, CompositeMixin
-from ._constants import DEAD_REF
-from ._exceptions import (
-    AlreadyParentedError,
-    NotParentedError,
-    ParentCycleError,
-    MultipleParentingError,
-    MultipleUnparentingError,
-)
+from slotted import Slotted
+from componente import CompositeMixin, Component
+
+from .._base.exceptions import ModeloException, ModeloError
+
+__all__ = [
+    "Hierarchy",
+    "ChildrenUpdates",
+    "HierarchyAccess",
+    "HierarchyException",
+    "HierarchyError",
+    "AlreadyParentedError",
+    "NotParentedError",
+    "ParentCycleError",
+    "MultipleParentingError",
+    "MultipleUnparentingError",
+]
+
+DEAD_REF = ref(type("DeadRef", (object,), {"__slots__": ("__weakref__",)})())
 
 
-class ChildrenUpdates(namedtuple("ChildrenUpdates", "adoptions releases")):
-    """Describes a change in children."""
-
-    def __invert__(self):
-        # type: () -> ChildrenUpdates
-        """Get inverted."""
-        return ChildrenUpdates(adoptions=self.releases, releases=self.adoptions)
-
-
-class Hierarchy(Component):
+class Hierarchy(Slotted, Component):
     """Parent-child hierarchy node."""
 
     __slots__ = ("__parent_ref", "__last_parent_ref", "__children")
+
+    @staticmethod
+    def get_type():
+        # type: () -> Type[Hierarchy]
+        """Get component key type."""
+        return Hierarchy
 
     def __init__(self, obj):
         # type: (CompositeMixin) -> None
@@ -38,13 +45,19 @@ class Hierarchy(Component):
         self.__last_parent_ref = DEAD_REF
         self.__children = set()
 
+    @classmethod
+    def get_component(cls, obj):
+        # type: (CompositeMixin) -> Hierarchy
+        """Get hierarchy component of a composite object."""
+        return cast(Hierarchy, super(Hierarchy, cls).get_component(obj))
+
     def prepare_children_updates(self, children_count):
         # type: (Counter[CompositeMixin, int]) -> ChildrenUpdates
         """Prepare children updates."""
         adoptions = set()
         releases = set()
         for child, count in children_count.items():
-            child_hierarchy = cast(Hierarchy, child.__get_component__(Hierarchy))
+            child_hierarchy = cast(Hierarchy, self.get_component(child))
             if count == 1:
                 child_parent = child_hierarchy.parent
                 if child_parent is not None:
@@ -69,9 +82,7 @@ class Hierarchy(Component):
                 releases.add(child)
             elif count > 1:
                 raise MultipleParentingError(
-                    "{} cannot be parented to {} more than once".format(
-                        child, self.obj
-                    )
+                    "{} cannot be parented to {} more than once".format(child, self.obj)
                 )
             elif count < -1:
                 raise MultipleUnparentingError(
@@ -87,12 +98,12 @@ class Hierarchy(Component):
         # type: (ChildrenUpdates) -> None
         """Perform children adoptions and/or releases."""
         for adoption in children_updates.adoptions:
-            adoption_hierarchy = cast(Hierarchy, adoption.__get_component__(Hierarchy))
+            adoption_hierarchy = cast(Hierarchy, self.get_component(adoption))
             adoption_hierarchy.__parent_ref = ref(self.obj)
             adoption_hierarchy.__last_parent_ref = adoption_hierarchy.__parent_ref
             self.__children.add(adoption)
         for release in children_updates.releases:
-            release_hierarchy = cast(Hierarchy, release.__get_component__(Hierarchy))
+            release_hierarchy = cast(Hierarchy, self.get_component(release))
             release_hierarchy.__parent_ref = DEAD_REF
             self.__children.remove(release_hierarchy.obj)
 
@@ -125,7 +136,7 @@ class Hierarchy(Component):
         parent = self.parent
         while parent is not None:
             yield parent
-            parent_hierarchy = cast(Hierarchy, parent.__get_component__(Hierarchy))
+            parent_hierarchy = cast(Hierarchy, self.get_component(parent))
             parent = parent_hierarchy.parent
 
     def iter_down(self, inclusive=False, depth_first=False):
@@ -135,7 +146,7 @@ class Hierarchy(Component):
             yield self.obj
         if depth_first:
             for child in self.iter_children():
-                child_hierarchy = cast(Hierarchy, child.__get_component__(Hierarchy))
+                child_hierarchy = cast(Hierarchy, self.get_component(child))
                 for grandchild in child_hierarchy.iter_down(
                     inclusive=True, depth_first=True
                 ):
@@ -145,7 +156,7 @@ class Hierarchy(Component):
             while queue:
                 child = queue.popleft()
                 yield child
-                child_hierarchy = cast(Hierarchy, child.__get_component__(Hierarchy))
+                child_hierarchy = cast(Hierarchy, self.get_component(child))
                 queue.extend(child_hierarchy.iter_children())
 
     @property
@@ -165,3 +176,104 @@ class Hierarchy(Component):
         # type: () -> FrozenSet[CompositeMixin, ...]
         """Children."""
         return frozenset(self.__children)
+
+
+class ChildrenUpdates(namedtuple("ChildrenUpdates", "adoptions releases")):
+    """Describes a change in children."""
+
+    def __invert__(self):
+        # type: () -> ChildrenUpdates
+        """Get inverted."""
+        return ChildrenUpdates(adoptions=self.releases, releases=self.adoptions)
+
+
+class HierarchyAccess(Slotted):
+    """Provides read-only access to the hierarchy component."""
+
+    __slots__ = ("__hierarchy",)
+
+    def __init__(self, hierarchy):
+        # type: (Hierarchy) -> None
+        """Initialize with hierarchy."""
+        self.__hierarchy = hierarchy
+
+    def has_parent(self):
+        # type: () -> bool
+        """Whether has a parent."""
+        return self.__hierarchy.has_parent()
+
+    def has_last_parent(self):
+        # type: () -> bool
+        """Whether had a parent."""
+        return self.__hierarchy.has_last_parent()
+
+    def has_child(self, child):
+        # type: (CompositeMixin) -> bool
+        """Whether has a specific child."""
+        return self.__hierarchy.has_child(child)
+
+    def iter_children(self):
+        # type: () -> Iterator[CompositeMixin, ...]
+        """Iterate over children."""
+        for child in self.__hierarchy.iter_children():
+            yield child
+
+    def iter_up(self, inclusive=True):
+        # type: (bool) -> Iterator[CompositeMixin, ...]
+        """Iterate up the tree."""
+        for obj in self.__hierarchy.iter_up(inclusive=inclusive):
+            yield obj
+
+    def iter_down(self, inclusive=False, depth_first=False):
+        # type: (bool, bool) -> Iterator[CompositeMixin, ...]
+        """Iterate down the tree."""
+        for obj in self.__hierarchy.iter_down(
+            inclusive=inclusive, depth_first=depth_first
+        ):
+            yield obj
+
+    @property
+    def parent(self):
+        # type: () -> Optional[CompositeMixin]
+        """Parent."""
+        return self.__hierarchy.parent
+
+    @property
+    def last_parent(self):
+        # type: () -> Optional[CompositeMixin]
+        """Last parent."""
+        return self.__hierarchy.last_parent
+
+    @property
+    def children(self):
+        # type: () -> FrozenSet[CompositeMixin, ...]
+        """Children."""
+        return self.__hierarchy.children
+
+
+class HierarchyException(ModeloException):
+    """Hierarchy exception."""
+
+
+class HierarchyError(ModeloError, HierarchyException):
+    """Hierarchy error."""
+
+
+class AlreadyParentedError(HierarchyError):
+    """Raised when already parented to another parent."""
+
+
+class NotParentedError(HierarchyError):
+    """Raised when not parented to given parent."""
+
+
+class ParentCycleError(HierarchyError):
+    """Raised when a parent cycle is detected."""
+
+
+class MultipleParentingError(HierarchyError):
+    """Raised when trying to parent more than once."""
+
+
+class MultipleUnparentingError(HierarchyError):
+    """Raised when trying to un-parent more than once."""

@@ -1,4 +1,5 @@
 six>=1.13.0
 slotted>=0.0.3
+componente>=0.0.1
 typing>=3.7.4.1
 enum34>=1.1.6
