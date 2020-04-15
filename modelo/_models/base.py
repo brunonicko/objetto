@@ -12,7 +12,7 @@ from .._components.broadcaster import (
     InternalBroadcaster,
     EventListenerMixin,
     EventPhase,
-    Events,
+    EventEmitter,
     Event,
 )
 from .._components.hierarchy import Hierarchy, HierarchyAccess
@@ -53,13 +53,12 @@ class Model(with_metaclass(ModelMeta, CompositeMixin, EventListenerMixin, Slotte
     """Abstract model."""
 
     __slots__ = (COMPONENTS_SLOT,)
-    __events__ = frozenset()  # type: FrozenSet[Type[ModelEvent], ...]
 
     def __init__(self):
-        cls = type(self)
+        super(Model, self).__init__()
         self._.add_component(Hierarchy)
-        self._.add_component(InternalBroadcaster, event_types=cls.__events__)
-        self._.add_component(Broadcaster, event_types=cls.__events__)
+        self._.add_component(InternalBroadcaster)
+        self._.add_component(Broadcaster)
         self._.add_component(Runner)
 
     def __dispatch__(self, name, redo, redo_event, undo, undo_event):
@@ -117,17 +116,17 @@ class Model(with_metaclass(ModelMeta, CompositeMixin, EventListenerMixin, Slotte
 
     @property
     def _events(self):
-        # type: () -> Events
-        """Internal event emitters mapped by event type."""
+        # type: () -> EventEmitter
+        """Internal event emitter."""
         internal_broadcaster = cast(InternalBroadcaster, self._[InternalBroadcaster])
-        return internal_broadcaster.events
+        return internal_broadcaster.emitter
 
     @property
     def events(self):
-        # type: () -> Events
-        """Event emitters mapped by event type."""
+        # type: () -> EventEmitter
+        """Event emitter."""
         broadcaster = cast(Broadcaster, self._[Broadcaster])
-        return broadcaster.events
+        return broadcaster.emitter
 
 
 class ModelEvent(Event):

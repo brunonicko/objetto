@@ -22,7 +22,6 @@ from typing import (
 from slotted import Slotted
 from collections import Counter
 
-from .._components.broadcaster import Event, EventPhase
 from .._components.hierarchy import Hierarchy
 from .._components.state.base import State
 from .._components.state.object import (
@@ -657,7 +656,6 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
 
     __slots__ = ()
     __state_class__ = ObjectState
-    __events__ = frozenset({AttributesUpdateEvent})
 
     def __init__(self):
         # type: () -> None
