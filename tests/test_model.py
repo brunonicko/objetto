@@ -105,6 +105,7 @@ class TestModel(unittest.TestCase):
         class Person(ObjectModel):
             first_name = attribute(str)  # type: str
             last_name = attribute(str)  # type: str
+            age = attribute(int)  # type: int
             full_name = attribute(str, delegated=True)
 
             def __init__(self, first_name, last_name):
@@ -148,6 +149,16 @@ class TestModel(unittest.TestCase):
         self.assertEqual(p.full_name, "Jack Nicholson")
         p.full_name = "Bruno Nicko"
         self.assertEqual(p.full_name, "Bruno Nicko")
+
+        pp = Person("Bruno", "Nicko")
+        self.assertEqual(p, pp)
+        self.assertIsNot(p, pp)
+
+        p.events.remove_listener(pl)
+        p.age = 35
+        self.assertNotEqual(p, pp)
+        pp.age = 35
+        self.assertEqual(p, pp)
 
 
 if __name__ == "__main__":

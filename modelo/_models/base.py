@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """Models manage data access and modification."""
 
+from abc import abstractmethod
 from contextlib import contextmanager
 from six import with_metaclass
-from typing import FrozenSet, Type, ContextManager, Optional, Any, cast
+from typing import FrozenSet, ContextManager, Optional, Any, cast
 from slotted import SlottedABCMeta, SlottedABC
 from componente import COMPONENTS_SLOT, CompositeMixin
 
@@ -60,6 +61,29 @@ class Model(with_metaclass(ModelMeta, CompositeMixin, EventListenerMixin, Slotte
         self._.add_component(InternalBroadcaster)
         self._.add_component(Broadcaster)
         self._.add_component(Runner)
+
+    @abstractmethod
+    def __repr__(self):
+        # type: () -> str
+        """Get representation."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __str__(self):
+        # type: () -> str
+        """Get string representation."""
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __eq__(self, other):
+        # type: (Model) -> bool
+        """Compare for equality."""
+        raise NotImplementedError()
+
+    def __ne__(self, other):
+        # type: (Model) -> bool
+        """Compare for inequality."""
+        return not self.__eq__(other)
 
     def __dispatch__(self, name, redo, redo_event, undo, undo_event):
         # type: (str, Partial, ModelEvent, Partial, ModelEvent) -> bool

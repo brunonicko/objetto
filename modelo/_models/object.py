@@ -29,8 +29,10 @@ from .._components.state.object import (
 )
 from ..utils.type_checking import UnresolvedType as UType
 from ..utils.wrapped_dict import WrappedDict
+from ..utils.recursive_repr import recursive_repr
 from ..utils.naming import privatize_name
 from ..utils.partial import Partial
+from ..utils.obj_repr import obj_repr
 from .base import ModelMeta, Model, ModelEvent
 
 __all__ = [
@@ -98,7 +100,8 @@ class AttributeDescriptor(Slotted):
         default_module=None,  # type: Optional[str]
         accepts_none=None,  # type: Optional[bool]
         comparable=None,  # type: Optional[bool]
-        representable=None,  # type: Optional[bool]
+        representable=False,  # type: Optional[bool]
+        string=None,  # type: Optional[bool]
         delegated=False,  # type: bool
         parent=False,  # type: bool
         history=False,  # type: bool
@@ -116,6 +119,7 @@ class AttributeDescriptor(Slotted):
         accepts_none = bool(accepts_none) if accepts_none is not None else None
         comparable = bool(comparable) if comparable is not None else None
         representable = bool(representable) if representable is not None else None
+        string = bool(string) if string is not None else None
         delegated = bool(delegated)
         parent = bool(parent)
         history = bool(history)
@@ -130,6 +134,7 @@ class AttributeDescriptor(Slotted):
             "accepts_none": accepts_none,
             "comparable": comparable,
             "representable": representable,
+            "string": string,
             "delegated": delegated
         }
         self.__kwargs = kwargs = dict(attribute_kwargs)
@@ -433,10 +438,18 @@ class AttributeDescriptor(Slotted):
     @property
     def representable(self):
         # type: () -> bool
-        """Whether this is leveraged in state's '__repr__' and '__str__' methods."""
+        """Whether this is leveraged in state's '__repr__' method."""
         if self.__attribute is None:
             raise RuntimeError("attribute descriptor has no owner")
         return self.__attribute.representable
+
+    @property
+    def string(self):
+        # type: () -> bool
+        """Whether this is leveraged in state's '__str__' method."""
+        if self.__attribute is None:
+            raise RuntimeError("attribute descriptor has no owner")
+        return self.__attribute.string
 
     @property
     def delegated(self):
@@ -663,10 +676,35 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         super(ObjectModel, self).__init__()
         self._.add_component(type(self).__state_class__)
 
-    # TODO: __repr__
-    # TODO: __str__
-    # TODO: __eq__
-    # TODO: __ne__
+    @recursive_repr
+    def __repr__(self):
+        # type: () -> str
+        """Get representation."""
+        state = cast(ObjectState, self._[State])
+        repr_dict = state.get_dict(attribute_sieve=lambda a: a.representable)
+        return "<{}.{} object at {}{}>".format(
+            type(self).__module__,
+            type(self).__name__,
+            hex(id(self)),
+            " {}".format(obj_repr(**repr_dict)) if repr_dict else ""
+        )
+
+    @recursive_repr
+    def __str__(self):
+        # type: () -> str
+        """Get string representation."""
+        state = cast(ObjectState, self._[State])
+        str_dict = state.get_dict(attribute_sieve=lambda a: a.string)
+        return "{}({})".format(type(self).__name__, obj_repr(**str_dict))
+
+    def __eq__(self, other):
+        # type: (Model) -> bool
+        """Compare for equality."""
+        if type(self) is not type(other):
+            return False
+        self_state = cast(ObjectState, self._[State])
+        other_state = cast(ObjectState, other._[State])
+        return self_state == other_state
 
     def __getitem__(self, name):
         # type: (str) -> Any

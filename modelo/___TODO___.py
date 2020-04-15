@@ -1,4 +1,4 @@
-# TODO: single event emitter?
+# TODO: pickling
 # TODO: create 'SequenceState'
 # TODO: create 'MappingState'
 # TODO: create 'SetState'

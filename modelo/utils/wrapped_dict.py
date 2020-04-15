@@ -4,6 +4,8 @@
 from slotted import SlottedMapping
 from typing import Mapping, Hashable, Any, Iterator
 
+from .recursive_repr import recursive_repr
+
 __all__ = ["WrappedDict"]
 
 
@@ -17,11 +19,13 @@ class WrappedDict(SlottedMapping):
         """Initialize with a dict/mapping."""
         self._dict = internal_dict
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """Representation."""
         return repr(self._dict)
 
+    @recursive_repr
     def __str__(self):
         # type: () -> str
         """String representation."""

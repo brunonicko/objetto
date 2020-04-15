@@ -8,7 +8,13 @@ except ImportError:
 from collections import defaultdict
 from componente import CompositeMixin
 from enum import Enum
-from slotted import SlottedMeta, Slotted, SlottedMapping, SlottedMutableMapping
+from slotted import (
+    SlottedABCMeta,
+    Slotted,
+    SlottedABC,
+    SlottedMapping,
+    SlottedMutableMapping,
+)
 from six import with_metaclass, iteritems, raise_from, string_types
 from typing import (
     Any,
@@ -23,11 +29,13 @@ from typing import (
     Set,
     Tuple,
     Type,
-    Union
+    Union,
+    cast,
 )
 
 from ...utils.type_checking import UnresolvedType as UType
 from ...utils.type_checking import assert_is_instance, assert_is_unresolved_type
+from ...utils.recursive_repr import recursive_repr
 from ...utils.wrapped_dict import WrappedDict
 from .base import State, StateException, StateError
 
@@ -241,9 +249,7 @@ def _make_object_state_class(
 
         # Delegated, but does not define any delegate
         elif (
-                attribute.fget is None and
-                attribute.fset is None and
-                attribute.fdel is None
+            attribute.fget is None and attribute.fset is None and attribute.fdel is None
         ):
             raise ValueError(
                 "attribute '{}' is delegated, but no delegates were defined".format(
@@ -372,7 +378,7 @@ def _invert_tree(tree):
     return frozen_new_tree
 
 
-class ObjectStateMeta(SlottedMeta):
+class ObjectStateMeta(SlottedABCMeta):
     __new__ = staticmethod(_make_object_state_class)
 
     __attributes__ = {}  # type: Mapping[str, Attribute]
@@ -382,12 +388,20 @@ class ObjectStateMeta(SlottedMeta):
     def __setattr__(cls, name, value):
         # type: (str, Any) -> None
         """Prevent class attribute setting."""
-        raise AttributeError("'{}' class attributes are read-only".format(cls.__name__))
+        if name not in SlottedABC.__dict__:
+            raise AttributeError(
+                "'{}' class attributes are read-only".format(cls.__name__)
+            )
+        super(ObjectStateMeta, cls).__setattr__(name, value)
 
     def __delattr__(cls, name):
         # type: (str) -> None
         """Prevent class attribute deleting."""
-        raise AttributeError("'{}' class attributes are read-only".format(cls.__name__))
+        if name not in SlottedABC.__dict__:
+            raise AttributeError(
+                "'{}' class attributes are read-only".format(cls.__name__)
+            )
+        super(ObjectStateMeta, cls).__delattr__(name)
 
     @property
     def attributes(cls):
@@ -411,30 +425,62 @@ class ObjectStateMeta(SlottedMeta):
 class ObjectState(with_metaclass(ObjectStateMeta, State)):
     """Holds values curated/controlled by attributes."""
 
-    __slots__ = ("__state",)
+    __slots__ = ("__state", "__attributes", "__dependencies", "__constants")
     state_attributes = frozenset()  # type: FrozenSet[Attribute, ...]
 
     def __init__(self, obj):
         # type: (CompositeMixin) -> None
         """Initialize."""
         super(ObjectState, self).__init__(obj)
-        self.__state = defaultdict(lambda: SpecialValue.MISSING)
-        self.__state.update(type(self).constants)
 
-    # TODO: __repr__
-    # TODO: __str__
-    # TODO: __eq__
-    # TODO: __ne__
-    # TODO: __reduce__
+        cls = type(self)
+        self.__attributes = getattr(cls, "attributes")  # type: Mapping[str, Attribute]
+        self.__dependencies = getattr(
+            cls, "dependencies"
+        )  # type: Mapping[str, FrozenSet[str, ...]]
+        self.__constants = getattr(cls, "constants")  # type: Mapping[str, Any]
+
+        self.__state = defaultdict(lambda: SpecialValue.MISSING)
+        self.__state.update(self.__constants)
+
+    @recursive_repr
+    def __repr__(self):
+        # type: () -> str
+        """Get representation."""
+        repr_dict = self.get_dict(attribute_sieve=lambda a: a.representable)
+        return "<{}.{} object at {}{}>".format(
+            ObjectState.__module__,
+            ObjectState.__name__,
+            hex(id(self)),
+            " {}".format(repr_dict) if repr_dict else ""
+        )
+
+    @recursive_repr
+    def __str__(self):
+        # type: () -> str
+        """Get string representation."""
+        str_dict = self.get_dict(attribute_sieve=lambda a: a.string)
+        return "{}".format(str_dict)
+
+    def __eq__(self, other):
+        # type: (ObjectState) -> bool
+        """Compare for equality."""
+        if not isinstance(other, ObjectState):
+            return False
+        self_dict = self.get_dict(attribute_sieve=lambda a: a.comparable)
+        other_dict = other.get_dict(attribute_sieve=lambda a: a.comparable)
+        return self_dict == other_dict
+
+    def __reduce__(self):
+        # type: () -> Tuple[Callable, Tuple]
+        """Reduce for pickling purposes."""
+        return make_object_state, (self.__getstate__(), type(self).state_attributes)
 
     def get(self, name):
         # type: (str) -> Any
         """Get attribute value."""
-        cls = type(self)
-        attributes = cls.attributes
-
         try:
-            attribute = attributes[name]
+            attribute = self.__attributes[name]
         except KeyError:
             exc = AttributeError(
                 "'{}' object has no attribute '{}'".format(
@@ -476,17 +522,14 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
     def prepare_update(self, *name_value_pairs):
         # type: (Tuple[Tuple[str, Any], ...]) -> AttributeUpdates
         """Prepare attribute update based on input values."""
-        cls = type(self)
-        attributes = cls.attributes
-        dependencies = cls.dependencies
 
         # Create a temporary update state based on the current state
-        update_state = UpdateState(self.__state, attributes, dependencies)
+        update_state = UpdateState(self.__state, self.__attributes, self.__dependencies)
 
         # Set values respecting order
         for name, value in name_value_pairs:
             try:
-                attribute = attributes[name]
+                attribute = self.__attributes[name]
             except KeyError:
                 exc = AttributeError("object has no attribute '{}'".format(name))
                 raise_from(exc, None)
@@ -501,7 +544,7 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
                         _make_access_object(
                             update_state,
                             name,
-                            attributes,
+                            self.__attributes,
                             access_type=AttributeAccessType.DELETER,
                         )
                     )
@@ -522,7 +565,7 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
                         _make_access_object(
                             update_state,
                             name,
-                            attributes,
+                            self.__attributes,
                             access_type=AttributeAccessType.SETTER,
                         ),
                         value,
@@ -539,15 +582,54 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
             return
         self.__state.update(update_state)
 
+    def get_dict(
+        self,
+        attribute_sieve=None,  # type: Optional[Callable]
+        name_sieve=None,  # type: Optional[Callable]
+        value_sieve=None,  # type: Optional[Callable]
+    ):
+        # type: (...) -> Dict[str, Any]
+        """Get dictionary with current values."""
+        values = {}
+        if attribute_sieve is not None:
+            attributes = filter(
+                lambda p: attribute_sieve(p[1]), iteritems(self.__attributes)
+            )
+        else:
+            attributes = iteritems(self.__attributes)
 
-def make_object_state_class(*attributes):
+        for name, attribute in attributes:
+            if name_sieve is not None and not name_sieve(name):
+                continue
+            try:
+                value = self.get(name)
+            except AttributeError:
+                continue
+            else:
+                if value_sieve is not None and not value_sieve(value):
+                    continue
+                values[name] = value
+
+        return values
+
+
+def make_object_state_class(*state_attributes):
     # type: (Tuple[Attribute, ...]) -> Union[ObjectStateMeta, Type[ObjectState]]
-    """Make an object state class with given attributes."""
+    """Make an object state class with given state attributes."""
     return ObjectStateMeta(
         ObjectState.__name__,
         (ObjectState,),
-        {"__slots__": (), "state_attributes": frozenset(attributes)},
+        {"__slots__": (), "state_attributes": frozenset(state_attributes)},
     )
+
+
+def make_object_state(state, state_attributes):
+    # type: (Dict[str, Any], Tuple[Attribute, ...]) -> ObjectState
+    """Make an object state component with given state and state attributes."""
+    cls = make_object_state_class(*state_attributes)
+    object_state_component = cast(ObjectState, cls.__new__(cls))
+    object_state_component.__setstate__(state)
+    return object_state_component
 
 
 class Attribute(Slotted):
@@ -562,6 +644,7 @@ class Attribute(Slotted):
         "__accepts_none",
         "__comparable",
         "__representable",
+        "__string",
         "__delegated",
         "__fget",
         "__fset",
@@ -581,7 +664,8 @@ class Attribute(Slotted):
         default_module=None,  # type: Optional[str]
         accepts_none=None,  # type: Optional[bool]
         comparable=None,  # type: Optional[bool]
-        representable=None,  # type: Optional[bool]
+        representable=False,  # type: Optional[bool]
+        string=None,  # type: Optional[bool]
         delegated=False,  # type: bool
     ):
         # type: (...) -> None
@@ -636,13 +720,14 @@ class Attribute(Slotted):
             )
         self.__value_factory = value_factory
 
-        # Store 'comparable' and 'representable'
+        # Store 'comparable', 'representable', and 'string'
         self.__comparable = bool(
             comparable if comparable is not None else not name.startswith("_")
         )
         self.__representable = bool(
             representable if representable is not None else not name.startswith("_")
         )
+        self.__string = bool(string if string is not None else not name.startswith("_"))
 
         # Delegated
         self.__delegated = bool(delegated)
@@ -818,8 +903,14 @@ class Attribute(Slotted):
     @property
     def representable(self):
         # type: () -> bool
-        """Whether this is leveraged in state's '__repr__' and '__str__' methods."""
+        """Whether this is leveraged in state's '__repr__' method."""
         return self.__representable
+
+    @property
+    def string(self):
+        # type: () -> bool
+        """Whether this is leveraged in state's '__str__' method."""
+        return self.__string
 
     @property
     def delegated(self):
@@ -1012,15 +1103,17 @@ class AttributeUpdates(SlottedMapping):
         self.__updates = updates
         self.__reverts = reverts
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """Representation."""
-        return repr(self.__updates)
+        return "{}".format(self.__updates)
 
+    @recursive_repr
     def __str__(self):
         # type: () -> str
         """String representation."""
-        return str(self.__updates)
+        return "{}".format(self.__updates)
 
     def __getitem__(self, name):
         # type: (str) -> Any
@@ -1069,15 +1162,17 @@ class UpdateState(SlottedMutableMapping):
         self.__attributes = attributes
         self.__dependencies = dependencies
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """Representation."""
-        return repr(dict(self))
+        return "{}".format(dict(self))
 
+    @recursive_repr
     def __str__(self):
         # type: () -> str
         """String representation."""
-        return str(dict(self))
+        return "{}".format(dict(self))
 
     def __getitem__(self, name):
         # type: (str) -> Any

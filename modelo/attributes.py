@@ -30,7 +30,8 @@ def attribute(
     default_module=None,  # type: Optional[str]
     accepts_none=None,  # type: Optional[bool]
     comparable=None,  # type: Optional[bool]
-    representable=None,  # type: Optional[bool]
+    representable=False,  # type: Optional[bool]
+    string=None,  # type: Optional[bool]
     delegated=False,  # type: bool
     parent=None,  # type: Optional[bool]
     history=None,  # type: Optional[bool]
@@ -46,6 +47,7 @@ def attribute(
         accepts_none=accepts_none,
         comparable=comparable,
         representable=representable,
+        string=string,
         delegated=delegated,
         parent=parent,
         history=history,
