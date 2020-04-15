@@ -4,9 +4,9 @@
 from abc import abstractmethod
 from enum import Enum
 from weakref import WeakKeyDictionary, ref
-from slotted import Slotted, SlottedMapping
+from slotted import Slotted
 from six import raise_from
-from typing import Type, FrozenSet, Optional, Iterator, Callable, cast
+from typing import Type, FrozenSet, Optional, Callable, cast
 from componente import CompositeMixin, Component
 
 from .._base.exceptions import ModeloException, ModeloError
@@ -19,7 +19,6 @@ __all__ = [
     "EventListenerMixin",
     "ListenerToken",
     "EventEmitter",
-    "Events",
     "Event",
     "BroadcasterException",
     "BroadcasterError",
@@ -40,7 +39,7 @@ class EventPhase(Enum):
 class Broadcaster(Slotted, Component):
     """Emits events."""
 
-    __slots__ = ("__weakref__", "__events")
+    __slots__ = ("__weakref__", "__emitter")
 
     @staticmethod
     def get_type():
@@ -48,11 +47,11 @@ class Broadcaster(Slotted, Component):
         """Get component key type."""
         return Broadcaster
 
-    def __init__(self, obj, event_types=frozenset()):
-        # type: (CompositeMixin, FrozenSet[Type[Event], ...]) -> None
-        """Initialize with supported event types."""
+    def __init__(self, obj):
+        # type: (CompositeMixin) -> None
+        """Initialize."""
         super(Broadcaster, self).__init__(obj)
-        self.__events = Events(self, event_types)
+        self.__emitter = EventEmitter(self)
 
     @classmethod
     def get_component(cls, obj):
@@ -63,7 +62,7 @@ class Broadcaster(Slotted, Component):
     def emit(self, event, phase):
         # type: (Event, EventPhase) -> bool
         """Emit event. Return False if event was rejected."""
-        return self.__events[event.type].__emit__(event, phase)
+        return self.__emitter.__emit__(event, phase)
 
     @property
     def internal(self):
@@ -72,10 +71,10 @@ class Broadcaster(Slotted, Component):
         return False
 
     @property
-    def events(self):
-        # type: () -> Events
-        """Event emitters mapped by event type."""
-        return self.__events
+    def emitter(self):
+        # type: () -> EventEmitter
+        """Event emitter."""
+        return self.__emitter
 
 
 class InternalBroadcaster(Broadcaster):
@@ -177,19 +176,17 @@ class EventEmitter(Slotted):
         "__weakref__",
         "__broadcaster_ref",
         "__internal",
-        "__event_type",
         "__listeners",
         "__emitting",
         "__emitting_phase",
         "__reacting",
     )
 
-    def __init__(self, broadcaster, event_type):
-        # type: (Broadcaster, Type[Event]) -> None
-        """Init with a broadcaster component and event type."""
+    def __init__(self, broadcaster):
+        # type: (Broadcaster) -> None
+        """Init with a broadcaster component."""
         self.__broadcaster_ref = ref(broadcaster)
         self.__internal = broadcaster.internal
-        self.__event_type = event_type
         self.__listeners = WeakKeyDictionary()
         self.__emitting = None
         self.__emitting_phase = None
@@ -215,12 +212,6 @@ class EventEmitter(Slotted):
             raise RuntimeError(
                 "already emitting event {}, cannot emit {}".format(
                     self.__emitting, event
-                )
-            )
-        if event.type is not self.event_type:
-            raise TypeError(
-                "cannot emmit '{}' events, only '{}'".format(
-                    event.type.__name__, self.event_type.__name__
                 )
             )
         if not self.__internal:
@@ -330,12 +321,6 @@ class EventEmitter(Slotted):
             return broadcaster.obj
 
     @property
-    def event_type(self):
-        # type: () -> Type[Event]
-        """Event type."""
-        return self.__event_type
-
-    @property
     def listeners(self):
         # type: () -> FrozenSet[EventListenerMixin, ...]
         """Listeners."""
@@ -352,57 +337,6 @@ class EventEmitter(Slotted):
         # type: () -> Optional[EventPhase]
         """Current emitting phase."""
         return self.__emitting_phase
-
-
-class Events(SlottedMapping):
-    """Mapping of event types and corresponding emitters."""
-
-    __slots__ = ("__broadcaster_ref", "__event_types", "__emitters")
-
-    def __init__(self, broadcaster, event_types):
-        # type: (Broadcaster, FrozenSet[Type[Event], ...]) -> None
-        """Initialize with broadcaster and supported event types."""
-        self.__broadcaster_ref = ref(broadcaster)
-        self.__event_types = event_types
-        self.__emitters = {}
-
-    def __repr__(self):
-        # type: () -> str
-        """Get representation."""
-        return repr(self.__emitters)
-
-    def __str__(self):
-        # type: () -> str
-        """Get string representation."""
-        return str(self.__emitters)
-
-    def __getitem__(self, event_type):
-        # type: (Type[Event]) -> EventEmitter
-        """Get event emitter for a given event type."""
-        try:
-            emitter = self.__emitters[event_type]
-        except KeyError:
-            if event_type in self.__event_types:
-                broadcaster = self.__broadcaster_ref()
-                if broadcaster is None or broadcaster.obj is None:
-                    raise ReferenceError("object is no longer alive")
-                emitter = self.__emitters[event_type] = EventEmitter(
-                    broadcaster, event_type
-                )
-            else:
-                raise
-        return emitter
-
-    def __iter__(self):
-        # type: () -> Iterator[Type[Event], ...]
-        """Iterate over event types."""
-        for event_type in self.__event_types:
-            yield event_type
-
-    def __len__(self):
-        # type: () -> int
-        """Get number of supported event types."""
-        return len(self.__event_types)
 
 
 class Event(Slotted):

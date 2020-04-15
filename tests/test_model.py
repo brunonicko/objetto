@@ -82,7 +82,9 @@ class TestModel(unittest.TestCase):
             @full_name.getter
             @dependencies(gets=("first_name", "last_name", "__constant"))
             def full_name(self):
-                return self.first_name + " " + self.last_name + " " + str(self.__constant)
+                return (
+                    self.first_name + " " + self.last_name + " " + str(self.__constant)
+                )
 
         p = Person()
         p.first_name = "Bruno"
@@ -91,11 +93,12 @@ class TestModel(unittest.TestCase):
         p.tested = "Ha"
 
         self.assertEqual(p.constantine, 12)
-        self.assertEqual(p.full_name, 'Jack Nicko 3')
+        self.assertEqual(p.full_name, "Jack Nicko 3")
         self.assertEqual(p.tested, True)
         self.assertEqual(Person.constantine, 12)
 
     def test_attribute_b(self):
+        from modelo.events import EventListenerMixin
         from modelo.models import ObjectModel
         from modelo.attributes import attribute, dependencies
 
@@ -106,10 +109,7 @@ class TestModel(unittest.TestCase):
 
             def __init__(self, first_name, last_name):
                 super(Person, self).__init__()
-                self.update(
-                    ("first_name", first_name),
-                    ("last_name", last_name)
-                )
+                self.update(("first_name", first_name), ("last_name", last_name))
 
             @full_name.getter
             @dependencies(gets=("first_name", "last_name"))
@@ -123,8 +123,29 @@ class TestModel(unittest.TestCase):
                 # type: (str) -> None
                 self.first_name, self.last_name = value.split(" ")
 
+        class PersonListener(EventListenerMixin):
+            def __react__(_, obj, event, phase):
+                self.assertEqual(
+                    getattr(event, "old_values"),
+                    {
+                        "first_name": "Jack",
+                        "last_name": "Nicholson",
+                        "full_name": "Jack Nicholson",
+                    },
+                )
+                self.assertEqual(
+                    getattr(event, "new_values"),
+                    {
+                        "first_name": "Bruno",
+                        "last_name": "Nicko",
+                        "full_name": "Bruno Nicko",
+                    },
+                )
+
         p = Person("Jack", "Nicholson")
-        self.assertEqual(p.full_name, 'Jack Nicholson')
+        pl = PersonListener()
+        p.events.add_listener(pl)
+        self.assertEqual(p.full_name, "Jack Nicholson")
         p.full_name = "Bruno Nicko"
         self.assertEqual(p.full_name, "Bruno Nicko")
 
