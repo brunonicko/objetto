@@ -35,18 +35,16 @@ class ModelMeta(SlottedABCMeta):
         # type: (str, Any) -> None
         """Prevent class attribute setting."""
         if name not in SlottedABC.__dict__:
-            raise AttributeError(
-                "'{}' class attributes are read-only".format(cls.__name__)
-            )
+            error = "'{}' class attributes are read-only".format(cls.__name__)
+            raise AttributeError(error)
         super(ModelMeta, cls).__setattr__(name, value)
 
     def __delattr__(cls, name):
         # type: (str) -> None
         """Prevent class attribute deleting."""
         if name not in SlottedABC.__dict__:
-            raise AttributeError(
-                "'{}' class attributes are read-only".format(cls.__name__)
-            )
+            error = "'{}' class attributes are read-only".format(cls.__name__)
+            raise AttributeError(error)
         super(ModelMeta, cls).__delattr__(name)
 
 

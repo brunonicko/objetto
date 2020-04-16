@@ -51,7 +51,7 @@ class TestObject(unittest.TestCase):
         state_update = state.prepare_update(("foo", "Bruno"), ("bar", "Nicko"))
         state.update(state_update)
 
-        print(state.get("foobar"))
+        print(state["foobar"])
 
 
 if __name__ == "__main__":

@@ -189,6 +189,19 @@ class TestModel(unittest.TestCase):
         self.assertEqual(set(MixedModelA.attributes.keys()), {"a", "mixin", "mixed_a"})
         self.assertEqual(set(MixedModelB.attributes.keys()), {"b", "mixin", "mixed_b"})
 
+    def test_constant(self):
+        from modelo.models import ObjectModel
+        from modelo.attributes import constant_attribute
+
+        class ModelA(ObjectModel):
+            a = constant_attribute("test")
+
+        model_a = ModelA()
+
+        self.assertEqual(ModelA.a, "test")
+        self.assertEqual(model_a.a, "test")
+        self.assertRaises(AttributeError, setattr, model_a, "a", None)
+
 
 if __name__ == "__main__":
     unittest.main()

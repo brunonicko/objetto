@@ -608,11 +608,8 @@ def _make_object_model_class(
                     if base is cls:
                         member.__set_owner__(cls, member_name)
                 else:
-                    if member.owned and member.owner is base:
-                        attributes[member_name] = member
-                    else:
-                        attributes[member_name] = member_copy = member.copy()
-                        member_copy.__set_owner__(base, member_name)
+                    attributes[member_name] = member_copy = member.copy()
+                    member_copy.__set_owner__(base, member_name)
             elif member_name in attributes:
                 raise TypeError(
                     "can't override attribute descriptor '{}' with a non-attribute of "
@@ -741,22 +738,6 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
 
         hierarchy = cast(Hierarchy, self._[Hierarchy])
         state = cast(ObjectState, self._[State])
-
-        # Check for invalid names and values
-        invalid_names = set()
-        for name, value in name_value_pairs:
-            if name not in type(self).attributes:
-                invalid_names.add(name)
-            if value is SpecialValue.MISSING:
-                raise ValueError("cannot set attribute value to {}".format(value))
-        if invalid_names:
-            raise AttributeError(
-                "'{}' object has no attribute{} '{}'".format(
-                    type(self).__name__,
-                    "s" if len(invalid_names) > 1 else "",
-                    ", ".join("'{}'".format(n) for n in sorted(invalid_names)),
-                )
-            )
 
         # Prepare updates
         redo_update = state.prepare_update(*name_value_pairs)

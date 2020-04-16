@@ -5,6 +5,7 @@ try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
+from weakref import WeakKeyDictionary
 from collections import defaultdict
 from componente import CompositeMixin
 from enum import Enum
@@ -476,11 +477,6 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
         other_dict = other.get_dict(attribute_sieve=lambda a: a.comparable)
         return self_dict == other_dict
 
-    def __reduce__(self):
-        # type: () -> Tuple[Callable, Tuple]
-        """Reduce for pickling purposes."""
-        return make_object_state, (self.__getstate__(), type(self).state_attributes)
-
     def __getitem__(self, name):
         # type: (str) -> Any
         """Get attribute value."""
@@ -527,6 +523,20 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
     def prepare_update(self, *name_value_pairs):
         # type: (Tuple[Tuple[str, Any], ...]) -> AttributeUpdates
         """Prepare attribute update based on input values."""
+
+        # Check for invalid names
+        invalid_names = set()
+        for name, value in name_value_pairs:
+            if name not in self.__attributes:
+                invalid_names.add(name)
+        if invalid_names:
+            raise AttributeError(
+                "'{}' object has no attribute{} '{}'".format(
+                    type(self.obj).__name__,
+                    "s" if len(invalid_names) > 1 else "",
+                    ", ".join("'{}'".format(n) for n in sorted(invalid_names)),
+                )
+            )
 
         # Create a temporary update state based on the current state
         update_state = UpdateState(self.__state, self.__attributes, self.__dependencies)
@@ -626,15 +636,6 @@ def make_object_state_class(*state_attributes):
         (ObjectState,),
         {"__slots__": (), "state_attributes": frozenset(state_attributes)},
     )
-
-
-def make_object_state(state, state_attributes):
-    # type: (Dict[str, Any], Tuple[Attribute, ...]) -> ObjectState
-    """Make an object state component with given state and state attributes."""
-    cls = make_object_state_class(*state_attributes)
-    object_state_component = cast(ObjectState, cls.__new__(cls))
-    object_state_component.__setstate__(state)
-    return object_state_component
 
 
 class Attribute(Slotted):
@@ -975,13 +976,13 @@ class Attribute(Slotted):
     def settable(self):
         # type: () -> bool
         """Whether this attribute is settable."""
-        return not self.__delegated or self.__fget is not None
+        return not self.__delegated or self.__fset is not None
 
     @property
     def deletable(self):
         # type: () -> bool
         """Whether this attribute is deletable."""
-        return not self.__delegated or self.__fget is not None
+        return not self.__delegated or self.__fdel is not None
 
 
 class AttributeDelegate(Slotted):
