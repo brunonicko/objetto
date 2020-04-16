@@ -4,10 +4,10 @@
 from six import iteritems
 from typing import Dict, Any
 
-__all__ = ["obj_repr"]
+__all__ = ["object_repr"]
 
 
-def obj_repr(**attributes):
+def object_repr(**attributes):
     # type: (Dict[str, Any]) -> str
     """Get object representation (using 'repr')."""
     parts = []

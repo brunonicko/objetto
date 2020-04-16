@@ -1,4 +1,3 @@
-# TODO: pickling
 # TODO: create 'SequenceState'
 # TODO: create 'MappingState'
 # TODO: create 'SetState'
@@ -10,4 +9,5 @@
 # TODO: history model
 # TODO: immutable data?
 # TODO: docstrings and cleanup
+# TODO: pickling
 # TODO: write proper tests

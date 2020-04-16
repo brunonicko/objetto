@@ -32,7 +32,7 @@ from ..utils.wrapped_dict import WrappedDict
 from ..utils.recursive_repr import recursive_repr
 from ..utils.naming import privatize_name
 from ..utils.partial import Partial
-from ..utils.obj_repr import obj_repr
+from ..utils.object_repr import object_repr
 from .base import ModelMeta, Model, ModelEvent
 
 __all__ = [
@@ -100,8 +100,8 @@ class AttributeDescriptor(Slotted):
         default_module=None,  # type: Optional[str]
         accepts_none=None,  # type: Optional[bool]
         comparable=None,  # type: Optional[bool]
-        representable=False,  # type: Optional[bool]
-        string=None,  # type: Optional[bool]
+        represented=False,  # type: Optional[bool]
+        printed=None,  # type: Optional[bool]
         delegated=False,  # type: bool
         parent=False,  # type: bool
         history=False,  # type: bool
@@ -118,8 +118,8 @@ class AttributeDescriptor(Slotted):
         default_module = str(default_module) if default_module is not None else None
         accepts_none = bool(accepts_none) if accepts_none is not None else None
         comparable = bool(comparable) if comparable is not None else None
-        representable = bool(representable) if representable is not None else None
-        string = bool(string) if string is not None else None
+        represented = bool(represented) if represented is not None else None
+        printed = bool(printed) if printed is not None else None
         delegated = bool(delegated)
         parent = bool(parent)
         history = bool(history)
@@ -133,8 +133,8 @@ class AttributeDescriptor(Slotted):
             "default_module": default_module,
             "accepts_none": accepts_none,
             "comparable": comparable,
-            "representable": representable,
-            "string": string,
+            "represented": represented,
+            "printed": printed,
             "delegated": delegated
         }
         self.__kwargs = kwargs = dict(attribute_kwargs)
@@ -372,6 +372,12 @@ class AttributeDescriptor(Slotted):
         return self.__attribute
 
     @property
+    def owned(self):
+        # type: () -> bool
+        """Whether owned by a class."""
+        return self.__owner is not None
+
+    @property
     def owner(self):
         # type: () -> Type[ObjectModel]
         """Owner class."""
@@ -436,20 +442,20 @@ class AttributeDescriptor(Slotted):
         return self.__attribute.comparable
 
     @property
-    def representable(self):
+    def represented(self):
         # type: () -> bool
         """Whether this is leveraged in state's '__repr__' method."""
         if self.__attribute is None:
             raise RuntimeError("attribute descriptor has no owner")
-        return self.__attribute.representable
+        return self.__attribute.represented
 
     @property
-    def string(self):
+    def printed(self):
         # type: () -> bool
         """Whether this is leveraged in state's '__str__' method."""
         if self.__attribute is None:
             raise RuntimeError("attribute descriptor has no owner")
-        return self.__attribute.string
+        return self.__attribute.printed
 
     @property
     def delegated(self):
@@ -597,13 +603,16 @@ def _make_object_model_class(
                         )
                     )
             if isinstance(member, AttributeDescriptor):
-                if isinstance(cls, ObjectModelMeta):
+                if isinstance(base, ObjectModelMeta):
                     attributes[member_name] = member
                     if base is cls:
                         member.__set_owner__(cls, member_name)
                 else:
-                    attributes[member_name] = member_copy = member.copy()
-                    member_copy.__set_owner__(base, member_name)
+                    if member.owned and member.owner is base:
+                        attributes[member_name] = member
+                    else:
+                        attributes[member_name] = member_copy = member.copy()
+                        member_copy.__set_owner__(base, member_name)
             elif member_name in attributes:
                 raise TypeError(
                     "can't override attribute descriptor '{}' with a non-attribute of "
@@ -681,12 +690,13 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         # type: () -> str
         """Get representation."""
         state = cast(ObjectState, self._[State])
-        repr_dict = state.get_dict(attribute_sieve=lambda a: a.representable)
-        return "<{}.{} object at {}{}>".format(
+        repr_dict = state.get_dict(attribute_sieve=lambda a: a.represented)
+        return "<{}.{} object at {}{}{}>".format(
             type(self).__module__,
             type(self).__name__,
             hex(id(self)),
-            " {}".format(obj_repr(**repr_dict)) if repr_dict else ""
+            " | " if repr_dict else "",
+            object_repr(**repr_dict) if repr_dict else ""
         )
 
     @recursive_repr
@@ -694,8 +704,8 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         # type: () -> str
         """Get string representation."""
         state = cast(ObjectState, self._[State])
-        str_dict = state.get_dict(attribute_sieve=lambda a: a.string)
-        return "{}({})".format(type(self).__name__, obj_repr(**str_dict))
+        str_dict = state.get_dict(attribute_sieve=lambda a: a.printed)
+        return "{}({})".format(type(self).__name__, object_repr(**str_dict))
 
     def __eq__(self, other):
         # type: (Model) -> bool
@@ -710,7 +720,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         # type: (str) -> Any
         """Get attribute value."""
         state = cast(ObjectState, self._[State])
-        return state.get(name)
+        return state[name]
 
     def __setitem__(self, name, value):
         # type: (str, Any) -> None
@@ -722,11 +732,6 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         """Delete attribute."""
         self.__getitem__(name)
         self.update((name, SpecialValue.DELETED))
-
-    def keys(self):
-        # type: () -> Iterable[str, ...]
-        """Get/iterate over attribute names."""
-        return type(self).attributes.keys()
 
     def update(self, *name_value_pairs):
         # type: (Tuple[Tuple[str, Any], ...]) -> None

@@ -23,13 +23,13 @@ class WrappedDict(SlottedMapping):
     def __repr__(self):
         # type: () -> str
         """Representation."""
-        return repr(self._dict)
+        return self._dict.__repr__()
 
     @recursive_repr
     def __str__(self):
         # type: () -> str
         """String representation."""
-        return str(self._dict)
+        return self._dict.__str__()
 
     def __getitem__(self, key):
         # type: (Hashable) -> Any

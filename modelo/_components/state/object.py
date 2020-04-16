@@ -36,6 +36,7 @@ from typing import (
 from ...utils.type_checking import UnresolvedType as UType
 from ...utils.type_checking import assert_is_instance, assert_is_unresolved_type
 from ...utils.recursive_repr import recursive_repr
+from ...utils.object_repr import object_repr
 from ...utils.wrapped_dict import WrappedDict
 from .base import State, StateException, StateError
 
@@ -292,41 +293,45 @@ def _make_object_state_class(
         for get_dependency in get_dependencies:
             if get_dependency not in attributes:
                 raise NameError(
-                    "attribute '{}' declares '{}' as a 'get' dependency, "
-                    "but it's not present in the class".format(
+                    "attribute '{0}' declares '{1}' as a 'get' dependency, "
+                    "but '{1}' is not a valid attribute".format(
                         attribute_name, get_dependency
                     )
                 )
             if not attributes[get_dependency].readable:
                 raise ValueError(
-                    "attribute '{}' declares '{}' as a 'get' dependency, "
-                    "but it's not readable".format(attribute_name, get_dependency)
+                    "attribute '{0}' declares '{1}' as a 'get' dependency, "
+                    "but '{1}' is not readable".format(attribute_name, get_dependency)
                 )
         for set_dependency in set_dependencies:
             if set_dependency not in attributes:
                 raise NameError(
-                    "attribute '{}' declares '{}' as a 'set' dependency, "
-                    "but it's not present in the class".format(
+                    "attribute '{0}' declares '{1}' as a 'set' dependency, "
+                    "but '{1}' is not a valid attribute".format(
                         attribute_name, set_dependency
                     )
                 )
             if not attributes[set_dependency].settable:
                 raise ValueError(
-                    "attribute '{}' declares '{}' as a 'set' dependency, "
-                    "but it's not settable".format(attribute_name, set_dependency)
+                    "attribute '{0}' declares '{1}' as a 'set' dependency, "
+                    "but '{1}' is not settable".format(
+                        attribute_name, set_dependency
+                    )
                 )
         for delete_dependency in set_dependencies:
             if delete_dependency not in attributes:
                 raise NameError(
-                    "attribute '{}' declares '{}' as a 'delete' dependency, "
-                    "but it's not present in the class".format(
+                    "attribute '{0}' declares '{1}' as a 'delete' dependency, "
+                    "but '{1}' is not a valid attribute".format(
                         attribute_name, delete_dependency
                     )
                 )
-            if not attributes[delete_dependency].settable:
+            if not attributes[delete_dependency].deletable:
                 raise ValueError(
-                    "attribute '{}' declares '{}' as a 'delete' dependency, "
-                    "but it's not deletable".format(attribute_name, delete_dependency)
+                    "attribute '{0}' declares '{1}' as a 'delete' dependency, "
+                    "but '{1}' is not deletable".format(
+                        attribute_name, delete_dependency
+                    )
                 )
 
     # Build fget 'gets' dependency tree
@@ -447,20 +452,20 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
     def __repr__(self):
         # type: () -> str
         """Get representation."""
-        repr_dict = self.get_dict(attribute_sieve=lambda a: a.representable)
-        return "<{}.{} object at {}{}>".format(
+        repr_dict = self.get_dict(attribute_sieve=lambda a: a.represented)
+        return "<{}.{} object at {}{}{}>".format(
             ObjectState.__module__,
             ObjectState.__name__,
             hex(id(self)),
-            " {}".format(repr_dict) if repr_dict else ""
+            " | " if repr_dict else "",
+            object_repr(**repr_dict) if repr_dict else ""
         )
 
     @recursive_repr
     def __str__(self):
         # type: () -> str
         """Get string representation."""
-        str_dict = self.get_dict(attribute_sieve=lambda a: a.string)
-        return "{}".format(str_dict)
+        return self.get_dict(attribute_sieve=lambda a: a.printed).__str__()
 
     def __eq__(self, other):
         # type: (ObjectState) -> bool
@@ -476,13 +481,13 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
         """Reduce for pickling purposes."""
         return make_object_state, (self.__getstate__(), type(self).state_attributes)
 
-    def get(self, name):
+    def __getitem__(self, name):
         # type: (str) -> Any
         """Get attribute value."""
         try:
             attribute = self.__attributes[name]
         except KeyError:
-            exc = AttributeError(
+            exc = KeyError(
                 "'{}' object has no attribute '{}'".format(
                     type(self.obj).__name__, name
                 )
@@ -491,7 +496,7 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
             raise exc
 
         if not attribute.readable:
-            raise AttributeError(
+            raise KeyError(
                 "attribute '{}.{}' is not readable".format(
                     type(self.obj).__name__, name
                 )
@@ -506,7 +511,7 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
                     for get in gets
                     if self.__state[get] in (SpecialValue.MISSING, SpecialValue.DELETED)
                 )
-                raise AttributeError(
+                raise KeyError(
                     "getter's dependenc{} {} (for attribute '{}') {} no value".format(
                         "ies" if len(missing_gets) > 1 else "y",
                         ", ".join("'{}'".format(n) for n in missing_gets),
@@ -514,9 +519,9 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
                         "have" if len(missing_gets) > 1 else "has",
                     )
                 )
-            raise AttributeError("attribute '{}' not initialized".format(name))
+            raise KeyError("attribute '{}' not initialized".format(name))
         if value is SpecialValue.DELETED:
-            raise AttributeError("attribute '{}' was deleted".format(name))
+            raise KeyError("attribute '{}' was deleted".format(name))
         return value
 
     def prepare_update(self, *name_value_pairs):
@@ -602,8 +607,8 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
             if name_sieve is not None and not name_sieve(name):
                 continue
             try:
-                value = self.get(name)
-            except AttributeError:
+                value = self[name]
+            except KeyError:
                 continue
             else:
                 if value_sieve is not None and not value_sieve(value):
@@ -643,8 +648,8 @@ class Attribute(Slotted):
         "__default_module",
         "__accepts_none",
         "__comparable",
-        "__representable",
-        "__string",
+        "__represented",
+        "__printed",
         "__delegated",
         "__fget",
         "__fset",
@@ -664,8 +669,8 @@ class Attribute(Slotted):
         default_module=None,  # type: Optional[str]
         accepts_none=None,  # type: Optional[bool]
         comparable=None,  # type: Optional[bool]
-        representable=False,  # type: Optional[bool]
-        string=None,  # type: Optional[bool]
+        represented=False,  # type: Optional[bool]
+        printed=None,  # type: Optional[bool]
         delegated=False,  # type: bool
     ):
         # type: (...) -> None
@@ -720,14 +725,14 @@ class Attribute(Slotted):
             )
         self.__value_factory = value_factory
 
-        # Store 'comparable', 'representable', and 'string'
+        # Store 'comparable', 'represented', and 'printed'
         self.__comparable = bool(
             comparable if comparable is not None else not name.startswith("_")
         )
-        self.__representable = bool(
-            representable if representable is not None else not name.startswith("_")
+        self.__represented = bool(
+            represented if represented is not None else not name.startswith("_")
         )
-        self.__string = bool(string if string is not None else not name.startswith("_"))
+        self.__printed = bool(printed if printed is not None else not name.startswith("_"))
 
         # Delegated
         self.__delegated = bool(delegated)
@@ -901,16 +906,16 @@ class Attribute(Slotted):
         return self.__comparable
 
     @property
-    def representable(self):
+    def represented(self):
         # type: () -> bool
         """Whether this is leveraged in state's '__repr__' method."""
-        return self.__representable
+        return self.__represented
 
     @property
-    def string(self):
+    def printed(self):
         # type: () -> bool
         """Whether this is leveraged in state's '__str__' method."""
-        return self.__string
+        return self.__printed
 
     @property
     def delegated(self):
@@ -940,32 +945,24 @@ class Attribute(Slotted):
     def public(self):
         # type: () -> bool
         """Whether attribute access is considered 'public'."""
-        if self.__public is None:
-            raise AttributeError("name was not set")
         return self.__public
 
     @property
     def magic(self):
         # type: () -> bool
         """Whether attribute access is considered 'magic'."""
-        if self.__magic is None:
-            raise AttributeError("name was not set")
         return self.__magic
 
     @property
     def private(self):
         # type: () -> bool
         """Whether attribute access is considered 'private'."""
-        if self.__private is None:
-            raise AttributeError("name was not set")
         return self.__private
 
     @property
     def protected(self):
         # type: () -> bool
         """Whether attribute access is considered 'protected'."""
-        if self.__protected is None:
-            raise AttributeError("name was not set")
         return self.__protected
 
     @property
@@ -1107,13 +1104,13 @@ class AttributeUpdates(SlottedMapping):
     def __repr__(self):
         # type: () -> str
         """Representation."""
-        return "{}".format(self.__updates)
+        return self.__updates.__repr__()
 
     @recursive_repr
     def __str__(self):
         # type: () -> str
         """String representation."""
-        return "{}".format(self.__updates)
+        return self.__updates.__str__()
 
     def __getitem__(self, name):
         # type: (str) -> Any
@@ -1166,13 +1163,13 @@ class UpdateState(SlottedMutableMapping):
     def __repr__(self):
         # type: () -> str
         """Representation."""
-        return "{}".format(dict(self))
+        return dict(self).__repr__()
 
     @recursive_repr
     def __str__(self):
         # type: () -> str
         """String representation."""
-        return "{}".format(dict(self))
+        return dict(self).__str__()
 
     def __getitem__(self, name):
         # type: (str) -> Any

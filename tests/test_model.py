@@ -106,7 +106,8 @@ class TestModel(unittest.TestCase):
             first_name = attribute(str)  # type: str
             last_name = attribute(str)  # type: str
             age = attribute(int)  # type: int
-            full_name = attribute(str, delegated=True)
+            sibling = attribute(parent=True)  # type: Person
+            full_name = attribute(str, delegated=True, represented=True)
 
             def __init__(self, first_name, last_name):
                 super(Person, self).__init__()
@@ -159,6 +160,34 @@ class TestModel(unittest.TestCase):
         self.assertNotEqual(p, pp)
         pp.age = 35
         self.assertEqual(p, pp)
+
+        p.sibling = pp
+
+        print(repr(p))
+        print(str(p))
+
+    def test_mixin(self):
+        from modelo.models import ObjectModel
+        from modelo.attributes import attribute
+
+        class ModelA(ObjectModel):
+            a = attribute()
+
+        class ModelB(ObjectModel):
+            b = attribute()
+
+        class Mixin(object):
+            __slots__ = ()
+            mixin = attribute()
+
+        class MixedModelA(ModelA, Mixin):
+            mixed_a = attribute()
+
+        class MixedModelB(ModelB, Mixin):
+            mixed_b = attribute()
+
+        self.assertEqual(set(MixedModelA.attributes.keys()), {"a", "mixin", "mixed_a"})
+        self.assertEqual(set(MixedModelB.attributes.keys()), {"b", "mixin", "mixed_b"})
 
 
 if __name__ == "__main__":
