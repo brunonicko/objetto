@@ -4,9 +4,8 @@
 from abc import abstractmethod
 from contextlib import contextmanager
 from six import with_metaclass
-from typing import FrozenSet, ContextManager, Optional, Any, cast
+from typing import FrozenSet, ContextManager, Optional, Any
 from slotted import SlottedABCMeta, SlottedABC
-from componente import COMPONENTS_SLOT, CompositeMixin
 
 from .._components.broadcaster import (
     Broadcaster,
@@ -14,18 +13,12 @@ from .._components.broadcaster import (
     EventListenerMixin,
     EventPhase,
     EventEmitter,
-    Event,
 )
-from .._components.hierarchy import Hierarchy, HierarchyAccess
-from .._components.runner import Runner, UndoableCommand, History
+from .._components.hierarchy import Hierarchy, HierarchicalMixin, HierarchyAccess
+from .._components.history import UndoableCommand, History
 from ..utils.partial import Partial
 
-__all__ = [
-    "ModelMeta",
-    "Model",
-    "ModelEvent",
-    "ModelCommand",
-]
+__all__ = ["ModelMeta", "Model", "ModelEvent", "ModelCommand"]
 
 
 class ModelMeta(SlottedABCMeta):
@@ -48,17 +41,37 @@ class ModelMeta(SlottedABCMeta):
         super(ModelMeta, cls).__delattr__(name)
 
 
-class Model(with_metaclass(ModelMeta, CompositeMixin, EventListenerMixin, SlottedABC)):
+class Model(
+    with_metaclass(ModelMeta, HierarchicalMixin, EventListenerMixin, SlottedABC)
+):
     """Abstract model."""
 
-    __slots__ = (COMPONENTS_SLOT,)
+    __slots__ = (
+        "__hierarchy",
+        "__hierarchy_access",
+        "__internal_broadcaster",
+        "__broadcaster",
+        "__history",
+    )
 
     def __init__(self):
-        super(Model, self).__init__()
-        self._.add_component(Hierarchy)
-        self._.add_component(InternalBroadcaster)
-        self._.add_component(Broadcaster)
-        self._.add_component(Runner)
+        """Initialize."""
+        self.__hierarchy = Hierarchy(self)
+        self.__hierarchy_access = HierarchyAccess(self.__hierarchy)
+        self.__internal_broadcaster = InternalBroadcaster()
+        self.__broadcaster = Broadcaster()
+        self.__history = None
+
+    def __getattr__(self, name):
+        # type: (str) -> Any
+        """Raise informative exception if missed call to super's '__init__'."""
+        if name in Model.__members__:
+            error = (
+                "missing attribute '{}', maybe super-class '__init__' of type '{}' "
+                "was never called?"
+            ).format(type(self).__name__)
+            raise RuntimeError(error)
+        return self.__getattribute__(name)
 
     @abstractmethod
     def __repr__(self):
@@ -83,22 +96,28 @@ class Model(with_metaclass(ModelMeta, CompositeMixin, EventListenerMixin, Slotte
         """Compare for inequality."""
         return not self.__eq__(other)
 
+    def __get_hierarchy__(self):
+        # type: () -> Hierarchy
+        """Get hierarchy."""
+        return self.__hierarchy
+
     def __dispatch__(self, name, redo, redo_event, undo, undo_event):
         # type: (str, Partial, ModelEvent, Partial, ModelEvent) -> bool
         """Change the model by dispatching events and commands accordingly."""
-        internal_broadcaster = cast(InternalBroadcaster, self._[InternalBroadcaster])
-        runner = cast(Runner, self._[Runner])
-
         command = ModelCommand(name, self, redo, redo_event, undo, undo_event)
-        if internal_broadcaster.emit(redo_event, EventPhase.INTERNAL_PRE):
-            runner.run(command)
-            internal_broadcaster.emit(redo_event, EventPhase.INTERNAL_POST)
+        if self.__internal_broadcaster.emit(redo_event, EventPhase.INTERNAL_PRE):
+            if self.__history is None:
+                command.__flag_ran__()
+                command.__redo__()
+            else:
+                self.__history.run(command)
+            self.__internal_broadcaster.emit(redo_event, EventPhase.INTERNAL_POST)
             return True
         else:
             return False
 
-    def __react__(self, model, event, phase):
-        # type: (Model, Event, EventPhase) -> None
+    def __react__(self, event, phase):
+        # type: (Any, EventPhase) -> None
         """React to an event."""
         pass
 
@@ -106,61 +125,80 @@ class Model(with_metaclass(ModelMeta, CompositeMixin, EventListenerMixin, Slotte
     def __event_context__(self, event):
         # type: (ModelEvent) -> ContextManager
         """Internal event context."""
-        internal_broadcaster = cast(InternalBroadcaster, self._[InternalBroadcaster])
-        broadcaster = cast(Broadcaster, self._[Broadcaster])
-
-        internal_broadcaster.emit(event, EventPhase.PRE)
-        broadcaster.emit(event, EventPhase.PRE)
+        self.__internal_broadcaster.emit(event, EventPhase.PRE)
+        self.__broadcaster.emit(event, EventPhase.PRE)
         yield
-        internal_broadcaster.emit(event, EventPhase.POST)
-        broadcaster.emit(event, EventPhase.POST)
+        self.__internal_broadcaster.emit(event, EventPhase.POST)
+        self.__broadcaster.emit(event, EventPhase.POST)
 
     @property
     def _history(self):
         # type: () -> Optional[History]
         """Command history."""
-        runner = cast(Runner, self._[Runner])
-        return runner.history
+        return self.__history
 
     @_history.setter
     def _history(self, history):
         # type: (Optional[History]) -> None
         """Set command history."""
-        runner = cast(Runner, self._[Runner])
-        runner.history = history
+        if self.__history is not None:
+            self.__history.flush()
+        self.__history = history
 
     @property
     def _hierarchy(self):
         # type: () -> HierarchyAccess
         """Parent-child hierarchy."""
-        hierarchy = cast(Hierarchy, self._[Hierarchy])
-        return HierarchyAccess(hierarchy)
+        return self.__hierarchy_access
 
     @property
     def _events(self):
         # type: () -> EventEmitter
         """Internal event emitter."""
-        internal_broadcaster = cast(InternalBroadcaster, self._[InternalBroadcaster])
-        return internal_broadcaster.emitter
+        return self.__internal_broadcaster.emitter
 
     @property
     def events(self):
         # type: () -> EventEmitter
         """Event emitter."""
-        broadcaster = cast(Broadcaster, self._[Broadcaster])
-        return broadcaster.emitter
+        return self.__broadcaster.emitter
 
 
-class ModelEvent(Event):
-    """Abstract event. Describes the adoption and/or release of child _models."""
+class ModelEvent(SlottedABC):
+    """Abstract event. Describes the adoption and/or release of child models."""
 
-    __slots__ = ("__adoptions", "__releases")
+    __slots__ = ("__model", "__adoptions", "__releases")
 
-    def __init__(self, adoptions, releases):
-        # type: (FrozenSet[Model, ...], FrozenSet[Model, ...]) -> None
+    def __init__(self, model, adoptions, releases):
+        # type: (Model, FrozenSet[Model, ...], FrozenSet[Model, ...]) -> None
         """Initialize with adoptions and releases."""
+        self.__model = model
         self.__adoptions = adoptions
         self.__releases = releases
+
+    def __eq__(self, other):
+        # type: (ModelEvent) -> bool
+        """Compare with another event for equality."""
+        if type(self) is not type(other):
+            return False
+        if self.__model is not other.__model:
+            return False
+        if self.__adoptions != other.__adoptions:
+            return False
+        if self.__releases != other.__releases:
+            return False
+        return True
+
+    def __ne__(self, other):
+        # type: (ModelEvent) -> bool
+        """Compare with another event for inequality."""
+        return not self.__eq__(other)
+
+    @property
+    def model(self):
+        # type: () -> Model
+        """Model."""
+        return self.__model
 
     @property
     def adoptions(self):

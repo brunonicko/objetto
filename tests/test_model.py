@@ -11,7 +11,7 @@ class TestModel(unittest.TestCase):
     def test_model(self):
         from modelo.models import ObjectModel
         from modelo.attributes import attribute
-        from modelo._components.runner import History
+        from modelo._components.history import History
 
         class Person(ObjectModel):
             name = attribute()
@@ -126,7 +126,7 @@ class TestModel(unittest.TestCase):
                 self.first_name, self.last_name = value.split(" ")
 
         class PersonListener(EventListenerMixin):
-            def __react__(_, obj, event, phase):
+            def __react__(_, event, phase):
                 self.assertEqual(
                     getattr(event, "old_values"),
                     {
@@ -162,9 +162,6 @@ class TestModel(unittest.TestCase):
         self.assertEqual(p, pp)
 
         p.sibling = pp
-
-        print(repr(p))
-        print(str(p))
 
     def test_mixin(self):
         from modelo.models import ObjectModel

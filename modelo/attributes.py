@@ -3,7 +3,7 @@
 
 from typing import Any, Optional, Callable, Iterable, Union
 
-from ._components.state.object import AttributeDelegate
+from ._components.attributes import AttributeDelegate
 from ._models.object import AttributeDescriptor
 from .utils.type_checking import UnresolvedType as UType
 

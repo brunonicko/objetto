@@ -9,7 +9,6 @@ class TestSequence(unittest.TestCase):
     """Tests for 'modelo._components.state.sequence' module."""
 
     def test_operations(self):
-        from componente import Composite
         from typing import cast
 
         from modelo._components.state.base import State

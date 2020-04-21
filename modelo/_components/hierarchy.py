@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
-"""Parent-Child hierarchy component."""
+"""Parent-Child tree hierarchy."""
 
+from abc import abstractmethod
 from weakref import ref
 from collections import Counter, namedtuple, deque
-from typing import Iterator, Optional, FrozenSet, Type, cast
+from typing import Iterator, Optional, FrozenSet
 
 from slotted import Slotted
-from componente import CompositeMixin, Component
 
 from .._base.exceptions import ModeloException, ModeloError
 
 __all__ = [
     "Hierarchy",
+    "HierarchicalMixin",
     "ChildrenUpdates",
     "HierarchyAccess",
     "HierarchyException",
@@ -26,38 +27,26 @@ __all__ = [
 DEAD_REF = ref(type("DeadRef", (object,), {"__slots__": ("__weakref__",)})())
 
 
-class Hierarchy(Slotted, Component):
+class Hierarchy(Slotted):
     """Parent-child hierarchy node."""
 
-    __slots__ = ("__parent_ref", "__last_parent_ref", "__children")
-
-    @staticmethod
-    def get_type():
-        # type: () -> Type[Hierarchy]
-        """Get component key type."""
-        return Hierarchy
+    __slots__ = ("__obj_ref", "__parent_ref", "__last_parent_ref", "__children")
 
     def __init__(self, obj):
-        # type: (CompositeMixin) -> None
-        """Initialize."""
-        super(Hierarchy, self).__init__(obj)
+        # type: (HierarchicalMixin) -> None
+        """Initialize with hierarchical object."""
+        self.__obj_ref = ref(obj)
         self.__parent_ref = DEAD_REF
         self.__last_parent_ref = DEAD_REF
         self.__children = set()
 
-    @classmethod
-    def get_component(cls, obj):
-        # type: (CompositeMixin) -> Hierarchy
-        """Get hierarchy component of a composite object."""
-        return cast(Hierarchy, super(Hierarchy, cls).get_component(obj))
-
     def prepare_children_updates(self, children_count):
-        # type: (Counter[CompositeMixin, int]) -> ChildrenUpdates
+        # type: (Counter[HierarchicalMixin, int]) -> ChildrenUpdates
         """Prepare children updates."""
         adoptions = set()
         releases = set()
         for child, count in children_count.items():
-            child_hierarchy = cast(Hierarchy, self.get_component(child))
+            child_hierarchy = child.__get_hierarchy__()
             if count == 1:
                 child_parent = child_hierarchy.parent
                 if child_parent is not None:
@@ -98,12 +87,12 @@ class Hierarchy(Slotted, Component):
         # type: (ChildrenUpdates) -> None
         """Perform children adoptions and/or releases."""
         for adoption in children_updates.adoptions:
-            adoption_hierarchy = cast(Hierarchy, self.get_component(adoption))
+            adoption_hierarchy = adoption.__get_hierarchy__()
             adoption_hierarchy.__parent_ref = ref(self.obj)
             adoption_hierarchy.__last_parent_ref = adoption_hierarchy.__parent_ref
             self.__children.add(adoption)
         for release in children_updates.releases:
-            release_hierarchy = cast(Hierarchy, self.get_component(release))
+            release_hierarchy = release.__get_hierarchy__()
             release_hierarchy.__parent_ref = DEAD_REF
             self.__children.remove(release_hierarchy.obj)
 
@@ -118,35 +107,35 @@ class Hierarchy(Slotted, Component):
         return self.last_parent is not None
 
     def has_child(self, child):
-        # type: (CompositeMixin) -> bool
+        # type: (HierarchicalMixin) -> bool
         """Whether has a specific child."""
         return child in self.__children
 
     def iter_children(self):
-        # type: () -> Iterator[CompositeMixin, ...]
+        # type: () -> Iterator[HierarchicalMixin, ...]
         """Iterate over children."""
         for child in self.__children:
             yield child
 
     def iter_up(self, inclusive=True):
-        # type: (bool) -> Iterator[CompositeMixin, ...]
+        # type: (bool) -> Iterator[HierarchicalMixin, ...]
         """Iterate up the tree."""
         if inclusive:
             yield self.obj
         parent = self.parent
         while parent is not None:
             yield parent
-            parent_hierarchy = cast(Hierarchy, self.get_component(parent))
+            parent_hierarchy = parent.__get_hierarchy__()
             parent = parent_hierarchy.parent
 
     def iter_down(self, inclusive=False, depth_first=False):
-        # type: (bool, bool) -> Iterator[CompositeMixin, ...]
+        # type: (bool, bool) -> Iterator[HierarchicalMixin, ...]
         """Iterate down the tree."""
         if inclusive:
             yield self.obj
         if depth_first:
             for child in self.iter_children():
-                child_hierarchy = cast(Hierarchy, self.get_component(child))
+                child_hierarchy = child.__get_hierarchy__()
                 for grandchild in child_hierarchy.iter_down(
                     inclusive=True, depth_first=True
                 ):
@@ -156,24 +145,34 @@ class Hierarchy(Slotted, Component):
             while queue:
                 child = queue.popleft()
                 yield child
-                child_hierarchy = cast(Hierarchy, self.get_component(child))
+                child_hierarchy = child.__get_hierarchy__()
                 queue.extend(child_hierarchy.iter_children())
 
     @property
+    def obj(self):
+        # type: () -> HierarchicalMixin
+        """Hierarchical object."""
+        obj = self.__obj_ref()
+        if obj is None:
+            error = "object is no longer alive"
+            raise ReferenceError(error)
+        return obj
+
+    @property
     def parent(self):
-        # type: () -> Optional[CompositeMixin]
+        # type: () -> Optional[HierarchicalMixin]
         """Parent."""
         return self.__parent_ref()
 
     @property
     def last_parent(self):
-        # type: () -> Optional[CompositeMixin]
+        # type: () -> Optional[HierarchicalMixin]
         """Last parent."""
         return self.__last_parent_ref()
 
     @property
     def children(self):
-        # type: () -> FrozenSet[CompositeMixin, ...]
+        # type: () -> FrozenSet[HierarchicalMixin, ...]
         """Children."""
         return frozenset(self.__children)
 
@@ -208,24 +207,24 @@ class HierarchyAccess(Slotted):
         return self.__hierarchy.has_last_parent()
 
     def has_child(self, child):
-        # type: (CompositeMixin) -> bool
+        # type: (HierarchicalMixin) -> bool
         """Whether has a specific child."""
         return self.__hierarchy.has_child(child)
 
     def iter_children(self):
-        # type: () -> Iterator[CompositeMixin, ...]
+        # type: () -> Iterator[HierarchicalMixin, ...]
         """Iterate over children."""
         for child in self.__hierarchy.iter_children():
             yield child
 
     def iter_up(self, inclusive=True):
-        # type: (bool) -> Iterator[CompositeMixin, ...]
+        # type: (bool) -> Iterator[HierarchicalMixin, ...]
         """Iterate up the tree."""
         for obj in self.__hierarchy.iter_up(inclusive=inclusive):
             yield obj
 
     def iter_down(self, inclusive=False, depth_first=False):
-        # type: (bool, bool) -> Iterator[CompositeMixin, ...]
+        # type: (bool, bool) -> Iterator[HierarchicalMixin, ...]
         """Iterate down the tree."""
         for obj in self.__hierarchy.iter_down(
             inclusive=inclusive, depth_first=depth_first
@@ -234,21 +233,33 @@ class HierarchyAccess(Slotted):
 
     @property
     def parent(self):
-        # type: () -> Optional[CompositeMixin]
+        # type: () -> Optional[HierarchicalMixin]
         """Parent."""
         return self.__hierarchy.parent
 
     @property
     def last_parent(self):
-        # type: () -> Optional[CompositeMixin]
+        # type: () -> Optional[HierarchicalMixin]
         """Last parent."""
         return self.__hierarchy.last_parent
 
     @property
     def children(self):
-        # type: () -> FrozenSet[CompositeMixin, ...]
+        # type: () -> FrozenSet[HierarchicalMixin, ...]
         """Children."""
         return self.__hierarchy.children
+
+
+class HierarchicalMixin(object):
+    """Mix-in class that defines a node object in the hierarchy."""
+
+    __slots__ = ("__weakref__",)
+
+    @abstractmethod
+    def __get_hierarchy__(self):
+        # type: () -> Hierarchy
+        """Get hierarchy."""
+        raise NotImplementedError()
 
 
 class HierarchyException(ModeloException):

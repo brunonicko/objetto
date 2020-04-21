@@ -6,14 +6,13 @@ __all__ = ["TestObject"]
 
 
 class TestObject(unittest.TestCase):
-    """Tests for 'modelo._components.state.object' module."""
+    """Tests for 'modelo._components.attributes' module."""
 
     def test_make_object_state_class(self):
-        from componente import Composite
         from typing import cast
 
         from modelo._components.state.base import State
-        from modelo._components.state.object import (
+        from modelo._components.attributes import (
             Attribute, ObjectState, make_object_state_class, AttributeDelegate
         )
 
@@ -36,7 +35,7 @@ class TestObject(unittest.TestCase):
         composite = Composite()
         state_class = make_object_state_class(*attributes)
         print("state_class", state_class)
-        print("state_class.get_type()", state_class.get_type())
+        print("state_class.get_key_type()", state_class.get_key_type())
 
         state = composite._.add_component(state_class)
         print("state", state)

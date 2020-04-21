@@ -5,7 +5,6 @@ from abc import abstractmethod
 from typing import Type, cast
 
 from slotted import SlottedABC
-from componente import CompositeMixin, Component
 
 from ..._base.exceptions import ModeloException, ModeloError
 
@@ -41,7 +40,7 @@ class State(SlottedABC, Component):
         return not self.__eq__(other)
 
     @staticmethod
-    def get_type():
+    def get_key_type():
         # type: () -> Type[State]
         """Get component key type."""
         return State

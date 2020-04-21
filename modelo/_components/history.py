@@ -1,97 +1,41 @@
 # -*- coding: utf-8 -*-
-"""Command runner component."""
+"""Command/History implementation."""
 
 from abc import abstractmethod
 from contextlib import contextmanager
-from weakref import ref
 from six import raise_from
-from typing import Optional, ContextManager, Union, Any, List, Type, cast
-from slotted import Slotted, SlottedABC, SlottedSequence, SlottedHashable
-from componente import COMPONENTS_SLOT, CompositeMixin, Component
+from typing import Optional, ContextManager, Union, Any, List, Tuple, cast
+from slotted import Slotted, SlottedABC
 
 from .._base.exceptions import ModeloException, ModeloError
-from .broadcaster import Broadcaster
 
 __all__ = [
-    "Runner",
     "History",
     "Command",
     "UndoableCommand",
     "BatchCommand",
     "UndoableBatchCommand",
-    "RunnerException",
-    "RunnerError",
+    "HistoryException",
+    "HistoryError",
+    "WhileRunningError",
+    "AlreadyRanError",
     "CannotUndoError",
     "CannotRedoError",
 ]
 
 
-class Runner(Slotted, Component):
-    __slots__ = ("__weakref__", "__history", "__executing")
-
-    @staticmethod
-    def get_type():
-        # type: () -> Type[Runner]
-        """Get component key type."""
-        return Runner
-
-    def __init__(self, obj):
-        # type: (CompositeMixin) -> None
-        """Initialize."""
-        super(Runner, self).__init__(obj)
-        self.__history = None
-        self.__executing = False
-
-    @classmethod
-    def get_component(cls, obj):
-        # type: (CompositeMixin) -> Runner
-        """Get hierarchy component of a composite object."""
-        return cast(Runner, super(Runner, cls).get_component(obj))
-
-    def run(self, command):
-        if self.__executing:
-            raise RuntimeError("already executing")
-        self.__executing = True
-        try:
-            if self.__history is None:
-                command.__attach__(self)
-                command.__redo__()
-            else:
-                self.__history.__push__(command)
-        finally:
-            self.__executing = False
-
-    @property
-    def history(self):
-        return self.__history
-
-    @history.setter
-    def history(self, history):
-        old_history = self.__history
-        if old_history is history:
-            return
-        if old_history is not None:
-            old_history.flush()
-        self.__history = history
-
-    @property
-    def executing(self):
-        return self.__executing
-
-
-class History(CompositeMixin, SlottedHashable, SlottedSequence):
-    """Runs and keeps track of commands."""
+class History(Slotted):
+    """Keeps track of commands, allowing for undo/redo operations."""
 
     __slots__ = (
         "__size",
         "__undo_stack",
         "__redo_stack",
-        "__executing",
+        "__running",
         "__batch",
         "__batches",
         "__flush_later",
-        "__flush_redo_later",
-        COMPONENTS_SLOT
+        "__flush_redo_later"
     )
 
     def __init__(self, size=0):
@@ -104,18 +48,11 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
         self.__size = size
         self.__undo_stack = []
         self.__redo_stack = []
-        self.__executing = False
+        self.__running = False
         self.__batch = None
         self.__batches = []
         self.__flush_later = False
         self.__flush_redo_later = False
-
-        self._.add_component(Broadcaster)  # TODO: events
-
-    def __hash__(self):
-        # type: () -> int
-        """Get object hash."""
-        return object.__hash__(self)
 
     def __getitem__(self, item):
         # type: (Union[int, slice]) -> Union[Any, List]
@@ -130,7 +67,7 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
     def flush_redo(self):
         # type: () -> None
         """Flush redo stack."""
-        if self.__executing:
+        if self.__running:
             self.__flush_redo_later = True
             return
         self.__flush_later, self.__flush_redo_later = False, False
@@ -140,13 +77,14 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
         first_index = len(self.__undo_stack)
         last_index = first_index + len(self.__redo_stack) - 1
         old_values = tuple(reversed(self.__redo_stack))
+        # TODO: emit event
 
         del self.__redo_stack[:]
 
     def flush(self):
         # type: () -> None
         """Flush entire history."""
-        if self.__executing:
+        if self.__running:
             self.__flush_later = True
             return
         self.__flush_later, self.__flush_redo_later = False, False
@@ -156,11 +94,12 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
             return
         del self.__redo_stack[:]
         del self.__undo_stack[:]
+        # TODO: emit event
 
     def __flush_queued(self):
         # type: () -> None
         """Execute queued flush requests."""
-        if self.__executing:
+        if self.__running:
             raise RuntimeError("can't flush during execution")
         if self.__flush_later:
             self.flush()
@@ -169,26 +108,27 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
         self.__flush_later = False
         self.__flush_redo_later = False
 
-    def __push__(self, command):
+    def run(self, command):
         # type: (Command) -> None
-        """Run and push a command into the queue."""
+        """Run a command and keep track of it."""
 
-        # If during execution
-        if self.__executing:
-            raise RuntimeError("already executing")
+        # Error, already running
+        if self.__running:
+            error = "already running a command"
+            raise WhileRunningError(error)
 
-        # Command already attached
-        if command.attached:
-            raise ValueError("command already utilized")
+        # Command already ran
+        if command.ran:
+            raise AlreadyRanError(command)
 
         # Not during execution, command is not undoable
         elif not isinstance(command, UndoableCommand):
 
-            # Associate command with this history
-            command.__attach__(self)
+            # Flag command as 'ran'
+            command.__flag_ran__()
 
-            # Set executing flag
-            self.__executing = True
+            # Set running flag
+            self.__running = True
 
             # Flush entire history
             self.flush()
@@ -199,21 +139,21 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
 
             # Reset execution flag no matter what
             finally:
-                self.__executing = False
+                self.__running = False
                 self.__flush_queued()
 
         # Command is undoable
         else:
 
-            # Associate command with this history if not in a batch
+            # Flag command as 'ran' if not in a batch
             if self.__batch is None:
-                command.__attach__(self)
+                command.__flag_ran__()
 
             # Flush redo only
             self.flush_redo()
 
-            # Set executing flag
-            self.__executing = True
+            # Set running flag
+            self.__running = True
 
             # Run redo delegate
             try:
@@ -221,13 +161,13 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
 
             # In case anything goes wrong, flush entire history and raise
             except Exception:
-                self.__executing = False
+                self.__running = False
                 self.flush()
                 raise
 
             # Reset execution flag no matter what
             finally:
-                self.__executing = False
+                self.__running = False
                 self.__flush_queued()
 
             # In a batch
@@ -249,8 +189,9 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
         # type: (Command) -> None
         """Append to undo stack."""
         first_index = last_index = len(self.__undo_stack)
-        values = (command,)
+        new_values = (command,)
         self.__undo_stack.append(command)
+        # TODO: emit event
 
     def __adjust_stack_size(self):
         # type: () -> None
@@ -260,6 +201,7 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
             last_index = len(self.__undo_stack) - self.size - 1
             old_values = self.__undo_stack[first_index : last_index + 1]
             del self.__undo_stack[first_index : last_index + 1]
+            # TODO: emit event
 
     def undo_all(self):
         # type: () -> None
@@ -297,9 +239,13 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
     def batch_context(self, name):
         # type: (str) -> ContextManager
         """Start a new batch context."""
-        if self.__executing:
-            raise RuntimeError("already executing")
 
+        # Error, already running
+        if self.__running:
+            error = "can't start a batch context while a command is running"
+            raise WhileRunningError(error)
+
+        # Store previous batch and start a new one
         previous_batch = self.__batch
         self.__batch = name, []
         self.__batches.append(self.__batch)
@@ -336,8 +282,8 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
                 # No previous batch
                 else:
 
-                    # Set ownership
-                    batch.__attach__(self)
+                    # Flag batch command as 'ran'
+                    batch.__flag_ran__()
 
                     # One or more commands are not undoable, flush history
                     if not undoable:
@@ -371,10 +317,14 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
     def size(self, size):
         # type: (int) -> None
         """How many commands to remember."""
-        if self.__executing:
-            raise RuntimeError("can't set size during execution")
+
+        # Error, can't change while running
+        if self.__running:
+            error = "can't change history size while running a command"
+            raise WhileRunningError(error)
         if self.__batch is not None:
-            raise RuntimeError("can't set size within a batch context")
+            error = "can't change history size within a batch context"
+            raise WhileRunningError(error)
 
         # Format size
         size = int(size)
@@ -399,10 +349,14 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
     def current_index(self, current_index):
         # type: (int) -> None
         """Current index."""
-        if self.__executing:
-            raise RuntimeError("can't set current index during execution")
+
+        # Error, can't change while running
+        if self.__running:
+            error = "can't change history index while running a command"
+            raise WhileRunningError(error)
         if self.__batch is not None:
-            raise RuntimeError("can't set current index within a batch context")
+            error = "can't change history index within a batch context"
+            raise WhileRunningError(error)
 
         # Check for invalid index
         if (
@@ -415,7 +369,7 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
         old_current_index = self.current_index
         try:
             while self.current_index != current_index:
-                self.__executing = True
+                self.__running = True
                 try:
                     old_index = self.current_index
 
@@ -429,37 +383,27 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
                         command.__undo__()
                         self.__redo_stack.append(command)
 
-                    # Emit signal for index change
+                    # Emit event for index change
                     new_index = self.current_index
                     if old_index != new_index:
-                        pass
-                        # self.__emit__(
-                        #     HistoryIndexChangedEvent(old_index=old_index, index=new_index),
-                        #     EventPhase.SINGLE,
-                        # )
+                        pass  # TODO: emit event for index change (old_index => new_index)
 
                 except Exception:
-                    self.__executing = False
+                    self.__running = False
                     self.flush()
                     raise
                 finally:
-                    self.__executing = False
+                    self.__running = False
                     self.__flush_queued()
         finally:
             if old_current_index != self.current_index:
-                pass
-                # self.__emit__(
-                #     HistoryIndexFinishedChangedEvent(
-                #         old_index=old_current_index, index=self.current_index
-                #     ),
-                #     EventPhase.SINGLE,
-                # )
+                pass  # TODO: emit event for index change (old_current_index => self.current_index)
 
     @property
-    def executing(self):
+    def running(self):
         # type: () -> bool
-        """Whether currently executing a command."""
-        return self.__executing
+        """Whether currently running a command."""
+        return self.__running
 
     @property
     def current_batch(self):
@@ -476,105 +420,150 @@ class History(CompositeMixin, SlottedHashable, SlottedSequence):
 
     @property
     def commands(self):
-        return [None] + (self.__undo_stack + list(reversed(self.__redo_stack)))
+        # type: () -> Tuple[Optional[Command], ...]
+        """Get commands."""
+        return tuple([None] + (self.__undo_stack + list(reversed(self.__redo_stack))))
 
     @property
     def flattened_commands(self):
+        # type: () -> Tuple[Optional[Command], ...]
+        """Get commands (flatten batch commands)."""
         flattened_commands = []
         for command in self.commands:
             if isinstance(command, BatchCommand):
                 flattened_commands.extend(command.flattened_commands)
             else:
                 flattened_commands.append(command)
-        return flattened_commands
+        return tuple(flattened_commands)
 
 
 class Command(SlottedABC):
-    __slots__ = ("__name", "__owner_ref")
+    """Contains a delegate function and the necessary data to run it."""
+
+    __slots__ = ("__name", "__ran")
 
     def __init__(self, name):
-        self.__name = name
-        self.__owner_ref = None
+        # type: (str) -> None
+        """Initialize with name."""
+        self.__name = str(name)
+        self.__ran = False
 
-    def __attach__(self, owner):
-        if self.__owner_ref is not None:
-            raise ValueError("command already utilized")
-        self.__owner_ref = ref(owner)
+    def __flag_ran__(self):
+        # type: () -> None
+        """Flag this command as 'ran'."""
+        if self.__ran:
+            raise AlreadyRanError(self)
+        self.__ran = True
 
     @abstractmethod
     def __redo__(self):
+        # type: () -> None
+        """Redo delegate."""
         raise NotImplementedError()
 
     @property
     def name(self):
+        # type: () -> str
+        """Command name."""
         return self.__name
 
     @property
-    def attached(self):
-        return self.__owner_ref is not None
+    def ran(self):
+        # type: () -> bool
+        """Whether this command already ran."""
+        return self.__ran
 
 
 class UndoableCommand(Command):
+    """Special type of command that also contains a delegate to undo its changes."""
+
     __slots__ = ()
 
     @abstractmethod
     def __undo__(self):
+        # type: () -> None
+        """Undo delegate."""
         raise NotImplementedError()
 
 
 class BatchCommand(Command):
+    """Concatenates multiple commands into one."""
+
     __slots__ = ("__weakref__", "__commands")
 
     def __init__(self, name, *commands):
+        # type: (str, Tuple[Command, ...]) -> None
+        """Initialize with name and commands."""
         super(BatchCommand, self).__init__(name)
         for command in commands:
-            command.__attach__(self)
+            command.__flag_ran__()
         self.__commands = commands
 
     def __redo__(self):
+        # type: () -> None
+        """Redo delegate."""
         for command in self.commands:
             command.__redo__()
 
     @property
     def commands(self):
+        # type: () -> Tuple[Optional[Command], ...]
+        """Get commands."""
         return self.__commands
 
     @property
     def flattened_commands(self):
+        # type: () -> Tuple[Command, ...]
+        """Get commands (flatten batch commands)."""
         flattened_commands = []
         for command in self.commands:
             if isinstance(command, BatchCommand):
                 flattened_commands.extend(command.flattened_commands)
             else:
                 flattened_commands.append(command)
-        return flattened_commands
+        return tuple(flattened_commands)
 
 
 class UndoableBatchCommand(BatchCommand, UndoableCommand):
+    """Concatenates multiple undoable commands into one."""
+
     __slots__ = ()
 
     def __init__(self, name, *commands):
+        # type: (str, Tuple[UndoableCommand, ...]) -> None
+        """Initialize with name and undoable commands."""
         for command in commands:
             if not isinstance(command, UndoableCommand):
-                raise ValueError("command {} is not undoable".format(command))
+                error = "command {} is not undoable".format(command)
+                raise TypeError(error)
         super(UndoableBatchCommand, self).__init__(name, *commands)
 
     def __undo__(self):
+        # type: () -> None
+        """Undo delegate."""
         for command in reversed(self.commands):
-            command.__undo__()
+            cast(UndoableCommand, command).__undo__()
 
 
-class RunnerException(ModeloException):
-    """Runner exception."""
+class HistoryException(ModeloException):
+    """History exception."""
 
 
-class RunnerError(ModeloError, RunnerException):
-    """Runner error."""
+class HistoryError(ModeloError, HistoryException):
+    """History error."""
 
 
-class CannotUndoError(RunnerError):
+class WhileRunningError(HistoryError):
+    """Raised when trying to perform an operation during an ongoing execution."""
+
+
+class AlreadyRanError(HistoryError):
+    """Raised when trying to run a command that has already been used before."""
+
+
+class CannotUndoError(HistoryError):
     """Raised when trying to undo but no more commands are available."""
 
 
-class CannotRedoError(RunnerError):
+class CannotRedoError(HistoryError):
     """Raised when trying to redo but no more commands are available."""

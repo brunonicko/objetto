@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""Object state component."""
+"""Object-attributes system."""
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
-from weakref import WeakKeyDictionary
+import re
 from collections import defaultdict
-from componente import CompositeMixin
+from weakref import ref
 from enum import Enum
 from slotted import (
     SlottedABCMeta,
@@ -31,17 +31,17 @@ from typing import (
     Tuple,
     Type,
     Union,
-    cast,
 )
 
-from ...utils.type_checking import UnresolvedType as UType
-from ...utils.type_checking import assert_is_instance, assert_is_unresolved_type
-from ...utils.recursive_repr import recursive_repr
-from ...utils.object_repr import object_repr
-from ...utils.wrapped_dict import WrappedDict
-from .base import State, StateException, StateError
+from .._base.exceptions import ModeloException, ModeloError
+from ..utils.type_checking import UnresolvedType as UType
+from ..utils.type_checking import assert_is_instance, assert_is_unresolved_type
+from ..utils.recursive_repr import recursive_repr
+from ..utils.object_repr import object_repr
+from ..utils.wrapped_dict import WrappedDict
 
 __all__ = [
+    "ATTRIBUTE_NAME_REGEX",
     "SpecialValue",
     "ObjectStateMeta",
     "ObjectState",
@@ -49,9 +49,19 @@ __all__ = [
     "Attribute",
     "AttributeDelegate",
     "AttributeUpdates",
-    "ObjectStateException",
-    "ObjectStateError",
+    "AttributesException",
+    "AttributesError",
+    "AttributeNameError",
+    "AttributeNotDelegatedError",
+    "AttributeMissingDelegatesError",
+    "AlreadyHasDelegateError",
+    "IncompatibleParametersError",
+    "IncompatibleDependenciesError",
+    "MissingDependencyError",
+    "SpecialValueError"
 ]
+
+ATTRIBUTE_NAME_REGEX = re.compile(r"^[^\d\W]\w*\Z", re.UNICODE)
 
 
 class SpecialValue(Enum):
@@ -92,7 +102,8 @@ def _make_constant_access_object(
     """Make access object that can be provided to a constant attribute fget function."""
     attribute = attributes[attribute_name]
     if not attribute.delegated:
-        raise ValueError("attribute '{}' is not delegated".format(attribute_name))
+        error = "attribute '{}' is not delegated".format(attribute_name)
+        raise AttributeMissingDelegatesError(error)
 
     # Build properties
     dct = {"__slots__": ()}
@@ -106,9 +117,10 @@ def _make_constant_access_object(
                 get_access = _make_constant_access_object(constants, _get, attributes)
                 value = get_attribute.fget.func(get_access)
                 if value in (SpecialValue.MISSING, SpecialValue.DELETED):
-                    raise ValueError(
-                        "getter for attribute '{}' cannot return {}".format(_get, value)
+                    error_message = "getter for attribute '{}' cannot return {}".format(
+                        _get, value
                     )
+                    raise SpecialValueError(error_message)
                 constants[_get] = value
             else:
                 value = constants[_get]
@@ -129,7 +141,8 @@ def _make_access_object(
     """Make access object that can be provided to an attribute delegate's function."""
     attribute = attributes[attribute_name]
     if not attribute.delegated:
-        raise ValueError("attribute '{}' is not delegated".format(attribute_name))
+        error = "attribute '{}' is not delegated".format(attribute_name)
+        raise AttributeNotDelegatedError(error)
 
     # Get delegate according to the access type
     if access_type is AttributeAccessType.GETTER:
@@ -139,7 +152,7 @@ def _make_access_object(
     elif access_type is AttributeAccessType.DELETER:
         delegate = attribute.fdel
     else:
-        raise ValueError(access_type)
+        raise ValueError("invalid access type {}".format(access_type))
 
     # Build properties' functions according to dependencies declared in the delegate
     dct = {"__slots__": ()}
@@ -156,16 +169,19 @@ def _make_access_object(
                 )
                 value = get_attribute.fget.func(get_access)
                 if value in (SpecialValue.MISSING, SpecialValue.DELETED):
-                    raise ValueError(
-                        "getter for attribute '{}' cannot return {}".format(_get, value)
+                    error_message = "getter for attribute '{}' cannot return {}".format(
+                        _get, value
                     )
+                    raise SpecialValueError(error_message)
                 state[_get] = value
             else:
                 value = state[_get]
                 if value is SpecialValue.MISSING:
-                    raise AttributeError("attribute '{}' not initialized".format(_get))
+                    error_message = "attribute '{}' not initialized".format(_get)
+                    raise AttributeError(error_message)
                 if value is SpecialValue.DELETED:
-                    raise AttributeError("attribute '{}' was deleted".format(name))
+                    error_message = "attribute '{}' was deleted".format(name)
+                    raise AttributeError(error_message)
             return value
 
         properties_functions.setdefault(get, {})["fget"] = fget
@@ -178,7 +194,8 @@ def _make_access_object(
             set_attribute = attributes[_set]
             value = set_attribute.__factory__(value)
             if value in (SpecialValue.MISSING, SpecialValue.DELETED):
-                raise ValueError("cannot set attribute value to {}".format(value))
+                error_message = "cannot set attribute value to {}".format(value)
+                raise SpecialValueError(error_message)
             if set_attribute.fset is not None:
                 set_access = _make_access_object(
                     state, _set, attributes, access_type=AttributeAccessType.SETTER
@@ -229,7 +246,8 @@ def _make_object_state_class(
     attributes = {}
     for attribute in state_attributes:
         if attribute.name in attributes:
-            raise ValueError("two or more attributes named '{}'".format(attribute.name))
+            error = "two or more attributes named '{}'".format(attribute.name)
+            raise AttributeNameError(error)
         attributes[attribute.name] = attribute
     dct["__attributes__"] = WrappedDict(attributes)
 
@@ -253,11 +271,10 @@ def _make_object_state_class(
         elif (
             attribute.fget is None and attribute.fset is None and attribute.fdel is None
         ):
-            raise ValueError(
-                "attribute '{}' is delegated, but no delegates were defined".format(
-                    attribute_name
-                )
-            )
+            error = (
+                "attribute '{}' is delegated, but no delegates were defined"
+            ).format(attribute_name)
+            raise AttributeMissingDelegatesError(error)
 
         get_dependencies = set()
         set_dependencies = set()
@@ -269,17 +286,19 @@ def _make_object_state_class(
         if attribute.fset is None and attribute.fdel is None:
             for parameter in ("value_type", "value_factory", "exact_value_type"):
                 if getattr(attribute, parameter) is not None:
-                    raise ValueError(
+                    error = (
                         "neither 'fset' or 'fdel' delegates were declared for "
                         "attribute '{}', so the '{}' parameter shouldn't be "
-                        "provided".format(attribute_name, parameter)
-                    )
+                        "provided"
+                    ).format(attribute_name, parameter)
+                    raise IncompatibleParametersError(error)
             if not attribute.accepts_none:
-                raise ValueError(
+                error = (
                     "neither 'fset' or 'fdel' delegates were declared for attribute "
                     "'{}', so the 'accepts_none' parameter can't be set to "
-                    "False".format(attribute_name)
-                )
+                    "False"
+                ).format(attribute_name)
+                raise IncompatibleParametersError(error)
 
         if attribute.fset is not None:
             get_dependencies.update(attribute.fset.gets)
@@ -293,47 +312,43 @@ def _make_object_state_class(
 
         for get_dependency in get_dependencies:
             if get_dependency not in attributes:
-                raise NameError(
+                error = (
                     "attribute '{0}' declares '{1}' as a 'get' dependency, "
-                    "but '{1}' is not a valid attribute".format(
-                        attribute_name, get_dependency
-                    )
-                )
+                    "but '{1}' is not a valid attribute in the same object"
+                ).format(attribute_name, get_dependency)
+                raise MissingDependencyError(error)
             if not attributes[get_dependency].readable:
-                raise ValueError(
+                error = (
                     "attribute '{0}' declares '{1}' as a 'get' dependency, "
-                    "but '{1}' is not readable".format(attribute_name, get_dependency)
-                )
+                    "but '{1}' is not readable"
+                ).format(attribute_name, get_dependency)
+                raise IncompatibleDependenciesError(error)
         for set_dependency in set_dependencies:
             if set_dependency not in attributes:
-                raise NameError(
+                error = (
                     "attribute '{0}' declares '{1}' as a 'set' dependency, "
-                    "but '{1}' is not a valid attribute".format(
-                        attribute_name, set_dependency
-                    )
-                )
+                    "but '{1}' is not a valid attribute in the same object"
+                ).format(attribute_name, set_dependency)
+                raise MissingDependencyError(error)
             if not attributes[set_dependency].settable:
-                raise ValueError(
+                error = (
                     "attribute '{0}' declares '{1}' as a 'set' dependency, "
-                    "but '{1}' is not settable".format(
-                        attribute_name, set_dependency
-                    )
+                    "but '{1}' is not settable".format(attribute_name, set_dependency)
                 )
+                raise IncompatibleDependenciesError(error)
         for delete_dependency in set_dependencies:
             if delete_dependency not in attributes:
-                raise NameError(
+                error = (
                     "attribute '{0}' declares '{1}' as a 'delete' dependency, "
-                    "but '{1}' is not a valid attribute".format(
-                        attribute_name, delete_dependency
-                    )
-                )
+                    "but '{1}' is not a valid attribute in the same object"
+                ).format(attribute_name, delete_dependency)
+                raise MissingDependencyError(error)
             if not attributes[delete_dependency].deletable:
-                raise ValueError(
+                error = (
                     "attribute '{0}' declares '{1}' as a 'delete' dependency, "
-                    "but '{1}' is not deletable".format(
-                        attribute_name, delete_dependency
-                    )
-                )
+                    "but '{1}' is not deletable"
+                ).format(attribute_name, delete_dependency)
+                raise IncompatibleDependenciesError(error)
 
     # Build fget 'gets' dependency tree
     dependency_tree = {}
@@ -395,18 +410,16 @@ class ObjectStateMeta(SlottedABCMeta):
         # type: (str, Any) -> None
         """Prevent class attribute setting."""
         if name not in SlottedABC.__dict__:
-            raise AttributeError(
-                "'{}' class attributes are read-only".format(cls.__name__)
-            )
+            error = "'{}' class attributes are read-only".format(cls.__name__)
+            raise AttributeError(error)
         super(ObjectStateMeta, cls).__setattr__(name, value)
 
     def __delattr__(cls, name):
         # type: (str) -> None
         """Prevent class attribute deleting."""
         if name not in SlottedABC.__dict__:
-            raise AttributeError(
-                "'{}' class attributes are read-only".format(cls.__name__)
-            )
+            error = "'{}' class attributes are read-only".format(cls.__name__)
+            raise AttributeError(error)
         super(ObjectStateMeta, cls).__delattr__(name)
 
     @property
@@ -428,18 +441,24 @@ class ObjectStateMeta(SlottedABCMeta):
         return cls.__constants__
 
 
-class ObjectState(with_metaclass(ObjectStateMeta, State)):
+class ObjectState(with_metaclass(ObjectStateMeta, Slotted)):
     """Holds values curated/controlled by attributes."""
 
-    __slots__ = ("__state", "__attributes", "__dependencies", "__constants")
+    __slots__ = (
+        "__obj_ref",
+        "__state",
+        "__attributes",
+        "__dependencies",
+        "__constants",
+    )
     state_attributes = frozenset()  # type: FrozenSet[Attribute, ...]
 
     def __init__(self, obj):
-        # type: (CompositeMixin) -> None
-        """Initialize."""
-        super(ObjectState, self).__init__(obj)
-
+        # type: (Any) -> None
+        """Initialize with object."""
         cls = type(self)
+
+        self.__obj_ref = ref(obj)
         self.__attributes = getattr(cls, "attributes")  # type: Mapping[str, Attribute]
         self.__dependencies = getattr(
             cls, "dependencies"
@@ -459,7 +478,7 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
             ObjectState.__name__,
             hex(id(self)),
             " | " if repr_dict else "",
-            object_repr(**repr_dict) if repr_dict else ""
+            object_repr(**repr_dict) if repr_dict else "",
         )
 
     @recursive_repr
@@ -492,11 +511,10 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
             raise exc
 
         if not attribute.readable:
-            raise KeyError(
-                "attribute '{}.{}' is not readable".format(
-                    type(self.obj).__name__, name
-                )
+            error = "attribute '{}.{}' is not readable".format(
+                type(self.obj).__name__, name
             )
+            raise KeyError(error)
 
         value = self.__state[name]
         if value is SpecialValue.MISSING:
@@ -507,17 +525,20 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
                     for get in gets
                     if self.__state[get] in (SpecialValue.MISSING, SpecialValue.DELETED)
                 )
-                raise KeyError(
-                    "getter's dependenc{} {} (for attribute '{}') {} no value".format(
-                        "ies" if len(missing_gets) > 1 else "y",
-                        ", ".join("'{}'".format(n) for n in missing_gets),
-                        name,
-                        "have" if len(missing_gets) > 1 else "has",
-                    )
+                error = (
+                    "getter's dependenc{} {} (for attribute '{}') {} no value"
+                ).format(
+                    "ies" if len(missing_gets) > 1 else "y",
+                    ", ".join("'{}'".format(n) for n in missing_gets),
+                    name,
+                    "have" if len(missing_gets) > 1 else "has",
                 )
-            raise KeyError("attribute '{}' not initialized".format(name))
+                raise KeyError(error)
+            error = "attribute '{}' not initialized".format(name)
+            raise KeyError(error)
         if value is SpecialValue.DELETED:
-            raise KeyError("attribute '{}' was deleted".format(name))
+            error = "attribute '{}' was deleted".format(name)
+            raise KeyError(error)
         return value
 
     def prepare_update(self, *name_value_pairs):
@@ -530,13 +551,12 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
             if name not in self.__attributes:
                 invalid_names.add(name)
         if invalid_names:
-            raise AttributeError(
-                "'{}' object has no attribute{} '{}'".format(
-                    type(self.obj).__name__,
-                    "s" if len(invalid_names) > 1 else "",
-                    ", ".join("'{}'".format(n) for n in sorted(invalid_names)),
-                )
+            error = "'{}' object has no attribute{} {}".format(
+                type(self.obj).__name__,
+                "s" if len(invalid_names) > 1 else "",
+                ", ".join("'{}'".format(n) for n in sorted(invalid_names)),
             )
+            raise AttributeError(error)
 
         # Create a temporary update state based on the current state
         update_state = UpdateState(self.__state, self.__attributes, self.__dependencies)
@@ -546,14 +566,16 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
             try:
                 attribute = self.__attributes[name]
             except KeyError:
-                exc = AttributeError("object has no attribute '{}'".format(name))
+                error = "object has no attribute '{}'".format(name)
+                exc = AttributeError(error)
                 raise_from(exc, None)
                 raise exc
 
             # Delete
             if value is SpecialValue.DELETED:
                 if not attribute.deletable:
-                    raise AttributeError("attribute '{}' is not deletable".format(name))
+                    error = "attribute '{}' is not deletable".format(name)
+                    raise AttributeError(error)
                 if attribute.fdel is not None:
                     attribute.fdel.func(
                         _make_access_object(
@@ -569,12 +591,12 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
             # Set
             else:
                 if not attribute.settable:
-                    raise AttributeError("attribute '{}' is not settable".format(name))
+                    error = "attribute '{}' is not settable".format(name)
+                    raise AttributeError(error)
                 value = attribute.__factory__(value)
                 if value is SpecialValue.MISSING:
-                    raise ValueError(
-                        "can't set attribute to special value {}".format(value)
-                    )
+                    error = "can't set attribute to special value {}".format(value)
+                    raise SpecialValueError(error)
                 if attribute.fset is not None:
                     attribute.fset.func(
                         _make_access_object(
@@ -626,6 +648,16 @@ class ObjectState(with_metaclass(ObjectStateMeta, State)):
                 values[name] = value
 
         return values
+
+    @property
+    def obj(self):
+        # type: () -> Any
+        """Object."""
+        obj = self.__obj_ref()
+        if obj is None:
+            error = "object is no longer alive"
+            raise ReferenceError(error)
+        return obj
 
 
 def make_object_state_class(*state_attributes):
@@ -680,9 +712,14 @@ class Attribute(Slotted):
         # Name
         name = str(name)
         if name == "self":
-            raise AttributeError("attribute can't named 'self'")
+            error = "attribute can't be named 'self'"
+            raise AttributeNameError(error)
         elif not name:
-            raise AttributeError("attribute needs a valid name")
+            error = "attribute needs a valid name"
+            raise AttributeNameError(error)
+        elif not re.match(ATTRIBUTE_NAME_REGEX, name):
+            error = "'{}' is not a valid attribute name".format(name)
+            raise AttributeNameError(error)
         self.__name = name
 
         # Default module
@@ -693,9 +730,8 @@ class Attribute(Slotted):
 
         # Check, and store 'value_type', 'exact_value_type', and 'accepts_none'
         if value_type is not None and exact_value_type is not None:
-            raise ValueError(
-                "cannot specify bot 'value_type' and 'exact_value_type' arguments"
-            )
+            error = "cannot specify both 'value_type' and 'exact_value_type' arguments"
+            raise ValueError(error)
         if value_type is not None:
             assert_is_unresolved_type(value_type)
             self.__value_type = value_type
@@ -719,11 +755,10 @@ class Attribute(Slotted):
 
         # Check and store 'value_factory'
         if value_factory is not None and not callable(value_factory):
-            raise TypeError(
-                "expected a callable for 'value_factory', got '{}'".format(
-                    type(value_factory).__name__
-                )
+            error = "expected a callable for 'value_factory', got '{}'".format(
+                type(value_factory).__name__
             )
+            raise TypeError(error)
         self.__value_factory = value_factory
 
         # Store 'comparable', 'represented', and 'printed'
@@ -733,7 +768,9 @@ class Attribute(Slotted):
         self.__represented = bool(
             represented if represented is not None else not name.startswith("_")
         )
-        self.__printed = bool(printed if printed is not None else not name.startswith("_"))
+        self.__printed = bool(
+            printed if printed is not None else not name.startswith("_")
+        )
 
         # Delegated
         self.__delegated = bool(delegated)
@@ -778,9 +815,10 @@ class Attribute(Slotted):
                     default_module_name=self.__default_module,
                 )
             elif not self.__accepts_none and value is None:
-                raise TypeError(
-                    "attribute '{}' does not accept None as a value".format(self.__name)
+                error = "attribute '{}' does not accept None as a value".format(
+                    self.__name
                 )
+                raise TypeError(error)
         except TypeError as e:
             exc = TypeError("{} while setting attribute '{}'".format(e, self.__name))
             raise_from(exc, None)
@@ -791,15 +829,13 @@ class Attribute(Slotted):
         # type: (Union[Callable, AttributeDelegate]) -> Attribute
         """Assign a 'getter' function/delegate by decorating it."""
         if not self.__delegated:
-            raise RuntimeError(
-                "cannot define a getter for a non-delegated attribute '{}'".format(
-                    self.__name
-                )
+            error = "cannot define a getter for a non-delegated attribute '{}'".format(
+                self.__name
             )
+            raise AttributeNotDelegatedError(error)
         if self.__fget is not None:
-            raise RuntimeError(
-                "already defined a getter for attribute '{}'".format(self.__name)
-            )
+            error = "already defined a getter for attribute '{}'".format(self.__name)
+            raise AlreadyHasDelegateError(error)
 
         if not isinstance(func, AttributeDelegate):
             fget = AttributeDelegate(func)
@@ -807,15 +843,17 @@ class Attribute(Slotted):
             fget = func
 
         if fget.sets:
-            raise ValueError(
+            error = (
                 "error while defining a getter delegate for attribute '{}', can't "
-                "have 'sets' dependencies".format(self.__name)
-            )
+                "have 'sets' dependencies"
+            ).format(self.__name)
+            raise IncompatibleDependenciesError(error)
         if fget.deletes:
-            raise ValueError(
+            error = (
                 "error while defining a getter delegate for attribute '{}', can't "
-                "have 'deletes' dependencies".format(self.__name)
-            )
+                "have 'deletes' dependencies"
+            ).format(self.__name)
+            raise IncompatibleDependenciesError(error)
 
         self.__fget = fget
         return self
@@ -824,15 +862,13 @@ class Attribute(Slotted):
         # type: (Callable) -> Attribute
         """Assign a 'setter' function/delegate by decorating it."""
         if not self.__delegated:
-            raise RuntimeError(
-                "cannot define a setter for a non-delegated attribute '{}'".format(
-                    self.__name
-                )
+            error = "cannot define a setter for a non-delegated attribute '{}'".format(
+                self.__name
             )
+            raise AttributeNotDelegatedError(error)
         if self.__fset is not None:
-            raise RuntimeError(
-                "already defined a setter for attribute '{}'".format(self.__name)
-            )
+            error = "already defined a setter for attribute '{}'".format(self.__name)
+            raise AlreadyHasDelegateError(error)
 
         if not isinstance(func, AttributeDelegate):
             fset = AttributeDelegate(func)
@@ -846,15 +882,13 @@ class Attribute(Slotted):
         # type: (Callable) -> Attribute
         """Assign a 'deleter' function/delegate by decorating it."""
         if not self.__delegated:
-            raise RuntimeError(
-                "cannot define a deleter for a non-delegated attribute '{}'".format(
-                    self.__name
-                )
+            error = "cannot define a deleter for a non-delegated attribute '{}'".format(
+                self.__name
             )
+            raise AttributeNotDelegatedError(error)
         if self.__fdel is not None:
-            raise RuntimeError(
-                "already defined a deleter for attribute '{}'".format(self.__name)
-            )
+            error = "already defined a deleter for attribute '{}'".format(self.__name)
+            raise AlreadyHasDelegateError(error)
 
         if not isinstance(func, AttributeDelegate):
             fdel = AttributeDelegate(func)
@@ -1033,27 +1067,26 @@ class AttributeDelegate(Slotted):
 
         # Make sure 'func' is a callable, but not an AttributeDelegate
         if not callable(func):
-            raise TypeError(
+            error = (
                 "cannot decorate non-callable object of type '{}' as a "
-                "getter/setter/deleter".format(type(func).__name__)
-            )
+                "getter/setter/deleter"
+            ).format(type(func).__name__)
+            raise TypeError(error)
         elif isinstance(func, AttributeDelegate):
-            raise TypeError(
-                "cannot use a '{}' object as the callable function".format(
-                    type(func).__name__
-                )
+            error = "cannot use a '{}' object as the callable function".format(
+                type(func).__name__
             )
+            raise TypeError(error)
 
         # Make sure dependencies are iterables of strings
         for param, value in (("gets", gets), ("sets", sets), ("deletes", deletes)):
             if not isinstance(value, collections_abc.Iterable) or any(
                 not isinstance(v, string_types) for v in value
             ):
-                raise TypeError(
-                    "expected an iterable of strings for parameter '{}', got {}".format(
-                        param, value
-                    )
-                )
+                error = (
+                    "expected an iterable of strings for parameter '{}', got {}"
+                ).format(param, value)
+                raise TypeError(error)
 
         self.__func = func
         self.__gets = frozenset(gets)
@@ -1242,9 +1275,41 @@ class UpdateState(SlottedMutableMapping):
         return AttributeUpdates(self.__updates, reverts)
 
 
-class ObjectStateException(StateException):
-    """Object state exception."""
+class AttributesException(ModeloException):
+    """Attributes exception."""
 
 
-class ObjectStateError(StateError, ObjectStateException):
-    """Object state error."""
+class AttributesError(ModeloError, AttributesException):
+    """Attributes error."""
+
+
+class AttributeNameError(AttributesError):
+    """Raised when there's an error with the attribute's name."""
+
+
+class AttributeNotDelegatedError(AttributesError):
+    """Raised when trying to define a delegate for a non-delegated attribute."""
+
+
+class AttributeMissingDelegatesError(AttributesError):
+    """Raised when an attribute is delegated but no delegates were defined."""
+
+
+class AlreadyHasDelegateError(AttributesError):
+    """Raised when attribute already has a delegate and tried to define it again."""
+
+
+class IncompatibleParametersError(AttributesError):
+    """Raised when detected an incompatible combination of parameters."""
+
+
+class IncompatibleDependenciesError(AttributesError):
+    """Raised when incompatible dependencies are given to a delegate."""
+
+
+class MissingDependencyError(AttributesError):
+    """Raised when a dependency is missing."""
+
+
+class SpecialValueError(AttributesError):
+    """Raised when using a special value where it is not allowed."""

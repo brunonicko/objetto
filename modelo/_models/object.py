@@ -17,14 +17,11 @@ from typing import (
     Iterable,
     FrozenSet,
     Union,
-    cast,
 )
 from slotted import Slotted
 from collections import Counter
 
-from .._components.hierarchy import Hierarchy
-from .._components.state.base import State
-from .._components.state.object import (
+from .._components.attributes import (
     SpecialValue, ObjectState, Attribute, AttributeDelegate, make_object_state_class
 )
 from ..utils.type_checking import UnresolvedType as UType
@@ -50,6 +47,7 @@ class AttributesUpdateEvent(ModelEvent):
 
     def __init__(
         self,
+        model,  # type: ObjectModel
         adoptions,  # type: FrozenSet[Model, ...]
         releases,  # type: FrozenSet[Model, ...]
         new_values,  # type: Mapping[str, Any]
@@ -57,7 +55,7 @@ class AttributesUpdateEvent(ModelEvent):
     ):
         # type: (...) -> None
         """Initialize with new values and old values."""
-        super(AttributesUpdateEvent, self).__init__(adoptions, releases)
+        super(AttributesUpdateEvent, self).__init__(model, adoptions, releases)
         self.__new_values = new_values
         self.__old_values = old_values
 
@@ -673,21 +671,20 @@ class ObjectModelMeta(ModelMeta):
 class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
     """Model described by attributes."""
 
-    __slots__ = ()
+    __slots__ = ("__state",)
     __state_class__ = ObjectState
 
     def __init__(self):
         # type: () -> None
         """Initialize."""
         super(ObjectModel, self).__init__()
-        self._.add_component(type(self).__state_class__)
+        self.__state = type(self).__state_class__(self)
 
     @recursive_repr
     def __repr__(self):
         # type: () -> str
         """Get representation."""
-        state = cast(ObjectState, self._[State])
-        repr_dict = state.get_dict(attribute_sieve=lambda a: a.represented)
+        repr_dict = self.__state.get_dict(attribute_sieve=lambda a: a.represented)
         return "<{}.{} object at {}{}{}>".format(
             type(self).__module__,
             type(self).__name__,
@@ -700,24 +697,22 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
     def __str__(self):
         # type: () -> str
         """Get string representation."""
-        state = cast(ObjectState, self._[State])
-        str_dict = state.get_dict(attribute_sieve=lambda a: a.printed)
+        str_dict = self.__state.get_dict(attribute_sieve=lambda a: a.printed)
         return "{}({})".format(type(self).__name__, object_repr(**str_dict))
 
     def __eq__(self, other):
-        # type: (Model) -> bool
+        # type: (ObjectModel) -> bool
         """Compare for equality."""
         if type(self) is not type(other):
             return False
-        self_state = cast(ObjectState, self._[State])
-        other_state = cast(ObjectState, other._[State])
+        self_state = self.__state
+        other_state = other.__state
         return self_state == other_state
 
     def __getitem__(self, name):
         # type: (str) -> Any
         """Get attribute value."""
-        state = cast(ObjectState, self._[State])
-        return state[name]
+        return self.__state[name]
 
     def __setitem__(self, name, value):
         # type: (str, Any) -> None
@@ -736,11 +731,11 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         if not name_value_pairs:
             return
 
-        hierarchy = cast(Hierarchy, self._[Hierarchy])
-        state = cast(ObjectState, self._[State])
+        # Get hierarchy
+        hierarchy = self.__get_hierarchy__()
 
         # Prepare updates
-        redo_update = state.prepare_update(*name_value_pairs)
+        redo_update = self.__state.prepare_update(*name_value_pairs)
         if not redo_update:
             return
         undo_update = ~redo_update
@@ -760,16 +755,16 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
 
         # Create partials and events
         redo = Partial(hierarchy.update_children, redo_children) + Partial(
-            state.update, redo_update
+            self.__state.update, redo_update
         )
         undo = Partial(hierarchy.update_children, undo_children) + Partial(
-            state.update, undo_update
+            self.__state.update, undo_update
         )
         redo_event = AttributesUpdateEvent(
-            redo_children, undo_children, redo_update, undo_update
+            self, redo_children, undo_children, redo_update, undo_update
         )
         undo_event = AttributesUpdateEvent(
-            undo_children, redo_children, undo_update, redo_update
+            self, undo_children, redo_children, undo_update, redo_update
         )
 
         # Dispatch

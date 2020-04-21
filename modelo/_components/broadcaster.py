@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Event broadcasting component."""
+"""Event broadcasting."""
 
 from abc import abstractmethod
 from enum import Enum
 from weakref import WeakKeyDictionary, ref
 from slotted import Slotted
 from six import raise_from
-from typing import Type, FrozenSet, Optional, Callable, cast
-from componente import CompositeMixin, Component
+from typing import Any, FrozenSet, Optional, Callable
 
 from .._base.exceptions import ModeloException, ModeloError
 from ..utils.type_checking import assert_is_instance
@@ -19,9 +18,11 @@ __all__ = [
     "EventListenerMixin",
     "ListenerToken",
     "EventEmitter",
-    "Event",
     "BroadcasterException",
     "BroadcasterError",
+    "AlreadyEmittingError",
+    "NonInternalEmitterError",
+    "PhaseError",
     "StopEventPropagationException",
     "RejectEventException",
 ]
@@ -36,31 +37,19 @@ class EventPhase(Enum):
     INTERNAL_POST = "internal_post"
 
 
-class Broadcaster(Slotted, Component):
+class Broadcaster(Slotted):
     """Emits events."""
 
     __slots__ = ("__weakref__", "__emitter")
+    _internal = False
 
-    @staticmethod
-    def get_type():
-        # type: () -> Type[Broadcaster]
-        """Get component key type."""
-        return Broadcaster
-
-    def __init__(self, obj):
-        # type: (CompositeMixin) -> None
+    def __init__(self):
+        # type: () -> None
         """Initialize."""
-        super(Broadcaster, self).__init__(obj)
         self.__emitter = EventEmitter(self)
 
-    @classmethod
-    def get_component(cls, obj):
-        # type: (CompositeMixin) -> Broadcaster
-        """Get broadcaster component of a composite object."""
-        return cast(Broadcaster, super(Broadcaster, cls).get_component(obj))
-
     def emit(self, event, phase):
-        # type: (Event, EventPhase) -> bool
+        # type: (Any, EventPhase) -> bool
         """Emit event. Return False if event was rejected."""
         return self.__emitter.__emit__(event, phase)
 
@@ -68,7 +57,7 @@ class Broadcaster(Slotted, Component):
     def internal(self):
         # type: () -> bool
         """Whether this broadcaster is internal."""
-        return False
+        return type(self)._internal
 
     @property
     def emitter(self):
@@ -81,26 +70,7 @@ class InternalBroadcaster(Broadcaster):
     """Emits internal events."""
 
     __slots__ = ()
-
-    @staticmethod
-    def get_type():
-        # type: () -> Type[InternalBroadcaster]
-        """Get component key type."""
-        return InternalBroadcaster
-
-    @classmethod
-    def get_component(cls, obj):
-        # type: (CompositeMixin) -> InternalBroadcaster
-        """Get internal broadcaster component of a composite object."""
-        return cast(
-            InternalBroadcaster, super(InternalBroadcaster, cls).get_component(obj)
-        )
-
-    @property
-    def internal(self):
-        # type: () -> bool
-        """Whether this broadcaster is internal."""
-        return True
+    _internal = True
 
 
 class EventListenerMixin(object):
@@ -108,28 +78,18 @@ class EventListenerMixin(object):
 
     __slots__ = ("__weakref__",)
 
-    def __hash__(self):
-        # type: () -> int
-        """Make sure 'super' object has a valid hash method."""
-        try:
-            hash_method = super(EventListenerMixin, self).__hash__
-            if hash_method is None:
-                raise AttributeError()
-        except AttributeError:
-            exc = TypeError("'{}' is not hashable".format(type(self).__name__))
-            raise_from(exc, None)
-            raise exc
-        return hash_method()
-
     @abstractmethod
-    def __react__(self, obj, event, phase):
-        # type: (CompositeMixin, Event, EventPhase) -> None
+    def __react__(self, event, phase):
+        # type: (Any, EventPhase) -> None
         """React to an event."""
-        raise NotImplementedError()
+        error = "event listener class '{}' did not implement '__react__' method".format(
+            type(self).__name__
+        )
+        raise NotImplementedError(error)
 
 
 class ListenerToken(Slotted):
-    """Token that allows control event reaction priority."""
+    """Token that allows control over event reaction order/priority."""
 
     __slots__ = ("__emitter_ref", "__listener_ref")
 
@@ -184,7 +144,7 @@ class EventEmitter(Slotted):
 
     def __init__(self, broadcaster):
         # type: (Broadcaster) -> None
-        """Init with a broadcaster component."""
+        """Init with a broadcaster object."""
         self.__broadcaster_ref = ref(broadcaster)
         self.__internal = broadcaster.internal
         self.__listeners = WeakKeyDictionary()
@@ -197,54 +157,69 @@ class EventEmitter(Slotted):
         """Wait for the token's listener to react before continuing."""
         if self.__emitting is None:
             return
-        obj = self.obj
-        if obj is None:
-            return
         listener = token.listener
         if listener in self.__reacting:
             self.__reacting.remove(listener)
-            listener.__react__(obj, self.__emitting, self.__emitting_phase)
+            listener.__react__(self.__emitting, self.__emitting_phase)
 
     def __emit__(self, event, phase):
-        # type: (Event, EventPhase) -> bool
+        # type: (Any, EventPhase) -> bool
         """Emit event to all listeners. Return False if event was rejected."""
+
+        # Check phase type
+        assert_is_instance(phase, EventPhase)
+
+        # Can't emit None
+        if event is None:
+            error = "cannot emit '{}' object as an event".format(type(None).__name__)
+            raise TypeError(error)
+
+        # Can't emit if already emitting
         if self.__emitting is not None:
-            raise RuntimeError(
-                "already emitting event {}, cannot emit {}".format(
-                    self.__emitting, event
-                )
+            error = "already emitting event {}, cannot emit {}".format(
+                self.__emitting, event
             )
+            raise AlreadyEmittingError(error)
+
+        # Can't use internal phases if not an internal emitter
         if not self.__internal:
             if phase in (EventPhase.INTERNAL_PRE, EventPhase.INTERNAL_POST):
-                raise RuntimeError(
-                    "cannot use phase '{}' on a non-internal event emitter".format(
-                        phase
-                    )
+                error = "cannot use phase '{}' on a non-internal event emitter".format(
+                    phase
                 )
-        obj = self.obj
+                raise PhaseError(error)
+
+        # Start emission
         self.__emitting = event
         self.__emitting_phase = phase
         self.__reacting = reacting = set(self.__listeners)
-
         callback = None
         try:
             while reacting:
                 listener = reacting.pop()
                 try:
-                    listener.__react__(obj, event, phase)
+                    listener.__react__(event, phase)
+
+                # Requested to stop event propagation
                 except StopEventPropagationException:
                     break
+
+                # Requested to reject event (internal only, during INTERNAL_PRE phase)
                 except RejectEventException as exc:
+
+                    # Error, not internal emitter
                     if not self.__internal:
-                        exc = RuntimeError(
+                        exc = NonInternalEmitterError(
                             "'{}' can only be raised during internal emission".format(
                                 RejectEventException.__name__
                             )
                         )
                         raise_from(exc, None)
                         raise exc
+
+                    # Error, not INTERNAL_PRE phase
                     if phase is not EventPhase.INTERNAL_PRE:
-                        exc = RuntimeError(
+                        exc = PhaseError(
                             "'{}' can only be raised during '{}', not '{}'".format(
                                 RejectEventException.__name__,
                                 EventPhase.INTERNAL_PRE,
@@ -253,12 +228,18 @@ class EventEmitter(Slotted):
                         )
                         raise_from(exc, None)
                         raise exc
+
+                    # Retrieve optional callback from exception and return False
                     callback = exc.callback
                     return False
+
+        # No matter what, end event emission
         finally:
             self.__emitting = None
             self.__emitting_phase = None
             self.__reacting = set()
+
+            # If a callback was set from a rejected internal event, run it now
             if callback is not None:
                 callback()
 
@@ -270,7 +251,7 @@ class EventEmitter(Slotted):
         assert_is_instance(listener, EventListenerMixin)
 
         if listener in self.__listeners:
-            raise ValueError("listener already added")
+            return self.get_token(listener)
 
         listeners = self.__listeners
         reacting = self.__reacting
@@ -293,7 +274,7 @@ class EventEmitter(Slotted):
             self.__reacting.discard(listener)
 
     def get_token(self, listener):
-        # type: (ListenerToken) -> None
+        # type: (EventListenerMixin) -> ListenerToken
         """Get token for listener."""
         return self.__listeners[listener]
 
@@ -313,14 +294,6 @@ class EventEmitter(Slotted):
         return self.__internal
 
     @property
-    def obj(self):
-        # type: () -> CompositeMixin
-        """Source object."""
-        broadcaster = self.__broadcaster
-        if broadcaster is not None:
-            return broadcaster.obj
-
-    @property
     def listeners(self):
         # type: () -> FrozenSet[EventListenerMixin, ...]
         """Listeners."""
@@ -328,7 +301,7 @@ class EventEmitter(Slotted):
 
     @property
     def emitting(self):
-        # type: () -> Optional[Event]
+        # type: () -> Optional[Any]
         """Event currently being emitted."""
         return self.__emitting
 
@@ -339,24 +312,24 @@ class EventEmitter(Slotted):
         return self.__emitting_phase
 
 
-class Event(Slotted):
-    """Abstract event."""
-
-    __slots__ = ()
-
-    @property
-    def type(self):
-        # type: () -> Type[Event]
-        """Event type."""
-        return type(self)
-
-
 class BroadcasterException(ModeloException):
     """Broadcaster exception."""
 
 
 class BroadcasterError(ModeloError, BroadcasterException):
     """Broadcaster error."""
+
+
+class AlreadyEmittingError(BroadcasterError):
+    """Raised when trying to emit during an ongoing emission."""
+
+
+class NonInternalEmitterError(BroadcasterError):
+    """Raised when trying to perform internal emission from a non-internal emitter."""
+
+
+class PhaseError(BroadcasterError):
+    """Raised when the current phase is not the expected one."""
 
 
 class StopEventPropagationException(BroadcasterException):
