@@ -100,7 +100,8 @@ class History(Slotted):
         # type: () -> None
         """Execute queued flush requests."""
         if self.__running:
-            raise RuntimeError("can't flush during execution")
+            error = "can't flush during execution"
+            raise RuntimeError(error)
         if self.__flush_later:
             self.flush()
         elif self.__flush_redo_later:

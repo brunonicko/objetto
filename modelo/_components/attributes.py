@@ -152,7 +152,8 @@ def _make_access_object(
     elif access_type is AttributeAccessType.DELETER:
         delegate = attribute.fdel
     else:
-        raise ValueError("invalid access type {}".format(access_type))
+        error = "invalid access type {}".format(access_type)
+        raise ValueError(error)
 
     # Build properties' functions according to dependencies declared in the delegate
     dct = {"__slots__": ()}

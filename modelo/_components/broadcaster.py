@@ -117,7 +117,8 @@ class ListenerToken(Slotted):
         emitter = self.__emitter_ref()
         if emitter is not None:
             return emitter
-        raise ReferenceError("emitter is no longer alive")
+        error = "emitter is no longer alive"
+        raise ReferenceError(error)
 
     @property
     def listener(self):
@@ -126,7 +127,8 @@ class ListenerToken(Slotted):
         listener = self.__listener_ref()
         if listener is not None:
             return listener
-        raise ReferenceError("listener is no longer alive")
+        error = "listener is no longer alive"
+        raise ReferenceError(error)
 
 
 class EventEmitter(Slotted):
@@ -285,7 +287,8 @@ class EventEmitter(Slotted):
         broadcaster = self.__broadcaster_ref()
         if broadcaster is not None:
             return broadcaster
-        raise ReferenceError("broadcaster is no longer alive")
+        error = "broadcaster is no longer alive"
+        raise ReferenceError(error)
 
     @property
     def internal(self):

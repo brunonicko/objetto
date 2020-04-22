@@ -50,35 +50,32 @@ class Hierarchy(Slotted):
             if count == 1:
                 child_parent = child_hierarchy.parent
                 if child_parent is not None:
-                    raise AlreadyParentedError(
-                        "{} is already parented to {}, cannot parent it to {}".format(
-                            child, child_parent, self.obj
-                        )
-                    )
+                    error = (
+                        "{} is already parented to {}, cannot parent it to {}"
+                    ).format(child, child_parent, self.obj)
+                    raise AlreadyParentedError(error)
                 for parent in self.iter_up():
                     if parent is child:
-                        raise ParentCycleError(
-                            "parent cycle detected between {} and {}".format(
-                                child, self.obj
-                            )
+                        error = "parent cycle detected between {} and {}".format(
+                            child, self.obj
                         )
+                        raise ParentCycleError(error)
                 adoptions.add(child)
             elif count == -1:
                 if not self.has_child(child):
-                    raise NotParentedError(
-                        "{} is not a child of {}".format(child, self.obj)
-                    )
+                    error = "{} is not a child of {}".format(child, self.obj)
+                    raise NotParentedError(error)
                 releases.add(child)
             elif count > 1:
-                raise MultipleParentingError(
-                    "{} cannot be parented to {} more than once".format(child, self.obj)
+                error = "{} cannot be parented to {} more than once".format(
+                    child, self.obj
                 )
+                raise MultipleParentingError(error)
             elif count < -1:
-                raise MultipleUnparentingError(
-                    "{} cannot be unparented from {} more than once".format(
-                        child, self.obj
-                    )
+                error = "{} cannot be unparented from {} more than once".format(
+                    child, self.obj
                 )
+                raise MultipleUnparentingError(error)
         return ChildrenUpdates(
             adoptions=frozenset(adoptions), releases=frozenset(releases)
         )

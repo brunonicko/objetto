@@ -5,7 +5,7 @@ from ._components.broadcaster import (
     EventPhase,
     EventListenerMixin,
     StopEventPropagationException,
-    RejectEventException
+    RejectEventException,
 )
 from ._models.object import AttributesUpdateEvent
 from ._models.sequence import (

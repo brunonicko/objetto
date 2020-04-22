@@ -125,7 +125,7 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         """Get string representation."""
         return "<{}{}>".format(
             type(self).__name__,
-            " {}".format(self.__state) if self.__printed and self.__state else ""
+            " {}".format(self.__state) if self.__printed and self.__state else "",
         )
 
     def __eq__(self, other):

@@ -169,7 +169,8 @@ class AttributeDescriptor(Slotted):
                     return constants[name]
             return self
         if name is None:
-            raise RuntimeError("attribute has no owner")
+            error = "attribute has no owner"
+            raise RuntimeError(error)
         try:
             return model[name]
         except KeyError as e:
@@ -182,7 +183,8 @@ class AttributeDescriptor(Slotted):
         """Descriptor 'set' access."""
         name = self.__name
         if name is None:
-            raise RuntimeError("attribute has no owner")
+            error = "attribute has no owner"
+            raise RuntimeError(error)
         model[name] = value
 
     def __delete__(self, model):
@@ -190,7 +192,8 @@ class AttributeDescriptor(Slotted):
         """Descriptor 'delete' access."""
         name = self.__name
         if name is None:
-            raise RuntimeError("attribute has no owner")
+            error = "attribute has no owner"
+            raise RuntimeError(error)
         try:
             del model[name]
         except KeyError as e:
@@ -203,11 +206,10 @@ class AttributeDescriptor(Slotted):
         """Set ownership & name, and build attribute."""
         if self.__owner is not None and self.__name is not None:
             if owner is not self.__owner or name != self.__name:
-                raise NameError(
-                    "can't re-use attribute descriptor '{}.{}' as '{}.{}'".format(
-                        self.__owner.__name__, self.__name, owner.__name__, name
-                    )
+                error = "can't re-use attribute descriptor '{}.{}' as '{}.{}'".format(
+                    self.__owner.__name__, self.__name, owner.__name__, name
                 )
+                raise NameError(error)
         if owner is self.__owner and name == self.__name:
             return
         self.__owner = owner
@@ -259,15 +261,13 @@ class AttributeDescriptor(Slotted):
         # type: (Union[Callable, AttributeDelegate]) -> AttributeDescriptor
         """Assign a 'getter' function/delegate by decorating it."""
         if not self.__delegated:
-            raise RuntimeError(
-                "cannot define a getter for a non-delegated attribute '{}'".format(
-                    self.__name
-                )
+            error = "cannot define a getter for a non-delegated attribute '{}'".format(
+                self.__name
             )
+            raise RuntimeError(error)
         if self.__fget is not None:
-            raise RuntimeError(
-                "already defined a getter for attribute '{}'".format(self.__name)
-            )
+            error = "already defined a getter for attribute '{}'".format(self.__name)
+            raise RuntimeError(error)
 
         if not isinstance(func, AttributeDelegate):
             fget = AttributeDelegate(func)
@@ -275,15 +275,17 @@ class AttributeDescriptor(Slotted):
             fget = func
 
         if fget.sets:
-            raise ValueError(
-                "error while defining a getter delegate for attribute '{}', can't "
-                "have 'sets' dependencies".format(self.__name)
-            )
+            error = (
+                "error while defining a getter delegate for attribute '{}', can't have "
+                "'sets' dependencies"
+            ).format(self.__name)
+            raise ValueError(error)
         if fget.deletes:
-            raise ValueError(
-                "error while defining a getter delegate for attribute '{}', can't "
-                "have 'deletes' dependencies".format(self.__name)
-            )
+            error = (
+                "error while defining a getter delegate for attribute '{}', can't have "
+                "'deletes' dependencies"
+            ).format(self.__name)
+            raise ValueError(error)
 
         self.__fget = fget
         return self
@@ -292,15 +294,13 @@ class AttributeDescriptor(Slotted):
         # type: (Callable) -> AttributeDescriptor
         """Assign a 'setter' function/delegate by decorating it."""
         if not self.__delegated:
-            raise RuntimeError(
-                "cannot define a setter for a non-delegated attribute '{}'".format(
-                    self.__name
-                )
+            error = "cannot define a setter for a non-delegated attribute '{}'".format(
+                self.__name
             )
+            raise RuntimeError(error)
         if self.__fset is not None:
-            raise RuntimeError(
-                "already defined a setter for attribute '{}'".format(self.__name)
-            )
+            error = "already defined a setter for attribute '{}'".format(self.__name)
+            raise RuntimeError(error)
 
         if not isinstance(func, AttributeDelegate):
             fset = AttributeDelegate(func)
@@ -314,15 +314,13 @@ class AttributeDescriptor(Slotted):
         # type: (Callable) -> AttributeDescriptor
         """Assign a 'deleter' function/delegate by decorating it."""
         if not self.__delegated:
-            raise RuntimeError(
-                "cannot define a deleter for a non-delegated attribute '{}'".format(
-                    self.__name
-                )
+            error = "cannot define a deleter for a non-delegated attribute '{}'".format(
+                self.__name
             )
+            raise RuntimeError(error)
         if self.__fdel is not None:
-            raise RuntimeError(
-                "already defined a deleter for attribute '{}'".format(self.__name)
-            )
+            error = "already defined a deleter for attribute '{}'".format(self.__name)
+            raise RuntimeError(error)
 
         if not isinstance(func, AttributeDelegate):
             fdel = AttributeDelegate(func)
@@ -363,7 +361,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> Attribute
         """State attribute."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute
 
     @property
@@ -377,7 +376,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> Type[ObjectModel]
         """Owner class."""
         if self.__owner is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__owner
 
     @property
@@ -385,7 +385,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> str
         """Owner class."""
         if self.__name is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__name
 
     @property
@@ -393,7 +394,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> Optional[Union[UType, Iterable[UType, ...]]]
         """Value type."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.value_type
 
     @property
@@ -401,7 +403,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> Optional[Callable]
         """Value factory."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.value_factory
 
     @property
@@ -409,7 +412,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> Optional[Union[UType, Iterable[UType, ...]]]
         """Exact value type."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.exact_value_type
 
     @property
@@ -417,7 +421,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> Optional[str]
         """Default module name for type checking."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.default_module
 
     @property
@@ -425,7 +430,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether None can be accepted as a value."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.accepts_none
 
     @property
@@ -433,7 +439,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether this is leveraged in state's '__eq__' method."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.comparable
 
     @property
@@ -441,7 +448,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether this is leveraged in state's '__repr__' method."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.represented
 
     @property
@@ -449,7 +457,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether this is leveraged in state's '__str__' method."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.printed
 
     @property
@@ -492,7 +501,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether attribute access is considered 'public'."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.public
 
     @property
@@ -500,7 +510,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether attribute access is considered 'magic'."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.magic
 
     @property
@@ -508,7 +519,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether attribute access is considered 'private'."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.private
 
     @property
@@ -516,7 +528,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether attribute access is considered 'protected'."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.protected
 
     @property
@@ -524,7 +537,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether this attribute is readable."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.readable
 
     @property
@@ -532,7 +546,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether this attribute is settable."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.settable
 
     @property
@@ -540,7 +555,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether this attribute is deletable."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__attribute.deletable
 
     @property
@@ -548,7 +564,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether model used as value should attach as a child."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__parent
 
     @property
@@ -556,7 +573,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether model used as value should be assigned to the same history."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__history
 
     @property
@@ -564,7 +582,8 @@ class AttributeDescriptor(Slotted):
         # type: () -> bool
         """Whether this attribute can't be overridden by sub-classes."""
         if self.__attribute is None:
-            raise RuntimeError("attribute descriptor has no owner")
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
         return self.__final
 
 
@@ -590,11 +609,10 @@ def _make_object_model_class(
         for member_name, member in iteritems(base.__dict__):
             if base is cls and attributes:
                 if getattr(attributes.get(member_name, None), "final", False):
-                    raise TypeError(
-                        "can't override final attribute descriptor '{}'".format(
-                            member_name
-                        )
+                    error = "can't override final attribute descriptor '{}'".format(
+                        member_name
                     )
+                    raise TypeError(error)
             if isinstance(member, AttributeDescriptor):
                 if isinstance(base, ObjectModelMeta):
                     attributes[member_name] = member
@@ -604,10 +622,11 @@ def _make_object_model_class(
                     attributes[member_name] = member_copy = member.copy()
                     member_copy.__set_owner__(base, member_name)
             elif member_name in attributes:
-                raise TypeError(
+                error = (
                     "can't override attribute descriptor '{}' with a non-attribute of "
-                    "type '{}'".format(member_name, type(member).__name__)
-                )
+                    "type '{}'"
+                ).format(member_name, type(member).__name__)
+                raise TypeError(error)
 
     # Make object state class and store it
     state_class = make_object_state_class(
@@ -621,17 +640,19 @@ def _make_object_model_class(
         # Constant attribute
         if attribute_name in state_class.constants:
             if attribute.parent:
-                raise ValueError(
-                    "the 'fget' delegate for attribute '{}' does not declare any"
-                    "'get' dependencies (it is a constant), so its 'parent' parameter "
-                    "can't be set to True".format(attribute_name)
-                )
+                error = (
+                    "the 'fget' delegate for attribute '{}' does not declare any 'get' "
+                    "dependencies (it is a constant), so its 'parent' parameter can't "
+                    "be set to True"
+                ).format(attribute_name)
+                raise ValueError(error)
             if attribute.history:
-                raise ValueError(
-                    "the 'fget' delegate for attribute '{}' does not declare any"
-                    "'get' dependencies (it is a constant), so its 'history' parameter "
-                    "can't be set to True".format(attribute_name)
-                )
+                error = (
+                    "the 'fget' delegate for attribute '{}' does not declare any 'get' "
+                    "dependencies (it is a constant), so its 'history' parameter can't "
+                    "be set to True"
+                ).format(attribute_name)
+                raise ValueError(error)
 
     return cls
 

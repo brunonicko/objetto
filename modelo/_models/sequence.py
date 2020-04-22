@@ -237,14 +237,16 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             elif index > state_len:
                 index = state_len
         elif index < 0 or index >= state_len:
-            raise IndexError("index out of range")
+            error = "index out of range"
+            raise IndexError(error)
         return index
 
     def __prepare_insert(self, index, *new_values):
         # type: (int, Tuple) -> Tuple[SequenceInsert, SequencePop]
         """Prepare insert operation."""
         if not new_values:
-            raise ValueError("no values provided")
+            error = "no values provided"
+            raise ValueError(error)
         new_values = tuple(self.__factory__(value) for value in new_values)
         index = self.__normalize_index(index, clamp=True)
         last_index = index + len(new_values) - 1
@@ -292,7 +294,8 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
                 last_index=target_index,
             )
         else:
-            raise IndexError("target index is within range of index and last index")
+            error = "target index is within range of index and last index"
+            raise IndexError(error)
         return (
             SequenceMove(
                 index=index,
@@ -307,7 +310,8 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         # type: (int, Tuple[Any, ...]) -> Tuple[SequenceChange, SequenceChange]
         """Prepare change operation."""
         if not new_values:
-            raise ValueError("no values provided")
+            error = "no values provided"
+            raise ValueError(error)
         index = self.__normalize_index(index)
         new_values = tuple(self.__factory__(value) for value in new_values)
         last_index = self.__normalize_index(index + len(new_values) - 1)

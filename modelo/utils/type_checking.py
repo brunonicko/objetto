@@ -37,10 +37,11 @@ def resolve_dot_path(dot_path, default_module_name=None):
     if "." not in dot_path:
         if default_module_name is not None:
             dot_path = "{}.{}".format(default_module_name, dot_path)
-        raise ValueError(
+        error = (
             "dot path '{}' does not contain a dot and no default module name was "
-            "provided".format(dot_path)
-        )
+            "provided"
+        ).format(dot_path)
+        raise ValueError(error)
 
     parts = dot_path.split(".")
     package_name = parts[0]
@@ -64,9 +65,8 @@ def resolve_dot_path(dot_path, default_module_name=None):
     try:
         obj = getattr(module, obj_name)
     except AttributeError:
-        raise AttributeError(
-            "obj named '{}' not found in module '{}'".format(obj_name, module_name)
-        )
+        error = "obj named '{}' not found in module '{}'".format(obj_name, module_name)
+        raise AttributeError(error)
     return obj
 
 
@@ -173,7 +173,7 @@ def assert_is_unresolved_type(types):
     # type: (Union[UnresolvedType, Iterable[UnresolvedType, ...]]) -> None
     """Assert value provided to 'types' parameter is valid."""
     if not is_unresolved_type(types):
-        raise TypeError(
-            "expected valid type(s) and/or dot path(s) for type checking, "
-            "got {}".format(types)
-        )
+        error = (
+            "expected valid type(s) and/or dot path(s) for type checking, got {}"
+        ).format(types)
+        raise TypeError(error)
