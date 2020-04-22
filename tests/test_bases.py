@@ -7,6 +7,7 @@ __all__ = ["TestBases"]
 
 class TestBases(unittest.TestCase):
     """Tests for '_bases' module."""
+
     pass
 
 

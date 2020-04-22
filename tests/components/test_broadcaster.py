@@ -10,7 +10,11 @@ class TestBroadcaster(unittest.TestCase):
 
     def test_broadcaster(self):
         from modelo._components.broadcaster import (
-            Broadcaster, InternalBroadcaster, EventListenerMixin, EventPhase, PhaseError
+            Broadcaster,
+            InternalBroadcaster,
+            EventListenerMixin,
+            EventPhase,
+            PhaseError,
         )
 
         event, phase = None, None

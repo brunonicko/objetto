@@ -17,6 +17,7 @@ from .container import ContainerModelMeta, ContainerModel
 __all__ = [
     "SequenceInsertEvent",
     "SequencePopEvent",
+    "SequenceMoveEvent",
     "SequenceChangeEvent",
     "SequenceModelMeta",
     "SequenceModel",

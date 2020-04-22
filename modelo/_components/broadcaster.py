@@ -24,7 +24,7 @@ __all__ = [
     "NonInternalEmitterError",
     "PhaseError",
     "StopEventPropagationException",
-    "RejectEventException"
+    "RejectEventException",
 ]
 
 
@@ -346,10 +346,17 @@ class RejectEventException(BroadcasterException):
 
     def __init__(self, callback=None):
         # type: (Optional[Callable]) -> None
+        """Initialize with an optional callback."""
         super(RejectEventException, self).__init__()
+        if callback is not None and not callable(callback):
+            error = (
+                "expected None or a callable for 'callback' parameter, got '{}'"
+            ).format(type(callback).__name__)
+            raise TypeError(error)
         self.__callback = callback
 
     @property
     def callback(self):
         # type: () -> Optional[Callable]
+        """Callback."""
         return self.__callback

@@ -11,15 +11,21 @@ class TestSequenceModel(unittest.TestCase):
     def test_sequence_model(self):
         from modelo.models import SequenceModel
 
-        s = SequenceModel()
+        sa = SequenceModel(parent=True)
+        sb = SequenceModel(parent=True)
 
-        print(list(s))
-        s._insert(0, *[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-        print(list(s))
-        s._move(2, 1, 5)
-        print(list(s))
-        s._move(1, 6, 4)
-        print(list(s))
+        print(sa)
+        sa._insert(0, *[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, sb])
+        print(sa)
+        print(sb._hierarchy.parent)
+        sa._move(2, 1, 5)
+        print(sa)
+        sa._move(1, 6, 4)
+        print(sa)
+        sa._pop()
+        print(sa)
+        sa._pop(0, -1)
+        print(sa)
 
 
 if __name__ == "__main__":

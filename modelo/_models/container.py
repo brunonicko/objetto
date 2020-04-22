@@ -30,6 +30,8 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         "__exact_value_type",
         "__default_module",
         "__accepts_none",
+        "__represented",
+        "__printed",
         "__parent",
         "__history",
     )
@@ -42,6 +44,8 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
         default_module=None,  # type: Optional[str]
         accepts_none=None,  # type: Optional[bool]
+        represented=False,  # type: bool
+        printed=True,  # type: bool
         parent=False,  # type: bool
         history=False,  # type: bool
     ):
@@ -95,6 +99,10 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
             raise TypeError(error)
         self.__value_factory = value_factory
 
+        # Store 'represented' and 'printed'
+        self.__represented = bool(represented)
+        self.__printed = bool(printed)
+
         # Store 'parent' and 'history'
         self.__parent = bool(parent)
         self.__history = bool(history)
@@ -103,19 +111,22 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
     def __repr__(self):
         # type: () -> str
         """Get representation."""
-        return "<{}.{} object at {}{}{}>".format(
-            type(self).__module__,
+        module = type(self).__module__
+        return "<{}{} object at {}{}>".format(
+            "{}.".format(module) if "_" not in module else "",
             type(self).__name__,
             hex(id(self)),
-            " | " if self.__state else "",
-            self.__state or "",
+            " | {}".format(self.__state) if self.__represented and self.__state else "",
         )
 
     @recursive_repr
     def __str__(self):
         # type: () -> str
         """Get string representation."""
-        return "{}({})".format(type(self).__name__, self.__state)
+        return "<{}{}>".format(
+            type(self).__name__,
+            " {}".format(self.__state) if self.__printed and self.__state else ""
+        )
 
     def __eq__(self, other):
         # type: (ContainerModel) -> bool
@@ -193,6 +204,18 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         # type: () -> bool
         """Whether None can be accepted as a value."""
         return self.__accepts_none
+
+    @property
+    def represented(self):
+        # type: () -> bool
+        """Whether this is leveraged in state's '__repr__' method."""
+        return self.__represented
+
+    @property
+    def printed(self):
+        # type: () -> bool
+        """Whether this is leveraged in state's '__str__' method."""
+        return self.__printed
 
     @property
     def parent(self):

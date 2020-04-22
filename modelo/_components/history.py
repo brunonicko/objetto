@@ -35,7 +35,7 @@ class History(Slotted):
         "__batch",
         "__batches",
         "__flush_later",
-        "__flush_redo_later"
+        "__flush_redo_later",
     )
 
     def __init__(self, size=0):

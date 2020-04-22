@@ -2,7 +2,7 @@
 """Partials."""
 
 from functools import partial
-from typing import Callable, Tuple
+from typing import Any, Callable, Tuple, Dict
 
 __all__ = ["Partial"]
 
@@ -17,11 +17,11 @@ class ConcatenatedCallables(object):
         """Initialize with callables."""
         self.callables = callables
 
-    def __call__(self):
-        # type: () -> None
+    def __call__(self, *args, **kwargs):
+        # type: (Tuple, Dict[str, Any]) -> None
         """Call callables in order."""
         for func in self.callables:
-            func()
+            func(*args, **kwargs)
 
 
 class Partial(partial):

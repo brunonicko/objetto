@@ -22,7 +22,11 @@ from slotted import Slotted
 from collections import Counter
 
 from .._components.attributes import (
-    SpecialValue, ObjectState, Attribute, AttributeDelegate, make_object_state_class
+    SpecialValue,
+    ObjectState,
+    Attribute,
+    AttributeDelegate,
+    make_object_state_class,
 )
 from ..utils.type_checking import UnresolvedType as UType
 from ..utils.wrapped_dict import WrappedDict
@@ -87,7 +91,7 @@ class AttributeDescriptor(Slotted):
         "__fget",
         "__fset",
         "__fdel",
-        "__attribute"
+        "__attribute",
     )
 
     def __init__(
@@ -133,14 +137,10 @@ class AttributeDescriptor(Slotted):
             "comparable": comparable,
             "represented": represented,
             "printed": printed,
-            "delegated": delegated
+            "delegated": delegated,
         }
         self.__kwargs = kwargs = dict(attribute_kwargs)
-        kwargs.update({
-            "parent": parent,
-            "history": history,
-            "final": final
-        })
+        kwargs.update({"parent": parent, "history": history, "final": final})
 
         # Delegate-only parameters
         self.__parent = parent
@@ -223,7 +223,7 @@ class AttributeDescriptor(Slotted):
                     self.__fget.func,
                     gets=frozenset(
                         privatize_name(owner.__name__, n) for n in self.__fget.gets
-                    )
+                    ),
                 )
                 attribute.getter(fget)
             if self.__fset is not None:
@@ -237,7 +237,7 @@ class AttributeDescriptor(Slotted):
                     ),
                     deletes=frozenset(
                         privatize_name(owner.__name__, n) for n in self.__fset.deletes
-                    )
+                    ),
                 )
                 attribute.setter(fset)
             if self.__fdel is not None:
@@ -251,7 +251,7 @@ class AttributeDescriptor(Slotted):
                     ),
                     deletes=frozenset(
                         privatize_name(owner.__name__, n) for n in self.__fdel.deletes
-                    )
+                    ),
                 )
                 attribute.deleter(fdel)
 
@@ -338,17 +338,14 @@ class AttributeDescriptor(Slotted):
         copy = type(self)(**self.__kwargs)
         if self.__delegated:
             if self.__fget is not None:
-                fget = AttributeDelegate(
-                    self.__fget.func,
-                    gets=self.__fget.gets
-                )
+                fget = AttributeDelegate(self.__fget.func, gets=self.__fget.gets)
                 copy.getter(fget)
             if self.__fset is not None:
                 fset = AttributeDelegate(
                     self.__fset.func,
                     gets=self.__fset.gets,
                     sets=self.__fset.sets,
-                    deletes=self.__fset.deletes
+                    deletes=self.__fset.deletes,
                 )
                 copy.setter(fset)
             if self.__fdel is not None:
@@ -356,7 +353,7 @@ class AttributeDescriptor(Slotted):
                     self.__fdel.func,
                     gets=self.__fdel.gets,
                     sets=self.__fdel.sets,
-                    deletes=self.__fdel.deletes
+                    deletes=self.__fdel.deletes,
                 )
                 copy.deleter(fdel)
         return copy
@@ -592,9 +589,7 @@ def _make_object_model_class(
     for base in reversed(cls.__mro__):
         for member_name, member in iteritems(base.__dict__):
             if base is cls and attributes:
-                if getattr(
-                    attributes.get(member_name, None), "final", False
-                ):
+                if getattr(attributes.get(member_name, None), "final", False):
                     raise TypeError(
                         "can't override final attribute descriptor '{}'".format(
                             member_name
@@ -684,13 +679,13 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
     def __repr__(self):
         # type: () -> str
         """Get representation."""
+        module = type(self).__module__
         repr_dict = self.__state.get_dict(attribute_sieve=lambda a: a.represented)
-        return "<{}.{} object at {}{}{}>".format(
-            type(self).__module__,
+        return "<{}{} object at {}{}>".format(
+            "{}.".format(module) if "_" not in module else "",
             type(self).__name__,
             hex(id(self)),
-            " | " if repr_dict else "",
-            object_repr(**repr_dict) if repr_dict else ""
+            " | {}".format(object_repr(**repr_dict)) if repr_dict else "",
         )
 
     @recursive_repr
@@ -698,7 +693,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         # type: () -> str
         """Get string representation."""
         str_dict = self.__state.get_dict(attribute_sieve=lambda a: a.printed)
-        return "{}({})".format(type(self).__name__, object_repr(**str_dict))
+        return "<{}{}>".format(type(self).__name__, object_repr(**str_dict))
 
     def __eq__(self, other):
         # type: (ObjectModel) -> bool
@@ -765,14 +760,14 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
             new_values=redo_update,
-            old_values=undo_update
+            old_values=undo_update,
         )
         undo_event = AttributesUpdateEvent(
             model=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
             new_values=undo_update,
-            old_values=redo_update
+            old_values=redo_update,
         )
 
         # Dispatch
