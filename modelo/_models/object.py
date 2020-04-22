@@ -618,7 +618,7 @@ def _make_object_model_class(
     state_class = make_object_state_class(
         *(a.__attribute__ for a in itervalues(attributes))
     )
-    type.__setattr__(cls, "__state_class__", state_class)
+    type.__setattr__(cls, "__state_type__", state_class)
 
     # Check delegate-specific attribute rules
     for attribute_name, attribute in iteritems(attributes):
@@ -647,7 +647,7 @@ class ObjectModelMeta(ModelMeta):
     __new__ = staticmethod(_make_object_model_class)
 
     __attributes__ = {}  # type: Mapping[str, AttributeDescriptor]
-    __state_class__ = ObjectState
+    __state_type__ = ObjectState
 
     @property
     def attributes(cls):
@@ -659,26 +659,26 @@ class ObjectModelMeta(ModelMeta):
     def dependencies(cls):
         # type: () -> Mapping[str, FrozenSet[str, ...]]
         """Get dependencies."""
-        return cls.__state_class__.dependencies
+        return cls.__state_type__.dependencies
 
     @property
     def constants(cls):
         # type: () -> Mapping[str, Any]
         """Get constant values."""
-        return cls.__state_class__.constants
+        return cls.__state_type__.constants
 
 
 class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
     """Model described by attributes."""
 
     __slots__ = ("__state",)
-    __state_class__ = ObjectState
+    __state_type__ = ObjectState
 
     def __init__(self):
         # type: () -> None
         """Initialize."""
         super(ObjectModel, self).__init__()
-        self.__state = type(self).__state_class__(self)
+        self.__state = type(self).__state_type__(self)
 
     @recursive_repr
     def __repr__(self):
@@ -761,10 +761,18 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
             self.__state.update, undo_update
         )
         redo_event = AttributesUpdateEvent(
-            self, redo_children, undo_children, redo_update, undo_update
+            model=self,
+            adoptions=redo_children.adoptions,
+            releases=redo_children.releases,
+            new_values=redo_update,
+            old_values=undo_update
         )
         undo_event = AttributesUpdateEvent(
-            self, undo_children, redo_children, undo_update, redo_update
+            model=self,
+            adoptions=undo_children.adoptions,
+            releases=undo_children.releases,
+            new_values=undo_update,
+            old_values=redo_update
         )
 
         # Dispatch

@@ -58,7 +58,7 @@ __all__ = [
     "IncompatibleParametersError",
     "IncompatibleDependenciesError",
     "MissingDependencyError",
-    "SpecialValueError"
+    "SpecialValueError",
 ]
 
 ATTRIBUTE_NAME_REGEX = re.compile(r"^[^\d\W]\w*\Z", re.UNICODE)

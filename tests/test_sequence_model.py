@@ -9,24 +9,17 @@ class TestSequenceModel(unittest.TestCase):
     """Tests for '_sequence_model' module."""
 
     def test_sequence_model(self):
-        from modelo._sequence_model import SequenceModel
-        from modelo._runner import History
+        from modelo.models import SequenceModel
 
         s = SequenceModel()
-        h = History()
-        s.__runner__.history = h
 
         print(list(s))
-        s._insert(0, 1, 2, 3, 4, 5)
+        s._insert(0, *[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         print(list(s))
-        s._pop(2, 2)
+        s._move(2, 1, 5)
         print(list(s))
-        h.undo()
+        s._move(1, 6, 4)
         print(list(s))
-        h.undo()
-        print(list(s))
-
-        print(hash(s))
 
 
 if __name__ == "__main__":

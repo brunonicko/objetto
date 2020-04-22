@@ -24,7 +24,7 @@ __all__ = [
     "NonInternalEmitterError",
     "PhaseError",
     "StopEventPropagationException",
-    "RejectEventException",
+    "RejectEventException"
 ]
 
 
