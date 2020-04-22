@@ -9,6 +9,7 @@ from typing import Iterator, Optional, FrozenSet
 from slotted import Slotted
 
 from .._base.exceptions import ModeloException, ModeloError
+from .._base.constants import DEAD_REF
 
 __all__ = [
     "Hierarchy",
@@ -23,8 +24,6 @@ __all__ = [
     "MultipleParentingError",
     "MultipleUnparentingError",
 ]
-
-DEAD_REF = ref(type("DeadRef", (object,), {"__slots__": ("__weakref__",)})())
 
 
 class Hierarchy(Slotted):

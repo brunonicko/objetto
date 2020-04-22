@@ -6,7 +6,7 @@ __all__ = ["TestHierarchy"]
 
 
 class TestHierarchy(unittest.TestCase):
-    """Tests for '_hierarchy' module."""
+    """Tests for 'modelo._components.hierarchy' module."""
 
     pass
 

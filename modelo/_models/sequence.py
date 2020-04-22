@@ -6,8 +6,9 @@ try:
 except ImportError:
     import collections as collections_abc
 from collections import namedtuple
+from itertools import chain
 from six import with_metaclass
-from typing import Tuple, Any, Optional, FrozenSet, List, Union, cast
+from typing import Tuple, Callable, Any, Optional, FrozenSet, List, Union, cast
 from collections import Counter
 
 from ..utils.partial import Partial
@@ -21,6 +22,7 @@ __all__ = [
     "SequenceChangeEvent",
     "SequenceModelMeta",
     "SequenceModel",
+    "MutableSequenceModel",
 ]
 
 
@@ -263,7 +265,9 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             last_index = index
         else:
             last_index = self.__normalize_index(last_index)
-        old_values = tuple(self.__state[index : last_index + 1])
+        old_values = tuple(
+            self.__state[index : last_index + 1]
+        )  # TODO: normalize range
         return (
             SequencePop(index=index, last_index=last_index, old_values=old_values),
             SequenceInsert(index=index, last_index=last_index, new_values=old_values),
@@ -278,7 +282,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             last_index = index
         else:
             last_index = self.__normalize_index(last_index)
-        values = tuple(self.__state[index : last_index + 1])
+        values = tuple(self.__state[index : last_index + 1])  # TODO: normalize range
         if target_index < index:
             undo_move = SequenceMove(
                 index=target_index,
@@ -374,12 +378,20 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
 
         # Count children
         child_count = Counter()
-        if self.parent:
+        if self._parameters.parent:
             for value in redo_insert.new_values:
                 if isinstance(value, Model):
                     child_count[value] += 1
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
+
+        # Prepare history adopters
+        history_adopters = set()
+        if self._parameters.history:
+            for value in redo_insert.new_values:
+                if isinstance(value, Model):
+                    history_adopters.add(value)
+        history_adopters = frozenset(history_adopters)
 
         # Create partials
         redo = Partial(hierarchy.update_children, redo_children) + Partial(
@@ -408,7 +420,9 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         )
 
         # Dispatch
-        self.__dispatch__("Insert Values", redo, redo_event, undo, undo_event)
+        self.__dispatch__(
+            "Insert Values", redo, redo_event, undo, undo_event, history_adopters
+        )
 
     def _pop(self, index=-1, last_index=None):
         # type: (int, Optional[int]) -> Tuple[Any, ...]
@@ -422,12 +436,15 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
 
         # Count children
         child_count = Counter()
-        if self.parent:
+        if self._parameters.parent:
             for value in redo_pop.old_values:
                 if isinstance(value, Model):
                     child_count[value] -= 1
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
+
+        # No history adopters
+        history_adopters = frozenset()
 
         # Create partials
         redo = Partial(hierarchy.update_children, redo_children) + Partial(
@@ -456,7 +473,9 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         )
 
         # Dispatch
-        self.__dispatch__("Pop Values", redo, redo_event, undo, undo_event)
+        self.__dispatch__(
+            "Pop Values", redo, redo_event, undo, undo_event, history_adopters
+        )
 
         # Return old values
         return redo_pop.old_values
@@ -482,6 +501,9 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         redo_move, undo_move = self.__prepare_move(
             index, target_index, last_index=last_index
         )
+
+        # No history adopters
+        history_adopters = frozenset()
 
         # Create partials
         redo = Partial(self.__move, redo_move)
@@ -513,7 +535,9 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         )
 
         # Dispatch
-        self.__dispatch__("Move Values", redo, redo_event, undo, undo_event)
+        self.__dispatch__(
+            "Move Values", redo, redo_event, undo, undo_event, history_adopters
+        )
 
     def _change(self, index, *new_values):
         # type: (int, Tuple[Any, ...]) -> None
@@ -539,7 +563,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
 
         # Count children
         child_count = Counter()
-        if self.parent:
+        if self._parameters.parent:
             for value in redo_change.new_values:
                 if isinstance(value, Model):
                     child_count[value] += 1
@@ -548,6 +572,14 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
                     child_count[value] -= 1
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
+
+        # Prepare history adopters
+        history_adopters = set()
+        if self._parameters.history:
+            for value in redo_change.new_values:
+                if isinstance(value, Model):
+                    history_adopters.add(value)
+        history_adopters = frozenset(history_adopters)
 
         # Create events
         redo_event = SequenceChangeEvent(
@@ -570,13 +602,161 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         )
 
         # Dispatch
-        self.__dispatch__("Change Values", redo, redo_event, undo, undo_event)
+        self.__dispatch__(
+            "Change Values", redo, redo_event, undo, undo_event, history_adopters
+        )
+
+    def _append(self, *new_values):
+        # type: (Tuple[Any, ...]) -> None
+        """Insert values at the end of the sequence."""
+        self._insert(len(self), *new_values)
+
+    def _count(self, value):
+        # type: (Any) -> int
+        """Count occurrences of a value in the sequence."""
+        return self.__state.count(value)
+
+    def _extend(self, *iterables):
+        # type: (Any) -> None
+        """Extend the sequence with one or more iterables."""
+        if not iterables:
+            return
+        self._append(*chain(*iterables))
+
+    def _index(self, value, start=None, stop=None):
+        # type: (Any, Optional[int], Optional[int]) -> int
+        """Get the index of a value."""
+        if start is None and stop is None:
+            return self.__state.index(value)
+        elif start is not None and stop is None:
+            return self.__state.index(value, start)
+        elif start is not None and stop is not None:
+            return self.__state.index(value, start, stop)
+        else:
+            error = "provided 'stop' but did not provide 'start'"
+            raise ValueError(error)
+
+    def _remove(self, value, start=None, stop=None):
+        # type: (Any, Optional[int], Optional[int]) -> None
+        """Remove value from sequence."""
+        index = self._index(value, start=start, stop=stop)
+        self._pop(index)
+
+    def _reverse(self):
+        # type: () -> None
+        """Reverse values."""
+        self._extend(reversed(self._pop(0, -1)))
+
+    def _sort(self, key=None, reverse=False):
+        # type: (Optional[Callable], bool) -> None
+        """Sort values."""
+        self._extend(sorted(self._pop(0, -1), key=key, reverse=reverse))
 
     @property
     def __state(self):
         # type: () -> List
         """Internal state."""
         return cast(List, super(SequenceModel, self).__get_state__())
+
+
+class MutableSequenceModel(SequenceModel):
+    """Sequence model with public mutable methods."""
+
+    def __setitem__(self, item, value):
+        # type: (Union[slice, int], Any) -> None
+        """Change/insert value/values at index/range."""
+        if isinstance(item, slice):
+            index, stop, step = item.indices(len(self))
+            if step != 1:
+                error = "slice {} is not continuous".format(item)
+                raise IndexError(error)
+            if stop - index != len(value):
+                # Insert
+                if stop - index == 0:
+                    self.insert(index, *value)
+                else:
+                    error = "slice {} has a span of {}, but provided {} values".format(
+                        item, stop - index, len(value)
+                    )
+                    raise ValueError(error)
+            else:
+                # Change range
+                self.change(index, *value)
+        else:
+
+            # Change single
+            self.change(item.__index__(), value)
+
+    def __delitem__(self, item):
+        # type: (Union[slice, int]) -> None
+        """Pop value/values from index/range."""
+        if isinstance(item, slice):
+            index, stop, step = item.indices(len(self))
+            if step != 1:
+                error = "slice {} is not continuous".format(item)
+                raise IndexError(error)
+            if stop <= index:
+                return
+            # Pop range
+            self.pop(index, stop - 1)
+        else:
+            # Pop single
+            self.pop(item.__index__())
+
+    def insert(self, index, *new_values):
+        # type: (int, Tuple[Any, ...]) -> None
+        """Insert values at an index."""
+        self._insert(index, *new_values)
+
+    def pop(self, index=-1, last_index=None):
+        # type: (int, Optional[int]) -> Tuple[Any, ...]
+        """Pop a range of values out."""
+        return self._pop(index=index, last_index=last_index)
+
+    def move(self, index, target_index, last_index=None):
+        # type: (int, int, Optional[int]) -> None
+        """Move a range of values to a different index."""
+        self._move(index, target_index, last_index=last_index)
+
+    def change(self, index, *new_values):
+        # type: (int, Tuple[Any, ...]) -> None
+        """Change a range of values."""
+        self._change(index, *new_values)
+
+    def append(self, *new_values):
+        # type: (Tuple[Any, ...]) -> None
+        """Insert values at the end of the sequence."""
+        self._append(*new_values)
+
+    def count(self, value):
+        # type: (Any) -> int
+        """Count occurrences of a value in the sequence."""
+        return self._count(value)
+
+    def extend(self, *iterables):
+        # type: (Any) -> None
+        """Extend the sequence with one or more iterables."""
+        self._extend(*iterables)
+
+    def index(self, value, start=None, stop=None):
+        # type: (Any, Optional[int], Optional[int]) -> int
+        """Get the index of a value."""
+        return self._index(value, start=start, stop=stop)
+
+    def remove(self, value, start=None, stop=None):
+        # type: (Any, Optional[int], Optional[int]) -> None
+        """Remove value from sequence."""
+        self._remove(value, start=start, stop=stop)
+
+    def reverse(self):
+        # type: () -> None
+        """Reverse values."""
+        self._reverse()
+
+    def sort(self, key=None, reverse=False):
+        # type: (Optional[Callable], bool) -> None
+        """Sort values."""
+        self._sort(key=key, reverse=reverse)
 
 
 SequenceInsert = namedtuple("SequenceInsert", "index last_index new_values")

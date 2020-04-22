@@ -2,13 +2,13 @@
 
 import unittest
 
-__all__ = ["TestModel"]
+__all__ = ["TestObject"]
 
 
-class TestModel(unittest.TestCase):
-    """Tests for '_model' module."""
+class TestObject(unittest.TestCase):
+    """Tests for 'modelo._models.object' module."""
 
-    def test_model(self):
+    def test_usage(self):
         from modelo.models import ObjectModel
         from modelo.attributes import attribute
         from modelo._components.history import History
@@ -17,7 +17,7 @@ class TestModel(unittest.TestCase):
             name = attribute()
             sibling = attribute(parent=True)
 
-        history = History(size=500)
+        history = History()
 
         bruno = Person()
         bruno._history = history

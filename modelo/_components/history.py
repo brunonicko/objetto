@@ -28,6 +28,7 @@ class History(Slotted):
     """Keeps track of commands, allowing for undo/redo operations."""
 
     __slots__ = (
+        "__weakref__",
         "__size",
         "__undo_stack",
         "__redo_stack",
@@ -38,14 +39,10 @@ class History(Slotted):
         "__flush_redo_later",
     )
 
-    def __init__(self, size=0):
-        # type: (int) -> None
-        """Initialize with size."""
-        size = int(size)
-        if size < -1:
-            size = -1
-
-        self.__size = size
+    def __init__(self):
+        # type: () -> None
+        """Initialize."""
+        self.__size = 500
         self.__undo_stack = []
         self.__redo_stack = []
         self.__running = False
@@ -436,6 +433,18 @@ class History(Slotted):
             else:
                 flattened_commands.append(command)
         return tuple(flattened_commands)
+
+    @property
+    def can_redo(self):
+        # type: () -> bool
+        """Whether can redo."""
+        return self.current_index < len(self) - 1
+
+    @property
+    def can_undo(self):
+        # type: () -> bool
+        """Whether can undo."""
+        return self.current_index > 0
 
 
 class Command(SlottedABC):

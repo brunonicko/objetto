@@ -6,7 +6,7 @@ __all__ = ["TestBroadcaster"]
 
 
 class TestBroadcaster(unittest.TestCase):
-    """Tests for '_components.broadcaster' module."""
+    """Tests for 'modelo._components.broadcaster' module."""
 
     def test_broadcaster(self):
         from modelo._components.broadcaster import (

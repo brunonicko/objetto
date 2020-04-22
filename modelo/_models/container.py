@@ -7,6 +7,7 @@ except ImportError:
     import collections as collections_abc
 from six import with_metaclass, raise_from
 from typing import Any, Optional, Callable, Iterable, Union
+from slotted import Slotted
 
 from ..utils.type_checking import UnresolvedType as UType
 from ..utils.recursive_repr import recursive_repr
@@ -23,18 +24,7 @@ class ContainerModelMeta(ModelMeta):
 class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
     """Model that stores values in a mapping."""
 
-    __slots__ = (
-        "__state",
-        "__value_type",
-        "__value_factory",
-        "__exact_value_type",
-        "__default_module",
-        "__accepts_none",
-        "__represented",
-        "__printed",
-        "__parent",
-        "__history",
-    )
+    __slots__ = ("__state", "__parameters")
     __state_type__ = NotImplemented
 
     def __init__(
@@ -44,10 +34,11 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
         default_module=None,  # type: Optional[str]
         accepts_none=None,  # type: Optional[bool]
+        comparable=True,  # type: bool
         represented=False,  # type: bool
         printed=True,  # type: bool
-        parent=False,  # type: bool
-        history=False,  # type: bool
+        parent=True,  # type: bool
+        history=True,  # type: bool
     ):
         # type: (...) -> None
         """Initialize with parameters."""
@@ -59,6 +50,135 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
             error = "cannot instantiate abstract class '{}'".format(type(self).__name__)
             raise NotImplementedError(error)
         self.__state = state_type()
+
+        # Parameters
+        self.__parameters = ContainerModelParameters(
+            value_type=value_type,
+            value_factory=value_factory,
+            exact_value_type=exact_value_type,
+            default_module=default_module,
+            accepts_none=accepts_none,
+            comparable=comparable,
+            represented=represented,
+            printed=printed,
+            parent=parent,
+            history=history,
+        )
+
+    @recursive_repr
+    def __repr__(self):
+        # type: () -> str
+        """Get representation."""
+        module = type(self).__module__
+        return "<{}{} object at {}{}>".format(
+            "{}.".format(module) if "_" not in module else "",
+            type(self).__name__,
+            hex(id(self)),
+            (
+                " | {}".format(self.__state)
+                if self._parameters.represented and self.__state else ""
+            ),
+        )
+
+    @recursive_repr
+    def __str__(self):
+        # type: () -> str
+        """Get string representation."""
+        return "<{}{}>".format(
+            type(self).__name__,
+            (
+                " {}".format(self.__state)
+                if self._parameters.printed and self.__state else ""
+            ),
+        )
+
+    def __eq__(self, other):
+        # type: (ContainerModel) -> bool
+        """Compare for equality."""
+        if self is other:
+            return True
+        if not isinstance(other, type(self)):
+            return False
+        if not self.comparable or not other.comparable:
+            return False
+        self_state = self.__state
+        other_state = other.__state
+        return self_state == other_state
+
+    def __factory__(self, value):
+        # type: (Any) -> Any
+        """Fabricate value by running it through type checks and factory."""
+        if self._parameters.value_factory is not None:
+            value = self._parameters.value_factory(value)
+        try:
+            if self._parameters.value_type is not None:
+                assert_is_instance(
+                    value,
+                    self._parameters.value_type,
+                    optional=self._parameters.accepts_none,
+                    exact=False,
+                    default_module_name=self._parameters.default_module,
+                )
+            elif self._parameters.exact_value_type is not None:
+                assert_is_instance(
+                    value,
+                    self._parameters.exact_value_type,
+                    optional=self._parameters.accepts_none,
+                    exact=True,
+                    default_module_name=self._parameters.default_module,
+                )
+            elif not self._parameters.accepts_none and value is None:
+                error = "'{}' object does not accept None as a value".format(
+                    type(self).__name__
+                )
+                raise TypeError(error)
+        except TypeError as e:
+            exc = TypeError("{} in '{}' object".format(e, type(self).__name__))
+            raise_from(exc, None)
+            raise exc
+        return value
+
+    def __get_state__(self):
+        # type: () -> collections_abc.Container
+        """Get internal state."""
+        return self.__state
+
+    @property
+    def _parameters(self):
+        # type: () -> ContainerModelParameters
+        """Container parameters."""
+        return self.__parameters
+
+
+class ContainerModelParameters(Slotted):
+    """Holds parameter values for a container model."""
+
+    __slots__ = (
+        "__value_type",
+        "__value_factory",
+        "__exact_value_type",
+        "__default_module",
+        "__accepts_none",
+        "__comparable",
+        "__represented",
+        "__printed",
+        "__parent",
+        "__history",
+    )
+
+    def __init__(
+        self,
+        value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+        value_factory=None,  # type: Optional[Callable]
+        exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+        default_module=None,  # type: Optional[str]
+        accepts_none=None,  # type: Optional[bool]
+        comparable=True,  # type: bool
+        represented=False,  # type: bool
+        printed=True,  # type: bool
+        parent=True,  # type: bool
+        history=True,  # type: bool
+    ):
 
         # Default module
         if default_module is None:
@@ -99,81 +219,14 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
             raise TypeError(error)
         self.__value_factory = value_factory
 
-        # Store 'represented' and 'printed'
+        # Store 'comparable', 'represented' and 'printed'
+        self.__comparable = bool(comparable)
         self.__represented = bool(represented)
         self.__printed = bool(printed)
 
         # Store 'parent' and 'history'
         self.__parent = bool(parent)
         self.__history = bool(history)
-
-    @recursive_repr
-    def __repr__(self):
-        # type: () -> str
-        """Get representation."""
-        module = type(self).__module__
-        return "<{}{} object at {}{}>".format(
-            "{}.".format(module) if "_" not in module else "",
-            type(self).__name__,
-            hex(id(self)),
-            " | {}".format(self.__state) if self.__represented and self.__state else "",
-        )
-
-    @recursive_repr
-    def __str__(self):
-        # type: () -> str
-        """Get string representation."""
-        return "<{}{}>".format(
-            type(self).__name__,
-            " {}".format(self.__state) if self.__printed and self.__state else "",
-        )
-
-    def __eq__(self, other):
-        # type: (ContainerModel) -> bool
-        """Compare for equality."""
-        if not isinstance(other, type(self)):
-            return False
-        self_state = self.__state
-        other_state = other.__state
-        return self_state == other_state
-
-    def __factory__(self, value):
-        # type: (Any) -> Any
-        """Fabricate value by running it through type checks and factory."""
-        if self.__value_factory is not None:
-            value = self.__value_factory(value)
-        try:
-            if self.__value_type is not None:
-                assert_is_instance(
-                    value,
-                    self.__value_type,
-                    optional=self.__accepts_none,
-                    exact=False,
-                    default_module_name=self.__default_module,
-                )
-            elif self.__exact_value_type is not None:
-                assert_is_instance(
-                    value,
-                    self.__exact_value_type,
-                    optional=self.__accepts_none,
-                    exact=True,
-                    default_module_name=self.__default_module,
-                )
-            elif not self.__accepts_none and value is None:
-                error = "'{}' object does not accept None as a value".format(
-                    type(self).__name__
-                )
-                raise TypeError(error)
-        except TypeError as e:
-            exc = TypeError("{} in '{}' object".format(e, type(self).__name__))
-            raise_from(exc, None)
-            raise exc
-        return value
-
-    def __get_state__(self):
-        # type: () -> collections_abc.Container
-        """Get internal state."""
-        return self.__state
 
     @property
     def value_type(self):
@@ -206,15 +259,21 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         return self.__accepts_none
 
     @property
+    def comparable(self):
+        # type: () -> bool
+        """Whether values should be leveraged in '__eq__' method."""
+        return self.__comparable
+
+    @property
     def represented(self):
         # type: () -> bool
-        """Whether this is leveraged in state's '__repr__' method."""
+        """Whether values should be displayed in the result of '__repr__'."""
         return self.__represented
 
     @property
     def printed(self):
         # type: () -> bool
-        """Whether this is leveraged in state's '__str__' method."""
+        """Whether values should be displayed in the result of '__str__'."""
         return self.__printed
 
     @property

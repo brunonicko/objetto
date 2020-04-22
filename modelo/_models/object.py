@@ -769,6 +769,14 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
 
+        # Prepare history adopters
+        history_adopters = set()
+        for name, value in iteritems(redo_update):
+            attribute = type(self).attributes[name]
+            if attribute.history and isinstance(value, Model):
+                history_adopters.add(value)
+        history_adopters = frozenset(history_adopters)
+
         # Create partials and events
         redo = Partial(hierarchy.update_children, redo_children) + Partial(
             self.__state.update, redo_update
@@ -792,4 +800,6 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         )
 
         # Dispatch
-        self.__dispatch__("Update Attributes", redo, redo_event, undo, undo_event)
+        self.__dispatch__(
+            "Update Attributes", redo, redo_event, undo, undo_event, history_adopters
+        )

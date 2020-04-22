@@ -3,10 +3,13 @@
 
 from abc import abstractmethod
 from contextlib import contextmanager
+from weakref import ref
+from enum import Enum
 from six import with_metaclass
-from typing import FrozenSet, ContextManager, Optional, Any
+from typing import FrozenSet, ContextManager, Optional, Union, Any, Set, cast
 from slotted import SlottedABCMeta, SlottedABC
 
+from .._base.constants import DEAD_REF
 from .._components.broadcaster import (
     Broadcaster,
     InternalBroadcaster,
@@ -14,11 +17,32 @@ from .._components.broadcaster import (
     EventPhase,
     EventEmitter,
 )
-from .._components.hierarchy import Hierarchy, HierarchicalMixin, HierarchyAccess
+from .._components.hierarchy import (
+    Hierarchy, HierarchicalMixin, HierarchyAccess, ChildrenUpdates
+)
 from .._components.history import UndoableCommand, History
+from ..utils.type_checking import assert_is_instance
 from ..utils.partial import Partial
 
 __all__ = ["ModelMeta", "Model", "ModelEvent", "ModelCommand"]
+
+
+class ModelHierarchy(Hierarchy):
+    """Model hierarchy."""
+
+    def update_children(self, children_updates):
+        # type: (ChildrenUpdates) -> None
+        """Perform children adoptions and/or releases."""
+        for adoption in children_updates.adoptions:
+            adoption = cast(Model, adoption)
+            parent = cast(Model, self.obj)
+            last_parent_history = adoption.__get_last_parent_history__()
+            parent_history = parent.__get_history__()
+            if last_parent_history is not parent_history:
+                if last_parent_history is not None:
+                    last_parent_history.flush()
+                adoption.__set_last_parent_history__(parent_history)
+        super(ModelHierarchy, self).update_children(children_updates)
 
 
 class ModelMeta(SlottedABCMeta):
@@ -52,15 +76,17 @@ class Model(
         "__internal_broadcaster",
         "__broadcaster",
         "__history",
+        "__last_parent_history_ref",
     )
 
     def __init__(self):
         """Initialize."""
-        self.__hierarchy = Hierarchy(self)
+        self.__hierarchy = ModelHierarchy(self)
         self.__hierarchy_access = HierarchyAccess(self.__hierarchy)
         self.__internal_broadcaster = InternalBroadcaster()
         self.__broadcaster = Broadcaster()
         self.__history = None
+        self.__last_parent_history_ref = DEAD_REF
 
     def __getattr__(self, name):
         # type: (str) -> Any
@@ -101,18 +127,77 @@ class Model(
         """Get hierarchy."""
         return self.__hierarchy
 
-    def __dispatch__(self, name, redo, redo_event, undo, undo_event):
-        # type: (str, Partial, ModelEvent, Partial, ModelEvent) -> bool
+    def __get_history__(self):
+        # type: () -> Optional[History]
+        """Get command history."""
+        return self.__history
+
+    def __set_history__(self, history):
+        # type: (Optional[History]) -> None
+        """Set command history."""
+        old_history = self.__get_history__()
+        if old_history is not None and old_history is not history:
+            old_history.flush()
+        self.__history = history
+
+    def __get_last_parent_history__(self):
+        # type: () -> Optional[History]
+        """Get last parent history."""
+        return self.__last_parent_history_ref()
+
+    def __set_last_parent_history__(self, last_parent_history):
+        # type: (Optional[History]) -> None
+        """Set last parent history."""
+        if last_parent_history is None:
+            self.__last_parent_history_ref = DEAD_REF
+        else:
+            self.__last_parent_history_ref = ref(last_parent_history)
+
+    def __dispatch__(
+        self,
+        name,  # type: str
+        redo,  # type: Partial
+        redo_event,  # type: ModelEvent
+        undo,  # type: Partial
+        undo_event,  # type: ModelEvent
+        history_adopters  # type: FrozenSet[Model, ...]
+    ):
+        # type: (...) -> bool
         """Change the model by dispatching events and commands accordingly."""
         command = ModelCommand(name, self, redo, redo_event, undo, undo_event)
+
+        # Emit internal pre event, which will return True if event was accepted
         if self.__internal_broadcaster.emit(redo_event, EventPhase.INTERNAL_PRE):
-            if self.__history is None:
+
+            # Get history
+            history = self.__get_history__()
+
+            # Filter out adopters which share the same history, clear history otherwise
+            filtered_history_adopters = set()
+            for history_adopter in history_adopters:
+                if history_adopter.__get_history__() is history:
+                    continue
+                filtered_history_adopters.add(history_adopter)
+                history_adopter.__set_history__(None)
+
+            # Run command
+            if history is None:
                 command.__flag_ran__()
                 command.__redo__()
             else:
-                self.__history.run(command)
+                history.run(command)
+
+            # Adopt history
+            for model in filtered_history_adopters:
+                model.__set_history__(history)
+
+            # Emit internal post event
             self.__internal_broadcaster.emit(redo_event, EventPhase.INTERNAL_POST)
+
+            # Return True since event was accepted
             return True
+
+        # Event was rejected, return False
         else:
             return False
 
@@ -135,15 +220,14 @@ class Model(
     def _history(self):
         # type: () -> Optional[History]
         """Command history."""
-        return self.__history
+        return self.__get_history__()
 
     @_history.setter
     def _history(self, history):
         # type: (Optional[History]) -> None
         """Set command history."""
-        if self.__history is not None:
-            self.__history.flush()
-        self.__history = history
+        assert_is_instance(history, History, optional=True)
+        self.__set_history__(history)
 
     @property
     def _hierarchy(self):
