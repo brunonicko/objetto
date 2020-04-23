@@ -14,14 +14,12 @@ from ..utils.type_checking import assert_is_instance
 __all__ = [
     "EventPhase",
     "Broadcaster",
-    "InternalBroadcaster",
     "EventListenerMixin",
     "ListenerToken",
     "EventEmitter",
     "BroadcasterException",
     "BroadcasterError",
     "AlreadyEmittingError",
-    "NonInternalEmitterError",
     "PhaseError",
     "StopEventPropagationException",
     "RejectEventException",
@@ -41,7 +39,6 @@ class Broadcaster(Slotted):
     """Emits events."""
 
     __slots__ = ("__weakref__", "__emitter")
-    _internal = False
 
     def __init__(self):
         # type: () -> None
@@ -54,23 +51,10 @@ class Broadcaster(Slotted):
         return self.__emitter.__emit__(event, phase)
 
     @property
-    def internal(self):
-        # type: () -> bool
-        """Whether this broadcaster is internal."""
-        return type(self)._internal
-
-    @property
     def emitter(self):
         # type: () -> EventEmitter
         """Event emitter."""
         return self.__emitter
-
-
-class InternalBroadcaster(Broadcaster):
-    """Emits internal events."""
-
-    __slots__ = ()
-    _internal = True
 
 
 class EventListenerMixin(object):
@@ -137,7 +121,6 @@ class EventEmitter(Slotted):
     __slots__ = (
         "__weakref__",
         "__broadcaster_ref",
-        "__internal",
         "__listeners",
         "__emitting",
         "__emitting_phase",
@@ -148,7 +131,6 @@ class EventEmitter(Slotted):
         # type: (Broadcaster) -> None
         """Init with a broadcaster object."""
         self.__broadcaster_ref = ref(broadcaster)
-        self.__internal = broadcaster.internal
         self.__listeners = WeakKeyDictionary()
         self.__emitting = None
         self.__emitting_phase = None
@@ -183,14 +165,6 @@ class EventEmitter(Slotted):
             )
             raise AlreadyEmittingError(error)
 
-        # Can't use internal phases if not an internal emitter
-        if not self.__internal:
-            if phase in (EventPhase.INTERNAL_PRE, EventPhase.INTERNAL_POST):
-                error = "cannot use phase '{}' on a non-internal event emitter".format(
-                    phase
-                )
-                raise PhaseError(error)
-
         # Start emission
         self.__emitting = event
         self.__emitting_phase = phase
@@ -206,18 +180,8 @@ class EventEmitter(Slotted):
                 except StopEventPropagationException:
                     break
 
-                # Requested to reject event (internal only, during INTERNAL_PRE phase)
+                # Requested to reject event (during INTERNAL_PRE phase only)
                 except RejectEventException as exc:
-
-                    # Error, not internal emitter
-                    if not self.__internal:
-                        exc = NonInternalEmitterError(
-                            "'{}' can only be raised during internal emission".format(
-                                RejectEventException.__name__
-                            )
-                        )
-                        raise_from(exc, None)
-                        raise exc
 
                     # Error, not INTERNAL_PRE phase
                     if phase is not EventPhase.INTERNAL_PRE:
@@ -241,7 +205,7 @@ class EventEmitter(Slotted):
             self.__emitting_phase = None
             self.__reacting = set()
 
-            # If a callback was set from a rejected internal event, run it now
+            # If a callback was set from a rejected internal pre phase, run it now
             if callback is not None:
                 callback()
 
@@ -291,12 +255,6 @@ class EventEmitter(Slotted):
         raise ReferenceError(error)
 
     @property
-    def internal(self):
-        # type: () -> bool
-        """Whether this emitter is internal."""
-        return self.__internal
-
-    @property
     def listeners(self):
         # type: () -> FrozenSet[EventListenerMixin, ...]
         """Listeners."""
@@ -325,10 +283,6 @@ class BroadcasterError(ModeloError, BroadcasterException):
 
 class AlreadyEmittingError(BroadcasterError):
     """Raised when trying to emit during an ongoing emission."""
-
-
-class NonInternalEmitterError(BroadcasterError):
-    """Raised when trying to perform internal emission from a non-internal emitter."""
 
 
 class PhaseError(BroadcasterError):

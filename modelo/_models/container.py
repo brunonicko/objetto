@@ -76,7 +76,8 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
             hex(id(self)),
             (
                 " | {}".format(self.__state)
-                if self._parameters.represented and self.__state else ""
+                if self._parameters.represented and self.__state
+                else ""
             ),
         )
 
@@ -88,7 +89,8 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
             type(self).__name__,
             (
                 " {}".format(self.__state)
-                if self._parameters.printed and self.__state else ""
+                if self._parameters.printed and self.__state
+                else ""
             ),
         )
 

@@ -11,7 +11,6 @@ class TestBroadcaster(unittest.TestCase):
     def test_broadcaster(self):
         from modelo._components.broadcaster import (
             Broadcaster,
-            InternalBroadcaster,
             EventListenerMixin,
             EventPhase,
             PhaseError,
@@ -47,12 +46,6 @@ class TestBroadcaster(unittest.TestCase):
         self.assertRaises(TypeError, broadcaster.emitter.add_listener, 3)
         self.assertRaises(TypeError, broadcaster.emit, None, phase)
         self.assertRaises(TypeError, broadcaster.emit, event, None)
-
-        self.assertRaises(PhaseError, broadcaster.emit, event, EventPhase.INTERNAL_PRE)
-        self.assertFalse(reacted[0])
-
-        self.assertRaises(PhaseError, broadcaster.emit, event, EventPhase.INTERNAL_POST)
-        self.assertFalse(reacted[0])
 
 
 if __name__ == "__main__":

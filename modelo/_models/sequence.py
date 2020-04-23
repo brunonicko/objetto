@@ -265,9 +265,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             last_index = index
         else:
             last_index = self.__normalize_index(last_index)
-        old_values = tuple(
-            self.__state[index : last_index + 1]
-        )
+        old_values = tuple(self.__state[index : last_index + 1])
         if not old_values:
             error = "no values in index range {} to {}".format(index, last_index)
             raise IndexError(error)

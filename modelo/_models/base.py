@@ -4,7 +4,6 @@
 from abc import abstractmethod
 from contextlib import contextmanager
 from weakref import ref
-from enum import Enum
 from six import with_metaclass
 from typing import FrozenSet, ContextManager, Optional, Union, Any, Set, cast
 from slotted import SlottedABCMeta, SlottedABC
@@ -12,13 +11,15 @@ from slotted import SlottedABCMeta, SlottedABC
 from .._base.constants import DEAD_REF
 from .._components.broadcaster import (
     Broadcaster,
-    InternalBroadcaster,
     EventListenerMixin,
     EventPhase,
     EventEmitter,
 )
 from .._components.hierarchy import (
-    Hierarchy, HierarchicalMixin, HierarchyAccess, ChildrenUpdates
+    Hierarchy,
+    HierarchicalMixin,
+    HierarchyAccess,
+    ChildrenUpdates,
 )
 from .._components.history import UndoableCommand, History
 from ..utils.type_checking import assert_is_instance
@@ -73,7 +74,6 @@ class Model(
     __slots__ = (
         "__hierarchy",
         "__hierarchy_access",
-        "__internal_broadcaster",
         "__broadcaster",
         "__history",
         "__last_parent_history_ref",
@@ -83,7 +83,6 @@ class Model(
         """Initialize."""
         self.__hierarchy = ModelHierarchy(self)
         self.__hierarchy_access = HierarchyAccess(self.__hierarchy)
-        self.__internal_broadcaster = InternalBroadcaster()
         self.__broadcaster = Broadcaster()
         self.__history = None
         self.__last_parent_history_ref = DEAD_REF
@@ -160,14 +159,14 @@ class Model(
         redo_event,  # type: ModelEvent
         undo,  # type: Partial
         undo_event,  # type: ModelEvent
-        history_adopters  # type: FrozenSet[Model, ...]
+        history_adopters,  # type: FrozenSet[Model, ...]
     ):
         # type: (...) -> bool
         """Change the model by dispatching events and commands accordingly."""
         command = ModelCommand(name, self, redo, redo_event, undo, undo_event)
 
-        # Emit internal pre event, which will return True if event was accepted
-        if self.__internal_broadcaster.emit(redo_event, EventPhase.INTERNAL_PRE):
+        # Emit event (internal pre phase), which will return True if event was accepted
+        if self.__broadcaster.emit(redo_event, EventPhase.INTERNAL_PRE):
 
             # Get history
             history = self.__get_history__()
@@ -191,8 +190,8 @@ class Model(
             for model in filtered_history_adopters:
                 model.__set_history__(history)
 
-            # Emit internal post event
-            self.__internal_broadcaster.emit(redo_event, EventPhase.INTERNAL_POST)
+            # Emit event (internal post phase)
+            self.__broadcaster.emit(redo_event, EventPhase.INTERNAL_POST)
 
             # Return True since event was accepted
             return True
@@ -210,10 +209,8 @@ class Model(
     def __event_context__(self, event):
         # type: (ModelEvent) -> ContextManager
         """Internal event context."""
-        self.__internal_broadcaster.emit(event, EventPhase.PRE)
         self.__broadcaster.emit(event, EventPhase.PRE)
         yield
-        self.__internal_broadcaster.emit(event, EventPhase.POST)
         self.__broadcaster.emit(event, EventPhase.POST)
 
     @contextmanager
@@ -244,12 +241,6 @@ class Model(
         # type: () -> HierarchyAccess
         """Parent-child hierarchy."""
         return self.__hierarchy_access
-
-    @property
-    def _events(self):
-        # type: () -> EventEmitter
-        """Internal event emitter."""
-        return self.__internal_broadcaster.emitter
 
     @property
     def events(self):

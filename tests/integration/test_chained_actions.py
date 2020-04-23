@@ -25,7 +25,7 @@ class TestChainedActions(unittest.TestCase):
                 self.last_action = None
 
                 self.seq = MutableSequenceModel()
-                self.seq._events.add_listener(self)
+                self.seq.events.add_listener(self)
 
                 self._history = history
                 self.seq._history = history

@@ -226,11 +226,11 @@ class TestObject(unittest.TestCase):
 
         self.assertEqual(
             getattr(Person.full_name.fget, "gets"),
-            frozenset(("first_name", "last_name"))
+            frozenset(("first_name", "last_name")),
         )
         self.assertEqual(
             getattr(Person.full_name.fset, "sets"),
-            frozenset(("first_name", "last_name"))
+            frozenset(("first_name", "last_name")),
         )
 
         p = Person("Bruno", "Nicko")
