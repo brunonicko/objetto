@@ -1,8 +1,5 @@
-# TODO: batch context
-# TODO: finish 'SequenceModel'
 # TODO: create 'MappingModel'
 # TODO: create 'SetModel'
-# TODO: history model?
 # TODO: immutable data?
 # TODO: value factories module
 # TODO: docstrings and cleanup

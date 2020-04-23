@@ -199,6 +199,60 @@ class TestObject(unittest.TestCase):
         self.assertEqual(model_a.a, "test")
         self.assertRaises(AttributeError, setattr, model_a, "a", None)
 
+    def test_dependency_promises(self):
+        from modelo.models import ObjectModel
+        from modelo.attributes import attribute, dependencies
+
+        class Person(ObjectModel):
+            first_name = attribute(str)  # type: str
+            last_name = attribute(str)  # type: str
+            full_name = attribute(str, delegated=True, represented=True)
+
+            def __init__(self, first_name, last_name):
+                super(Person, self).__init__()
+                self.update(("first_name", first_name), ("last_name", last_name))
+
+            @full_name.getter
+            @dependencies(gets=(first_name, last_name))
+            def full_name(self):
+                # type: () -> str
+                return "{} {}".format(self.first_name, self.last_name)
+
+            @full_name.setter
+            @dependencies(sets=(first_name, last_name))
+            def full_name(self, value):
+                # type: (str) -> None
+                self.first_name, self.last_name = value.split(" ")
+
+        self.assertEqual(
+            getattr(Person.full_name.fget, "gets"),
+            frozenset(("first_name", "last_name"))
+        )
+        self.assertEqual(
+            getattr(Person.full_name.fset, "sets"),
+            frozenset(("first_name", "last_name"))
+        )
+
+        p = Person("Bruno", "Nicko")
+        self.assertEqual(p.first_name, "Bruno")
+        self.assertEqual(p.last_name, "Nicko")
+        self.assertEqual(p.full_name, "Bruno Nicko")
+
+        p.first_name = "Foo"
+        self.assertEqual(p.first_name, "Foo")
+        self.assertEqual(p.last_name, "Nicko")
+        self.assertEqual(p.full_name, "Foo Nicko")
+
+        p.last_name = "Bar"
+        self.assertEqual(p.first_name, "Foo")
+        self.assertEqual(p.last_name, "Bar")
+        self.assertEqual(p.full_name, "Foo Bar")
+
+        p.full_name = "Bar Foo"
+        self.assertEqual(p.first_name, "Bar")
+        self.assertEqual(p.last_name, "Foo")
+        self.assertEqual(p.full_name, "Bar Foo")
+
 
 if __name__ == "__main__":
     unittest.main()

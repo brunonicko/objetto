@@ -37,8 +37,8 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         comparable=True,  # type: bool
         represented=False,  # type: bool
         printed=True,  # type: bool
-        parent=True,  # type: bool
-        history=True,  # type: bool
+        parent=False,  # type: bool
+        history=False,  # type: bool
     ):
         # type: (...) -> None
         """Initialize with parameters."""

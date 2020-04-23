@@ -6,6 +6,7 @@ try:
 except ImportError:
     import collections as collections_abc
 import re
+from abc import abstractmethod
 from collections import defaultdict
 from weakref import ref
 from enum import Enum
@@ -48,6 +49,7 @@ __all__ = [
     "make_object_state_class",
     "Attribute",
     "AttributeDelegate",
+    "DependencyPromise",
     "AttributeUpdates",
     "AttributesException",
     "AttributesError",
@@ -276,6 +278,14 @@ def _make_object_state_class(
                 "attribute '{}' is delegated, but no delegates were defined"
             ).format(attribute_name)
             raise AttributeMissingDelegatesError(error)
+
+        # Collapse delegate dependency promises
+        if attribute.fget is not None:
+            attribute.fget.__collapse_promises__()
+        if attribute.fset is not None:
+            attribute.fset.__collapse_promises__()
+        if attribute.fdel is not None:
+            attribute.fdel.__collapse_promises__()
 
         get_dependencies = set()
         set_dependencies = set()
@@ -1023,14 +1033,14 @@ class Attribute(Slotted):
 class AttributeDelegate(Slotted):
     """Attribute fget/fset/fdel delegate."""
 
-    __slots__ = ("__func", "__gets", "__sets", "__deletes")
+    __slots__ = ("__func", "__gets", "__sets", "__deletes", "__collapsed")
 
     @classmethod
     def get_decorator(
         cls,
-        gets=(),  # type: Iterable[str, ...]
-        sets=(),  # type: Iterable[str, ...]
-        deletes=(),  # type: Iterable[str, ...]
+        gets=(),  # type: Iterable[Union[str, DependencyPromise], ...]
+        sets=(),  # type: Iterable[Union[str, DependencyPromise], ...]
+        deletes=(),  # type: Iterable[Union[str, DependencyPromise], ...]
         reset=True,  # type: bool
     ):
         # type: (...) -> Callable
@@ -1059,9 +1069,9 @@ class AttributeDelegate(Slotted):
     def __init__(
         self,
         func,  # type: Callable
-        gets=(),  # type: Iterable[str, ...]
-        sets=(),  # type: Iterable[str, ...]
-        deletes=(),  # type: Iterable[str, ...]
+        gets=(),  # type: Iterable[Union[str, DependencyPromise], ...]
+        sets=(),  # type: Iterable[Union[str, DependencyPromise], ...]
+        deletes=(),  # type: Iterable[Union[str, DependencyPromise], ...]
     ):
         # type: (...) -> None
         """Initialize with dependencies."""
@@ -1082,7 +1092,7 @@ class AttributeDelegate(Slotted):
         # Make sure dependencies are iterables of strings
         for param, value in (("gets", gets), ("sets", sets), ("deletes", deletes)):
             if not isinstance(value, collections_abc.Iterable) or any(
-                not isinstance(v, string_types) for v in value
+                not isinstance(v, string_types + (DependencyPromise,)) for v in value
             ):
                 error = (
                     "expected an iterable of strings for parameter '{}', got {}"
@@ -1093,11 +1103,29 @@ class AttributeDelegate(Slotted):
         self.__gets = frozenset(gets)
         self.__sets = frozenset(sets)
         self.__deletes = frozenset(deletes)
+        self.__collapsed = False
 
     def __call__(self, *args, **kwargs):
         # type: (Tuple[Any, ...], Dict[str, Any]) -> Optional[Any]
         """Call the function."""
         return self.__func(*args, **kwargs)
+
+    def __collapse_promises__(self):
+        # type: () -> None
+        """Collapse dependency promises."""
+        if self.__collapsed:
+            return
+        self.__collapsed = True
+        self.__gets = frozenset(
+            d.collapse() if isinstance(d, DependencyPromise) else d for d in self.__gets
+        )
+        self.__sets = frozenset(
+            d.collapse() if isinstance(d, DependencyPromise) else d for d in self.__sets
+        )
+        self.__deletes = frozenset(
+            d.collapse() if isinstance(d, DependencyPromise) else d
+            for d in self.__deletes
+        )
 
     @property
     def func(self):
@@ -1107,21 +1135,44 @@ class AttributeDelegate(Slotted):
 
     @property
     def gets(self):
-        # type: () -> FrozenSet[str, ...]
+        # type: () -> FrozenSet[Union[str, DependencyPromise], ...]
         """Dependencies (get)."""
         return self.__gets
 
     @property
     def sets(self):
-        # type: () -> FrozenSet[str, ...]
+        # type: () -> FrozenSet[Union[str, DependencyPromise], ...]
         """Dependencies (set)."""
         return self.__sets
 
     @property
     def deletes(self):
-        # type: () -> FrozenSet[str, ...]
+        # type: () -> FrozenSet[Union[str, DependencyPromise], ...]
         """Dependencies (delete)."""
         return self.__deletes
+
+
+class DependencyPromise(SlottedABC):
+    """This can be used temporarily instead of a string for delegate dependencies."""
+
+    __slots__ = ("__obj",)
+
+    def __init__(self, obj):
+        # type: (Any) -> None
+        """Initialize with promise object."""
+        self.__obj = obj
+
+    @abstractmethod
+    def collapse(self):
+        # type: () -> str
+        """Collapse into an attribute name."""
+        raise NotImplementedError()
+
+    @property
+    def obj(self):
+        # type: () -> Any
+        """Promise object."""
+        return self.__obj
 
 
 class AttributeUpdates(SlottedMapping):

@@ -609,7 +609,8 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
     def _append(self, *new_values):
         # type: (Tuple[Any, ...]) -> None
         """Insert values at the end of the sequence."""
-        self._insert(len(self), *new_values)
+        with self._batch_context("Append Values"):
+            self._insert(len(self), *new_values)
 
     def _count(self, value):
         # type: (Any) -> int
@@ -621,7 +622,8 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         """Extend the sequence with one or more iterables."""
         if not iterables:
             return
-        self._append(*chain(*iterables))
+        with self._batch_context("Extend"):
+            self._append(*chain(*iterables))
 
     def _index(self, value, start=None, stop=None):
         # type: (Any, Optional[int], Optional[int]) -> int
@@ -640,17 +642,20 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         # type: (Any, Optional[int], Optional[int]) -> None
         """Remove value from sequence."""
         index = self._index(value, start=start, stop=stop)
-        self._pop(index)
+        with self._batch_context("Remove"):
+            self._pop(index)
 
     def _reverse(self):
         # type: () -> None
         """Reverse values."""
-        self._extend(reversed(self._pop(0, -1)))
+        with self._batch_context("Reverse"):
+            self._extend(reversed(self._pop(0, -1)))
 
     def _sort(self, key=None, reverse=False):
         # type: (Optional[Callable], bool) -> None
         """Sort values."""
-        self._extend(sorted(self._pop(0, -1), key=key, reverse=reverse))
+        with self._batch_context("Sort"):
+            self._extend(sorted(self._pop(0, -1), key=key, reverse=reverse))
 
     @property
     def __state(self):

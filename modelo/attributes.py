@@ -4,20 +4,38 @@
 from typing import Any, Optional, Callable, Iterable, Union
 
 from ._components.attributes import AttributeDelegate
-from ._models.object import AttributeDescriptor
+from ._models.object import AttributeDescriptor, AttributeDescriptorDependencyPromise
 from .utils.type_checking import UnresolvedType as UType
 
 __all__ = ["dependencies", "attribute", "constant_attribute"]
 
 
 def dependencies(
-    gets=(),  # type: Iterable[str, ...]
-    sets=(),  # type: Iterable[str, ...]
-    deletes=(),  # type: Iterable[str, ...]
+    gets=(),  # type: Iterable[Union[str, AttributeDescriptor], ...]
+    sets=(),  # type: Iterable[Union[str, AttributeDescriptor], ...]
+    deletes=(),  # type: Iterable[Union[str, AttributeDescriptor], ...]
     reset=True,  # type: bool
 ):
     # type: (...) -> Callable
     """Make a decorator that decorates a function into a delegate with dependencies."""
+    gets = frozenset(
+        AttributeDescriptorDependencyPromise(d)
+        if isinstance(d, AttributeDescriptor)
+        else d
+        for d in gets
+    )
+    sets = frozenset(
+        AttributeDescriptorDependencyPromise(d)
+        if isinstance(d, AttributeDescriptor)
+        else d
+        for d in sets
+    )
+    deletes = frozenset(
+        AttributeDescriptorDependencyPromise(d)
+        if isinstance(d, AttributeDescriptor)
+        else d
+        for d in deletes
+    )
     return AttributeDelegate.get_decorator(
         gets=gets, sets=sets, deletes=deletes, reset=reset
     )
@@ -33,9 +51,9 @@ def attribute(
     represented=False,  # type: Optional[bool]
     printed=None,  # type: Optional[bool]
     delegated=False,  # type: bool
-    parent=None,  # type: Optional[bool]
-    history=None,  # type: Optional[bool]
-    final=None,  # type: Optional[bool]
+    parent=False,  # type: bool
+    history=False,  # type: bool
+    final=False,  # type: bool
 ):
     # type: (...) -> AttributeDescriptor
     """Make an attribute descriptor."""

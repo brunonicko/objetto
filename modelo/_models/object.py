@@ -26,6 +26,7 @@ from .._components.attributes import (
     ObjectState,
     Attribute,
     AttributeDelegate,
+    DependencyPromise,
     make_object_state_class,
 )
 from ..utils.type_checking import UnresolvedType as UType
@@ -34,11 +35,13 @@ from ..utils.recursive_repr import recursive_repr
 from ..utils.naming import privatize_name
 from ..utils.partial import Partial
 from ..utils.object_repr import object_repr
+from ..utils.type_checking import assert_is_instance
 from .base import ModelMeta, Model, ModelEvent
 
 __all__ = [
     "AttributesUpdateEvent",
     "AttributeDescriptor",
+    "AttributeDescriptorDependencyPromise",
     "ObjectModelMeta",
     "ObjectModel",
 ]
@@ -74,6 +77,16 @@ class AttributesUpdateEvent(ModelEvent):
         # type: () -> Mapping[str, Any]
         """Old values."""
         return self.__old_values
+
+
+class AttributeDescriptorDependencyPromise(DependencyPromise):
+    """Placeholder for an attribute dependency."""
+
+    def collapse(self):
+        # type: () -> str
+        """Collapse into an attribute name."""
+        assert_is_instance(self.obj, AttributeDescriptor)
+        return self.obj.name
 
 
 class AttributeDescriptor(Slotted):
@@ -216,11 +229,23 @@ class AttributeDescriptor(Slotted):
         self.__name = name
 
         # Build attribute
-        self.__attribute = attribute = Attribute(name, **self.__attribute_kwargs)
+        self.__attribute = Attribute(name, **self.__attribute_kwargs)
+
+    def __assign_delegates__(self):
+        # type: () -> None
+        """Assign delegates."""
+        if self.__attribute is None:
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
+
+        # Get owner and attribute
+        owner = self.__owner
+        attribute = self.__attribute
 
         # Assign delegates to attribute
         if self.__delegated:
             if self.__fget is not None:
+                self.__fget.__collapse_promises__()
                 fget = AttributeDelegate(
                     self.__fget.func,
                     gets=frozenset(
@@ -229,6 +254,7 @@ class AttributeDescriptor(Slotted):
                 )
                 attribute.getter(fget)
             if self.__fset is not None:
+                self.__fset.__collapse_promises__()
                 fset = AttributeDelegate(
                     self.__fset.func,
                     gets=frozenset(
@@ -243,6 +269,7 @@ class AttributeDescriptor(Slotted):
                 )
                 attribute.setter(fset)
             if self.__fdel is not None:
+                self.__fdel.__collapse_promises__()
                 fdel = AttributeDelegate(
                     self.__fdel.func,
                     gets=frozenset(
@@ -605,6 +632,7 @@ def _make_object_model_class(
     cls = super(ObjectModelMeta, mcs).__new__(mcs, name, bases, dct)
 
     # Collect attribute descriptors
+    new_attributes = set()
     for base in reversed(cls.__mro__):
         for member_name, member in iteritems(base.__dict__):
             if base is cls and attributes:
@@ -618,15 +646,21 @@ def _make_object_model_class(
                     attributes[member_name] = member
                     if base is cls:
                         member.__set_owner__(cls, member_name)
+                        new_attributes.add(member)
                 else:
                     attributes[member_name] = member_copy = member.copy()
                     member_copy.__set_owner__(base, member_name)
+                    new_attributes.add(member_copy)
             elif member_name in attributes:
                 error = (
                     "can't override attribute descriptor '{}' with a non-attribute of "
                     "type '{}'"
                 ).format(member_name, type(member).__name__)
                 raise TypeError(error)
+
+    # Assign delegates to new attributes
+    for attribute in new_attributes:
+        attribute.__assign_delegates__()
 
     # Make object state class and store it
     state_class = make_object_state_class(

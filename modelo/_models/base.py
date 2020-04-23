@@ -216,6 +216,16 @@ class Model(
         self.__internal_broadcaster.emit(event, EventPhase.POST)
         self.__broadcaster.emit(event, EventPhase.POST)
 
+    @contextmanager
+    def _batch_context(self, name="Batch"):
+        # type: (str) -> ContextManager
+        """Batch context."""
+        if self.__history is not None:
+            with self.__history.batch_context(name):
+                yield
+        else:
+            yield
+
     @property
     def _history(self):
         # type: () -> Optional[History]

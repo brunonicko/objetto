@@ -110,10 +110,13 @@ class History(Slotted):
         # type: (Command) -> None
         """Run a command and keep track of it."""
 
-        # Error, already running
+        # During execution, run and swallow command
         if self.__running:
-            error = "already running a command"
-            raise WhileRunningError(error)
+            if command.ran:
+                raise AlreadyRanError(command)
+            command.__flag_ran__()
+            command.__redo__()
+            return
 
         # Command already ran
         if command.ran:
@@ -238,72 +241,72 @@ class History(Slotted):
         # type: (str) -> ContextManager
         """Start a new batch context."""
 
-        # Error, already running
+        # Already running
         if self.__running:
-            error = "can't start a batch context while a command is running"
-            raise WhileRunningError(error)
+            yield
 
         # Store previous batch and start a new one
-        previous_batch = self.__batch
-        self.__batch = name, []
-        self.__batches.append(self.__batch)
-
-        # noinspection PyBroadException
-        try:
-            yield
-        except Exception:
-            if previous_batch is not None:
-                self.flush()
-                raise
         else:
+            previous_batch = self.__batch
+            self.__batch = name, []
+            self.__batches.append(self.__batch)
 
-            # If we have commands in the resulting batch
-            if self.__batch[1]:
-
-                # Make batch command
-                commands = self.__batch[1]
-                for command in commands:
-                    if not isinstance(command, UndoableCommand):
-                        batch_cls = BatchCommand
-                        undoable = False
-                        break
-                else:
-                    batch_cls = UndoableBatchCommand
-                    undoable = True
-
-                batch = batch_cls(self.__batch[0], *self.__batch[1])
-
-                # We have a previous batch, add command to it
+            # noinspection PyBroadException
+            try:
+                yield
+            except Exception:
                 if previous_batch is not None:
-                    previous_batch[1].append(batch)
+                    self.flush()
+                    raise
+            else:
 
-                # No previous batch
-                else:
+                # If we have commands in the resulting batch
+                if self.__batch[1]:
 
-                    # Flag batch command as 'ran'
-                    batch.__flag_ran__()
+                    # Make batch command
+                    commands = self.__batch[1]
+                    for command in commands:
+                        if not isinstance(command, UndoableCommand):
+                            batch_cls = BatchCommand
+                            undoable = False
+                            break
+                    else:
+                        batch_cls = UndoableBatchCommand
+                        undoable = True
 
-                    # One or more commands are not undoable, flush history
-                    if not undoable:
-                        self.flush()
+                    batch = batch_cls(self.__batch[0], *self.__batch[1])
 
-                    # If all commands are undoable and size is different than 0
-                    elif self.size != 0:
+                    # We have a previous batch, add command to it
+                    if previous_batch is not None:
+                        previous_batch[1].append(batch)
 
-                        # Flush redo
-                        self.flush_redo()
+                    # No previous batch
+                    else:
 
-                        # Add batch command to the undo stack
-                        self.__append_to_undo_stack(batch)
+                        # Flag batch command as 'ran'
+                        batch.__flag_ran__()
 
-                        # Adjust stack size
-                        self.__adjust_stack_size()
+                        # One or more commands are not undoable, flush history
+                        if not undoable:
+                            self.flush()
 
-        # Close batch (and restore previous batch if there was one)
-        finally:
-            if previous_batch is None:
-                del self.__batches[:]
-            self.__batch = previous_batch
+                        # If all commands are undoable and size is different than 0
+                        elif self.size != 0:
+
+                            # Flush redo
+                            self.flush_redo()
+
+                            # Add batch command to the undo stack
+                            self.__append_to_undo_stack(batch)
+
+                            # Adjust stack size
+                            self.__adjust_stack_size()
+
+            # Close batch (and restore previous batch if there was one)
+            finally:
+                if previous_batch is None:
+                    del self.__batches[:]
+                self.__batch = previous_batch
 
     @property
     def size(self):
