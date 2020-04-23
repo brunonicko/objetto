@@ -9,12 +9,14 @@ from six import with_metaclass, raise_from
 from typing import Any, Optional, Callable, Iterable, Union
 from slotted import Slotted
 
+from .._base.constants import SpecialValue
+from .._base.exceptions import SpecialValueError
 from ..utils.type_checking import UnresolvedType as UType
 from ..utils.recursive_repr import recursive_repr
 from ..utils.type_checking import assert_is_unresolved_type, assert_is_instance
 from .base import ModelMeta, Model
 
-__all__ = ["ContainerModelMeta", "ContainerModel"]
+__all__ = ["ContainerModelMeta", "ContainerModel", "ContainerModelParameters"]
 
 
 class ContainerModelMeta(ModelMeta):
@@ -37,8 +39,8 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         comparable=True,  # type: bool
         represented=False,  # type: bool
         printed=True,  # type: bool
-        parent=False,  # type: bool
-        history=False,  # type: bool
+        parent=True,  # type: bool
+        history=True,  # type: bool
     ):
         # type: (...) -> None
         """Initialize with parameters."""
@@ -106,39 +108,6 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         self_state = self.__state
         other_state = other.__state
         return self_state == other_state
-
-    def __factory__(self, value):
-        # type: (Any) -> Any
-        """Fabricate value by running it through type checks and factory."""
-        if self._parameters.value_factory is not None:
-            value = self._parameters.value_factory(value)
-        try:
-            if self._parameters.value_type is not None:
-                assert_is_instance(
-                    value,
-                    self._parameters.value_type,
-                    optional=self._parameters.accepts_none,
-                    exact=False,
-                    default_module_name=self._parameters.default_module,
-                )
-            elif self._parameters.exact_value_type is not None:
-                assert_is_instance(
-                    value,
-                    self._parameters.exact_value_type,
-                    optional=self._parameters.accepts_none,
-                    exact=True,
-                    default_module_name=self._parameters.default_module,
-                )
-            elif not self._parameters.accepts_none and value is None:
-                error = "'{}' object does not accept None as a value".format(
-                    type(self).__name__
-                )
-                raise TypeError(error)
-        except TypeError as e:
-            exc = TypeError("{} in '{}' object".format(e, type(self).__name__))
-            raise_from(exc, None)
-            raise exc
-        return value
 
     def __get_state__(self):
         # type: () -> collections_abc.Container
@@ -229,6 +198,41 @@ class ContainerModelParameters(Slotted):
         # Store 'parent' and 'history'
         self.__parent = bool(parent)
         self.__history = bool(history)
+
+    def fabricate(self, value, accepts_missing=False, accepts_deleted=True):
+        # type: (Any, bool, bool) -> Any
+        """Fabricate value by running it through type checks and factory."""
+        if self.value_factory is not None:
+            value = self.value_factory(value)
+
+        if self.value_type is not None:
+            assert_is_instance(
+                value,
+                self.value_type,
+                optional=self.accepts_none,
+                exact=False,
+                default_module_name=self.default_module,
+            )
+        elif self.exact_value_type is not None:
+            assert_is_instance(
+                value,
+                self.exact_value_type,
+                optional=self.accepts_none,
+                exact=True,
+                default_module_name=self.default_module,
+            )
+        elif not self.accepts_none and value is None:
+            error = "can't use None"
+            raise TypeError(error)
+
+        if not accepts_missing and value is SpecialValue.MISSING:
+            error = "can't use special value {}".format(value)
+            raise SpecialValueError(error)
+        if not accepts_deleted and value is SpecialValue.DELETED:
+            error = "can't use special value {}".format(value)
+            raise SpecialValueError(error)
+
+        return value
 
     @property
     def value_type(self):

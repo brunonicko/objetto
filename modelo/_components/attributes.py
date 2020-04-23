@@ -34,7 +34,8 @@ from typing import (
     Union,
 )
 
-from .._base.exceptions import ModeloException, ModeloError
+from .._base.exceptions import ModeloException, ModeloError, SpecialValueError
+from .._base.constants import SpecialValue
 from ..utils.type_checking import UnresolvedType as UType
 from ..utils.type_checking import assert_is_instance, assert_is_unresolved_type
 from ..utils.recursive_repr import recursive_repr
@@ -43,7 +44,6 @@ from ..utils.wrapped_dict import WrappedDict
 
 __all__ = [
     "ATTRIBUTE_NAME_REGEX",
-    "SpecialValue",
     "ObjectStateMeta",
     "ObjectState",
     "make_object_state_class",
@@ -60,17 +60,9 @@ __all__ = [
     "IncompatibleParametersError",
     "IncompatibleDependenciesError",
     "MissingDependencyError",
-    "SpecialValueError",
 ]
 
 ATTRIBUTE_NAME_REGEX = re.compile(r"^[^\d\W]\w*\Z", re.UNICODE)
-
-
-class SpecialValue(Enum):
-    """Special value."""
-
-    MISSING = "missing"
-    DELETED = "deleted"
 
 
 class AttributeAccessType(Enum):
@@ -1361,7 +1353,3 @@ class IncompatibleDependenciesError(AttributesError):
 
 class MissingDependencyError(AttributesError):
     """Raised when a dependency is missing."""
-
-
-class SpecialValueError(AttributesError):
-    """Raised when using a special value where it is not allowed."""

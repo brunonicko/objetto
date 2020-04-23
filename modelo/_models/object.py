@@ -21,8 +21,8 @@ from typing import (
 from slotted import Slotted
 from collections import Counter
 
+from .._base.constants import SpecialValue
 from .._components.attributes import (
-    SpecialValue,
     ObjectState,
     Attribute,
     AttributeDelegate,
@@ -118,8 +118,8 @@ class AttributeDescriptor(Slotted):
         represented=False,  # type: Optional[bool]
         printed=None,  # type: Optional[bool]
         delegated=False,  # type: bool
-        parent=False,  # type: bool
-        history=False,  # type: bool
+        parent=True,  # type: bool
+        history=True,  # type: bool
         final=False,  # type: bool
     ):
         # type: (...) -> None

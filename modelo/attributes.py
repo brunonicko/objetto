@@ -51,8 +51,8 @@ def attribute(
     represented=False,  # type: Optional[bool]
     printed=None,  # type: Optional[bool]
     delegated=False,  # type: bool
-    parent=False,  # type: bool
-    history=False,  # type: bool
+    parent=True,  # type: bool
+    history=True,  # type: bool
     final=False,  # type: bool
 ):
     # type: (...) -> AttributeDescriptor
@@ -76,6 +76,8 @@ def attribute(
 def constant_attribute(value, final=None):
     # type: (Any, Optional[bool]) -> AttributeDescriptor
     """Make a constant attribute descriptor."""
-    descriptor = AttributeDescriptor(final=final, delegated=True)
+    descriptor = AttributeDescriptor(
+        final=final, delegated=True, parent=False, history=False
+    )
     descriptor.getter(lambda _, _value=value: _value)
     return descriptor

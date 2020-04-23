@@ -8,7 +8,17 @@ except ImportError:
 from collections import namedtuple
 from itertools import chain
 from six import with_metaclass
-from typing import Tuple, Callable, Any, Optional, FrozenSet, List, Union, cast
+from typing import (
+    Tuple,
+    Callable,
+    Any,
+    Optional,
+    FrozenSet,
+    List,
+    Iterator,
+    Union,
+    cast,
+)
 from collections import Counter
 
 from ..utils.partial import Partial
@@ -223,9 +233,15 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         return len(self.__state)
 
     def __iter__(self):
+        # type: () -> Iterator[Any]
         """Iterate over values."""
         for value in self.__state:
             yield value
+
+    def __contains__(self, value):
+        # type: (Any) -> bool
+        """Whether contains a value."""
+        return value in self.__state
 
     def __normalize_index(self, index, clamp=False):
         # type: (int, bool) -> int
@@ -249,7 +265,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         if not new_values:
             error = "no values provided"
             raise ValueError(error)
-        new_values = tuple(self.__factory__(value) for value in new_values)
+        new_values = tuple(self._parameters.fabricate(value) for value in new_values)
         index = self.__normalize_index(index, clamp=True)
         last_index = index + len(new_values) - 1
         return (
@@ -321,7 +337,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             error = "no values provided"
             raise ValueError(error)
         index = self.__normalize_index(index)
-        new_values = tuple(self.__factory__(value) for value in new_values)
+        new_values = tuple(self._parameters.fabricate(value) for value in new_values)
         last_index = self.__normalize_index(index + len(new_values) - 1)
         old_values = tuple(self.__state[index : last_index + 1])
         return (
@@ -370,9 +386,6 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         """Insert values at an index."""
         if not new_values:
             return
-
-        # Factory values
-        new_values = tuple(self.__factory__(v) for v in new_values)
 
         # Get hierarchy
         hierarchy = self.__get_hierarchy__()
@@ -558,9 +571,6 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         # Normalize index
         index = self.__normalize_index(index)
 
-        # Factory values
-        new_values = tuple(self.__factory__(v) for v in new_values)
-
         # Get hierarchy
         hierarchy = self.__get_hierarchy__()
 
@@ -676,6 +686,8 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
 
 class MutableSequenceModel(SequenceModel):
     """Sequence model with public mutable methods."""
+
+    __slots__ = ()
 
     def __setitem__(self, item, value):
         # type: (Union[slice, int], Any) -> None

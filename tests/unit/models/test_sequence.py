@@ -6,7 +6,7 @@ __all__ = ["TestSequence"]
 
 
 class TestSequence(unittest.TestCase):
-    """Tests for '_sequence_model' module."""
+    """Tests for 'modelo._models.sequence' module."""
 
     def test_sequence_model(self):
         from modelo.models import SequenceModel

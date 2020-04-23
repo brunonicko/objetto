@@ -56,8 +56,8 @@ class TestObject(unittest.TestCase):
             tested = attribute(delegated=True, value_factory=bool)
             full_name = attribute(delegated=True)
             __constant = constant_attribute(3)
-            constant = attribute(delegated=True)
-            constantine = attribute(delegated=True)
+            constant = attribute(delegated=True, parent=False, history=False)
+            constantine = attribute(delegated=True, parent=False, history=False)
 
             @constant.getter
             @dependencies(gets=("__constant",))
