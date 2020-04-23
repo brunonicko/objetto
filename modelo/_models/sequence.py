@@ -267,7 +267,10 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             last_index = self.__normalize_index(last_index)
         old_values = tuple(
             self.__state[index : last_index + 1]
-        )  # TODO: normalize range
+        )
+        if not old_values:
+            error = "no values in index range {} to {}".format(index, last_index)
+            raise IndexError(error)
         return (
             SequencePop(index=index, last_index=last_index, old_values=old_values),
             SequenceInsert(index=index, last_index=last_index, new_values=old_values),
@@ -282,7 +285,10 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             last_index = index
         else:
             last_index = self.__normalize_index(last_index)
-        values = tuple(self.__state[index : last_index + 1])  # TODO: normalize range
+        values = tuple(self.__state[index : last_index + 1])
+        if not values:
+            error = "no values in index range {} to {}".format(index, last_index)
+            raise IndexError(error)
         if target_index < index:
             undo_move = SequenceMove(
                 index=target_index,
@@ -425,8 +431,11 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         )
 
     def _pop(self, index=-1, last_index=None):
-        # type: (int, Optional[int]) -> Tuple[Any, ...]
-        """Pop a range of values out."""
+        # type: (int, Optional[int]) -> Union[Any, Tuple[Any, ...]]
+        """Pop a value/range of values out."""
+
+        # Single pop?
+        single_pop = last_index is None
 
         # Get hierarchy
         hierarchy = self.__get_hierarchy__()
@@ -477,8 +486,11 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             "Pop Values", redo, redo_event, undo, undo_event, history_adopters
         )
 
-        # Return old values
-        return redo_pop.old_values
+        # Return old value(s)
+        if single_pop:
+            return redo_pop.old_values[0]
+        else:
+            return redo_pop.old_values
 
     def _move(self, index, target_index, last_index=None):
         # type: (int, int, Optional[int]) -> None
@@ -714,8 +726,8 @@ class MutableSequenceModel(SequenceModel):
         self._insert(index, *new_values)
 
     def pop(self, index=-1, last_index=None):
-        # type: (int, Optional[int]) -> Tuple[Any, ...]
-        """Pop a range of values out."""
+        # type: (int, Optional[int]) -> Union[Any, Tuple[Any, ...]]
+        """Pop a value/range of values out."""
         return self._pop(index=index, last_index=last_index)
 
     def move(self, index, target_index, last_index=None):

@@ -1,3 +1,4 @@
+# TODO: get rid of internal event emitter
 # TODO: create 'MappingModel'
 # TODO: create 'SetModel'
 # TODO: immutable data?
