@@ -146,10 +146,8 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
         """Whether contains a value."""
         return key in self.__state
 
-    def __prepare_update(
-        self, update  # type: Mapping[Hashable, Any]
-    ):
-        # type: (...) -> Tuple[Mapping[Hashable, Any], Mapping[Hashable, Any]]
+    def __prepare_update(self, update):
+        # type: (Mapping) -> Tuple[Mapping[Hashable, Any], Mapping[Hashable, Any]]
         """Prepare update."""
         if not update:
             error = "no updates provided"
@@ -169,9 +167,12 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
             if value is SpecialValue.DELETED:
                 if key not in self.__state:
                     raise KeyError(key)
-                value = SpecialValue.MISSING
+                processed_revert[key] = self.__state[key]
+            elif key not in self.__state:
+                processed_revert[key] = SpecialValue.MISSING
+            else:
+                processed_revert[key] = self.__state[key]
             processed_update[key] = value
-            processed_revert[key] = self.__state.get(key, SpecialValue.MISSING)
 
         return mapping_update, mapping_revert
 
@@ -179,7 +180,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
         # type: (Mapping[Hashable, Any]) -> None
         """Update."""
         for key, value in iteritems(mapping_update):
-            if value is SpecialValue.MISSING:
+            if value in (SpecialValue.MISSING, SpecialValue.DELETED):
                 del self.__state[key]
             else:
                 self.__state[key] = value
@@ -196,9 +197,10 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
 
         # Count children
         child_count = Counter()
+        special_drop_values = SpecialValue.MISSING, SpecialValue.DELETED
         if self._key_parameters.parent or self._parameters.parent:
             for key, value in iteritems(redo_update):
-                if value is SpecialValue.MISSING:
+                if value in special_drop_values:
                     if self._key_parameters.parent:
                         if isinstance(key, Model):
                             child_count[key] -= 1
@@ -210,7 +212,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
                     if self._key_parameters.parent:
                         if (
                             isinstance(key, Model)
-                            and undo_update[key] is SpecialValue.MISSING
+                            and undo_update[key] in special_drop_values
                         ):
                             child_count[key] += 1
                     if self._parameters.parent:

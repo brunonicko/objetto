@@ -1,4 +1,4 @@
-# TODO: create 'SetModel'
+# TODO: named batch operations for cosmetic reasons
 # TODO: history events
 # TODO: immutable data?
 # TODO: more attribute factories (containers, properties, etc)
