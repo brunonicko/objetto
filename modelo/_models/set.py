@@ -283,7 +283,7 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
         """Get symmetric difference between this and another iterable and apply it."""
         new_values = set(other).difference(self.__state)
         old_values = self.__state.intersection(other)
-        with self._batch_context("Symmetric Difference Update"):
+        with self._batch_context("Update Values"):
             self._discard(*old_values)
             self._add(*new_values)
 

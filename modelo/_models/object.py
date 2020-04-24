@@ -767,13 +767,15 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
     def __setitem__(self, name, value):
         # type: (str, Any) -> None
         """Set attribute value."""
-        self.update((name, value))
+        with self._batch_context("Set Attribute"):
+            self.update((name, value))
 
     def __delitem__(self, name):
         # type: (str) -> None
         """Delete attribute."""
         self.__getitem__(name)
-        self.update((name, SpecialValue.DELETED))
+        with self._batch_context("Delete Attribute"):
+            self.update((name, SpecialValue.DELETED))
 
     def update(self, *name_value_pairs):
         # type: (Tuple[Tuple[str, Any], ...]) -> None

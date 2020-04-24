@@ -260,13 +260,14 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
 
         # Dispatch
         self.__dispatch__(
-            "Update Mapping", redo, redo_event, undo, undo_event, history_adopters
+            "Update Items", redo, redo_event, undo, undo_event, history_adopters
         )
 
     def _clear(self):
         # type: () -> None
         """Clear mapping."""
-        self._update(dict((k, SpecialValue.DELETED) for k in self.__state))
+        with self._batch_context("Clear Items"):
+            self._update(dict((k, SpecialValue.DELETED) for k in self.__state))
 
     def _pop(self, key, fallback=SpecialValue.MISSING):
         # type: (Hashable, Any) -> Any
@@ -276,7 +277,8 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
                 raise KeyError(key)
             return fallback
         value = self.__state[key]
-        self._update({key: SpecialValue.DELETED})
+        with self._batch_context("Remove Item"):
+            self._update({key: SpecialValue.DELETED})
         return value
 
     def _popitem(self):
@@ -286,7 +288,9 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
             error = "mapping is empty"
             raise KeyError(error)
         key = next(iter(self.__state))
-        return key, self._pop(key)
+        with self._batch_context("Remove Item"):
+            value = self._pop(key)
+        return key, value
 
     def _setdefault(self, key, value):
         # type: (Hashable, Any) -> Any

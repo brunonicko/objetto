@@ -632,20 +632,34 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         with self._batch_context("Append Values"):
             self._insert(len(self), *new_values)
 
-    def _count(self, value):
-        # type: (Any) -> int
-        """Count occurrences of a value in the sequence."""
-        return self.__state.count(value)
-
     def _extend(self, *iterables):
         # type: (Any) -> None
         """Extend the sequence with one or more iterables."""
         if not iterables:
             return
-        with self._batch_context("Extend"):
+        with self._batch_context("Extend Values"):
             self._append(*chain(*iterables))
 
-    def _index(self, value, start=None, stop=None):
+    def _remove(self, value, start=None, stop=None):
+        # type: (Any, Optional[int], Optional[int]) -> None
+        """Remove value from sequence."""
+        index = self._index(value, start=start, stop=stop)
+        with self._batch_context("Remove Value"):
+            self._pop(index)
+
+    def _reverse(self):
+        # type: () -> None
+        """Reverse values."""
+        with self._batch_context("Reverse Values"):
+            self._extend(reversed(self._pop(0, -1)))
+
+    def _sort(self, key=None, reverse=False):
+        # type: (Optional[Callable], bool) -> None
+        """Sort values."""
+        with self._batch_context("Sort Values"):
+            self._extend(sorted(self._pop(0, -1), key=key, reverse=reverse))
+
+    def index(self, value, start=None, stop=None):
         # type: (Any, Optional[int], Optional[int]) -> int
         """Get the index of a value."""
         if start is None and stop is None:
@@ -658,24 +672,10 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             error = "provided 'stop' but did not provide 'start'"
             raise ValueError(error)
 
-    def _remove(self, value, start=None, stop=None):
-        # type: (Any, Optional[int], Optional[int]) -> None
-        """Remove value from sequence."""
-        index = self._index(value, start=start, stop=stop)
-        with self._batch_context("Remove"):
-            self._pop(index)
-
-    def _reverse(self):
-        # type: () -> None
-        """Reverse values."""
-        with self._batch_context("Reverse"):
-            self._extend(reversed(self._pop(0, -1)))
-
-    def _sort(self, key=None, reverse=False):
-        # type: (Optional[Callable], bool) -> None
-        """Sort values."""
-        with self._batch_context("Sort"):
-            self._extend(sorted(self._pop(0, -1), key=key, reverse=reverse))
+    def count(self, value):
+        # type: (Any) -> int
+        """Count occurrences of a value in the sequence."""
+        return self.__state.count(value)
 
     @property
     def __state(self):
@@ -755,20 +755,10 @@ class MutableSequenceModel(SequenceModel):
         """Insert values at the end of the sequence."""
         self._append(*new_values)
 
-    def count(self, value):
-        # type: (Any) -> int
-        """Count occurrences of a value in the sequence."""
-        return self._count(value)
-
     def extend(self, *iterables):
         # type: (Any) -> None
         """Extend the sequence with one or more iterables."""
         self._extend(*iterables)
-
-    def index(self, value, start=None, stop=None):
-        # type: (Any, Optional[int], Optional[int]) -> int
-        """Get the index of a value."""
-        return self._index(value, start=start, stop=stop)
 
     def remove(self, value, start=None, stop=None):
         # type: (Any, Optional[int], Optional[int]) -> None
