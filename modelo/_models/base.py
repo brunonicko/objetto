@@ -185,7 +185,7 @@ class Model(
                 command.__flag_ran__()
                 command.__redo__()
             else:
-                history.run(command)
+                history.__run__(command)
 
             # Adopt history
             for model in filtered_history_adopters:
@@ -246,7 +246,7 @@ class Model(
     @property
     def events(self):
         # type: () -> EventEmitter
-        """AbstractEvent emitter."""
+        """Event emitter."""
         return self.__broadcaster.emitter
 
 

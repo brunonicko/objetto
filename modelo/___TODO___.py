@@ -1,4 +1,4 @@
-# TODO: history events
+# TODO: public modules imports
 # TODO: immutable data?
 # TODO: more attribute factories (containers, properties, etc)
 # TODO: value factories module

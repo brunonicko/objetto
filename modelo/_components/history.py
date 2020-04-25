@@ -9,14 +9,13 @@ from slotted import Slotted, SlottedABC
 
 from .._base.exceptions import ModeloException, ModeloError
 from .._base.events import Event
-from .._components.broadcaster import (
-    Broadcaster,
-    EventListenerMixin,
-    EventPhase,
-    EventEmitter,
-)
+from .._components.broadcaster import Broadcaster, EventPhase, EventEmitter
 
 __all__ = [
+    "HistoryEvent",
+    "HistoryCurrentIndexChangeEvent",
+    "HistoryInsertEvent",
+    "HistoryPopEvent",
     "History",
     "Command",
     "UndoableCommand",
@@ -41,7 +40,6 @@ class HistoryEvent(Event):
         """Initialize with history."""
         self.__history = history
 
-    @abstractmethod
     def __eq_id_properties__(self):
         # type: () -> Tuple[str, ...]
         """Get names of properties that should compared using object identity."""
@@ -70,6 +68,198 @@ class HistoryEvent(Event):
         # type: () -> History
         """History."""
         return self.__history
+
+
+class HistoryCurrentIndexChangeEvent(HistoryEvent):
+    """Emitted when a history's current index changes."""
+
+    __slots__ = ("__old_index", "__new_index")
+
+    def __init__(
+        self,
+        history,  # type: History
+        old_current_index,  # type: int
+        new_current_index,  # type: int
+    ):
+        # type: (...) -> None
+        """Initialize with old index and new index."""
+        super(HistoryCurrentIndexChangeEvent, self).__init__(history)
+        self.__old_current_index = old_current_index
+        self.__new_current_index = new_current_index
+
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return super(HistoryCurrentIndexChangeEvent, self).__eq_equal_properties__() + (
+            "old_current_index",
+            "new_current_index",
+        )
+
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return super(HistoryCurrentIndexChangeEvent, self).__repr_properties__() + (
+            "old_current_index",
+            "new_current_index",
+        )
+
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return super(HistoryCurrentIndexChangeEvent, self).__str_properties__() + (
+            "old_current_index",
+            "new_current_index",
+        )
+
+    @property
+    def old_current_index(self):
+        # type: () -> int
+        """Old index."""
+        return self.__old_current_index
+
+    @property
+    def new_current_index(self):
+        # type: () -> int
+        """New index."""
+        return self.__new_current_index
+
+
+class HistoryInsertEvent(HistoryCurrentIndexChangeEvent):
+    """Emitted when commands are inserted into the history."""
+
+    __slots__ = ("__index", "__last_index", "__new_commands")
+
+    def __init__(
+        self,
+        history,  # type: History
+        old_current_index,  # type: int
+        new_current_index,  # type: int
+        index,  # type: int
+        last_index,  # type: int
+        new_commands,  # type: Tuple[Any, ...]
+    ):
+        # type: (...) -> None
+        """Initialize with index, last index, and new commands."""
+        super(HistoryInsertEvent, self).__init__(
+            history, old_current_index, new_current_index
+        )
+        self.__index = index
+        self.__last_index = last_index
+        self.__new_commands = new_commands
+
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return super(HistoryInsertEvent, self).__eq_equal_properties__() + (
+            "index",
+            "last_index",
+            "new_commands",
+        )
+
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return super(HistoryInsertEvent, self).__repr_properties__() + (
+            "index",
+            "last_index",
+            "new_commands",
+        )
+
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return super(HistoryInsertEvent, self).__str_properties__() + (
+            "index",
+            "last_index",
+            "new_commands",
+        )
+
+    @property
+    def index(self):
+        # type: () -> int
+        """Index."""
+        return self.__index
+
+    @property
+    def last_index(self):
+        # type: () -> int
+        """Last index."""
+        return self.__last_index
+
+    @property
+    def new_commands(self):
+        # type: () -> Tuple[Command, ...]
+        """New commands."""
+        return self.__new_commands
+
+
+class HistoryPopEvent(HistoryCurrentIndexChangeEvent):
+    """Emitted when commands are popped from the history."""
+
+    __slots__ = ("__index", "__last_index", "__old_commands")
+
+    def __init__(
+        self,
+        history,  # type: History
+        old_current_index,  # type: int
+        new_current_index,  # type: int
+        index,  # type: int
+        last_index,  # type: int
+        old_commands,  # type: Tuple[Any, ...]
+    ):
+        # type: (...) -> None
+        """Initialize with index, last index, and old commands."""
+        super(HistoryPopEvent, self).__init__(
+            history, old_current_index, new_current_index
+        )
+        self.__index = index
+        self.__last_index = last_index
+        self.__old_commands = old_commands
+
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return super(HistoryPopEvent, self).__eq_equal_properties__() + (
+            "index",
+            "last_index",
+            "old_commands",
+        )
+
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return super(HistoryPopEvent, self).__repr_properties__() + (
+            "index",
+            "last_index",
+            "old_commands",
+        )
+
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return super(HistoryPopEvent, self).__str_properties__() + (
+            "index",
+            "last_index",
+            "old_commands",
+        )
+
+    @property
+    def index(self):
+        # type: () -> int
+        """Index."""
+        return self.__index
+
+    @property
+    def last_index(self):
+        # type: () -> int
+        """Last index."""
+        return self.__last_index
+
+    @property
+    def old_commands(self):
+        # type: () -> Tuple[Command, ...]
+        """Old commands."""
+        return self.__old_commands
 
 
 class History(Slotted):
@@ -111,6 +301,20 @@ class History(Slotted):
         """Get command count."""
         return len(self.__undo_stack) + len(self.__redo_stack) + 1
 
+    @contextmanager
+    def _event_context(self, event):
+        # type: (HistoryEvent) -> ContextManager
+        """Event context."""
+        if self.__broadcaster.emit(event, EventPhase.INTERNAL_PRE):
+            self.__broadcaster.emit(event, EventPhase.PRE)
+            yield
+            self.__broadcaster.emit(event, EventPhase.POST)
+            self.__broadcaster.emit(event, EventPhase.INTERNAL_POST)
+        else:
+            raise RuntimeError(
+                "internal event rejection not allowed for history events"
+            )
+
     def flush_redo(self):
         # type: () -> None
         """Flush redo stack."""
@@ -121,12 +325,20 @@ class History(Slotted):
         if not self.__redo_stack:
             return
 
-        first_index = len(self.__undo_stack)
-        last_index = first_index + len(self.__redo_stack) - 1
-        old_values = tuple(reversed(self.__redo_stack))
-        # TODO: emit event
+        index = len(self.__undo_stack)
+        last_index = index + len(self.__redo_stack) - 1
+        old_commands = tuple(reversed(self.__redo_stack))
+        event = HistoryPopEvent(
+            history=self,
+            index=index,
+            old_current_index=index,
+            new_current_index=index,
+            last_index=last_index,
+            old_commands=old_commands,
+        )
 
-        del self.__redo_stack[:]
+        with self._event_context(event):
+            del self.__redo_stack[:]
 
     def flush(self):
         # type: () -> None
@@ -139,9 +351,22 @@ class History(Slotted):
             del batch[1][:]
         if not self.__redo_stack and not self.__undo_stack:
             return
-        del self.__redo_stack[:]
-        del self.__undo_stack[:]
-        # TODO: emit event
+
+        index = 1
+        last_index = len(self)
+        old_commands = tuple(self)
+        event = HistoryPopEvent(
+            history=self,
+            index=index,
+            old_current_index=len(self.__undo_stack),
+            new_current_index=0,
+            last_index=last_index,
+            old_commands=old_commands,
+        )
+
+        with self._event_context(event):
+            del self.__redo_stack[:]
+            del self.__undo_stack[:]
 
     def __flush_queued(self):
         # type: () -> None
@@ -156,7 +381,7 @@ class History(Slotted):
         self.__flush_later = False
         self.__flush_redo_later = False
 
-    def run(self, command):
+    def __run__(self, command):
         # type: (Command) -> None
         """Run a command and keep track of it."""
 
@@ -239,20 +464,40 @@ class History(Slotted):
     def __append_to_undo_stack(self, command):
         # type: (Command) -> None
         """Append to undo stack."""
-        first_index = last_index = len(self.__undo_stack)
-        new_values = (command,)
-        self.__undo_stack.append(command)
-        # TODO: emit event
+        index = last_index = len(self.__undo_stack)
+        new_commands = (command,)
+
+        event = HistoryInsertEvent(
+            history=self,
+            index=index,
+            old_current_index=index,
+            new_current_index=index + 1,
+            last_index=last_index,
+            new_commands=new_commands,
+        )
+        with self._event_context(event):
+            self.__undo_stack.append(command)
 
     def __adjust_stack_size(self):
         # type: () -> None
         """Adjust stack size."""
         if 0 <= self.size < len(self.__undo_stack):
-            first_index = 0
             last_index = len(self.__undo_stack) - self.size - 1
-            old_values = self.__undo_stack[first_index : last_index + 1]
-            del self.__undo_stack[first_index : last_index + 1]
-            # TODO: emit event
+            old_commands = tuple(self.__undo_stack[0 : last_index + 1])
+
+            old_current_index = len(self.__undo_stack)
+            new_current_index = old_current_index - (last_index + 1)
+
+            pop_event = HistoryPopEvent(
+                history=self,
+                index=0,
+                old_current_index=old_current_index,
+                new_current_index=new_current_index,
+                last_index=last_index,
+                old_commands=old_commands,
+            )
+            with self._event_context(pop_event):
+                del self.__undo_stack[0 : last_index + 1]
 
     def undo_all(self):
         # type: () -> None
@@ -417,38 +662,36 @@ class History(Slotted):
             raise IndexError(current_index)
 
         # Continuously run redo or undo until we reach the desired index
-        old_current_index = self.current_index
-        try:
-            while self.current_index != current_index:
-                self.__running = True
-                try:
-                    old_index = self.current_index
-
-                    # Change it
-                    if current_index > self.current_index:
+        while self.current_index != current_index:
+            self.__running = True
+            try:
+                if current_index > self.current_index:
+                    event = HistoryCurrentIndexChangeEvent(
+                        history=self,
+                        old_current_index=self.current_index,
+                        new_current_index=self.current_index + 1,
+                    )
+                    with self._event_context(event):
                         command = self.__redo_stack.pop()
                         command.__redo__()
                         self.__undo_stack.append(command)
-                    elif current_index < self.current_index:
+                elif current_index < self.current_index:
+                    event = HistoryCurrentIndexChangeEvent(
+                        history=self,
+                        old_current_index=self.current_index,
+                        new_current_index=self.current_index - 1,
+                    )
+                    with self._event_context(event):
                         command = self.__undo_stack.pop()
                         command.__undo__()
                         self.__redo_stack.append(command)
-
-                    # Emit event for index change
-                    new_index = self.current_index
-                    if old_index != new_index:
-                        pass  # TODO: emit event for index change (old_index => new_index)
-
-                except Exception:
-                    self.__running = False
-                    self.flush()
-                    raise
-                finally:
-                    self.__running = False
-                    self.__flush_queued()
-        finally:
-            if old_current_index != self.current_index:
-                pass  # TODO: emit event for index change (old_current_index => self.current_index)
+            except Exception:
+                self.__running = False
+                self.flush()
+                raise
+            finally:
+                self.__running = False
+                self.__flush_queued()
 
     @property
     def running(self):
@@ -498,6 +741,12 @@ class History(Slotted):
         # type: () -> bool
         """Whether can undo."""
         return self.current_index > 0
+
+    @property
+    def events(self):
+        # type: () -> EventEmitter
+        """Event emitter."""
+        return self.__broadcaster.emitter
 
 
 class Command(SlottedABC):

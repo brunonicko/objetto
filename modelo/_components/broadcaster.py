@@ -6,7 +6,7 @@ from enum import Enum
 from weakref import WeakKeyDictionary, ref
 from slotted import Slotted
 from six import raise_from
-from typing import FrozenSet, Optional, Callable
+from typing import Any, FrozenSet, Optional, Callable, Union
 
 from .._base.exceptions import ModeloException, ModeloError
 from .._base.events import AbstractEvent
@@ -28,7 +28,7 @@ __all__ = [
 
 
 class EventPhase(Enum):
-    """AbstractEvent phase."""
+    """Event phase."""
 
     INTERNAL_PRE = "internal_pre"
     PRE = "pre"
@@ -47,7 +47,7 @@ class Broadcaster(Slotted):
         self.__emitter = EventEmitter(self)
 
     def emit(self, event, phase):
-        # type: (AbstractEvent, EventPhase) -> bool
+        # type: (Union[AbstractEvent, Any], EventPhase) -> bool
         """Emit event. Return False if event was rejected."""
         return self.__emitter.__emit__(event, phase)
 
@@ -65,7 +65,7 @@ class EventListenerMixin(object):
 
     @abstractmethod
     def __react__(self, event, phase):
-        # type: (AbstractEvent, EventPhase) -> None
+        # type: (Union[AbstractEvent, Any], EventPhase) -> None
         """React to an event."""
         error = "event listener class '{}' did not implement '__react__' method".format(
             type(self).__name__
@@ -148,7 +148,7 @@ class EventEmitter(Slotted):
             listener.__react__(self.__emitting, self.__emitting_phase)
 
     def __emit__(self, event, phase):
-        # type: (AbstractEvent, EventPhase) -> bool
+        # type: (Union[AbstractEvent, Any], EventPhase) -> bool
         """Emit event to all listeners. Return False if event was rejected."""
 
         # Check phase type
