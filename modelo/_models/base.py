@@ -5,7 +5,7 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from weakref import ref
 from six import with_metaclass
-from typing import FrozenSet, ContextManager, Optional, Tuple, Any, cast
+from typing import FrozenSet, ContextManager, Optional, Union, Tuple, Any, cast
 from slotted import SlottedABCMeta, SlottedABC
 
 from .._base.constants import DEAD_REF
@@ -202,7 +202,7 @@ class Model(
             return False
 
     def __react__(self, event, phase):
-        # type: (Any, EventPhase) -> None
+        # type: (ModelEvent, EventPhase) -> None
         """React to an event."""
         pass
 

@@ -594,8 +594,13 @@ class ObjectState(with_metaclass(ObjectStateMeta, Slotted)):
             # Set
             else:
                 if not attribute.settable:
-                    error = "attribute '{}' is not settable".format(name)
-                    raise AttributeError(error)
+                    if (
+                        attribute.delegated
+                        or update_state.get(name, SpecialValue.MISSING)
+                        is not SpecialValue.MISSING
+                    ):
+                        error = "attribute '{}' is not settable".format(name)
+                        raise AttributeError(error)
                 value = attribute.__factory__(value)
                 if value is SpecialValue.MISSING:
                     error = "can't set attribute to special value {}".format(value)
@@ -687,6 +692,8 @@ class Attribute(Slotted):
         "__represented",
         "__printed",
         "__delegated",
+        "__settable",
+        "__deletable",
         "__fget",
         "__fset",
         "__fdel",
@@ -708,6 +715,8 @@ class Attribute(Slotted):
         represented=False,  # type: Optional[bool]
         printed=None,  # type: Optional[bool]
         delegated=False,  # type: bool
+        settable=None,  # type: Optional[bool]
+        deletable=None,  # type: Optional[bool]
     ):
         # type: (...) -> None
         """Initialize with parameters."""
@@ -777,6 +786,20 @@ class Attribute(Slotted):
 
         # Delegated
         self.__delegated = bool(delegated)
+
+        # Check and store 'settable' and 'deletable'
+        if delegated:
+            if settable is not None:
+                error = "can't define 'settable' if 'delegated' is set to True"
+                raise ValueError(error)
+            if deletable is not None:
+                error = "can't define 'deletable' if 'delegated' is set to True"
+                raise ValueError(error)
+            self.__settable = None
+            self.__deletable = None
+        else:
+            self.__settable = bool(settable) if settable is not None else True
+            self.__deletable = bool(deletable) if deletable is not None else True
 
         # Delegates
         self.__fget = None
@@ -1013,13 +1036,19 @@ class Attribute(Slotted):
     def settable(self):
         # type: () -> bool
         """Whether this attribute is settable."""
-        return not self.__delegated or self.__fset is not None
+        if not self.__delegated:
+            return self.__settable
+        else:
+            return self.__fset is not None
 
     @property
     def deletable(self):
         # type: () -> bool
         """Whether this attribute is deletable."""
-        return not self.__delegated or self.__fdel is not None
+        if not self.__delegated:
+            return self.__deletable
+        else:
+            return self.__fdel is not None
 
 
 class AttributeDelegate(Slotted):

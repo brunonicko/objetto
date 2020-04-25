@@ -121,6 +121,8 @@ class AttributeDescriptor(Slotted):
         "__name",
         "__attribute_kwargs",
         "__kwargs",
+        "__default",
+        "__default_factory",
         "__parent",
         "__history",
         "__final",
@@ -142,6 +144,10 @@ class AttributeDescriptor(Slotted):
         represented=False,  # type: Optional[bool]
         printed=None,  # type: Optional[bool]
         delegated=False,  # type: bool
+        settable=None,  # type: Optional[bool]
+        deletable=None,  # type: Optional[bool]
+        default=SpecialValue.MISSING,  # type: Any
+        default_factory=None,  # type: Optional[Callable]
         parent=True,  # type: bool
         history=True,  # type: bool
         final=False,  # type: bool
@@ -160,9 +166,35 @@ class AttributeDescriptor(Slotted):
         represented = bool(represented) if represented is not None else None
         printed = bool(printed) if printed is not None else None
         delegated = bool(delegated)
+        settable = bool(settable) if settable is not None else None
+        deletable = bool(deletable) if deletable is not None else None
         parent = bool(parent)
         history = bool(history)
         final = bool(final)
+
+        # Check parameters
+        if default is not SpecialValue.MISSING and default_factory is not None:
+            error = "can't specify both 'default' and 'default_factory' parameters"
+            raise ValueError(error)
+        if default is not SpecialValue.MISSING or default_factory is not None:
+            if default_factory is not None and not callable(default_factory):
+                error = (
+                    "specified 'default_factory' of type '{}' is not callable"
+                ).format(type(default_factory).__name__)
+                raise TypeError(error)
+            if delegated:
+                error = (
+                    "can't specify 'default' or 'default_factory' parameters for "
+                    "delegated attributes"
+                )
+                raise ValueError(error)
+        elif default is SpecialValue.MISSING and default_factory is None:
+            if settable is False:
+                error = (
+                    "need to specify 'default' or 'default_factory' if 'settable' is "
+                    "set to False"
+                )
+                raise ValueError(error)
 
         # Store keyword arguments
         self.__attribute_kwargs = attribute_kwargs = {
@@ -175,11 +207,23 @@ class AttributeDescriptor(Slotted):
             "represented": represented,
             "printed": printed,
             "delegated": delegated,
+            "settable": settable,
+            "deletable": deletable,
         }
         self.__kwargs = kwargs = dict(attribute_kwargs)
-        kwargs.update({"parent": parent, "history": history, "final": final})
+        kwargs.update(
+            {
+                "default": default,
+                "default_factory": default_factory,
+                "parent": parent,
+                "history": history,
+                "final": final,
+            }
+        )
 
-        # Delegate-only parameters
+        # Descriptor-only parameters
+        self.__default = default
+        self.__default_factory = default_factory
         self.__parent = parent
         self.__history = history
         self.__final = final
@@ -611,6 +655,24 @@ class AttributeDescriptor(Slotted):
         return self.__attribute.deletable
 
     @property
+    def default(self):
+        # type: () -> Any
+        """Default value."""
+        if self.__attribute is None:
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
+        return self.__default
+
+    @property
+    def default_factory(self):
+        # type: () -> Optional[Callable]
+        """Default factory."""
+        if self.__attribute is None:
+            error = "attribute descriptor has no owner"
+            raise RuntimeError(error)
+        return self.__default_factory
+
+    @property
     def parent(self):
         # type: () -> bool
         """Whether model used as value should attach as a child."""
@@ -650,7 +712,9 @@ def _make_object_model_class(
 
     # Prepare dictionaries
     attributes = {}
+    factories = {}
     dct["__attributes__"] = WrappedDict(attributes)
+    dct["__factories__"] = WrappedDict(factories)
 
     # Make class
     cls = super(ObjectModelMeta, mcs).__new__(mcs, name, bases, dct)
@@ -692,7 +756,7 @@ def _make_object_model_class(
     )
     type.__setattr__(cls, "__state_type__", state_class)
 
-    # Check delegate-specific attribute rules
+    # Check delegate-specific attribute rules and collect factories
     for attribute_name, attribute in iteritems(attributes):
 
         # Constant attribute
@@ -712,6 +776,15 @@ def _make_object_model_class(
                 ).format(attribute_name)
                 raise ValueError(error)
 
+        # Has default/default factory, collect it
+        factory = None
+        if attribute.default is not SpecialValue.MISSING:
+            factory = lambda _v=attribute.default: _v
+        elif attribute.default_factory is not None:
+            factory = attribute.default_factory
+        if factory is not None:
+            factories[attribute_name] = factory
+
     return cls
 
 
@@ -721,6 +794,7 @@ class ObjectModelMeta(ModelMeta):
     __new__ = staticmethod(_make_object_model_class)
 
     __attributes__ = {}  # type: Mapping[str, AttributeDescriptor]
+    __factories__ = {}  # type: Mapping[str, Callable]
     __state_type__ = ObjectState
 
     @property
@@ -728,6 +802,12 @@ class ObjectModelMeta(ModelMeta):
         # type: () -> Mapping[str, AttributeDescriptor]
         """Get attribute descriptors mapped by name."""
         return cls.__attributes__
+
+    @property
+    def factories(cls):
+        # type: () -> Mapping[str, Callable]
+        """Get default factories by name."""
+        return cls.__factories__
 
     @property
     def dependencies(cls):
@@ -752,7 +832,10 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         # type: () -> None
         """Initialize."""
         super(ObjectModel, self).__init__()
-        self.__state = type(self).__state_type__(self)
+        cls = type(self)
+        self.__state = cls.__state_type__(self)
+        if cls.factories:
+            self.update(*iteritems(dict((n, f()) for n, f in iteritems(cls.factories))))
 
     @recursive_repr
     def __repr__(self):
@@ -772,7 +855,10 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         # type: () -> str
         """Get string representation."""
         str_dict = self.__state.get_dict(attribute_sieve=lambda a: a.printed)
-        return "<{}{}>".format(type(self).__name__, object_repr(**str_dict))
+        return "<{}{}>".format(
+            type(self).__name__,
+            " {}".format(object_repr(**str_dict)) if str_dict else "",
+        )
 
     def __eq__(self, other):
         # type: (ObjectModel) -> bool

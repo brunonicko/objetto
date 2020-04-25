@@ -73,7 +73,7 @@ class HistoryEvent(Event):
 class HistoryCurrentIndexChangeEvent(HistoryEvent):
     """Emitted when a history's current index changes."""
 
-    __slots__ = ("__old_index", "__new_index")
+    __slots__ = ("__old_current_index", "__new_current_index")
 
     def __init__(
         self,

@@ -16,11 +16,15 @@ from typing import (
     FrozenSet,
     List,
     Iterator,
+    Iterable,
     Union,
     cast,
 )
 from collections import Counter
 
+from .._components.broadcaster import EventPhase
+from ..utils.type_checking import UnresolvedType as UType
+from ..utils.type_checking import assert_is_instance
 from ..utils.partial import Partial
 from .base import Model, ModelEvent
 from .container import ContainerModelMeta, ContainerModel
@@ -33,6 +37,7 @@ __all__ = [
     "SequenceModelMeta",
     "SequenceModel",
     "MutableSequenceModel",
+    "SequenceProxyModel",
 ]
 
 
@@ -888,6 +893,101 @@ class MutableSequenceModel(SequenceModel):
         # type: (Optional[Callable], bool) -> None
         """Sort values."""
         self._sort(key=key, reverse=reverse)
+
+
+class SequenceProxyModel(SequenceModel):
+    """Read-only sequence model that reflects the values of another sequence model."""
+
+    __slots__ = ("__source", "__reaction_phase")
+
+    def __init__(
+        self,
+        source=None,  # type: Optional[SequenceModel]
+        source_factory=None,  # type: Optional[Callable]
+        reaction_phase=EventPhase.PRE,  # type: EventPhase
+        value_factory=None,  # type: Optional[Callable]
+        comparable=True,  # type: bool
+        represented=False,  # type: bool
+        printed=True,  # type: bool
+        parent=None,  # type: Optional[bool]
+        history=None,  # type: Optional[bool]
+    ):
+        if source is None:
+            if source_factory is None:
+                error = "need to provide exactly one of 'source' or 'source_factory'"
+                raise ValueError(error)
+            source = source_factory()
+        elif source_factory is not None:
+            error = "can't provide both 'source' and 'source_factory'"
+            raise ValueError(error)
+
+        assert_is_instance(source, SequenceModel)
+        assert_is_instance(reaction_phase, EventPhase)
+
+        parent = bool(parent) if parent is not None else not source.parent
+        history = bool(history) if history is not None else not source.history
+
+        if source.parent and parent:
+            error = "both source and proxy container models have 'parent' set to True"
+            raise ValueError(error)
+        if source.history and history:
+            error = "both source and proxy container models have 'history' set to True"
+            raise ValueError(error)
+
+        super(SequenceProxyModel, self).__init__(
+            value_type=None,
+            value_factory=value_factory,
+            exact_value_type=None,
+            default_module=None,
+            accepts_none=None,
+            comparable=comparable,
+            represented=represented,
+            printed=printed,
+            parent=parent,
+            history=history,
+        )
+
+        self.__source = source
+        self.__reaction_phase = reaction_phase
+
+        self._extend(source)
+        source.events.add_listener(self)
+
+    def __react__(self, event, phase):
+        # type: (ModelEvent, EventPhase) -> None
+        """React to an event."""
+        if isinstance(event, ModelEvent) and event.model is self._source:
+            if phase is self.__reaction_phase:
+                if type(event) is SequenceInsertEvent:
+                    event = cast(SequenceInsertEvent, event)
+                    self._insert(event.index, *event.new_values)
+                elif type(event) is SequencePopEvent:
+                    event = cast(SequencePopEvent, event)
+                    self._pop(event.index, event.last_index)
+                elif type(event) is SequenceMoveEvent:
+                    event = cast(SequenceMoveEvent, event)
+                    self._move(event.index, event.target_index, event.last_index)
+                elif type(event) is SequenceChangeEvent:
+                    event = cast(SequenceChangeEvent, event)
+                    self._change(event.index, *event.new_values)
+
+    @property
+    def _history(self):
+        # type: () -> None
+        """History (not settable)."""
+        return super(SequenceProxyModel, self)._history
+
+    @property
+    def _source(self):
+        # type: () -> SequenceModel
+        """Source sequence model."""
+        return self.__source
+
+    @property
+    def reaction_phase(self):
+        # type: () -> EventPhase
+        """Phase in which the reaction takes place."""
+        return self.__reaction_phase
 
 
 SequenceInsert = namedtuple("SequenceInsert", "index last_index new_values")
