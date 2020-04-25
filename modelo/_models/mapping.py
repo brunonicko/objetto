@@ -57,6 +57,30 @@ class MappingUpdateEvent(ModelEvent):
         self.__new_values = new_values
         self.__old_values = old_values
 
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return super(MappingUpdateEvent, self).__eq_equal_properties__() + (
+            "new_values",
+            "old_values",
+        )
+
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return super(MappingUpdateEvent, self).__repr_properties__() + (
+            "new_values",
+            "old_values",
+        )
+
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return super(MappingUpdateEvent, self).__str_properties__() + (
+            "new_values",
+            "old_values",
+        )
+
     @property
     def new_values(self):
         # type: () -> Mapping[Hashable, Any]

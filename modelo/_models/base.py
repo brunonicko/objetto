@@ -5,10 +5,11 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from weakref import ref
 from six import with_metaclass
-from typing import FrozenSet, ContextManager, Optional, Union, Any, Set, cast
+from typing import FrozenSet, ContextManager, Optional, Tuple, Any, cast
 from slotted import SlottedABCMeta, SlottedABC
 
 from .._base.constants import DEAD_REF
+from .._base.events import Event
 from .._components.broadcaster import (
     Broadcaster,
     EventListenerMixin,
@@ -196,7 +197,7 @@ class Model(
             # Return True since event was accepted
             return True
 
-        # Event was rejected, return False
+        # AbstractEvent was rejected, return False
         else:
             return False
 
@@ -245,11 +246,11 @@ class Model(
     @property
     def events(self):
         # type: () -> EventEmitter
-        """Event emitter."""
+        """AbstractEvent emitter."""
         return self.__broadcaster.emitter
 
 
-class ModelEvent(SlottedABC):
+class ModelEvent(Event):
     """Abstract event. Describes the adoption and/or release of child models."""
 
     __slots__ = ("__model", "__adoptions", "__releases")
@@ -261,23 +262,28 @@ class ModelEvent(SlottedABC):
         self.__adoptions = adoptions
         self.__releases = releases
 
-    def __eq__(self, other):
-        # type: (ModelEvent) -> bool
-        """Compare with another event for equality."""
-        if type(self) is not type(other):
-            return False
-        if self.__model is not other.__model:
-            return False
-        if self.__adoptions != other.__adoptions:
-            return False
-        if self.__releases != other.__releases:
-            return False
-        return True
+    def __eq_id_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using object identity."""
+        return ("model",)
 
-    def __ne__(self, other):
-        # type: (ModelEvent) -> bool
-        """Compare with another event for inequality."""
-        return not self.__eq__(other)
+    @abstractmethod
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return "adoptions", "releases"
+
+    @abstractmethod
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return "adoptions", "releases"
+
+    @abstractmethod
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return "history", "adoptions", "releases"
 
     @property
     def model(self):

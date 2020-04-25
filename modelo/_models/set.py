@@ -39,6 +39,21 @@ class SetAddEvent(ModelEvent):
         super(SetAddEvent, self).__init__(model, adoptions, releases)
         self.__new_values = new_values
 
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return super(SetAddEvent, self).__eq_equal_properties__() + ("new_values",)
+
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return super(SetAddEvent, self).__repr_properties__() + ("new_values",)
+
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return super(SetAddEvent, self).__str_properties__() + ("new_values",)
+
     @property
     def new_values(self):
         # type: () -> FrozenSet[Hashable, ...]
@@ -62,6 +77,21 @@ class SetRemoveEvent(ModelEvent):
         """Initialize with old values."""
         super(SetRemoveEvent, self).__init__(model, adoptions, releases)
         self.__old_values = old_values
+
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return super(SetRemoveEvent, self).__eq_equal_properties__() + ("old_values",)
+
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return super(SetRemoveEvent, self).__repr_properties__() + ("old_values",)
+
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return super(SetRemoveEvent, self).__str_properties__() + ("old_values",)
 
     @property
     def old_values(self):
@@ -174,13 +204,13 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
             model=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
-            new_values=new_values
+            new_values=new_values,
         )
         undo_event = SetRemoveEvent(
             model=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
-            old_values=old_values
+            old_values=old_values,
         )
 
         # Dispatch
@@ -226,13 +256,13 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
             model=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
-            old_values=old_values
+            old_values=old_values,
         )
         undo_event = SetAddEvent(
             model=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
-            new_values=new_values
+            new_values=new_values,
         )
 
         # Dispatch
@@ -263,7 +293,7 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
         if not self.__state.issuperset(old_values):
             error = "set does not contain value{} {}".format(
                 "s" if len(old_values) > 1 else "",
-                old_values if len(old_values) > 1 else old_values[0]
+                old_values if len(old_values) > 1 else old_values[0],
             )
             raise KeyError(error)
         self._discard(*old_values)

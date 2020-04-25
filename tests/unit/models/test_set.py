@@ -32,6 +32,7 @@ class TestSet(unittest.TestCase):
 
     def test_update(self):
         from modelo.models import MutableSetModel
+
         sa = MutableSetModel(parent=True)
         sb = MutableSetModel(parent=True)
         sa.update(range(0, 10))
@@ -42,6 +43,7 @@ class TestSet(unittest.TestCase):
 
     def test_difference_update(self):
         from modelo.models import MutableSetModel
+
         sa = MutableSetModel(parent=True)
         sb = MutableSetModel(parent=True)
         sa.update(range(0, 10))
@@ -53,6 +55,7 @@ class TestSet(unittest.TestCase):
 
     def test_symmetric_difference_update(self):
         from modelo.models import MutableSetModel
+
         sa = MutableSetModel(parent=True)
         sb = MutableSetModel(parent=True)
         sa.update(range(0, 10))
@@ -64,6 +67,7 @@ class TestSet(unittest.TestCase):
 
     def test_intersection_update(self):
         from modelo.models import MutableSetModel
+
         sa = MutableSetModel(parent=True)
         sb = MutableSetModel(parent=True)
         sa.update(range(0, 10))

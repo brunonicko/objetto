@@ -57,6 +57,33 @@ class SequenceInsertEvent(ModelEvent):
         self.__last_index = last_index
         self.__new_values = new_values
 
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return super(SequenceInsertEvent, self).__eq_equal_properties__() + (
+            "index",
+            "last_index",
+            "new_values",
+        )
+
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return super(SequenceInsertEvent, self).__repr_properties__() + (
+            "index",
+            "last_index",
+            "new_values",
+        )
+
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return super(SequenceInsertEvent, self).__str_properties__() + (
+            "index",
+            "last_index",
+            "new_values",
+        )
+
     @property
     def index(self):
         # type: () -> int
@@ -96,6 +123,33 @@ class SequencePopEvent(ModelEvent):
         self.__index = index
         self.__last_index = last_index
         self.__old_values = old_values
+
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return super(SequencePopEvent, self).__eq_equal_properties__() + (
+            "index",
+            "last_index",
+            "old_values",
+        )
+
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return super(SequencePopEvent, self).__repr_properties__() + (
+            "index",
+            "last_index",
+            "old_values",
+        )
+
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return super(SequencePopEvent, self).__str_properties__() + (
+            "index",
+            "last_index",
+            "old_values",
+        )
 
     @property
     def index(self):
@@ -138,6 +192,36 @@ class SequenceMoveEvent(ModelEvent):
         self.__target_index = target_index
         self.__last_index = last_index
         self.__values = values
+
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return super(SequenceMoveEvent, self).__eq_equal_properties__() + (
+            "index",
+            "target_index",
+            "last_index",
+            "values",
+        )
+
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return super(SequenceMoveEvent, self).__repr_properties__() + (
+            "index",
+            "target_index",
+            "last_index",
+            "values",
+        )
+
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return super(SequenceMoveEvent, self).__str_properties__() + (
+            "index",
+            "target_index",
+            "last_index",
+            "values",
+        )
 
     @property
     def index(self):
@@ -186,6 +270,36 @@ class SequenceChangeEvent(ModelEvent):
         self.__last_index = last_index
         self.__new_values = new_values
         self.__old_values = old_values
+
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return super(SequenceChangeEvent, self).__eq_equal_properties__() + (
+            "index",
+            "last_index",
+            "new_values",
+            "old_values",
+        )
+
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return super(SequenceChangeEvent, self).__repr_properties__() + (
+            "index",
+            "last_index",
+            "new_values",
+            "old_values",
+        )
+
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return super(SequenceChangeEvent, self).__str_properties__() + (
+            "index",
+            "last_index",
+            "new_values",
+            "old_values",
+        )
 
     @property
     def index(self):

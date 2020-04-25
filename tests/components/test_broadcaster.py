@@ -33,12 +33,12 @@ class TestBroadcaster(unittest.TestCase):
         listener = Listener()
         broadcaster.emitter.add_listener(listener)
 
-        event, phase = "Event A", EventPhase.PRE
+        event, phase = "AbstractEvent A", EventPhase.PRE
         self.assertTrue(broadcaster.emit(event, phase))
         self.assertTrue(reacted[0])
         reacted[0] = False
 
-        event, phase = "Event A", EventPhase.POST
+        event, phase = "AbstractEvent A", EventPhase.POST
         self.assertTrue(broadcaster.emit(event, phase))
         self.assertTrue(reacted[0])
         reacted[0] = False

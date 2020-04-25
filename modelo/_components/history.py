@@ -8,6 +8,13 @@ from typing import Optional, ContextManager, Union, Any, List, Tuple, cast
 from slotted import Slotted, SlottedABC
 
 from .._base.exceptions import ModeloException, ModeloError
+from .._base.events import Event
+from .._components.broadcaster import (
+    Broadcaster,
+    EventListenerMixin,
+    EventPhase,
+    EventEmitter,
+)
 
 __all__ = [
     "History",
@@ -24,6 +31,47 @@ __all__ = [
 ]
 
 
+class HistoryEvent(Event):
+    """Abstract event. Describes a change in a history."""
+
+    __slots__ = ("__history",)
+
+    def __init__(self, history):
+        # type: (History) -> None
+        """Initialize with history."""
+        self.__history = history
+
+    @abstractmethod
+    def __eq_id_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using object identity."""
+        return ("history",)
+
+    @abstractmethod
+    def __eq_equal_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should compared using equality."""
+        return ()
+
+    @abstractmethod
+    def __repr_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__repr__'."""
+        return ()
+
+    @abstractmethod
+    def __str_properties__(self):
+        # type: () -> Tuple[str, ...]
+        """Get names of properties that should show up in the result of '__str__'."""
+        return ("history",)
+
+    @property
+    def history(self):
+        # type: () -> History
+        """History."""
+        return self.__history
+
+
 class History(Slotted):
     """Keeps track of commands, allowing for undo/redo operations."""
 
@@ -37,6 +85,7 @@ class History(Slotted):
         "__batches",
         "__flush_later",
         "__flush_redo_later",
+        "__broadcaster",
     )
 
     def __init__(self):
@@ -50,6 +99,7 @@ class History(Slotted):
         self.__batches = []
         self.__flush_later = False
         self.__flush_redo_later = False
+        self.__broadcaster = Broadcaster()
 
     def __getitem__(self, item):
         # type: (Union[int, slice]) -> Union[Any, List]

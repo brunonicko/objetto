@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Event broadcasting."""
+"""AbstractEvent broadcasting."""
 
 from abc import abstractmethod
 from enum import Enum
 from weakref import WeakKeyDictionary, ref
 from slotted import Slotted
 from six import raise_from
-from typing import Any, FrozenSet, Optional, Callable
+from typing import FrozenSet, Optional, Callable
 
 from .._base.exceptions import ModeloException, ModeloError
+from .._base.events import AbstractEvent
 from ..utils.type_checking import assert_is_instance
 
 __all__ = [
@@ -27,7 +28,7 @@ __all__ = [
 
 
 class EventPhase(Enum):
-    """Event phase."""
+    """AbstractEvent phase."""
 
     INTERNAL_PRE = "internal_pre"
     PRE = "pre"
@@ -46,14 +47,14 @@ class Broadcaster(Slotted):
         self.__emitter = EventEmitter(self)
 
     def emit(self, event, phase):
-        # type: (Any, EventPhase) -> bool
+        # type: (AbstractEvent, EventPhase) -> bool
         """Emit event. Return False if event was rejected."""
         return self.__emitter.__emit__(event, phase)
 
     @property
     def emitter(self):
         # type: () -> EventEmitter
-        """Event emitter."""
+        """AbstractEvent emitter."""
         return self.__emitter
 
 
@@ -64,7 +65,7 @@ class EventListenerMixin(object):
 
     @abstractmethod
     def __react__(self, event, phase):
-        # type: (Any, EventPhase) -> None
+        # type: (AbstractEvent, EventPhase) -> None
         """React to an event."""
         error = "event listener class '{}' did not implement '__react__' method".format(
             type(self).__name__
@@ -97,7 +98,7 @@ class ListenerToken(Slotted):
     @property
     def emitter(self):
         # type: () -> EventEmitter
-        """Event emitter."""
+        """AbstractEvent emitter."""
         emitter = self.__emitter_ref()
         if emitter is not None:
             return emitter
@@ -107,7 +108,7 @@ class ListenerToken(Slotted):
     @property
     def listener(self):
         # type: () -> EventListenerMixin
-        """Event listener."""
+        """AbstractEvent listener."""
         listener = self.__listener_ref()
         if listener is not None:
             return listener
@@ -147,7 +148,7 @@ class EventEmitter(Slotted):
             listener.__react__(self.__emitting, self.__emitting_phase)
 
     def __emit__(self, event, phase):
-        # type: (Any, EventPhase) -> bool
+        # type: (AbstractEvent, EventPhase) -> bool
         """Emit event to all listeners. Return False if event was rejected."""
 
         # Check phase type
@@ -262,8 +263,8 @@ class EventEmitter(Slotted):
 
     @property
     def emitting(self):
-        # type: () -> Optional[Any]
-        """Event currently being emitted."""
+        # type: () -> Optional[AbstractEvent]
+        """AbstractEvent currently being emitted."""
         return self.__emitting
 
     @property
