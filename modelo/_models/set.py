@@ -500,12 +500,6 @@ class SetProxyModel(SetModel):
                     self._remove(*event.old_values)
 
     @property
-    def _history(self):
-        # type: () -> None
-        """History (not settable)."""
-        return super(SetProxyModel, self)._history
-
-    @property
     def _source(self):
         # type: () -> SetModel
         """Source set model."""

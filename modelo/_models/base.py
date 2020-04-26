@@ -4,9 +4,9 @@
 from abc import abstractmethod
 from contextlib import contextmanager
 from weakref import ref
-from six import with_metaclass
-from typing import FrozenSet, ContextManager, Optional, Union, Tuple, Any, cast
-from slotted import SlottedABCMeta, SlottedABC
+from six import with_metaclass, iteritems
+from typing import FrozenSet, ContextManager, Optional, Type, Tuple, Any, Dict, cast
+from slotted import SlottedABCMeta, SlottedABC, Slotted
 
 from .._base.constants import DEAD_REF
 from .._base.events import Event
@@ -23,10 +23,9 @@ from .._components.hierarchy import (
     ChildrenUpdates,
 )
 from .._components.history import UndoableCommand, History
-from ..utils.type_checking import assert_is_instance
 from ..utils.partial import Partial
 
-__all__ = ["ModelMeta", "Model", "ModelEvent", "ModelCommand"]
+__all__ = ["HistoryDescriptor", "ModelMeta", "Model", "ModelEvent", "ModelCommand"]
 
 
 class ModelHierarchy(Hierarchy):
@@ -47,8 +46,99 @@ class ModelHierarchy(Hierarchy):
         super(ModelHierarchy, self).update_children(children_updates)
 
 
+class HistoryDescriptor(Slotted):
+    """Descriptor that gives access to a model's command history."""
+
+    __slots__ = ("__size",)
+
+    def __init__(self, size=0):
+        # type: (int) -> None
+        """Initialize with size."""
+        size = int(size)
+        if size < -1:
+            size = -1
+        self.__size = size
+
+    def __get__(self, model, model_cls=None):
+        # type: (Optional[Model], Optional[Type[Model]]) -> Any
+        """Descriptor 'get' access."""
+        if model is None:
+            return self
+        return model.__get_history__()
+
+    def __set__(self, model, value):
+        # type: (Model, Any) -> None
+        """Descriptor 'set' access."""
+        error = "attribute is read-only"
+        raise AttributeError(error)
+
+    def __delete__(self, model):
+        # type: (Model) -> None
+        """Descriptor 'delete' access."""
+        error = "attribute is read-only"
+        raise AttributeError(error)
+
+    @property
+    def size(self):
+        # type: () -> int
+        """History size."""
+        return self.__size
+
+
+def _make_model_class(
+    mcs,  # type: Type[ModelMeta]
+    name,  # type: str
+    bases,  # type: Tuple[Type, ...]
+    dct,  # type: Dict[str, Any]
+):
+    # type: (...) -> ModelMeta
+    """Make model class/subclass."""
+    dct = dict(dct)
+
+    # Init 'history_descriptor'
+    dct["__history_descriptor__"] = None
+
+    # Make class
+    cls = super(ModelMeta, mcs).__new__(mcs, name, bases, dct)
+
+    # Find a history descriptor
+    for base in cls.__mro__:
+        if base is not cls and isinstance(base, ModelMeta):
+            if base.__history_descriptor__ is not None:
+                type.__setattr__(
+                    cls, "__history_descriptor__", base.__history_descriptor__
+                )
+                break
+            continue
+        else:
+            for member_name, member in iteritems(base.__dict__):
+                if isinstance(member, HistoryDescriptor):
+                    type.__setattr__(cls, "__history_descriptor__", member)
+                    break
+            else:
+                continue
+        break
+
+    return cls
+
+
 class ModelMeta(SlottedABCMeta):
     """Metaclass for 'Model'."""
+
+    __new__ = staticmethod(_make_model_class)
+    __history_descriptor__ = None  # type: Optional[HistoryDescriptor]
+
+    def __call__(cls, *args, **kwargs):
+        """Make an instance an initialize it."""
+        self = super(ModelMeta, cls).__call__(*args, **kwargs)
+
+        # Adjust history size according to descriptor
+        if cls.history_descriptor is not None and cls.history_descriptor.size != 0:
+            history = self.__get_history__()
+            if history is not None and history.size == 0:
+                history.size = cls.history_descriptor.size
+
+        return self
 
     def __setattr__(cls, name, value):
         # type: (str, Any) -> None
@@ -66,6 +156,12 @@ class ModelMeta(SlottedABCMeta):
             raise AttributeError(error)
         super(ModelMeta, cls).__delattr__(name)
 
+    @property
+    def history_descriptor(cls):
+        # type: () -> Optional[HistoryDescriptor]
+        """History descriptor."""
+        return cls.__history_descriptor__
+
 
 class Model(
     with_metaclass(ModelMeta, HierarchicalMixin, EventListenerMixin, SlottedABC)
@@ -82,6 +178,10 @@ class Model(
 
     def __init__(self):
         """Initialize."""
+        if type(self).history_descriptor is not None:
+            self.__history = History(size=0)
+        else:
+            self.__history = None
         self.__hierarchy = ModelHierarchy(self)
         self.__hierarchy_access = HierarchyAccess(self.__hierarchy)
         self.__broadcaster = Broadcaster()
@@ -129,11 +229,7 @@ class Model(
     def __get_history__(self):
         # type: () -> Optional[History]
         """Get command history."""
-        try:
-            history = self.__history
-        except AttributeError:
-            history = self.__history = None
-        return history
+        return self.__history
 
     def __set_history__(self, history):
         # type: (Optional[History]) -> None
@@ -227,19 +323,6 @@ class Model(
                 yield
         else:
             yield
-
-    @property
-    def _history(self):
-        # type: () -> Optional[History]
-        """Command history."""
-        return self.__get_history__()
-
-    @_history.setter
-    def _history(self, history):
-        # type: (Optional[History]) -> None
-        """Set command history."""
-        assert_is_instance(history, History, optional=True)
-        self.__set_history__(history)
 
     @property
     def _hierarchy(self):

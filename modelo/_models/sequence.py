@@ -971,12 +971,6 @@ class SequenceProxyModel(SequenceModel):
                     self._change(event.index, *event.new_values)
 
     @property
-    def _history(self):
-        # type: () -> None
-        """History (not settable)."""
-        return super(SequenceProxyModel, self)._history
-
-    @property
     def _source(self):
         # type: () -> SequenceModel
         """Source sequence model."""

@@ -6,6 +6,7 @@ from typing import Any, Optional, Callable, Iterable, Union, Tuple
 from ._base.constants import SpecialValue
 from ._components.attributes import AttributeDelegate
 from ._components.broadcaster import EventPhase
+from ._models.base import HistoryDescriptor
 from ._models.object import AttributeDescriptor, AttributeDescriptorDependencyPromise
 from ._models.sequence import MutableSequenceModel, SequenceProxyModel
 from ._models.mapping import MutableMappingModel, MappingProxyModel
@@ -15,8 +16,9 @@ from .utils.type_checking import UnresolvedType as UType
 __all__ = [
     "dependencies",
     "attribute",
+    "history_attribute",
     "constant_attribute",
-    "default_attribute",
+    "permanent_attribute",
     "protected_attribute_pair",
     "sequence_attribute",
     "protected_sequence_attribute_pair",
@@ -98,6 +100,12 @@ def attribute(
     )
 
 
+def history_attribute(size=0):
+    # type: (int) -> HistoryDescriptor
+    """Make a history attribute."""
+    return HistoryDescriptor(size=size)
+
+
 def constant_attribute(value, final=None):
     # type: (Any, Optional[bool]) -> AttributeDescriptor
     """Make a constant attribute."""
@@ -106,7 +114,7 @@ def constant_attribute(value, final=None):
     return descriptor
 
 
-def default_attribute(
+def permanent_attribute(
     value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
     value_factory=None,  # type: Optional[Callable]
     exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
@@ -231,7 +239,7 @@ def sequence_attribute(
             history=history,
         )
 
-    return default_attribute(
+    return permanent_attribute(
         comparable=comparable,
         represented=represented,
         printed=printed,
@@ -282,7 +290,7 @@ def protected_sequence_attribute_pair(
             history=False,
         )
 
-    external = default_attribute(
+    external = permanent_attribute(
         comparable=comparable,
         represented=represented,
         printed=printed,
@@ -351,7 +359,7 @@ def mapping_attribute(
             key_history=key_history,
         )
 
-    return default_attribute(
+    return permanent_attribute(
         comparable=comparable,
         represented=represented,
         printed=printed,
@@ -414,7 +422,7 @@ def protected_mapping_attribute_pair(
             key_history=False,
         )
 
-    external = default_attribute(
+    external = permanent_attribute(
         comparable=comparable,
         represented=represented,
         printed=printed,
@@ -473,7 +481,7 @@ def set_attribute(
             history=history,
         )
 
-    return default_attribute(
+    return permanent_attribute(
         comparable=comparable,
         represented=represented,
         printed=printed,
@@ -524,7 +532,7 @@ def protected_set_attribute_pair(
             history=False,
         )
 
-    external = default_attribute(
+    external = permanent_attribute(
         comparable=comparable,
         represented=represented,
         printed=printed,

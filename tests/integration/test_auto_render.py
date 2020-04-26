@@ -14,7 +14,8 @@ class TestAutoRender(unittest.TestCase):
         from modelo.models import ObjectModel
         from modelo.attributes import (
             attribute,
-            default_attribute,
+            history_attribute,
+            permanent_attribute,
             sequence_attribute,
             protected_sequence_attribute_pair,
         )
@@ -25,7 +26,6 @@ class TestAutoRender(unittest.TestCase):
             SequenceChangeEvent,
             RejectEventException,
         )
-        from modelo.history import History
 
         def ensure_unique_name(container, container_name, event, phase, cache):
             if event.model is container and phase is EventPhase.INTERNAL_PRE:
@@ -81,15 +81,8 @@ class TestAutoRender(unittest.TestCase):
                 ensure_unique_name(self.comps, "comp", event, phase, self.__comp_names)
 
         class Application(ObjectModel):
-            template = default_attribute(default_factory=Template)
-
-            def __init__(self):
-                # self._history = History()
-                super(Application, self).__init__()
-
-            @property
-            def history(self):
-                return self._history
+            template = permanent_attribute(default_factory=Template)
+            history = history_attribute()
 
         app = Application()
 
@@ -106,7 +99,7 @@ class TestAutoRender(unittest.TestCase):
         print(app.template.layers)
         print(app.template.comps)
 
-        history.undo()
+        app.history.undo()
 
         print(app.template.layers)
         print(app.template.comps)

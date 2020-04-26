@@ -278,10 +278,14 @@ class History(Slotted):
         "__broadcaster",
     )
 
-    def __init__(self):
-        # type: () -> None
-        """Initialize."""
-        self.__size = 500
+    def __init__(self, size=0):
+        # type: (int) -> None
+        """Initialize with size."""
+        size = int(size)
+        if size < -1:
+            size = -1
+
+        self.__size = size
         self.__undo_stack = []
         self.__redo_stack = []
         self.__running = False

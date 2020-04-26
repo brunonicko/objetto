@@ -27,8 +27,8 @@ class TestChainedActions(unittest.TestCase):
                 self.seq = MutableSequenceModel()
                 self.seq.events.add_listener(self)
 
-                self._history = history
-                self.seq._history = history
+                self.__set_history__(history)
+                self.seq.__set_history__(history)
 
             def __react__(self, event, phase):
                 if isinstance(event, SequenceInsertEvent) and phase is EventPhase.PRE:

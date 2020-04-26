@@ -10,17 +10,14 @@ class TestObject(unittest.TestCase):
 
     def test_usage(self):
         from modelo.models import ObjectModel
-        from modelo.attributes import attribute
-        from modelo._components.history import History
+        from modelo.attributes import attribute, history_attribute
 
         class Person(ObjectModel):
             name = attribute()
             sibling = attribute(parent=True)
-
-        history = History()
+            history = history_attribute()
 
         bruno = Person()
-        bruno._history = history
 
         bruno.name = "Bruno"
         self.assertEqual(bruno.name, "Bruno")
@@ -40,7 +37,7 @@ class TestObject(unittest.TestCase):
         self.assertIs(bianca_hierarchy.parent, None)
         self.assertIs(bianca_hierarchy.last_parent, bruno)
 
-        history.undo()
+        bruno.history.undo()
         self.assertIs(bruno.sibling, bianca)
         self.assertIs(bianca_hierarchy.parent, bruno)
         self.assertIs(bianca_hierarchy.last_parent, bruno)

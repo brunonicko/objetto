@@ -512,12 +512,6 @@ class MappingProxyModel(MappingModel):
                     self._update(event.new_values)
 
     @property
-    def _history(self):
-        # type: () -> None
-        """History (not settable)."""
-        return super(MappingProxyModel, self)._history
-
-    @property
     def _source(self):
         # type: () -> MappingModel
         """Source mapping model."""
