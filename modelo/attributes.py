@@ -5,8 +5,11 @@ from typing import Any, Optional, Callable, Iterable, Union, Tuple
 
 from ._base.constants import SpecialValue
 from ._components.attributes import AttributeDelegate
+from ._components.broadcaster import EventPhase
 from ._models.object import AttributeDescriptor, AttributeDescriptorDependencyPromise
 from ._models.sequence import MutableSequenceModel, SequenceProxyModel
+from ._models.mapping import MutableMappingModel, MappingProxyModel
+from ._models.set import MutableSetModel, SetProxyModel
 from .utils.type_checking import UnresolvedType as UType
 
 __all__ = [
@@ -17,6 +20,10 @@ __all__ = [
     "protected_attribute_pair",
     "sequence_attribute",
     "protected_sequence_attribute_pair",
+    "mapping_attribute",
+    "protected_mapping_attribute_pair",
+    "set_attribute",
+    "protected_set_attribute_pair",
 ]
 
 
@@ -247,6 +254,7 @@ def protected_sequence_attribute_pair(
     parent=True,  # type: bool
     history=True,  # type: bool
     final=False,  # type: bool
+    reaction_phase=EventPhase.POST,  # type: EventPhase
 ):
     # type: (...) -> Tuple[AttributeDescriptor, AttributeDescriptor]
     """Make two sequence attributes, one internal and one external (read-only)."""
@@ -266,6 +274,249 @@ def protected_sequence_attribute_pair(
         )
         return SequenceProxyModel(
             source=source,
+            reaction_phase=reaction_phase,
+            comparable=comparable,
+            represented=represented,
+            printed=printed,
+            parent=parent,
+            history=False,
+        )
+
+    external = default_attribute(
+        comparable=comparable,
+        represented=represented,
+        printed=printed,
+        default_factory=default_factory,
+        parent=parent,
+        history=False,
+        final=final,
+    )
+
+    internal = attribute(
+        comparable=False,
+        represented=False,
+        printed=False,
+        delegated=True,
+        parent=False,
+        history=history,
+        final=final,
+    )
+    internal.getter(
+        AttributeDelegate(
+            lambda d, _e=external: getattr(getattr(d, _e.name), "_source"),
+            gets=(AttributeDescriptorDependencyPromise(external),),
+        )
+    )
+
+    return internal, external
+
+
+def mapping_attribute(
+    value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    value_factory=None,  # type: Optional[Callable]
+    exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    default_module=None,  # type: Optional[str]
+    accepts_none=None,  # type: Optional[bool]
+    comparable=None,  # type: Optional[bool]
+    represented=False,  # type: Optional[bool]
+    printed=True,  # type: Optional[bool]
+    parent=True,  # type: bool
+    history=True,  # type: bool
+    key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    exact_key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    key_accepts_none=None,  # type: Optional[bool]
+    key_parent=True,  # type: bool
+    key_history=True,  # type: bool
+    final=False,  # type: bool
+):
+    # type: (...) -> AttributeDescriptor
+    """Make a mapping attribute."""
+
+    def default_factory():
+        return MutableMappingModel(
+            value_type=value_type,
+            value_factory=value_factory,
+            exact_value_type=exact_value_type,
+            default_module=default_module,
+            accepts_none=accepts_none,
+            comparable=comparable,
+            represented=represented,
+            printed=printed,
+            parent=parent,
+            history=history,
+            key_type=key_type,
+            exact_key_type=exact_key_type,
+            key_accepts_none=key_accepts_none,
+            key_parent=key_parent,
+            key_history=key_history,
+        )
+
+    return default_attribute(
+        comparable=comparable,
+        represented=represented,
+        printed=printed,
+        default_factory=default_factory,
+        parent=parent,
+        history=history,
+        final=final,
+    )
+
+
+def protected_mapping_attribute_pair(
+    value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    value_factory=None,  # type: Optional[Callable]
+    exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    default_module=None,  # type: Optional[str]
+    accepts_none=None,  # type: Optional[bool]
+    comparable=None,  # type: Optional[bool]
+    represented=False,  # type: Optional[bool]
+    printed=True,  # type: Optional[bool]
+    parent=True,  # type: bool
+    history=True,  # type: bool
+    key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    exact_key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    key_accepts_none=None,  # type: Optional[bool]
+    key_parent=True,  # type: bool
+    key_history=True,  # type: bool
+    final=False,  # type: bool
+    reaction_phase=EventPhase.POST,  # type: EventPhase
+):
+    # type: (...) -> Tuple[AttributeDescriptor, AttributeDescriptor]
+    """Make two mapping attributes, one internal and one external (read-only)."""
+
+    def default_factory():
+        source = MutableMappingModel(
+            value_type=value_type,
+            value_factory=value_factory,
+            exact_value_type=exact_value_type,
+            default_module=default_module,
+            accepts_none=accepts_none,
+            comparable=comparable,
+            represented=represented,
+            printed=printed,
+            parent=False,
+            history=history,
+            key_type=key_type,
+            exact_key_type=exact_key_type,
+            key_accepts_none=key_accepts_none,
+            key_parent=False,
+            key_history=key_history,
+        )
+        return MappingProxyModel(
+            source=source,
+            reaction_phase=reaction_phase,
+            comparable=comparable,
+            represented=represented,
+            printed=printed,
+            parent=parent,
+            history=False,
+            key_parent=key_parent,
+            key_history=False,
+        )
+
+    external = default_attribute(
+        comparable=comparable,
+        represented=represented,
+        printed=printed,
+        default_factory=default_factory,
+        parent=parent,
+        history=False,
+        final=final,
+    )
+
+    internal = attribute(
+        comparable=False,
+        represented=False,
+        printed=False,
+        delegated=True,
+        parent=False,
+        history=history,
+        final=final,
+    )
+    internal.getter(
+        AttributeDelegate(
+            lambda d, _e=external: getattr(getattr(d, _e.name), "_source"),
+            gets=(AttributeDescriptorDependencyPromise(external),),
+        )
+    )
+
+    return internal, external
+
+
+def set_attribute(
+    value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    value_factory=None,  # type: Optional[Callable]
+    exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    default_module=None,  # type: Optional[str]
+    accepts_none=None,  # type: Optional[bool]
+    comparable=None,  # type: Optional[bool]
+    represented=False,  # type: Optional[bool]
+    printed=True,  # type: Optional[bool]
+    parent=True,  # type: bool
+    history=True,  # type: bool
+    final=False,  # type: bool
+):
+    # type: (...) -> AttributeDescriptor
+    """Make a set attribute."""
+
+    def default_factory():
+        return MutableSetModel(
+            value_type=value_type,
+            value_factory=value_factory,
+            exact_value_type=exact_value_type,
+            default_module=default_module,
+            accepts_none=accepts_none,
+            comparable=comparable,
+            represented=represented,
+            printed=printed,
+            parent=parent,
+            history=history,
+        )
+
+    return default_attribute(
+        comparable=comparable,
+        represented=represented,
+        printed=printed,
+        default_factory=default_factory,
+        parent=parent,
+        history=history,
+        final=final,
+    )
+
+
+def protected_set_attribute_pair(
+    value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    value_factory=None,  # type: Optional[Callable]
+    exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
+    default_module=None,  # type: Optional[str]
+    accepts_none=None,  # type: Optional[bool]
+    comparable=None,  # type: Optional[bool]
+    represented=False,  # type: Optional[bool]
+    printed=True,  # type: Optional[bool]
+    parent=True,  # type: bool
+    history=True,  # type: bool
+    final=False,  # type: bool
+    reaction_phase=EventPhase.POST,  # type: EventPhase
+):
+    # type: (...) -> Tuple[AttributeDescriptor, AttributeDescriptor]
+    """Make two set attributes, one internal and one external (read-only)."""
+
+    def default_factory():
+        source = MutableSetModel(
+            value_type=value_type,
+            value_factory=value_factory,
+            exact_value_type=exact_value_type,
+            default_module=default_module,
+            accepts_none=accepts_none,
+            comparable=comparable,
+            represented=represented,
+            printed=printed,
+            parent=False,
+            history=history,
+        )
+        return SetProxyModel(
+            source=source,
+            reaction_phase=reaction_phase,
             comparable=comparable,
             represented=represented,
             printed=printed,

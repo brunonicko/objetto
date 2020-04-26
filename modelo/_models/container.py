@@ -71,9 +71,7 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
     def __repr__(self):
         # type: () -> str
         """Get representation."""
-        module = type(self).__module__
-        return "<{}{} object at {}{}>".format(
-            "{}.".format(module) if "_" not in module else "",
+        return "<{} {}{}>".format(
             type(self).__name__,
             hex(id(self)),
             (

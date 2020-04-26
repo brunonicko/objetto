@@ -24,7 +24,9 @@ from typing import (
 from collections import Counter
 
 from .._base.constants import SpecialValue
+from .._components.broadcaster import EventPhase
 from ..utils.type_checking import UnresolvedType as UType
+from ..utils.type_checking import assert_is_instance
 from ..utils.partial import Partial
 from ..utils.wrapped_dict import WrappedDict
 from .base import Model, ModelEvent
@@ -35,6 +37,7 @@ __all__ = [
     "MappingModelMeta",
     "MappingModel",
     "MutableMappingModel",
+    "MappingProxyModel",
 ]
 
 
@@ -193,7 +196,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
                     raise KeyError(key)
                 processed_revert[key] = self.__state[key]
             elif key not in self.__state:
-                processed_revert[key] = SpecialValue.MISSING
+                processed_revert[key] = SpecialValue.DELETED
             else:
                 processed_revert[key] = self.__state[key]
             processed_update[key] = value
@@ -419,3 +422,109 @@ class MutableMappingModel(MappingModel):
         # type: (Hashable, Any) -> Any
         """Set default value for key."""
         return self._setdefault(key, value)
+
+
+class MappingProxyModel(MappingModel):
+    """Read-only mapping model that reflects the values of another mapping model."""
+
+    __slots__ = ("__source", "__reaction_phase")
+
+    def __init__(
+        self,
+        source=None,  # type: Optional[MappingModel]
+        source_factory=None,  # type: Optional[Callable]
+        reaction_phase=EventPhase.POST,  # type: EventPhase
+        value_factory=None,  # type: Optional[Callable]
+        comparable=True,  # type: bool
+        represented=False,  # type: bool
+        printed=True,  # type: bool
+        parent=True,  # type: bool
+        history=True,  # type: bool
+        key_parent=True,  # type: bool
+        key_history=True,  # type: bool
+    ):
+        if source is None:
+            if source_factory is None:
+                error = "need to provide exactly one of 'source' or 'source_factory'"
+                raise ValueError(error)
+            source = source_factory()
+        elif source_factory is not None:
+            error = "can't provide both 'source' and 'source_factory'"
+            raise ValueError(error)
+
+        assert_is_instance(source, MappingModel)
+        assert_is_instance(reaction_phase, EventPhase)
+
+        parent = bool(parent) if parent is not None else not source.parent
+        history = bool(history) if history is not None else not source.history
+        key_parent = bool(
+            key_parent if key_parent is not None else not source.key_parent
+        )
+        key_history = bool(
+            key_history if key_history is not None else not source.key_history
+        )
+
+        if source.parent and parent:
+            error = "both source and proxy container models have 'parent' set to True"
+            raise ValueError(error)
+        if source.history and history:
+            error = "both source and proxy container models have 'history' set to True"
+            raise ValueError(error)
+        if source.key_parent and key_parent:
+            error = (
+                "both source and proxy container models have 'key_parent' set to True"
+            )
+            raise ValueError(error)
+        if source.key_history and key_history:
+            error = (
+                "both source and proxy container models have 'key_history' set to True"
+            )
+            raise ValueError(error)
+
+        super(MappingProxyModel, self).__init__(
+            value_type=None,
+            value_factory=value_factory,
+            exact_value_type=None,
+            default_module=None,
+            accepts_none=None,
+            comparable=comparable,
+            represented=represented,
+            printed=printed,
+            parent=parent,
+            history=history,
+            key_parent=key_parent,
+            key_history=key_history,
+        )
+
+        self.__source = source
+        self.__reaction_phase = reaction_phase
+
+        self._extend(source)
+        source.events.add_listener(self)
+
+    def __react__(self, event, phase):
+        # type: (ModelEvent, EventPhase) -> None
+        """React to an event."""
+        if isinstance(event, ModelEvent) and event.model is self._source:
+            if phase is self.__reaction_phase:
+                if type(event) is MappingUpdateEvent:
+                    event = cast(MappingUpdateEvent, event)
+                    self._update(event.new_values)
+
+    @property
+    def _history(self):
+        # type: () -> None
+        """History (not settable)."""
+        return super(MappingProxyModel, self)._history
+
+    @property
+    def _source(self):
+        # type: () -> MappingModel
+        """Source mapping model."""
+        return self.__source
+
+    @property
+    def reaction_phase(self):
+        # type: () -> EventPhase
+        """Phase in which the reaction takes place."""
+        return self.__reaction_phase

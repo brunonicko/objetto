@@ -7,6 +7,7 @@ from ._components.broadcaster import (
     StopEventPropagationException,
     RejectEventException,
 )
+from ._models.base import ModelEvent
 from ._models.object import AttributesUpdateEvent
 from ._models.sequence import (
     SequenceInsertEvent,
@@ -14,15 +15,21 @@ from ._models.sequence import (
     SequenceMoveEvent,
     SequenceChangeEvent,
 )
+from ._models.mapping import MappingUpdateEvent
+from ._models.set import SetAddEvent, SetRemoveEvent
 
 __all__ = [
     "EventPhase",
     "EventListenerMixin",
     "StopEventPropagationException",
     "RejectEventException",
+    "ModelEvent",
     "AttributesUpdateEvent",
     "SequenceInsertEvent",
     "SequencePopEvent",
     "SequenceMoveEvent",
     "SequenceChangeEvent",
+    "MappingUpdateEvent",
+    "SetAddEvent",
+    "SetRemoveEvent",
 ]

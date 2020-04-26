@@ -23,7 +23,6 @@ from typing import (
 from collections import Counter
 
 from .._components.broadcaster import EventPhase
-from ..utils.type_checking import UnresolvedType as UType
 from ..utils.type_checking import assert_is_instance
 from ..utils.partial import Partial
 from .base import Model, ModelEvent
@@ -904,7 +903,7 @@ class SequenceProxyModel(SequenceModel):
         self,
         source=None,  # type: Optional[SequenceModel]
         source_factory=None,  # type: Optional[Callable]
-        reaction_phase=EventPhase.PRE,  # type: EventPhase
+        reaction_phase=EventPhase.POST,  # type: EventPhase
         value_factory=None,  # type: Optional[Callable]
         comparable=True,  # type: bool
         represented=False,  # type: bool

@@ -841,10 +841,8 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
     def __repr__(self):
         # type: () -> str
         """Get representation."""
-        module = type(self).__module__
         repr_dict = self.__state.get_dict(attribute_sieve=lambda a: a.represented)
-        return "<{}{} object at {}{}>".format(
-            "{}.".format(module) if "_" not in module else "",
+        return "<{} {}{}>".format(
             type(self).__name__,
             hex(id(self)),
             " | {}".format(object_repr(**repr_dict)) if repr_dict else "",

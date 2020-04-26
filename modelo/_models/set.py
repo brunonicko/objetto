@@ -6,9 +6,21 @@ try:
 except ImportError:
     import collections as collections_abc
 from six import with_metaclass
-from typing import FrozenSet, Set, Hashable, Iterable, Iterator, Tuple, cast
+from typing import (
+    FrozenSet,
+    Set,
+    Hashable,
+    Iterable,
+    Iterator,
+    Optional,
+    Callable,
+    Tuple,
+    cast,
+)
 from collections import Counter
 
+from .._components.broadcaster import EventPhase
+from ..utils.type_checking import assert_is_instance
 from ..utils.partial import Partial
 from .base import Model, ModelEvent
 from .container import ContainerModelMeta, ContainerModel
@@ -19,6 +31,7 @@ __all__ = [
     "SetModelMeta",
     "SetModel",
     "MutableSetModel",
+    "SetProxyModel",
 ]
 
 
@@ -414,3 +427,92 @@ class MutableSetModel(SetModel):
         # type: (Iterable[Hashable, ...]) -> None
         """Get intersection between this and another iterable and update."""
         self._intersection_update(other)
+
+
+class SetProxyModel(SetModel):
+    """Read-only set model that reflects the values of another set model."""
+
+    __slots__ = ("__source", "__reaction_phase")
+
+    def __init__(
+        self,
+        source=None,  # type: Optional[SetModel]
+        source_factory=None,  # type: Optional[Callable]
+        reaction_phase=EventPhase.POST,  # type: EventPhase
+        value_factory=None,  # type: Optional[Callable]
+        comparable=True,  # type: bool
+        represented=False,  # type: bool
+        printed=True,  # type: bool
+        parent=None,  # type: Optional[bool]
+        history=None,  # type: Optional[bool]
+    ):
+        if source is None:
+            if source_factory is None:
+                error = "need to provide exactly one of 'source' or 'source_factory'"
+                raise ValueError(error)
+            source = source_factory()
+        elif source_factory is not None:
+            error = "can't provide both 'source' and 'source_factory'"
+            raise ValueError(error)
+
+        assert_is_instance(source, SetModel)
+        assert_is_instance(reaction_phase, EventPhase)
+
+        parent = bool(parent) if parent is not None else not source.parent
+        history = bool(history) if history is not None else not source.history
+
+        if source.parent and parent:
+            error = "both source and proxy container models have 'parent' set to True"
+            raise ValueError(error)
+        if source.history and history:
+            error = "both source and proxy container models have 'history' set to True"
+            raise ValueError(error)
+
+        super(SetProxyModel, self).__init__(
+            value_type=None,
+            value_factory=value_factory,
+            exact_value_type=None,
+            default_module=None,
+            accepts_none=None,
+            comparable=comparable,
+            represented=represented,
+            printed=printed,
+            parent=parent,
+            history=history,
+        )
+
+        self.__source = source
+        self.__reaction_phase = reaction_phase
+
+        self._extend(source)
+        source.events.add_listener(self)
+
+    def __react__(self, event, phase):
+        # type: (ModelEvent, EventPhase) -> None
+        """React to an event."""
+        if isinstance(event, ModelEvent) and event.model is self._source:
+            if phase is self.__reaction_phase:
+                if type(event) is SetAddEvent:
+                    event = cast(SetAddEvent, event)
+                    self._add(*event.new_values)
+                elif type(event) is SetRemoveEvent:
+                    event = cast(SetRemoveEvent, event)
+                    self._remove(*event.old_values)
+
+    @property
+    def _history(self):
+        # type: () -> None
+        """History (not settable)."""
+        return super(SetProxyModel, self)._history
+
+    @property
+    def _source(self):
+        # type: () -> SetModel
+        """Source set model."""
+        return self.__source
+
+    @property
+    def reaction_phase(self):
+        # type: () -> EventPhase
+        """Phase in which the reaction takes place."""
+        return self.__reaction_phase
