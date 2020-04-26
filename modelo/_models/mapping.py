@@ -464,18 +464,18 @@ class MappingProxyModel(MappingModel):
             key_history if key_history is not None else not source.key_history
         )
 
-        if source.parent and parent:
+        if getattr(source, "_parameters").parent and parent:
             error = "both source and proxy container models have 'parent' set to True"
             raise ValueError(error)
-        if source.history and history:
+        if getattr(source, "_parameters").history and history:
             error = "both source and proxy container models have 'history' set to True"
             raise ValueError(error)
-        if source.key_parent and key_parent:
+        if getattr(source, "_key_parameters").key_parent and key_parent:
             error = (
                 "both source and proxy container models have 'key_parent' set to True"
             )
             raise ValueError(error)
-        if source.key_history and key_history:
+        if getattr(source, "_key_parameters").key_history and key_history:
             error = (
                 "both source and proxy container models have 'key_history' set to True"
             )

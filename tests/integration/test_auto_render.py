@@ -16,7 +16,7 @@ class TestAutoRender(unittest.TestCase):
             attribute,
             default_attribute,
             sequence_attribute,
-            protected_set_attribute_pair,
+            protected_sequence_attribute_pair,
         )
         from modelo.events import (
             EventPhase,
@@ -25,6 +25,7 @@ class TestAutoRender(unittest.TestCase):
             SequenceChangeEvent,
             RejectEventException,
         )
+        from modelo.history import History
 
         def ensure_unique_name(container, container_name, event, phase, cache):
             if event.model is container and phase is EventPhase.INTERNAL_PRE:
@@ -52,10 +53,12 @@ class TestAutoRender(unittest.TestCase):
 
         class Comp(ObjectModel):
             name = attribute(value_factory=str, represented=True)
+            _nodes, nodes = protected_sequence_attribute_pair(represented=True)
 
             def __init__(self, name="master"):
                 super(Comp, self).__init__()
                 self.name = name
+                self._nodes.append("Node A", "Node B", "Node C")
 
         class Template(ObjectModel):
 
@@ -80,6 +83,14 @@ class TestAutoRender(unittest.TestCase):
         class Application(ObjectModel):
             template = default_attribute(default_factory=Template)
 
+            def __init__(self):
+                # self._history = History()
+                super(Application, self).__init__()
+
+            @property
+            def history(self):
+                return self._history
+
         app = Application()
 
         app.template.layers.append(Layer())
@@ -91,6 +102,11 @@ class TestAutoRender(unittest.TestCase):
         app.template.comps.append(Comp("comp_a"))
         app.template.comps.append(Comp("comp_b"))
         self.assertRaises(ValueError, app.template.comps.append, Comp())
+
+        print(app.template.layers)
+        print(app.template.comps)
+
+        history.undo()
 
         print(app.template.layers)
         print(app.template.comps)

@@ -926,10 +926,10 @@ class SequenceProxyModel(SequenceModel):
         parent = bool(parent) if parent is not None else not source.parent
         history = bool(history) if history is not None else not source.history
 
-        if source.parent and parent:
+        if getattr(source, "_parameters").parent and parent:
             error = "both source and proxy container models have 'parent' set to True"
             raise ValueError(error)
-        if source.history and history:
+        if getattr(source, "_parameters").history and history:
             error = "both source and proxy container models have 'history' set to True"
             raise ValueError(error)
 

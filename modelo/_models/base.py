@@ -73,10 +73,10 @@ class Model(
     """Abstract model."""
 
     __slots__ = (
+        "__history",
         "__hierarchy",
         "__hierarchy_access",
         "__broadcaster",
-        "__history",
         "__last_parent_history_ref",
     )
 
@@ -85,7 +85,6 @@ class Model(
         self.__hierarchy = ModelHierarchy(self)
         self.__hierarchy_access = HierarchyAccess(self.__hierarchy)
         self.__broadcaster = Broadcaster()
-        self.__history = None
         self.__last_parent_history_ref = DEAD_REF
 
     def __getattr__(self, name):
@@ -130,7 +129,11 @@ class Model(
     def __get_history__(self):
         # type: () -> Optional[History]
         """Get command history."""
-        return self.__history
+        try:
+            history = self.__history
+        except AttributeError:
+            history = self.__history = None
+        return history
 
     def __set_history__(self, history):
         # type: (Optional[History]) -> None
@@ -218,8 +221,9 @@ class Model(
     def _batch_context(self, name="Batch"):
         # type: (str) -> ContextManager
         """Batch context."""
-        if self.__history is not None:
-            with self.__history.batch_context(name):
+        history = self.__get_history__()
+        if history is not None:
+            with history.batch_context(name):
                 yield
         else:
             yield
