@@ -278,7 +278,7 @@ class History(Slotted):
         "__broadcaster",
     )
 
-    def __init__(self, size=0):
+    def __init__(self, size=500):
         # type: (int) -> None
         """Initialize with size."""
         size = int(size)
@@ -538,7 +538,7 @@ class History(Slotted):
     @contextmanager
     def batch_context(self, name):
         # type: (str) -> ContextManager
-        """Start a new batch context."""
+        """Batch context."""
 
         # Already running
         if self.__running:

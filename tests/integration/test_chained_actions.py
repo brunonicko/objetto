@@ -10,15 +10,13 @@ class TestChainedActions(unittest.TestCase):
 
     def test_multiple_actions_same_history(self):
         from modelo.models import ObjectModel, MutableSequenceModel
-        from modelo.attributes import attribute
-        from modelo._components.history import History
+        from modelo.attributes import attribute, history_attribute
         from modelo.events import EventPhase, SequenceInsertEvent, SequencePopEvent
-
-        history = History()
 
         class MyObject(ObjectModel):
             last_action = attribute()
             seq = attribute()
+            history = history_attribute()
 
             def __init__(self):
                 super(MyObject, self).__init__()
@@ -26,9 +24,6 @@ class TestChainedActions(unittest.TestCase):
 
                 self.seq = MutableSequenceModel()
                 self.seq.events.add_listener(self)
-
-                self.__set_history__(history)
-                self.seq.__set_history__(history)
 
             def __react__(self, event, phase):
                 if isinstance(event, SequenceInsertEvent) and phase is EventPhase.PRE:
@@ -47,10 +42,10 @@ class TestChainedActions(unittest.TestCase):
         obj.seq.pop()
         self.assertEqual(obj.last_action, "Pop (3,)")
 
-        history.undo()
+        obj.history.undo()
         self.assertEqual(obj.last_action, "Insert (3,)")
 
-        history.undo()
+        obj.history.undo()
         self.assertEqual(obj.last_action, "Pop (1, 2, 3)")
 
 

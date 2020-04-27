@@ -100,7 +100,7 @@ def attribute(
     )
 
 
-def history_attribute(size=0):
+def history_attribute(size=500):
     # type: (int) -> HistoryDescriptor
     """Make a history attribute."""
     return HistoryDescriptor(size=size)
@@ -131,6 +131,10 @@ def permanent_attribute(
 ):
     # type: (...) -> AttributeDescriptor
     """Make an read-only attribute that initializes with a default/default factory."""
+    if default is SpecialValue.MISSING and default_factory is None:
+        error = "need to specify 'default' or 'default_factory' for permanent attribute"
+        raise ValueError(error)
+
     return attribute(
         value_type=value_type,
         value_factory=value_factory,

@@ -3,7 +3,7 @@
 
 from abc import abstractmethod
 from contextlib import contextmanager
-from weakref import ref
+from weakref import WeakSet, WeakKeyDictionary, ref
 from six import with_metaclass, iteritems
 from typing import FrozenSet, ContextManager, Optional, Type, Tuple, Any, Dict, cast
 from slotted import SlottedABCMeta, SlottedABC, Slotted
@@ -64,6 +64,10 @@ class HistoryDescriptor(Slotted):
         """Descriptor 'get' access."""
         if model is None:
             return self
+        if not model.__initialized__:
+            raise AttributeError(
+                "can't access history before instance is fully initialized"
+            )
         return model.__get_history__()
 
     def __set__(self, model, value):
@@ -130,13 +134,22 @@ class ModelMeta(SlottedABCMeta):
 
     def __call__(cls, *args, **kwargs):
         """Make an instance an initialize it."""
-        self = super(ModelMeta, cls).__call__(*args, **kwargs)
 
-        # Adjust history size according to descriptor
-        if cls.history_descriptor is not None and cls.history_descriptor.size != 0:
-            history = self.__get_history__()
-            if history is not None and history.size == 0:
-                history.size = cls.history_descriptor.size
+        # Make an instance
+        self = cls.__new__(cls, *args, **kwargs)
+
+        # Mark as not initialized
+        self.__initialized__ = False
+
+        # Initialize it
+        self.__init__(*args, **kwargs)
+
+        # Post initialize history
+        if cls.history_descriptor is not None:
+            self.__post_initialize_history__()
+
+        # Mark as initialized
+        self.__initialized__ = True
 
         return self
 
@@ -169,7 +182,9 @@ class Model(
     """Abstract model."""
 
     __slots__ = (
+        "__initialized__",
         "__history",
+        "__history_provider_ref",
         "__hierarchy",
         "__hierarchy_access",
         "__broadcaster",
@@ -180,8 +195,10 @@ class Model(
         """Initialize."""
         if type(self).history_descriptor is not None:
             self.__history = History(size=0)
+            self.__history_provider_ref = ref(self)
         else:
             self.__history = None
+            self.__history_provider_ref = DEAD_REF
         self.__hierarchy = ModelHierarchy(self)
         self.__hierarchy_access = HierarchyAccess(self.__hierarchy)
         self.__broadcaster = Broadcaster()
@@ -229,15 +246,16 @@ class Model(
     def __get_history__(self):
         # type: () -> Optional[History]
         """Get command history."""
-        return self.__history
+        if self.__history is not None:
+            return self.__history
+        provider = self.__history_provider_ref()
+        if provider is not None:
+            return provider.__get_history__()
 
-    def __set_history__(self, history):
-        # type: (Optional[History]) -> None
-        """Set command history."""
-        old_history = self.__get_history__()
-        if old_history is not None and old_history is not history:
-            old_history.flush()
-        self.__history = history
+    def __post_initialize_history__(self):
+        # type: () -> None
+        """Post-initialize history properties."""
+        self.__history.size = type(self).history_descriptor.size
 
     def __get_last_parent_history__(self):
         # type: () -> Optional[History]
@@ -268,27 +286,28 @@ class Model(
         # Emit event (internal pre phase), which will return True if event was accepted
         if self.__broadcaster.emit(redo_event, EventPhase.INTERNAL_PRE):
 
-            # Get history
-            history = self.__get_history__()
-
-            # Filter out adopters which share the same history, clear history otherwise
-            filtered_history_adopters = set()
-            for history_adopter in history_adopters:
-                if history_adopter.__get_history__() is history:
-                    continue
-                filtered_history_adopters.add(history_adopter)
-                history_adopter.__set_history__(None)
+            # Filter history adopters, skipping the ones that provide their own history
+            filtered_history_adopters = set(
+                adopter for adopter in history_adopters
+                if type(adopter).history_descriptor is None
+            )
 
             # Run command
+            history = self.__get_history__()
             if history is None:
                 command.__flag_ran__()
                 command.__redo__()
             else:
                 history.__run__(command)
 
-            # Adopt history
-            for model in filtered_history_adopters:
-                model.__set_history__(history)
+            # Attach history adopters and propagate history
+            history = self.__get_history__()
+            for adopter in filtered_history_adopters:
+                old_history = adopter.__get_history__()
+                if old_history is not None:
+                    if old_history is not history:
+                        old_history.flush()
+                adopter.__history_provider_ref = ref(self)
 
             # Emit event (internal post phase)
             self.__broadcaster.emit(redo_event, EventPhase.INTERNAL_POST)
@@ -317,7 +336,7 @@ class Model(
     def _batch_context(self, name="Batch"):
         # type: (str) -> ContextManager
         """Batch context."""
-        history = self.__get_history__()
+        history = self.__history
         if history is not None:
             with history.batch_context(name):
                 yield
