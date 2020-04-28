@@ -3,7 +3,7 @@
 
 from abc import abstractmethod
 from contextlib import contextmanager
-from weakref import WeakSet, WeakKeyDictionary, ref
+from weakref import ref
 from six import with_metaclass, iteritems
 from typing import FrozenSet, ContextManager, Optional, Type, Tuple, Any, Dict, cast
 from slotted import SlottedABCMeta, SlottedABC, Slotted
@@ -288,7 +288,8 @@ class Model(
 
             # Filter history adopters, skipping the ones that provide their own history
             filtered_history_adopters = set(
-                adopter for adopter in history_adopters
+                adopter
+                for adopter in history_adopters
                 if type(adopter).history_descriptor is None
             )
 

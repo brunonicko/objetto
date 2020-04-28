@@ -5,7 +5,7 @@ try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
-from six import with_metaclass, raise_from
+from six import with_metaclass
 from typing import Any, Optional, Callable, Iterable, Union
 from slotted import Slotted
 
@@ -197,7 +197,7 @@ class ContainerModelParameters(Slotted):
         self.__parent = bool(parent)
         self.__history = bool(history)
 
-    def fabricate(self, value, accepts_missing=False, accepts_deleted=True):
+    def fabricate(self, value, accepts_missing=False, accepts_deleted=False):
         # type: (Any, bool, bool) -> Any
         """Fabricate value by running it through type checks and factory."""
         if self.value_factory is not None:

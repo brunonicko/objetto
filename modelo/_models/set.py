@@ -147,9 +147,7 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
             raise ValueError(error)
         processed_new_values = set()
         for value in set(new_values):
-            processed_value = self._parameters.fabricate(
-                value, accepts_missing=False, accepts_deleted=False
-            )
+            processed_value = self._parameters.fabricate(value)
             if processed_value not in self.__state:
                 processed_new_values.add(processed_value)
         return frozenset(processed_new_values)

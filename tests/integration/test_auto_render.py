@@ -9,8 +9,6 @@ class TestAutoRender(unittest.TestCase):
     """Tests actions chained by events."""
 
     def test_application(self):
-        from collections import defaultdict
-
         from modelo.models import ObjectModel
         from modelo.attributes import (
             attribute,
@@ -100,9 +98,6 @@ class TestAutoRender(unittest.TestCase):
         print(app.template.comps)
 
         app.history.undo()
-
-        print(app.template.layers)
-        print(app.template.comps)
 
 
 if __name__ == "__main__":

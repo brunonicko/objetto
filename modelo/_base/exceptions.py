@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Base exceptions."""
 
-__all__ = ["ModeloException", "ModeloError", "SpecialValueError"]
-
 
 class ModeloException(Exception):
     """Base exception."""
