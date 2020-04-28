@@ -7,7 +7,7 @@ except ImportError:
     import collections as collections_abc
 from collections import namedtuple
 from itertools import chain
-from six import with_metaclass
+from six import with_metaclass, string_types
 from typing import (
     Tuple,
     Callable,
@@ -16,7 +16,6 @@ from typing import (
     FrozenSet,
     List,
     Iterator,
-    Iterable,
     Union,
     cast,
 )
@@ -339,6 +338,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
 
     __slots__ = ()
     __state_type__ = list
+    _default_type_name_prefix = "List"
 
     def __getitem__(self, item):
         # type: (Union[int, slice]) -> Union[Any, List]
@@ -796,6 +796,19 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         return self.__state.count(value)
 
     @property
+    def _default_type_name(self):
+        # type: () -> str
+        """Default type name."""
+        value_type = self._parameters.value_type
+        if isinstance(value_type, type):
+            type_name = "{}List".format(value_type.__name__.capitalize())
+        elif isinstance(value_type, string_types):
+            type_name = "{}List".format(value_type.split(".")[-1].capitalize())
+        else:
+            type_name = "List"
+        return type_name
+
+    @property
     def __state(self):
         # type: () -> List
         """Internal state."""
@@ -910,6 +923,7 @@ class SequenceProxyModel(SequenceModel):
         printed=True,  # type: bool
         parent=None,  # type: Optional[bool]
         history=None,  # type: Optional[bool]
+        type_name=None,  # type: Optional[None]
     ):
         if source is None:
             if source_factory is None:
@@ -944,6 +958,7 @@ class SequenceProxyModel(SequenceModel):
             printed=printed,
             parent=parent,
             history=history,
+            type_name=type_name,
         )
 
         self.__source = source

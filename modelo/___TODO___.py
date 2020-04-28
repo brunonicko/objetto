@@ -1,4 +1,4 @@
-# TODO: container type_name property in repr
+# TODO: reactions
 # TODO: reaction factories module (unique_attribute)
 # TODO: public modules imports
 # TODO: immutable data?

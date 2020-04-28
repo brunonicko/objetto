@@ -5,7 +5,7 @@ try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
-from six import with_metaclass
+from six import with_metaclass, string_types
 from typing import Any, Optional, Callable, Iterable, Union
 from slotted import Slotted
 
@@ -26,7 +26,7 @@ class ContainerModelMeta(ModelMeta):
 class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
     """Model that stores values in a mapping."""
 
-    __slots__ = ("__state", "__parameters")
+    __slots__ = ("__type_name", "__state", "__parameters")
     __state_type__ = NotImplemented
 
     def __init__(
@@ -41,10 +41,14 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         printed=True,  # type: bool
         parent=True,  # type: bool
         history=True,  # type: bool
+        type_name=None,  # type: Optional[str]
     ):
         # type: (...) -> None
         """Initialize with parameters."""
         super(ContainerModel, self).__init__()
+
+        # Type name
+        self.__type_name = (str(type_name) if type_name is not None else None) or None
 
         # State
         state_type = type(self).__state_type__
@@ -72,7 +76,7 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         # type: () -> str
         """Get representation."""
         return "<{} {}{}>".format(
-            type(self).__name__,
+            self.__type_name or self._default_type_name,
             hex(id(self)),
             (
                 " | {}".format(self.__state)
@@ -86,7 +90,7 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         # type: () -> str
         """Get string representation."""
         return "<{}{}>".format(
-            type(self).__name__,
+            self.__type_name or self._default_type_name,
             (
                 " {}".format(self.__state)
                 if self._parameters.printed and self.__state
@@ -106,6 +110,12 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         self_state = self.__state
         other_state = other.__state
         return self_state == other_state
+
+    @property
+    def _default_type_name(self):
+        # type: () -> str
+        """Default type name."""
+        raise NotImplementedError()
 
     def __get_state__(self):
         # type: () -> collections_abc.Container

@@ -224,6 +224,7 @@ def sequence_attribute(
     printed=True,  # type: Optional[bool]
     parent=True,  # type: bool
     history=True,  # type: bool
+    type_name=None,  # type: Optional[str]
     final=False,  # type: bool
 ):
     # type: (...) -> AttributeDescriptor
@@ -241,6 +242,7 @@ def sequence_attribute(
             printed=printed,
             parent=parent,
             history=history,
+            type_name=type_name,
         )
 
     return permanent_attribute(
@@ -265,6 +267,7 @@ def protected_sequence_attribute_pair(
     printed=True,  # type: Optional[bool]
     parent=True,  # type: bool
     history=True,  # type: bool
+    type_name=None,  # type: Optional[str]
     final=False,  # type: bool
     reaction_phase=EventPhase.POST,  # type: EventPhase
 ):
@@ -283,7 +286,15 @@ def protected_sequence_attribute_pair(
             printed=printed,
             parent=False,
             history=history,
+            type_name=type_name,
         )
+
+        if type_name is None:
+            proxy_type_name = getattr(source, "_default_type_name")
+        else:
+            proxy_type_name = type_name
+        proxy_type_name = "ReadOnly{}".format(proxy_type_name)
+
         return SequenceProxyModel(
             source=source,
             reaction_phase=reaction_phase,
@@ -292,6 +303,7 @@ def protected_sequence_attribute_pair(
             printed=printed,
             parent=parent,
             history=False,
+            type_name=proxy_type_name,
         )
 
     external = permanent_attribute(
@@ -334,6 +346,7 @@ def mapping_attribute(
     printed=True,  # type: Optional[bool]
     parent=True,  # type: bool
     history=True,  # type: bool
+    type_name=None,  # type: Optional[str]
     key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
     exact_key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
     key_accepts_none=None,  # type: Optional[bool]
@@ -356,6 +369,7 @@ def mapping_attribute(
             printed=printed,
             parent=parent,
             history=history,
+            type_name=type_name,
             key_type=key_type,
             exact_key_type=exact_key_type,
             key_accepts_none=key_accepts_none,
@@ -385,6 +399,7 @@ def protected_mapping_attribute_pair(
     printed=True,  # type: Optional[bool]
     parent=True,  # type: bool
     history=True,  # type: bool
+    type_name=None,  # type: Optional[str]
     key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
     exact_key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
     key_accepts_none=None,  # type: Optional[bool]
@@ -408,12 +423,20 @@ def protected_mapping_attribute_pair(
             printed=printed,
             parent=False,
             history=history,
+            type_name=type_name,
             key_type=key_type,
             exact_key_type=exact_key_type,
             key_accepts_none=key_accepts_none,
             key_parent=False,
             key_history=key_history,
         )
+
+        if type_name is None:
+            proxy_type_name = getattr(source, "_default_type_name")
+        else:
+            proxy_type_name = type_name
+        proxy_type_name = "ReadOnly{}".format(proxy_type_name)
+
         return MappingProxyModel(
             source=source,
             reaction_phase=reaction_phase,
@@ -421,6 +444,7 @@ def protected_mapping_attribute_pair(
             represented=represented,
             printed=printed,
             parent=parent,
+            type_name=proxy_type_name,
             history=False,
             key_parent=key_parent,
             key_history=False,
@@ -466,6 +490,7 @@ def set_attribute(
     printed=True,  # type: Optional[bool]
     parent=True,  # type: bool
     history=True,  # type: bool
+    type_name=None,  # type: Optional[str]
     final=False,  # type: bool
 ):
     # type: (...) -> AttributeDescriptor
@@ -483,6 +508,7 @@ def set_attribute(
             printed=printed,
             parent=parent,
             history=history,
+            type_name=type_name,
         )
 
     return permanent_attribute(
@@ -507,6 +533,7 @@ def protected_set_attribute_pair(
     printed=True,  # type: Optional[bool]
     parent=True,  # type: bool
     history=True,  # type: bool
+    type_name=None,  # type: Optional[str]
     final=False,  # type: bool
     reaction_phase=EventPhase.POST,  # type: EventPhase
 ):
@@ -525,7 +552,15 @@ def protected_set_attribute_pair(
             printed=printed,
             parent=False,
             history=history,
+            type_name=type_name,
         )
+
+        if type_name is None:
+            proxy_type_name = getattr(source, "_default_type_name")
+        else:
+            proxy_type_name = type_name
+        proxy_type_name = "ReadOnly{}".format(proxy_type_name)
+
         return SetProxyModel(
             source=source,
             reaction_phase=reaction_phase,
@@ -534,6 +569,7 @@ def protected_set_attribute_pair(
             printed=printed,
             parent=parent,
             history=False,
+            type_name=proxy_type_name,
         )
 
     external = permanent_attribute(

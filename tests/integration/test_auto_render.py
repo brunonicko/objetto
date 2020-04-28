@@ -96,6 +96,7 @@ class TestAutoRender(unittest.TestCase):
 
         print(app.template.layers)
         print(app.template.comps)
+        print(app.template.comps[0].nodes)
 
         app.history.undo()
 

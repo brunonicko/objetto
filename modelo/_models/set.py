@@ -5,7 +5,7 @@ try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
-from six import with_metaclass
+from six import with_metaclass, string_types
 from typing import (
     FrozenSet,
     Set,
@@ -370,6 +370,19 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
         return self.__state.issuperset(other)
 
     @property
+    def _default_type_name(self):
+        # type: () -> str
+        """Default type name."""
+        value_type = self._parameters.value_type
+        if isinstance(value_type, type):
+            type_name = "{}Set".format(value_type.__name__.capitalize())
+        elif isinstance(value_type, string_types):
+            type_name = "{}Set".format(value_type.split(".")[-1].capitalize())
+        else:
+            type_name = "Set"
+        return type_name
+
+    @property
     def __state(self):
         # type: () -> Set
         """Internal state."""
@@ -443,6 +456,7 @@ class SetProxyModel(SetModel):
         printed=True,  # type: bool
         parent=None,  # type: Optional[bool]
         history=None,  # type: Optional[bool]
+        type_name=None,  # type: Optional[str]
     ):
         if source is None:
             if source_factory is None:
@@ -477,6 +491,7 @@ class SetProxyModel(SetModel):
             printed=printed,
             parent=parent,
             history=history,
+            type_name=type_name,
         )
 
         self.__source = source

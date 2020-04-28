@@ -5,7 +5,7 @@ try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
-from six import with_metaclass, iteritems, iterkeys, itervalues
+from six import with_metaclass, iteritems, iterkeys, itervalues, string_types
 from typing import (
     Dict,
     Callable,
@@ -119,6 +119,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
         printed=True,  # type: bool
         parent=True,  # type: bool
         history=True,  # type: bool
+        type_name=None,  # type: Optional[str]
         key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
         exact_key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
         key_accepts_none=None,  # type: Optional[bool]
@@ -138,6 +139,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
             printed=printed,
             parent=parent,
             history=history,
+            type_name=type_name,
         )
         self.__key_parameters = ContainerModelParameters(
             value_type=key_type,
@@ -371,6 +373,36 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
         return list(self.__state.values())
 
     @property
+    def _default_type_name(self):
+        # type: () -> str
+        """Default type name."""
+        value_type = self._parameters.value_type
+        key_type = self._key_parameters.value_type
+
+        if isinstance(value_type, type):
+            value_type_name = value_type.__name__.capitalize()
+        elif isinstance(value_type, string_types):
+            value_type_name = value_type.split(".")[-1].capitalize()
+        else:
+            value_type_name = ""
+
+        if isinstance(key_type, type):
+            key_type_name = key_type.__name__.capitalize()
+        elif isinstance(key_type, string_types):
+            key_type_name = key_type.split(".")[-1].capitalize()
+        else:
+            key_type_name = ""
+
+        if value_type_name and key_type_name:
+            type_name = "{}To{}Dict".format(key_type_name, value_type_name)
+        elif value_type_name or key_type_name:
+            type_name = "{}Dict".format(value_type_name or key_type_name)
+        else:
+            type_name = "Dict"
+
+        return type_name
+
+    @property
     def __state(self):
         # type: () -> Dict
         """Internal state."""
@@ -440,6 +472,7 @@ class MappingProxyModel(MappingModel):
         printed=True,  # type: bool
         parent=True,  # type: bool
         history=True,  # type: bool
+        type_name=None,  # type: Optional[str]
         key_parent=True,  # type: bool
         key_history=True,  # type: bool
     ):
@@ -492,6 +525,7 @@ class MappingProxyModel(MappingModel):
             printed=printed,
             parent=parent,
             history=history,
+            type_name=type_name,
             key_parent=key_parent,
             key_history=key_history,
         )
