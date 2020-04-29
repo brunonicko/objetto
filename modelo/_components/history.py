@@ -330,12 +330,12 @@ class History(Slotted):
         str_dict = {
             "size": self.size,
             "running": self.running,
-            "current_index": self.current_index
+            "current_index": self.current_index,
         }
         return "{}{}{}>".format(
             repr_str,
             ", {}".format(object_repr(**str_dict)) if str_dict else "",
-            " | {}".format(commands_list) if commands_list else ""
+            " | {}".format(commands_list) if commands_list else "",
         )
 
     def __repr(self):

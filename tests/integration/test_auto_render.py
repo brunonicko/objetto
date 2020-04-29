@@ -32,7 +32,7 @@ class TestAutoRender(unittest.TestCase):
             order = attribute(
                 default=0,
                 value_factory=integer(maximum=100) + curated(*range(90)),
-                represented=True
+                represented=True,
             )
             _nodes, nodes = protected_sequence_attribute_pair(
                 represented=True, type_name="CompNodeList"
@@ -49,7 +49,7 @@ class TestAutoRender(unittest.TestCase):
             )
             comps = sequence_attribute(
                 Comp,
-                reaction=unique_attributes("name", order=lambda v, vs: max(vs) + 1)
+                reaction=unique_attributes("name", order=lambda v, vs: max(vs) + 1),
             )
 
         class Application(ObjectModel):

@@ -50,4 +50,5 @@ class ConcatenatedCallables(MergeableCallableMixin):
 
 class Partial(MergeableCallableMixin, partial):
     """Partial that can be added/concatenated with another callable/partial."""
+
     pass

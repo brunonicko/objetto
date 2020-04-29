@@ -244,7 +244,7 @@ def sequence_attribute(
             parent=parent,
             history=history,
             type_name=type_name,
-            reaction=reaction
+            reaction=reaction,
         )
 
     return permanent_attribute(
@@ -290,7 +290,7 @@ def protected_sequence_attribute_pair(
             parent=False,
             history=history,
             type_name=type_name,
-            reaction=reaction
+            reaction=reaction,
         )
         proxy_type_name = "ReadOnly{}".format(
             source.default_type_name if type_name is None else type_name
@@ -510,7 +510,7 @@ def set_attribute(
             parent=parent,
             history=history,
             type_name=type_name,
-            reaction=reaction
+            reaction=reaction,
         )
 
     return permanent_attribute(
@@ -556,7 +556,7 @@ def protected_set_attribute_pair(
             parent=False,
             history=history,
             type_name=type_name,
-            reaction=reaction
+            reaction=reaction,
         )
         proxy_type_name = "ReadOnly{}".format(
             source.default_type_name if type_name is None else type_name

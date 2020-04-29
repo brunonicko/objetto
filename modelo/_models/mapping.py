@@ -141,7 +141,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
             parent=parent,
             history=history,
             type_name=type_name,
-            reaction=reaction
+            reaction=reaction,
         )
         self.__key_parameters = ContainerModelParameters(
             value_type=key_type,

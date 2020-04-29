@@ -9,7 +9,9 @@ from typing import Any, Tuple, Dict, Callable, Mapping, Union, Optional, FrozenS
 
 from ._base.events import AbstractEvent
 from ._components.broadcaster import (
-    EventPhase, EventListenerMixin, RejectEventException
+    EventPhase,
+    EventListenerMixin,
+    RejectEventException,
 )
 from ._models.base import ModelEvent
 from ._models.object import ObjectModel, AttributesUpdateEvent
@@ -52,9 +54,9 @@ class UniqueAttributesReaction(MergeableCallableMixin, EventListenerMixin, Slott
         # type: (Union[AbstractEvent, Any], EventPhase) -> None
         """React to an event coming from a container's child."""
         if (
-            isinstance(event.model, ObjectModel) and
-            isinstance(event, AttributesUpdateEvent) and
-            phase is EventPhase.INTERNAL_PRE
+            isinstance(event.model, ObjectModel)
+            and isinstance(event, AttributesUpdateEvent)
+            and phase is EventPhase.INTERNAL_PRE
         ):
             # React before they are actually get updated
             child = event.model
@@ -91,7 +93,8 @@ class UniqueAttributesReaction(MergeableCallableMixin, EventListenerMixin, Slott
         # Build a dictionary with existing values
         all_values = defaultdict(set)
         existing_children = frozenset(
-            child for child in container.hierarchy.children
+            child
+            for child in container.hierarchy.children
             if isinstance(child, ObjectModel)
         )
         for child in existing_children:
@@ -129,9 +132,7 @@ class UniqueAttributesReaction(MergeableCallableMixin, EventListenerMixin, Slott
                     # Prepare error message
                     error = (
                         "another object in '{}' already has '{}' set to '{}'"
-                    ).format(
-                        container.default_type_name, name, repr(value)
-                    )
+                    ).format(container.default_type_name, name, repr(value))
 
                     # Try to use incrementer to get a unique value
                     if name in self.__incrementers:

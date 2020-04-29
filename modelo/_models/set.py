@@ -493,7 +493,7 @@ class SetProxyModel(SetModel):
             parent=parent,
             history=history,
             type_name=type_name,
-            reaction=reaction
+            reaction=reaction,
         )
 
         self.__source = source
