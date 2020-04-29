@@ -17,30 +17,8 @@ class TestAutoRender(unittest.TestCase):
             sequence_attribute,
             protected_sequence_attribute_pair,
         )
-        from modelo.events import (
-            EventPhase,
-            ModelEvent,
-            SequenceInsertEvent,
-            SequenceChangeEvent,
-            RejectEventException,
-        )
-
-        def ensure_unique_name(container, container_name, event, phase, cache):
-            if event.model is container and phase is EventPhase.INTERNAL_PRE:
-                if event.adoptions:
-                    new_names = set()
-                    for layer in event.adoptions:
-                        name = layer.name
-                        if name in cache:
-                            error = (
-                                "a {} named '{}' already exists in the template"
-                            ).format(container_name, name)
-                            raise ValueError(error)
-                        new_names.add(name)
-                    cache.update(new_names)
-                if event.releases:
-                    old_names = set(layer.name for layer in event.releases)
-                    cache.difference_update(old_names)
+        from modelo.factories import integer, curated
+        from modelo.reactions import unique_attributes, limit
 
         class Layer(ObjectModel):
             name = attribute(value_factory=str, represented=True)
@@ -51,7 +29,14 @@ class TestAutoRender(unittest.TestCase):
 
         class Comp(ObjectModel):
             name = attribute(value_factory=str, represented=True)
-            _nodes, nodes = protected_sequence_attribute_pair(represented=True)
+            order = attribute(
+                default=0,
+                value_factory=integer(maximum=100) + curated(*range(90)),
+                represented=True
+            )
+            _nodes, nodes = protected_sequence_attribute_pair(
+                represented=True, type_name="CompNodeList"
+            )
 
             def __init__(self, name="master"):
                 super(Comp, self).__init__()
@@ -59,24 +44,13 @@ class TestAutoRender(unittest.TestCase):
                 self._nodes.append("Node A", "Node B", "Node C")
 
         class Template(ObjectModel):
-
-            __slots__ = ("__layer_names", "__comp_names")
-
-            layers = sequence_attribute(Layer)
-            comps = sequence_attribute(Comp)
-
-            def __init__(self):
-                super(Template, self).__init__()
-                self.__layer_names = set()
-                self.__comp_names = set()
-                self.layers.events.add_listener(self)
-                self.comps.events.add_listener(self)
-
-            def __react__(self, event, phase):
-                ensure_unique_name(
-                    self.layers, "layer", event, phase, self.__layer_names
-                )
-                ensure_unique_name(self.comps, "comp", event, phase, self.__comp_names)
+            layers = sequence_attribute(
+                Layer, reaction=unique_attributes("name") + limit(maximum=4)
+            )
+            comps = sequence_attribute(
+                Comp,
+                reaction=unique_attributes("name", order=lambda v, vs: max(vs) + 1)
+            )
 
         class Application(ObjectModel):
             template = permanent_attribute(default_factory=Template)
@@ -88,17 +62,31 @@ class TestAutoRender(unittest.TestCase):
         app.template.layers.append(Layer("layer_a"))
         app.template.layers.append(Layer("layer_b"))
         self.assertRaises(ValueError, app.template.layers.append, Layer())
+        app.template.layers.append(Layer("layer_c"))
+        self.assertRaises(ValueError, app.template.layers.append, Layer("layer_d"))
 
         app.template.comps.append(Comp())
         app.template.comps.append(Comp("comp_a"))
         app.template.comps.append(Comp("comp_b"))
         self.assertRaises(ValueError, app.template.comps.append, Comp())
 
-        print(app.template.layers)
-        print(app.template.comps)
-        print(app.template.comps[0].nodes)
+        last_comp = app.template.comps[-1]
+        self.assertRaises(ValueError, setattr, last_comp, "name", "master")
+        last_comp_popped = app.template.comps.pop()
+        self.assertIs(last_comp, last_comp_popped)
+        last_comp.name = "master"
+        self.assertRaises(ValueError, app.template.comps.append, last_comp)
 
-        app.history.undo()
+        app.template.comps[1].order = 2
+        self.assertEqual(app.template.comps[1].order, 2)
+        app.template.comps[1].order = 0
+        self.assertEqual(app.template.comps[1].order, 1)
+
+        self.assertRaises(ValueError, setattr, app.template.comps[1], "order", 120)
+        self.assertRaises(ValueError, setattr, app.template.comps[1], "order", 95)
+
+        app.history.undo_all()
+        app.history.redo_all()
 
 
 if __name__ == "__main__":

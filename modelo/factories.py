@@ -4,25 +4,39 @@
 import re
 from typing import Any, Optional, Callable, Tuple
 
-from .utils.partial import Partial
+from .utils.type_checking import assert_is_instance
 
 __all__ = [
-    "int_factory",
-    "float_factory",
-    "regex_match_factory",
-    "regex_sub_factory",
-    "curated_factory",
+    "integer",
+    "floating_point",
+    "regex_match",
+    "regex_sub",
+    "curated",
 ]
 
 
-def concatenated_factories(*factories):
-    # type: (Tuple[Callable, ...]) -> Callable
-    """Concatenate multiple factories into one."""
-    return sum(Partial(f) for f in factories)
+class Factory(object):
+    """Decorator that allows for concatenating/adding of factory functions."""
+
+    __slots__ = ("__funcs",)
+
+    def __init__(self, *funcs):
+        self.__funcs = funcs
+
+    def __call__(self, value):
+        for func in self.__funcs:
+            value = func(value)
+        return value
+
+    def __add__(self, other):
+        # type: (Factory) -> Factory
+        """Add with another factory."""
+        assert_is_instance(other, Factory, exact=True)
+        return Factory(*self.__funcs + other.__funcs)
 
 
-def int_factory(minimum=None, maximum=None, clamp=False):
-    # type: (Optional[int], Optional[int], bool) -> Callable
+def integer(minimum=None, maximum=None, clamp=False):
+    # type: (Optional[int], Optional[int], bool) -> Factory
     """Integer factory maker."""
     if clamp and minimum is None and maximum is None:
         error = (
@@ -35,6 +49,7 @@ def int_factory(minimum=None, maximum=None, clamp=False):
     if maximum is not None:
         maximum = int(maximum)
 
+    @Factory
     def factory(value):
         """Factory function."""
         value = int(value)
@@ -55,8 +70,8 @@ def int_factory(minimum=None, maximum=None, clamp=False):
     return factory
 
 
-def float_factory(minimum=None, maximum=None, clamp=False):
-    # type: (Optional[float], Optional[float], bool) -> Callable
+def floating_point(minimum=None, maximum=None, clamp=False):
+    # type: (Optional[float], Optional[float], bool) -> Factory
     """Float factory maker."""
     if clamp and minimum is None and maximum is None:
         error = (
@@ -69,6 +84,7 @@ def float_factory(minimum=None, maximum=None, clamp=False):
     if maximum is not None:
         maximum = float(maximum)
 
+    @Factory
     def factory(value):
         """Factory function."""
         value = float(value)
@@ -89,11 +105,12 @@ def float_factory(minimum=None, maximum=None, clamp=False):
     return factory
 
 
-def regex_match_factory(pattern):
-    # type: (str) -> Callable
+def regex_match(pattern):
+    # type: (str) -> Factory
     """String regex match factory."""
     compiled = re.compile(pattern)
 
+    @Factory
     def factory(value):
         """Factory function."""
         value = str(value)
@@ -104,11 +121,12 @@ def regex_match_factory(pattern):
     return factory
 
 
-def regex_sub_factory(pattern, repl):
-    # type: (str, str) -> Callable
+def regex_sub(pattern, repl):
+    # type: (str, str) -> Factory
     """String regex sub factory."""
     compiled = re.compile(pattern)
 
+    @Factory
     def factory(value):
         """Factory function."""
         value = str(value)
@@ -117,10 +135,11 @@ def regex_sub_factory(pattern, repl):
     return factory
 
 
-def curated_factory(*curated_values):
-    # type: (Tuple[Any, ...]) -> Callable
+def curated(*curated_values):
+    # type: (Tuple[Any, ...]) -> Factory
     """Curated values factory."""
 
+    @Factory
     def factory(value):
         """Factory function."""
         if value not in curated_values:

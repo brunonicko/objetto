@@ -3,7 +3,7 @@
 
 from abc import abstractmethod
 from enum import Enum
-from weakref import WeakKeyDictionary, ref
+from weakref import WeakKeyDictionary, WeakSet, ref
 from slotted import Slotted
 from six import raise_from
 from typing import Any, FrozenSet, Optional, Callable, Union
@@ -123,6 +123,7 @@ class EventEmitter(Slotted):
         "__weakref__",
         "__broadcaster_ref",
         "__listeners",
+        "__external_listeners",
         "__emitting",
         "__emitting_phase",
         "__reacting",
@@ -133,6 +134,7 @@ class EventEmitter(Slotted):
         """Init with a broadcaster object."""
         self.__broadcaster_ref = ref(broadcaster)
         self.__listeners = WeakKeyDictionary()
+        self.__external_listeners = WeakSet()
         self.__emitting = None
         self.__emitting_phase = None
         self.__reacting = set()
@@ -212,11 +214,9 @@ class EventEmitter(Slotted):
 
         return True
 
-    def add_listener(self, listener, force=False):
-        # type: (EventListenerMixin, bool) -> ListenerToken
+    def __add_listener__(self, listener, force=False, internal=True):
+        # type: (EventListenerMixin, bool, bool) -> ListenerToken
         """Add a listener and get its token."""
-        assert_is_instance(listener, EventListenerMixin)
-
         if listener in self.__listeners:
             return self.get_token(listener)
 
@@ -231,19 +231,43 @@ class EventEmitter(Slotted):
         if force and self.__emitting is not None:
             reacting.add(listener)
 
+        if not internal:
+            self.__external_listeners.add(listener)
+
         return token
+
+    def __remove_listener__(self, listener, force=False, internal=True):
+        # type: (EventListenerMixin, bool, bool) -> None
+        """Remove a listener."""
+        if not internal and listener not in self.__external_listeners:
+            return
+        self.__listeners.pop(listener, None)
+        self.__external_listeners.discard(listener)
+        if force:
+            self.__reacting.discard(listener)
+
+    def __get_token__(self, listener):
+        # type: (EventListenerMixin) -> ListenerToken
+        """Get token for listener."""
+        return self.__listeners[listener]
+
+    def add_listener(self, listener, force=False):
+        # type: (EventListenerMixin, bool) -> ListenerToken
+        """Add a listener and get its token."""
+        assert_is_instance(listener, EventListenerMixin)
+        return self.__add_listener__(listener, force=force, internal=False)
 
     def remove_listener(self, listener, force=False):
         # type: (EventListenerMixin, bool) -> None
         """Remove a listener."""
-        self.__listeners.pop(listener, None)
-        if force:
-            self.__reacting.discard(listener)
+        self.__remove_listener__(listener, force=force, internal=False)
 
     def get_token(self, listener):
         # type: (EventListenerMixin) -> ListenerToken
         """Get token for listener."""
-        return self.__listeners[listener]
+        if listener not in self.__external_listeners:
+            raise KeyError(listener)
+        return self.__get_token__(listener)
 
     @property
     def __broadcaster(self):
@@ -259,7 +283,7 @@ class EventEmitter(Slotted):
     def listeners(self):
         # type: () -> FrozenSet[EventListenerMixin, ...]
         """Listeners."""
-        return frozenset(self.__listeners)
+        return frozenset(self.__external_listeners)
 
     @property
     def emitting(self):

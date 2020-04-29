@@ -10,6 +10,8 @@ from slotted import Slotted, SlottedABC
 from .._base.exceptions import ModeloException, ModeloError
 from .._base.events import Event
 from .._components.broadcaster import Broadcaster, EventPhase, EventEmitter
+from ..utils.recursive_repr import recursive_repr
+from ..utils.object_repr import object_repr
 
 __all__ = [
     "HistoryEvent",
@@ -304,6 +306,49 @@ class History(Slotted):
         # type: () -> int
         """Get command count."""
         return len(self.__undo_stack) + len(self.__redo_stack) + 1
+
+    @recursive_repr
+    def __repr__(self):
+        # type: () -> str
+        """Get representation."""
+        return self.__repr()
+
+    @recursive_repr
+    def __str__(self):
+        # type: () -> str
+        """Get string representation."""
+        repr_str = self.__repr()[:-1]
+        commands_list = []
+        current_index = self.current_index
+        for i, command in enumerate(self):
+            if i == 0:
+                continue
+            if i == current_index:
+                commands_list.append("<{}>".format(command.name))
+            else:
+                commands_list.append(command.name)
+        str_dict = {
+            "size": self.size,
+            "running": self.running,
+            "current_index": self.current_index
+        }
+        return "{}{}{}>".format(
+            repr_str,
+            ", {}".format(object_repr(**str_dict)) if str_dict else "",
+            " | {}".format(commands_list) if commands_list else ""
+        )
+
+    def __repr(self):
+        # type: () -> str
+        """Get representation."""
+        repr_dict = {
+            "length": len(self.commands),
+        }
+        return "<{} {}{}>".format(
+            type(self).__name__,
+            hex(id(self)),
+            " | {}".format(object_repr(**repr_dict)) if repr_dict else "",
+        )
 
     @contextmanager
     def _event_context(self, event):

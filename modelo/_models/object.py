@@ -50,7 +50,7 @@ __all__ = [
 class AttributesUpdateEvent(ModelEvent):
     """Emitted when values for an object model's attributes change."""
 
-    __slots__ = ("__new_values", "__old_values")
+    __slots__ = ("__new_values", "__old_values", "__input_values")
 
     def __init__(
         self,
@@ -59,12 +59,14 @@ class AttributesUpdateEvent(ModelEvent):
         releases,  # type: FrozenSet[Model, ...]
         new_values,  # type: Mapping[str, Any]
         old_values,  # type: Mapping[str, Any]
+        input_values=None,  # type: Optional[Tuple[Tuple[str, Any], ...]]
     ):
         # type: (...) -> None
         """Initialize with new values and old values."""
         super(AttributesUpdateEvent, self).__init__(model, adoptions, releases)
         self.__new_values = new_values
         self.__old_values = old_values
+        self.__input_values = input_values
 
     def __eq_equal_properties__(self):
         # type: () -> Tuple[str, ...]
@@ -101,6 +103,12 @@ class AttributesUpdateEvent(ModelEvent):
         # type: () -> Mapping[str, Any]
         """Old values."""
         return self.__old_values
+
+    @property
+    def input_values(self):
+        # type: () -> Optional[Tuple[Tuple[str, Any], ...]]
+        """Input values."""
+        return self.__input_values
 
 
 class AttributeDescriptorDependencyPromise(DependencyPromise):
@@ -934,6 +942,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
             releases=redo_children.releases,
             new_values=redo_update,
             old_values=undo_update,
+            input_values=name_value_pairs,
         )
         undo_event = AttributesUpdateEvent(
             model=self,
@@ -941,6 +950,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
             releases=undo_children.releases,
             new_values=undo_update,
             old_values=redo_update,
+            input_values=None,
         )
 
         # Dispatch

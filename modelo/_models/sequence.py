@@ -17,6 +17,7 @@ from typing import (
     List,
     Iterator,
     Union,
+    Iterable,
     cast,
 )
 from collections import Counter
@@ -338,7 +339,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
 
     __slots__ = ()
     __state_type__ = list
-    _default_type_name_prefix = "List"
+    default_type_name_prefix = "List"
 
     def __getitem__(self, item):
         # type: (Union[int, slice]) -> Union[Any, List]
@@ -796,7 +797,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         return self.__state.count(value)
 
     @property
-    def _default_type_name(self):
+    def default_type_name(self):
         # type: () -> str
         """Default type name."""
         value_type = self._parameters.value_type
@@ -924,6 +925,7 @@ class SequenceProxyModel(SequenceModel):
         parent=None,  # type: Optional[bool]
         history=None,  # type: Optional[bool]
         type_name=None,  # type: Optional[None]
+        reaction=None,  # type: Optional[Callable]
     ):
         if source is None:
             if source_factory is None:
@@ -959,6 +961,7 @@ class SequenceProxyModel(SequenceModel):
             parent=parent,
             history=history,
             type_name=type_name,
+            reaction=reaction
         )
 
         self.__source = source

@@ -370,7 +370,7 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
         return self.__state.issuperset(other)
 
     @property
-    def _default_type_name(self):
+    def default_type_name(self):
         # type: () -> str
         """Default type name."""
         value_type = self._parameters.value_type
@@ -457,6 +457,7 @@ class SetProxyModel(SetModel):
         parent=None,  # type: Optional[bool]
         history=None,  # type: Optional[bool]
         type_name=None,  # type: Optional[str]
+        reaction=None,  # type: Optional[Callable]
     ):
         if source is None:
             if source_factory is None:
@@ -492,6 +493,7 @@ class SetProxyModel(SetModel):
             parent=parent,
             history=history,
             type_name=type_name,
+            reaction=reaction
         )
 
         self.__source = source

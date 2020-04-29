@@ -25,7 +25,7 @@ class TestMapping(unittest.TestCase):
         sa.update({"a": 1, "b": 2, "c": 3, "d": sb})
         del sa["a"]
         del sa["b"]
-        self.assertIs(sb._hierarchy.parent, sa)
+        self.assertIs(sb.hierarchy.parent, sa)
 
 
 if __name__ == "__main__":

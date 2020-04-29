@@ -345,7 +345,7 @@ class Model(
             yield
 
     @property
-    def _hierarchy(self):
+    def hierarchy(self):
         # type: () -> HierarchyAccess
         """Parent-child hierarchy."""
         return self.__hierarchy_access

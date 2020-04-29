@@ -120,6 +120,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
         parent=True,  # type: bool
         history=True,  # type: bool
         type_name=None,  # type: Optional[str]
+        reaction=None,  # type: Optional[Callable]
         key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
         exact_key_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
         key_accepts_none=None,  # type: Optional[bool]
@@ -140,6 +141,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
             parent=parent,
             history=history,
             type_name=type_name,
+            reaction=reaction
         )
         self.__key_parameters = ContainerModelParameters(
             value_type=key_type,
@@ -373,7 +375,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
         return list(self.__state.values())
 
     @property
-    def _default_type_name(self):
+    def default_type_name(self):
         # type: () -> str
         """Default type name."""
         value_type = self._parameters.value_type
@@ -475,6 +477,7 @@ class MappingProxyModel(MappingModel):
         type_name=None,  # type: Optional[str]
         key_parent=True,  # type: bool
         key_history=True,  # type: bool
+        reaction=None,  # type: Optional[Callable]
     ):
         if source is None:
             if source_factory is None:
@@ -526,6 +529,7 @@ class MappingProxyModel(MappingModel):
             parent=parent,
             history=history,
             type_name=type_name,
+            reaction=reaction,
             key_parent=key_parent,
             key_history=key_history,
         )

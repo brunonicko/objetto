@@ -25,7 +25,7 @@ class TestObject(unittest.TestCase):
         bianca = Person()
         bianca.name = "Bianca"
         self.assertEqual(bianca.name, "Bianca")
-        bianca_hierarchy = bianca._hierarchy
+        bianca_hierarchy = bianca.hierarchy
         self.assertIs(bianca_hierarchy.last_parent, None)
 
         bruno.sibling = bianca

@@ -9,12 +9,13 @@ from six import with_metaclass, string_types
 from typing import Any, Optional, Callable, Iterable, Union
 from slotted import Slotted
 
+from .._components.broadcaster import EventPhase
 from .._base.constants import SpecialValue
 from .._base.exceptions import SpecialValueError
 from ..utils.type_checking import UnresolvedType as UType
 from ..utils.recursive_repr import recursive_repr
 from ..utils.type_checking import assert_is_unresolved_type, assert_is_instance
-from .base import ModelMeta, Model
+from .base import ModelMeta, Model, ModelEvent
 
 __all__ = ["ContainerModelMeta", "ContainerModel", "ContainerModelParameters"]
 
@@ -26,7 +27,7 @@ class ContainerModelMeta(ModelMeta):
 class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
     """Model that stores values in a mapping."""
 
-    __slots__ = ("__type_name", "__state", "__parameters")
+    __slots__ = ("__type_name", "__state", "__parameters", "__reaction")
     __state_type__ = NotImplemented
 
     def __init__(
@@ -42,6 +43,7 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         parent=True,  # type: bool
         history=True,  # type: bool
         type_name=None,  # type: Optional[str]
+        reaction=None,  # type: Optional[Callable]
     ):
         # type: (...) -> None
         """Initialize with parameters."""
@@ -71,12 +73,22 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
             history=history,
         )
 
+        # Reaction
+        if reaction is not None and not callable(reaction):
+            error = "specified 'reaction' of type '{}' is not callable".format(
+                type(reaction).__name__
+            )
+            raise TypeError(error)
+        self.__reaction = reaction
+        if reaction is not None:
+            self.events.__add_listener__(self, force=True)
+
     @recursive_repr
     def __repr__(self):
         # type: () -> str
         """Get representation."""
         return "<{} {}{}>".format(
-            self.__type_name or self._default_type_name,
+            self.type_name,
             hex(id(self)),
             (
                 " | {}".format(self.__state)
@@ -90,7 +102,7 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         # type: () -> str
         """Get string representation."""
         return "<{}{}>".format(
-            self.__type_name or self._default_type_name,
+            self.type_name,
             (
                 " {}".format(self.__state)
                 if self._parameters.printed and self.__state
@@ -111,11 +123,23 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         other_state = other.__state
         return self_state == other_state
 
+    def __react__(self, event, phase):
+        # type: (ModelEvent, EventPhase) -> None
+        """React to an event."""
+        if self.__reaction is not None:
+            self.__reaction(self, event, phase)
+
     @property
-    def _default_type_name(self):
+    def default_type_name(self):
         # type: () -> str
         """Default type name."""
         raise NotImplementedError()
+
+    @property
+    def type_name(self):
+        # type: () -> str
+        """Type name."""
+        return self.__type_name or self.default_type_name
 
     def __get_state__(self):
         # type: () -> collections_abc.Container

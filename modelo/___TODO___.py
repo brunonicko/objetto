@@ -1,6 +1,3 @@
-# TODO: reactions
-# TODO: reaction factories module (unique_attribute)
-# TODO: public modules imports
 # TODO: immutable data?
 # TODO: docstrings and cleanup
 # TODO: pickling

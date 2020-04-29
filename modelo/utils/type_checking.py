@@ -7,7 +7,7 @@ except ImportError:
     import collections as collections_abc
 from os import environ
 from itertools import chain
-from six import string_types
+from six import string_types, raise_from
 from typing import Any, Union, Type, Iterable, Tuple, Optional
 
 __all__ = [
@@ -146,14 +146,18 @@ def assert_is_instance(
 ):
     # type: (...) -> None
     """Assert 'obj' is an instance of any of the provided 'types'."""
-    is_instance(
-        obj,
-        types,
-        optional=optional,
-        exact=exact,
-        error=True,
-        default_module_name=default_module_name,
-    )
+    try:
+        is_instance(
+            obj,
+            types,
+            optional=optional,
+            exact=exact,
+            error=True,
+            default_module_name=default_module_name,
+        )
+    except TypeError as e:
+        raise_from(e, None)
+        raise e
 
 
 def is_unresolved_type(types):
