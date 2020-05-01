@@ -11,4 +11,4 @@ class ModeloError(StandardError, ModeloException):
 
 
 class SpecialValueError(ModeloError):
-    """Raised when using a special value where it is not allowed."""
+    """Raised when using a special value in the wrong context."""

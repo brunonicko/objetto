@@ -2,13 +2,13 @@
 
 import unittest
 
-__all__ = ["TestAutoRender"]
+__all__ = ["TestApplication"]
 
 
-class TestAutoRender(unittest.TestCase):
-    """Tests actions chained by events."""
+class TestApplication(unittest.TestCase):
+    """Test simple application."""
 
-    def test_application(self):
+    def test_default(self):
         from modelo.models import ObjectModel
         from modelo.attributes import (
             attribute,
@@ -43,7 +43,7 @@ class TestAutoRender(unittest.TestCase):
                 self.name = name
                 self._nodes.append("Node A", "Node B", "Node C")
 
-        class Template(ObjectModel):
+        class Document(ObjectModel):
             layers = sequence_attribute(
                 Layer, reaction=unique_attributes("name") + limit(maximum=4)
             )
@@ -53,7 +53,7 @@ class TestAutoRender(unittest.TestCase):
             )
 
         class Application(ObjectModel):
-            template = permanent_attribute(default_factory=Template)
+            template = permanent_attribute(default_factory=Document)
             history = history_attribute()
 
         app = Application()

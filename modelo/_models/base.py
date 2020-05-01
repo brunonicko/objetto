@@ -142,6 +142,7 @@ class ModelMeta(SlottedABCMeta):
         self.__initialized__ = False
 
         # Initialize it
+        self.__pre_init__()
         self.__init__(*args, **kwargs)
 
         # Post initialize history
@@ -191,8 +192,8 @@ class Model(
         "__last_parent_history_ref",
     )
 
-    def __init__(self):
-        """Initialize."""
+    def __pre_init__(self):
+        """Pre-initialize."""
         if type(self).history_descriptor is not None:
             self.__history = History(size=0)
             self.__history_provider_ref = ref(self)

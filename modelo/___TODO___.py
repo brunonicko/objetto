@@ -1,3 +1,6 @@
+# TODO: Rename 'modelo' to something else
+# TODO: Rename component to system
+# TODO: Rename 'Model' to 'Component'
 # TODO: simplification with attrs or pyrsistent
 # TODO: immutable data?
 # TODO: docstrings and cleanup

@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="modelo",
-    version="0.0.1",
+    version="0.0.1a1",
     author="Bruno Nicko",
     author_email="brunonicko@gmail.com",
     description="Framework for building data-centric Applications/APIs",

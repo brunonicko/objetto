@@ -836,10 +836,10 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
     __slots__ = ("__state",)
     __state_type__ = ObjectState
 
-    def __init__(self):
+    def __pre_init__(self):
         # type: () -> None
-        """Initialize."""
-        super(ObjectModel, self).__init__()
+        """Pre-initialize."""
+        super(ObjectModel, self).__pre_init__()
         cls = type(self)
         self.__state = cls.__state_type__(self)
         if cls.factories:

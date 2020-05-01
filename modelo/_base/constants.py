@@ -5,11 +5,12 @@ from weakref import ref as _ref
 from enum import Enum as _Enum
 
 
+# Dead weak reference object
 DEAD_REF = _ref(type("DeadRef", (object,), {"__slots__": ("__weakref__",)})())
 
 
 class SpecialValue(_Enum):
-    """Special value."""
+    """Special value enum."""
 
-    MISSING = "missing"
-    DELETED = "deleted"
+    MISSING = "missing"  # represents the absence of a value
+    DELETED = "deleted"  # indicates that the value was deleted
