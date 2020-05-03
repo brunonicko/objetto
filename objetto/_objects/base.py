@@ -118,6 +118,12 @@ def _make_base_object_class(
     # Init 'history_descriptor'
     dct["__history_descriptor__"] = None
 
+    # Make sure hash is the object hash
+    def __hash__(self):
+        return object.__hash__(self)
+
+    dct["__hash__"] = __hash__
+
     # Make class
     cls = super(BaseObjectMeta, mcs).__new__(mcs, name, bases, dct)
 

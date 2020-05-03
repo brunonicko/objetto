@@ -55,19 +55,19 @@ class EventsError(ObjettoError, EventsException):
     """Events error."""
 
 
-class AlreadyEmittingError(StandardError):
+class AlreadyEmittingError(EventsError):
     """Raised when trying to emit during an ongoing emission."""
 
 
-class PhaseError(StandardError):
+class PhaseError(EventsError):
     """Raised when the current phase is not the expected one."""
 
 
-class StopEventPropagationException(Exception):
+class StopEventPropagationException(EventsException):
     """When raised during event emission, will prevent next listeners to react."""
 
 
-class RejectEventException(Exception):
+class RejectEventException(EventsException):
     """
     When raised during event emission, will prevent the action that originated the
     event from happening at all.
