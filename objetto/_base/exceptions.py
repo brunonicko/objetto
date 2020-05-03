@@ -6,5 +6,5 @@ class ObjettoException(Exception):
     """Objetto exception."""
 
 
-class ObjettoError(StandardError, ObjettoException):
+class ObjettoError(ObjettoException):
     """Objetto error."""
