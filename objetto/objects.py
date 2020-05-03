@@ -3,19 +3,19 @@
 
 from ._objects.base import BaseObject
 from ._objects.object import Object
-from ._objects.sequence import SequenceObject, MutableSequenceObject, SequenceProxyObject
-from ._objects.mapping import MappingObject, MutableMappingObject, MappingProxyObject
+from ._objects.list import ListObject, MutableListObject, ListProxyObject
+from ._objects.dict import DictObject, MutableDictObject, DictProxyObject
 from ._objects.set import SetObject, MutableSetObject, SetProxyObject
 
 __all__ = [
     "BaseObject",
     "Object",
-    "SequenceObject",
-    "MutableSequenceObject",
-    "SequenceProxyObject",
-    "MappingObject",
-    "MutableMappingObject",
-    "MappingProxyObject",
+    "ListObject",
+    "MutableListObject",
+    "ListProxyObject",
+    "DictObject",
+    "MutableDictObject",
+    "DictProxyObject",
     "SetObject",
     "MutableSetObject",
     "SetProxyObject",

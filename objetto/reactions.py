@@ -89,9 +89,7 @@ class UniqueAttributesReaction(MergeableCallableMixin, EventListenerMixin, Slott
         # Build a dictionary with existing values
         all_values = defaultdict(set)
         existing_children = frozenset(
-            child
-            for child in container.hierarchy.children
-            if isinstance(child, Object)
+            child for child in container.hierarchy.children if isinstance(child, Object)
         )
         for child in existing_children:
 

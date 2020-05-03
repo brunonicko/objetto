@@ -57,6 +57,7 @@ class ObjectEvent(BaseObjectEvent):
 
 class AttributesUpdateEvent(ObjectEvent):
     """Emitted when values for an object's attributes change."""
+
     new_values = field()
     old_values = field()
     input_values = field()

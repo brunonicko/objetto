@@ -30,7 +30,7 @@ __all__ = [
     "Broadcaster",
     "EventListenerMixin",
     "ListenerToken",
-    "EventEmitter"
+    "EventEmitter",
 ]
 
 

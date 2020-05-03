@@ -9,9 +9,9 @@ class TestChainedActions(unittest.TestCase):
     """Tests actions chained by events."""
 
     def test_multiple_actions_same_history(self):
-        from objetto.objects import Object, MutableSequenceObject
+        from objetto.objects import Object, MutableListObject
         from objetto.attributes import attribute, history_attribute
-        from objetto.events import EventPhase, SequenceInsertEvent, SequencePopEvent
+        from objetto.events import EventPhase, ListInsertEvent, ListPopEvent
 
         class MyObject(Object):
             last_action = attribute()
@@ -22,14 +22,14 @@ class TestChainedActions(unittest.TestCase):
                 super(MyObject, self).__init__()
                 self.last_action = None
 
-                self.seq = MutableSequenceObject()
+                self.seq = MutableListObject()
                 self.seq.events.add_listener(self)
 
             def __react__(self, event, phase):
-                if isinstance(event, SequenceInsertEvent) and phase is EventPhase.PRE:
+                if isinstance(event, ListInsertEvent) and phase is EventPhase.PRE:
                     if event.obj is self.seq:
                         self.last_action = "Insert " + str(event.new_values)
-                elif isinstance(event, SequencePopEvent) and phase is EventPhase.PRE:
+                elif isinstance(event, ListPopEvent) and phase is EventPhase.PRE:
                     if event.obj is self.seq:
                         self.last_action = "Pop " + str(event.old_values)
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Sequence object."""
+"""List object."""
 
 try:
     import collections.abc as collections_abc
@@ -25,65 +25,65 @@ from ..utils.partial import Partial
 from ..utils.type_checking import assert_is_instance
 
 from .base import BaseObjectEvent, BaseObject
-from .container import (
-    ContainerObjectEvent,
-    ContainerObjectMeta,
-    ContainerObject
-)
+from .container import ContainerObjectEvent, ContainerObjectMeta, ContainerObject
 
 __all__ = [
-    "SequenceObjectEvent",
-    "SequenceInsertEvent",
-    "SequencePopEvent",
-    "SequenceMoveEvent",
-    "SequenceChangeEvent",
-    "SequenceObjectMeta",
-    "SequenceObject",
-    "MutableSequenceObject",
-    "SequenceProxyObject",
+    "ListObjectEvent",
+    "ListInsertEvent",
+    "ListPopEvent",
+    "ListMoveEvent",
+    "ListChangeEvent",
+    "ListObjectMeta",
+    "ListObject",
+    "MutableListObject",
+    "ListProxyObject",
 ]
 
 
-class SequenceObjectEvent(ContainerObjectEvent):
-    """Sequence object event."""
+class ListObjectEvent(ContainerObjectEvent):
+    """List object event."""
 
 
-class SequenceInsertEvent(SequenceObjectEvent):
-    """Emitted when values are inserted into the sequence."""
+class ListInsertEvent(ListObjectEvent):
+    """Emitted when values are inserted into the list."""
+
     index = field()
     last_index = field()
     new_values = field()
 
 
-class SequencePopEvent(SequenceObjectEvent):
-    """Emitted when values are popped from the sequence."""
+class ListPopEvent(ListObjectEvent):
+    """Emitted when values are popped from the list."""
+
     index = field()
     last_index = field()
     old_values = field()
 
 
-class SequenceMoveEvent(SequenceObjectEvent):
-    """Emitted when values are moved within the sequence."""
+class ListMoveEvent(ListObjectEvent):
+    """Emitted when values are moved within the list."""
+
     index = field()
     target_index = field()
     last_index = field()
     values = field()
 
 
-class SequenceChangeEvent(SequenceObjectEvent):
-    """Emitted when values in the sequence change."""
+class ListChangeEvent(ListObjectEvent):
+    """Emitted when values in the list change."""
+
     index = field()
     last_index = field()
     new_values = field()
     old_values = field()
 
 
-class SequenceObjectMeta(ContainerObjectMeta):
-    """Metaclass for 'SequenceObject'."""
+class ListObjectMeta(ContainerObjectMeta):
+    """Metaclass for 'ListObject'."""
 
 
-class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
-    """Object that stores values in a sequence."""
+class ListObject(with_metaclass(ListObjectMeta, ContainerObject)):
+    """Object that stores values in a list."""
 
     __slots__ = ()
     __state_type__ = list
@@ -127,7 +127,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
         return index
 
     def __prepare_insert(self, index, *new_values):
-        # type: (int, Tuple) -> Tuple[SequenceInsert, SequencePop]
+        # type: (int, Tuple) -> Tuple[ListInsert, ListPop]
         """Prepare insert operation."""
         if not new_values:
             error = "no values provided"
@@ -136,12 +136,12 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
         index = self.__normalize_index(index, clamp=True)
         last_index = index + len(new_values) - 1
         return (
-            SequenceInsert(index=index, last_index=last_index, new_values=new_values),
-            SequencePop(index=index, last_index=last_index, old_values=new_values),
+            ListInsert(index=index, last_index=last_index, new_values=new_values),
+            ListPop(index=index, last_index=last_index, old_values=new_values),
         )
 
     def __prepare_pop(self, index=-1, last_index=None):
-        # type: (int, Optional[int]) -> Tuple[SequencePop, SequenceInsert]
+        # type: (int, Optional[int]) -> Tuple[ListPop, ListInsert]
         """Prepare pop operation."""
         index = self.__normalize_index(index)
         if last_index is None:
@@ -153,12 +153,12 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
             error = "no values in index range {} to {}".format(index, last_index)
             raise IndexError(error)
         return (
-            SequencePop(index=index, last_index=last_index, old_values=old_values),
-            SequenceInsert(index=index, last_index=last_index, new_values=old_values),
+            ListPop(index=index, last_index=last_index, old_values=old_values),
+            ListInsert(index=index, last_index=last_index, new_values=old_values),
         )
 
     def __prepare_move(self, index, target_index, last_index=None):
-        # type: (int, int, Optional[int]) -> Tuple[SequenceMove, SequenceMove]
+        # type: (int, int, Optional[int]) -> Tuple[ListMove, ListMove]
         """Prepare move operation."""
         index = self.__normalize_index(index)
         target_index = self.__normalize_index(target_index, clamp=True)
@@ -171,14 +171,14 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
             error = "no values in index range {} to {}".format(index, last_index)
             raise IndexError(error)
         if target_index < index:
-            undo_move = SequenceMove(
+            undo_move = ListMove(
                 index=target_index,
                 target_index=last_index + index - target_index,
                 values=values,
                 last_index=target_index + last_index - index,
             )
         elif target_index > last_index:
-            undo_move = SequenceMove(
+            undo_move = ListMove(
                 index=index + target_index - last_index,
                 target_index=index,
                 values=values,
@@ -188,7 +188,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
             error = "target index is within range of index and last index"
             raise IndexError(error)
         return (
-            SequenceMove(
+            ListMove(
                 index=index,
                 target_index=target_index,
                 values=values,
@@ -198,7 +198,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
         )
 
     def __prepare_change(self, index, *new_values):
-        # type: (int, Tuple[Any, ...]) -> Tuple[SequenceChange, SequenceChange]
+        # type: (int, Tuple[Any, ...]) -> Tuple[ListChange, ListChange]
         """Prepare change operation."""
         if not new_values:
             error = "no values provided"
@@ -208,13 +208,13 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
         last_index = self.__normalize_index(index + len(new_values) - 1)
         old_values = tuple(self.__state[index : last_index + 1])
         return (
-            SequenceChange(
+            ListChange(
                 index=index,
                 last_index=last_index,
                 new_values=new_values,
                 old_values=old_values,
             ),
-            SequenceChange(
+            ListChange(
                 index=index,
                 last_index=last_index,
                 new_values=old_values,
@@ -223,18 +223,18 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
         )
 
     def __insert(self, insert):
-        # type: (SequenceInsert) -> None
+        # type: (ListInsert) -> None
         """Insert values at an index."""
         self.__state[insert.index : insert.index] = insert.new_values
 
     def __pop(self, pop):
-        # type: (SequencePop) -> Tuple
+        # type: (ListPop) -> Tuple
         """Pop a range of values out."""
         del self.__state[pop.index : pop.last_index + 1]
         return pop.old_values
 
     def __move(self, move):
-        # type: (SequenceMove) -> None
+        # type: (ListMove) -> None
         """Move a range of values to a different index."""
         if move.target_index < move.index:
             del self.__state[move.index : move.last_index + 1]
@@ -244,7 +244,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
             del self.__state[move.index : move.last_index + 1]
 
     def __change(self, change):
-        # type: (SequenceChange) -> None
+        # type: (ListChange) -> None
         """Change a range of values."""
         self.__state[change.index : change.last_index + 1] = change.new_values
 
@@ -286,7 +286,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
         )
 
         # Create events
-        redo_event = SequenceInsertEvent(
+        redo_event = ListInsertEvent(
             obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
@@ -294,7 +294,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
             last_index=redo_insert.last_index,
             new_values=redo_insert.new_values,
         )
-        undo_event = SequencePopEvent(
+        undo_event = ListPopEvent(
             obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
@@ -342,7 +342,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
         )
 
         # Create events
-        redo_event = SequencePopEvent(
+        redo_event = ListPopEvent(
             obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
@@ -350,7 +350,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
             last_index=redo_pop.last_index,
             old_values=redo_pop.old_values,
         )
-        undo_event = SequenceInsertEvent(
+        undo_event = ListInsertEvent(
             obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
@@ -405,7 +405,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
         undo_children = ~redo_children
 
         # Create events
-        redo_event = SequenceMoveEvent(
+        redo_event = ListMoveEvent(
             obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
@@ -414,7 +414,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
             last_index=redo_move.last_index,
             values=redo_move.values,
         )
-        undo_event = SequenceMoveEvent(
+        undo_event = ListMoveEvent(
             obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
@@ -469,7 +469,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
         history_adopters = frozenset(history_adopters)
 
         # Create events
-        redo_event = SequenceChangeEvent(
+        redo_event = ListChangeEvent(
             obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
@@ -478,7 +478,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
             new_values=redo_change.new_values,
             old_values=redo_change.old_values,
         )
-        undo_event = SequenceChangeEvent(
+        undo_event = ListChangeEvent(
             obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
@@ -495,13 +495,13 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
 
     def _append(self, *new_values):
         # type: (Tuple[Any, ...]) -> None
-        """Insert values at the end of the sequence."""
+        """Insert values at the end of the list."""
         with self._batch_context("Append Values"):
             self._insert(len(self), *new_values)
 
     def _extend(self, *iterables):
         # type: (Any) -> None
-        """Extend the sequence with one or more iterables."""
+        """Extend the list with one or more iterables."""
         if not iterables:
             return
         with self._batch_context("Extend Values"):
@@ -509,7 +509,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
 
     def _remove(self, value, start=None, stop=None):
         # type: (Any, Optional[int], Optional[int]) -> None
-        """Remove value from sequence."""
+        """Remove value from list."""
         index = self._index(value, start=start, stop=stop)
         with self._batch_context("Remove Value"):
             self._pop(index)
@@ -541,7 +541,7 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
 
     def count(self, value):
         # type: (Any) -> int
-        """Count occurrences of a value in the sequence."""
+        """Count occurrences of a value in the list."""
         return self.__state.count(value)
 
     @property
@@ -561,11 +561,11 @@ class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
     def __state(self):
         # type: () -> List
         """Internal state."""
-        return cast(List, super(SequenceObject, self).__get_state__())
+        return cast(List, super(ListObject, self).__get_state__())
 
 
-class MutableSequenceObject(SequenceObject):
-    """Sequence object with public mutable methods."""
+class MutableListObject(ListObject):
+    """List object with public mutable methods."""
 
     __slots__ = ()
 
@@ -632,17 +632,17 @@ class MutableSequenceObject(SequenceObject):
 
     def append(self, *new_values):
         # type: (Tuple[Any, ...]) -> None
-        """Insert values at the end of the sequence."""
+        """Insert values at the end of the list."""
         self._append(*new_values)
 
     def extend(self, *iterables):
         # type: (Any) -> None
-        """Extend the sequence with one or more iterables."""
+        """Extend the list with one or more iterables."""
         self._extend(*iterables)
 
     def remove(self, value, start=None, stop=None):
         # type: (Any, Optional[int], Optional[int]) -> None
-        """Remove value from sequence."""
+        """Remove value from list."""
         self._remove(value, start=start, stop=stop)
 
     def reverse(self):
@@ -656,14 +656,14 @@ class MutableSequenceObject(SequenceObject):
         self._sort(key=key, reverse=reverse)
 
 
-class SequenceProxyObject(SequenceObject):
-    """Read-only sequence object that reflects the values of another sequence object."""
+class ListProxyObject(ListObject):
+    """Read-only list object that reflects the values of another list object."""
 
     __slots__ = ("__source", "__reaction_phase")
 
     def __init__(
         self,
-        source=None,  # type: Optional[SequenceObject]
+        source=None,  # type: Optional[ListObject]
         source_factory=None,  # type: Optional[Callable]
         reaction_phase=EventPhase.POST,  # type: EventPhase
         value_factory=None,  # type: Optional[Callable]
@@ -684,7 +684,7 @@ class SequenceProxyObject(SequenceObject):
             error = "can't provide both 'source' and 'source_factory'"
             raise ValueError(error)
 
-        assert_is_instance(source, SequenceObject)
+        assert_is_instance(source, ListObject)
         assert_is_instance(reaction_phase, EventPhase)
 
         parent = bool(parent) if parent is not None else not source.parent
@@ -697,7 +697,7 @@ class SequenceProxyObject(SequenceObject):
             error = "both source and proxy container objects have 'history' set to True"
             raise ValueError(error)
 
-        super(SequenceProxyObject, self).__init__(
+        super(ListProxyObject, self).__init__(
             value_type=None,
             value_factory=value_factory,
             exact_value_type=None,
@@ -723,23 +723,23 @@ class SequenceProxyObject(SequenceObject):
         """React to an event."""
         if isinstance(event, BaseObjectEvent) and event.obj is self._source:
             if phase is self.__reaction_phase:
-                if type(event) is SequenceInsertEvent:
-                    event = cast(SequenceInsertEvent, event)
+                if type(event) is ListInsertEvent:
+                    event = cast(ListInsertEvent, event)
                     self._insert(event.index, *event.new_values)
-                elif type(event) is SequencePopEvent:
-                    event = cast(SequencePopEvent, event)
+                elif type(event) is ListPopEvent:
+                    event = cast(ListPopEvent, event)
                     self._pop(event.index, event.last_index)
-                elif type(event) is SequenceMoveEvent:
-                    event = cast(SequenceMoveEvent, event)
+                elif type(event) is ListMoveEvent:
+                    event = cast(ListMoveEvent, event)
                     self._move(event.index, event.target_index, event.last_index)
-                elif type(event) is SequenceChangeEvent:
-                    event = cast(SequenceChangeEvent, event)
+                elif type(event) is ListChangeEvent:
+                    event = cast(ListChangeEvent, event)
                     self._change(event.index, *event.new_values)
 
     @property
     def _source(self):
-        # type: () -> SequenceObject
-        """Source sequence object."""
+        # type: () -> ListObject
+        """Source list object."""
         return self.__source
 
     @property
@@ -749,7 +749,7 @@ class SequenceProxyObject(SequenceObject):
         return self.__reaction_phase
 
 
-SequenceInsert = namedtuple("SequenceInsert", "index last_index new_values")
-SequencePop = namedtuple("SequencePop", "index last_index old_values")
-SequenceMove = namedtuple("SequenceMove", "index target_index values last_index")
-SequenceChange = namedtuple("SequenceChange", "index last_index new_values old_values")
+ListInsert = namedtuple("ListInsert", "index last_index new_values")
+ListPop = namedtuple("ListPop", "index last_index old_values")
+ListMove = namedtuple("ListMove", "index target_index values last_index")
+ListChange = namedtuple("ListChange", "index last_index new_values old_values")

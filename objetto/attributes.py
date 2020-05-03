@@ -8,8 +8,8 @@ from ._components.attributes import AttributeDelegate
 from ._components.events import EventPhase
 from ._objects.base import HistoryDescriptor
 from ._objects.object import AttributeDescriptor, AttributeDescriptorDependencyPromise
-from ._objects.sequence import MutableSequenceObject, SequenceProxyObject
-from ._objects.mapping import MutableMappingObject, MappingProxyObject
+from ._objects.list import MutableListObject, ListProxyObject
+from ._objects.dict import MutableDictObject, DictProxyObject
 from ._objects.set import MutableSetObject, SetProxyObject
 
 from .utils.type_checking import UnresolvedType as UType
@@ -21,10 +21,10 @@ __all__ = [
     "constant_attribute",
     "permanent_attribute",
     "protected_attribute_pair",
-    "sequence_attribute",
-    "protected_sequence_attribute_pair",
-    "mapping_attribute",
-    "protected_mapping_attribute_pair",
+    "list_attribute",
+    "protected_list_attribute_pair",
+    "dict_attribute",
+    "protected_dict_attribute_pair",
     "set_attribute",
     "protected_set_attribute_pair",
 ]
@@ -214,7 +214,7 @@ def protected_attribute_pair(
     return internal, external
 
 
-def sequence_attribute(
+def list_attribute(
     value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
     value_factory=None,  # type: Optional[Callable]
     exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
@@ -230,10 +230,10 @@ def sequence_attribute(
     final=False,  # type: bool
 ):
     # type: (...) -> AttributeDescriptor
-    """Make a sequence attribute."""
+    """Make a list attribute."""
 
     def default_factory():
-        return MutableSequenceObject(
+        return MutableListObject(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -259,7 +259,7 @@ def sequence_attribute(
     )
 
 
-def protected_sequence_attribute_pair(
+def protected_list_attribute_pair(
     value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
     value_factory=None,  # type: Optional[Callable]
     exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
@@ -276,10 +276,10 @@ def protected_sequence_attribute_pair(
     reaction_phase=EventPhase.POST,  # type: EventPhase
 ):
     # type: (...) -> Tuple[AttributeDescriptor, AttributeDescriptor]
-    """Make two sequence attributes, one internal and one external (read-only)."""
+    """Make two list attributes, one internal and one external (read-only)."""
 
     def default_factory():
-        source = MutableSequenceObject(
+        source = MutableListObject(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -296,7 +296,7 @@ def protected_sequence_attribute_pair(
         proxy_type_name = "ReadOnly{}".format(
             source.default_type_name if type_name is None else type_name
         )
-        return SequenceProxyObject(
+        return ListProxyObject(
             source=source,
             reaction_phase=reaction_phase,
             comparable=comparable,
@@ -336,7 +336,7 @@ def protected_sequence_attribute_pair(
     return internal, external
 
 
-def mapping_attribute(
+def dict_attribute(
     value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
     value_factory=None,  # type: Optional[Callable]
     exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
@@ -357,10 +357,10 @@ def mapping_attribute(
     final=False,  # type: bool
 ):
     # type: (...) -> AttributeDescriptor
-    """Make a mapping attribute."""
+    """Make a dict attribute."""
 
     def default_factory():
-        return MutableMappingObject(
+        return MutableDictObject(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -391,7 +391,7 @@ def mapping_attribute(
     )
 
 
-def protected_mapping_attribute_pair(
+def protected_dict_attribute_pair(
     value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
     value_factory=None,  # type: Optional[Callable]
     exact_value_type=None,  # type: Optional[Union[UType, Iterable[UType, ...]]]
@@ -413,10 +413,10 @@ def protected_mapping_attribute_pair(
     reaction_phase=EventPhase.POST,  # type: EventPhase
 ):
     # type: (...) -> Tuple[AttributeDescriptor, AttributeDescriptor]
-    """Make two mapping attributes, one internal and one external (read-only)."""
+    """Make two dict attributes, one internal and one external (read-only)."""
 
     def default_factory():
-        source = MutableMappingObject(
+        source = MutableDictObject(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -438,7 +438,7 @@ def protected_mapping_attribute_pair(
         proxy_type_name = "ReadOnly{}".format(
             source.default_type_name if type_name is None else type_name
         )
-        return MappingProxyObject(
+        return DictProxyObject(
             source=source,
             reaction_phase=reaction_phase,
             comparable=comparable,

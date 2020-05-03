@@ -10,7 +10,11 @@ class TestExample(unittest.TestCase):
 
     def test_example(self):
         from objetto import (
-            Object, attribute, sequence_attribute, history_attribute, dependencies
+            Object,
+            attribute,
+            list_attribute,
+            history_attribute,
+            dependencies,
         )
         from objetto.factories import regex_match
         from objetto.reactions import unique_attributes
@@ -63,10 +67,8 @@ class TestExample(unittest.TestCase):
         self.assertEqual(person.full_name, "Ada Lovelace")
 
         class Father(Person):
-            children = sequence_attribute(
-                value_type=Person,
-                reaction=unique_attributes("full_name"),
-                parent=True
+            children = list_attribute(
+                value_type=Person, reaction=unique_attributes("full_name"), parent=True
             )
 
         elizabeth = Person("Elizabeth Leigh")

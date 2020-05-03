@@ -15,7 +15,7 @@ from .._components.events import (
     field,
     Broadcaster,
     EventListenerMixin,
-    EventEmitter
+    EventEmitter,
 )
 from .._components.hierarchy import (
     Hierarchy,
@@ -32,12 +32,13 @@ __all__ = [
     "HistoryDescriptor",
     "BaseObjectMeta",
     "BaseObject",
-    "BaseObjectCommand"
+    "BaseObjectCommand",
 ]
 
 
 class BaseObjectEvent(Event):
     """Base object event. Describes the adoption and/or release of child objects."""
+
     obj = field()
     adoptions = field()
     releases = field()

@@ -14,8 +14,8 @@ class TestApplication(unittest.TestCase):
             attribute,
             history_attribute,
             permanent_attribute,
-            sequence_attribute,
-            protected_sequence_attribute_pair,
+            list_attribute,
+            protected_list_attribute_pair,
         )
         from objetto.factories import integer, curated
         from objetto.reactions import unique_attributes, limit
@@ -34,7 +34,7 @@ class TestApplication(unittest.TestCase):
                 value_factory=integer(maximum=100) + curated(*range(90)),
                 represented=True,
             )
-            _nodes, nodes = protected_sequence_attribute_pair(
+            _nodes, nodes = protected_list_attribute_pair(
                 represented=True, type_name="CompNodeList"
             )
 
@@ -44,10 +44,10 @@ class TestApplication(unittest.TestCase):
                 self._nodes.append("Node A", "Node B", "Node C")
 
         class Document(Object):
-            layers = sequence_attribute(
+            layers = list_attribute(
                 Layer, reaction=unique_attributes("name") + limit(maximum=4)
             )
-            comps = sequence_attribute(
+            comps = list_attribute(
                 Comp,
                 reaction=unique_attributes("name", order=lambda v, vs: max(vs) + 1),
             )

@@ -47,11 +47,13 @@ class SetObjectEvent(ContainerObjectEvent):
 
 class SetAddEvent(SetObjectEvent):
     """Emitted when values are added to a set object."""
+
     new_values = field()
 
 
 class SetRemoveEvent(SetObjectEvent):
     """Emitted when values are removed from a set object."""
+
     old_values = field()
 
 

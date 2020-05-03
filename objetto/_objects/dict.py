@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Mapping object."""
+"""Dict object."""
 
 try:
     import collections.abc as collections_abc
@@ -35,36 +35,37 @@ from .container import (
     ContainerObjectEvent,
     ContainerObjectMeta,
     ContainerObject,
-    ContainerObjectParameters
+    ContainerObjectParameters,
 )
 
 
 __all__ = [
-    "MappingObjectEvent",
-    "MappingUpdateEvent",
-    "MappingObjectMeta",
-    "MappingObject",
-    "MutableMappingObject",
-    "MappingProxyObject",
+    "DictObjectEvent",
+    "DictUpdateEvent",
+    "DictObjectMeta",
+    "DictObject",
+    "MutableDictObject",
+    "DictProxyObject",
 ]
 
 
-class MappingObjectEvent(ContainerObjectEvent):
-    """Mapping object event."""
+class DictObjectEvent(ContainerObjectEvent):
+    """Dict object event."""
 
 
-class MappingUpdateEvent(MappingObjectEvent):
-    """Emitted when key-value pairs in a mapping object change."""
+class DictUpdateEvent(DictObjectEvent):
+    """Emitted when key-value pairs in a dict object change."""
+
     new_values = field()
     old_values = field()
 
 
-class MappingObjectMeta(ContainerObjectMeta):
-    """Metaclass for 'MappingObject'."""
+class DictObjectMeta(ContainerObjectMeta):
+    """Metaclass for 'DictObject'."""
 
 
-class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
-    """Object that stores values in a mapping."""
+class DictObject(with_metaclass(DictObjectMeta, ContainerObject)):
+    """Object that stores values in a dictionary."""
 
     __slots__ = ("__key_parameters",)
     __state_type__ = dict
@@ -91,7 +92,7 @@ class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
     ):
         # type: (...) -> None
         """Initialize with value parameters and key parameters."""
-        super(MappingObject, self).__init__(
+        super(DictObject, self).__init__(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -148,8 +149,8 @@ class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
 
         processed_update = {}
         processed_revert = {}
-        mapping_update = WrappedDict(processed_update)
-        mapping_revert = WrappedDict(processed_revert)
+        dict_update = WrappedDict(processed_update)
+        dict_revert = WrappedDict(processed_revert)
         for key, value in iteritems(update):
             key = self._key_parameters.fabricate(
                 key, accepts_missing=False, accepts_deleted=False
@@ -167,12 +168,12 @@ class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
                 processed_revert[key] = self.__state[key]
             processed_update[key] = value
 
-        return mapping_update, mapping_revert
+        return dict_update, dict_revert
 
-    def __update(self, mapping_update):
+    def __update(self, dict_update):
         # type: (Mapping[Hashable, Any]) -> None
         """Update."""
-        for key, value in iteritems(mapping_update):
+        for key, value in iteritems(dict_update):
             if value in (MISSING, DELETED):
                 del self.__state[key]
             else:
@@ -236,14 +237,14 @@ class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
         )
 
         # Create events
-        redo_event = MappingUpdateEvent(
+        redo_event = DictUpdateEvent(
             obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
             new_values=redo_update,
             old_values=undo_update,
         )
-        undo_event = MappingUpdateEvent(
+        undo_event = DictUpdateEvent(
             obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
@@ -258,7 +259,7 @@ class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
 
     def _clear(self):
         # type: () -> None
-        """Clear mapping."""
+        """Clear dict."""
         with self._batch_context("Clear Items"):
             self._update(dict((k, DELETED) for k in self.__state))
 
@@ -278,7 +279,7 @@ class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
         # type: () -> Tuple[Hashable, Any]
         """Pop item."""
         if not self.__state:
-            error = "mapping is empty"
+            error = "dict is empty"
             raise KeyError(error)
         key = next(iter(self.__state))
         with self._batch_context("Remove Item"):
@@ -300,7 +301,7 @@ class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
 
     def has_key(self, key):
         # type: (Hashable) -> bool
-        """Whether key is in the mapping."""
+        """Whether key is in the dict."""
         return key in self.__state
 
     def iteritems(self):
@@ -370,7 +371,7 @@ class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
     def __state(self):
         # type: () -> Dict
         """Internal state."""
-        return cast(Dict, super(MappingObject, self).__get_state__())
+        return cast(Dict, super(DictObject, self).__get_state__())
 
     @property
     def _key_parameters(self):
@@ -379,8 +380,8 @@ class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
         return self.__key_parameters
 
 
-class MutableMappingObject(MappingObject):
-    """Mapping object with public mutable methods."""
+class MutableDictObject(DictObject):
+    """Dict object with public mutable methods."""
 
     __slots__ = ()
 
@@ -401,7 +402,7 @@ class MutableMappingObject(MappingObject):
 
     def clear(self):
         # type: () -> None
-        """Clear mapping."""
+        """Clear dict."""
         return self._clear()
 
     def pop(self, key, fallback=MISSING):
@@ -420,14 +421,14 @@ class MutableMappingObject(MappingObject):
         return self._setdefault(key, value)
 
 
-class MappingProxyObject(MappingObject):
-    """Read-only mapping object that reflects the values of another mapping object."""
+class DictProxyObject(DictObject):
+    """Read-only dict object that reflects the values of another dict object."""
 
     __slots__ = ("__source", "__reaction_phase")
 
     def __init__(
         self,
-        source=None,  # type: Optional[MappingObject]
+        source=None,  # type: Optional[DictObject]
         source_factory=None,  # type: Optional[Callable]
         reaction_phase=EventPhase.POST,  # type: EventPhase
         value_factory=None,  # type: Optional[Callable]
@@ -450,7 +451,7 @@ class MappingProxyObject(MappingObject):
             error = "can't provide both 'source' and 'source_factory'"
             raise ValueError(error)
 
-        assert_is_instance(source, MappingObject)
+        assert_is_instance(source, DictObject)
         assert_is_instance(reaction_phase, EventPhase)
 
         parent = bool(parent) if parent is not None else not source.parent
@@ -479,7 +480,7 @@ class MappingProxyObject(MappingObject):
             )
             raise ValueError(error)
 
-        super(MappingProxyObject, self).__init__(
+        super(DictProxyObject, self).__init__(
             value_type=None,
             value_factory=value_factory,
             exact_value_type=None,
@@ -507,14 +508,14 @@ class MappingProxyObject(MappingObject):
         """React to an event."""
         if isinstance(event, BaseObjectEvent) and event.obj is self._source:
             if phase is self.__reaction_phase:
-                if type(event) is MappingUpdateEvent:
-                    event = cast(MappingUpdateEvent, event)
+                if type(event) is DictUpdateEvent:
+                    event = cast(DictUpdateEvent, event)
                     self._update(event.new_values)
 
     @property
     def _source(self):
-        # type: () -> MappingObject
-        """Source mapping object."""
+        # type: () -> DictObject
+        """Source dict object."""
         return self.__source
 
     @property

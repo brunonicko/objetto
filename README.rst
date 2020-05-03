@@ -82,7 +82,7 @@ with the most. Its internal state is curated by `Attributes`_ defined in sub-cla
 
 .. note::
     There are other object types that are used internally by attribute factories, known
-    as containers, such as: `SequenceObject`, `MappingObject`, and `SetObject`.
+    as containers, such as: `ListObject`, `DictObject`, and `SetObject`.
     These classes can be imported from the `objetto.objects` module if you want to
     create advanced custom attribute factories or define custom behaviors.
 
@@ -97,10 +97,10 @@ Here are some of the attribute factories that `Objetto` offers:
   - constant_attribute
   - permanent_attribute
   - protected_attribute_pair
-  - sequence_attribute
-  - protected_sequence_attribute_pair
-  - mapping_attribute
-  - protected_mapping_attribute_pair
+  - list_attribute
+  - protected_list_attribute_pair
+  - dict_attribute
+  - protected_dict_attribute_pair
   - set_attribute
   - protected_set_attribute_pair
   - dependencies (decorator to define dependencies for an attribute's delegate)
@@ -189,17 +189,17 @@ a regex validation `value_factory` for `first_name` and `last_name` attributes.
     <Person first_name='Ada', full_name='Ada Lovelace', last_name='Lovelace'>
 
 Now, let's start creating a hierarchy of objects by creating the class `Father`,
-which extends `Person` by defining children in a `sequence_attribute`.
+which extends `Person` by defining children in a `list_attribute`.
 Not how we used a `unique_attributes` reaction in order to enforce a validation that
 prevents siblings from having the same full name.
 
 .. code:: python
 
-    >>> from objetto import sequence_attribute
+    >>> from objetto import list_attribute
     >>> from objetto.reactions import unique_attributes
     >>>
     >>> class Father(Person):
-    ...     children = sequence_attribute(
+    ...     children = list_attribute(
     ...         value_type=Person,
     ...         reaction=unique_attributes("full_name"),
     ...         parent=True

@@ -22,7 +22,7 @@ __all__ = [
     "ContainerObjectEvent",
     "ContainerObjectMeta",
     "ContainerObject",
-    "ContainerObjectParameters"
+    "ContainerObjectParameters",
 ]
 
 

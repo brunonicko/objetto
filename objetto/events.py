@@ -13,22 +13,20 @@ from ._components.history import (
     HistoryInsertEvent,
     HistoryPopEvent,
 )
-from ._objects.base import (
-    BaseObjectEvent,
-)
+from ._objects.base import BaseObjectEvent
 from ._objects.object import (
     ObjectEvent,
     AttributesUpdateEvent,
 )
-from ._objects.sequence import (
-    SequenceInsertEvent,
-    SequencePopEvent,
-    SequenceMoveEvent,
-    SequenceChangeEvent,
+from ._objects.list import (
+    ListInsertEvent,
+    ListPopEvent,
+    ListMoveEvent,
+    ListChangeEvent,
 )
-from ._objects.mapping import (
-    MappingObjectEvent,
-    MappingUpdateEvent,
+from ._objects.dict import (
+    DictObjectEvent,
+    DictUpdateEvent,
 )
 from ._objects.set import (
     SetObjectEvent,
@@ -48,12 +46,12 @@ __all__ = [
     "BaseObjectEvent",
     "ObjectEvent",
     "AttributesUpdateEvent",
-    "SequenceInsertEvent",
-    "SequencePopEvent",
-    "SequenceMoveEvent",
-    "SequenceChangeEvent",
-    "MappingObjectEvent",
-    "MappingUpdateEvent",
+    "ListInsertEvent",
+    "ListPopEvent",
+    "ListMoveEvent",
+    "ListChangeEvent",
+    "DictObjectEvent",
+    "DictUpdateEvent",
     "SetObjectEvent",
     "SetAddEvent",
     "SetRemoveEvent",

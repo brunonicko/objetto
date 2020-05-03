@@ -34,17 +34,20 @@ __all__ = [
 
 class HistoryEvent(Event):
     """Base history event class. Describes a change in a history."""
+
     history = field()
 
 
 class HistoryCurrentIndexChangeEvent(HistoryEvent):
     """Emitted when a history's current index changes."""
+
     old_current_index = field()
     new_current_index = field()
 
 
 class HistoryInsertEvent(HistoryCurrentIndexChangeEvent):
     """Emitted when commands are inserted into the history."""
+
     index = field()
     last_index = field()
     new_commands = field()
@@ -52,6 +55,7 @@ class HistoryInsertEvent(HistoryCurrentIndexChangeEvent):
 
 class HistoryPopEvent(HistoryCurrentIndexChangeEvent):
     """Emitted when commands are popped from the history."""
+
     index = field()
     last_index = field()
     old_commands = field()

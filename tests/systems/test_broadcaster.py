@@ -13,7 +13,6 @@ class TestBroadcaster(unittest.TestCase):
             Broadcaster,
             EventListenerMixin,
             EventPhase,
-            PhaseError,
         )
 
         event, phase = None, None

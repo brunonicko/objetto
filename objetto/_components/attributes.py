@@ -561,9 +561,7 @@ class ObjectState(with_metaclass(ObjectStateMeta, Slotted)):
             if attribute.fget is not None:
                 gets = attribute.fget.gets
                 missing_gets = sorted(
-                    get
-                    for get in gets
-                    if self.__state[get] in (MISSING, DELETED)
+                    get for get in gets if self.__state[get] in (MISSING, DELETED)
                 )
                 error = (
                     "getter's dependenc{} {} (for attribute '{}') {} no value"
@@ -633,8 +631,7 @@ class ObjectState(with_metaclass(ObjectStateMeta, Slotted)):
                 if not attribute.settable:
                     if (
                         attribute.delegated
-                        or update_state.get(name, MISSING)
-                        is not MISSING
+                        or update_state.get(name, MISSING) is not MISSING
                     ):
                         error = "attribute '{}' is not settable".format(name)
                         raise AttributeError(error)
@@ -1360,10 +1357,7 @@ class UpdateState(SlottedMutableMapping):
             intersection = gets.intersection(dirty)
             if intersection:
                 self.__clean_dirty(intersection)
-            if all(
-                self[get] not in (MISSING, DELETED)
-                for get in gets
-            ):
+            if all(self[get] not in (MISSING, DELETED) for get in gets):
                 self.__updates[name] = attribute.fget.func(
                     _make_access_object(
                         self,
@@ -1372,9 +1366,7 @@ class UpdateState(SlottedMutableMapping):
                         access_type=AttributeAccessType.GETTER,
                     )
                 )
-            elif (
-                name in self.__updates or self.__state[name] is not MISSING
-            ):
+            elif name in self.__updates or self.__state[name] is not MISSING:
                 self.__updates[name] = MISSING
 
     def get_updates(self):
