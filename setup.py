@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="objetto",
-    version="0.0.4",
+    version="0.0.5",
     author="Bruno Nicko",
     author_email="brunonicko@gmail.com",
     description="Framework for building data-centric Applications/APIs",
@@ -13,7 +13,7 @@ setuptools.setup(
     long_description_content_type="text/x-rst",
     url="https://github.com/brunonicko/objetto",
     packages=setuptools.find_packages(),
-    install_requires=["six", "slotted", "typing", "enum34"],
+    install_requires=["six", "slotted", "typing", "enum34", "attrs", "pyrsistent"],
     classifiers=[
         "Programming Language :: Python :: 2.7",
         "License :: OSI Approved :: MIT License",
