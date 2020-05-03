@@ -6,21 +6,21 @@ __all__ = ["TestMapping"]
 
 
 class TestMapping(unittest.TestCase):
-    """Tests for 'modelo._models.mapping' module."""
+    """Tests for 'objetto._objects.mapping' module."""
 
-    def test_mapping_model(self):
-        from modelo.models import MappingModel
+    def test_mapping_obj(self):
+        from objetto.objects import MappingObject
 
-        sa = MappingModel(parent=True)
-        sb = MappingModel(parent=True)
+        sa = MappingObject(parent=True)
+        sb = MappingObject(parent=True)
 
         sa._update({"a": 1, "b": 2, "c": 3, "d": sb})
 
-    def test_mutable_mapping_model(self):
-        from modelo.models import MutableMappingModel
+    def test_mutable_mapping_obj(self):
+        from objetto.objects import MutableMappingObject
 
-        sa = MutableMappingModel(parent=True)
-        sb = MutableMappingModel(parent=True)
+        sa = MutableMappingObject(parent=True)
+        sb = MutableMappingObject(parent=True)
 
         sa.update({"a": 1, "b": 2, "c": 3, "d": sb})
         del sa["a"]

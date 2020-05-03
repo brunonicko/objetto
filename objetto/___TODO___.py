@@ -1,4 +1,4 @@
-# TODO: Rename 'modelo' to something else
+# TODO: Rename 'objetto' to something else
 # TODO: Rename component to system
 # TODO: Rename 'Model' to 'Component'
 # TODO: simplification with attrs or pyrsistent

@@ -7,9 +7,9 @@ from six import raise_from
 from typing import Optional, ContextManager, Union, Any, List, Tuple, cast
 from slotted import Slotted, SlottedABC
 
-from .._base.exceptions import ModeloException, ModeloError
-from .._base.events import Event
-from .._components.broadcaster import Broadcaster, EventPhase, EventEmitter
+from .._base.exceptions import ObjettoException, ObjettoError
+from .._components.events import EventPhase, Event, field, Broadcaster, EventEmitter
+
 from ..utils.recursive_repr import recursive_repr
 from ..utils.object_repr import object_repr
 
@@ -18,250 +18,67 @@ __all__ = [
     "HistoryCurrentIndexChangeEvent",
     "HistoryInsertEvent",
     "HistoryPopEvent",
-    "History",
-    "Command",
-    "UndoableCommand",
-    "BatchCommand",
-    "UndoableBatchCommand",
     "HistoryException",
     "HistoryError",
     "WhileRunningError",
     "AlreadyRanError",
     "CannotUndoError",
     "CannotRedoError",
+    "History",
+    "Command",
+    "UndoableCommand",
+    "BatchCommand",
+    "UndoableBatchCommand",
 ]
 
 
 class HistoryEvent(Event):
-    """Abstract event. Describes a change in a history."""
-
-    __slots__ = ("__history",)
-
-    def __init__(self, history):
-        # type: (History) -> None
-        """Initialize with history."""
-        self.__history = history
-
-    def __eq_id_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using object identity."""
-        return ("history",)
-
-    @abstractmethod
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return ()
-
-    @abstractmethod
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return ()
-
-    @abstractmethod
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return ("history",)
-
-    @property
-    def history(self):
-        # type: () -> History
-        """History."""
-        return self.__history
+    """Base history event class. Describes a change in a history."""
+    history = field()
 
 
 class HistoryCurrentIndexChangeEvent(HistoryEvent):
     """Emitted when a history's current index changes."""
-
-    __slots__ = ("__old_current_index", "__new_current_index")
-
-    def __init__(
-        self,
-        history,  # type: History
-        old_current_index,  # type: int
-        new_current_index,  # type: int
-    ):
-        # type: (...) -> None
-        """Initialize with old index and new index."""
-        super(HistoryCurrentIndexChangeEvent, self).__init__(history)
-        self.__old_current_index = old_current_index
-        self.__new_current_index = new_current_index
-
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(HistoryCurrentIndexChangeEvent, self).__eq_equal_properties__() + (
-            "old_current_index",
-            "new_current_index",
-        )
-
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(HistoryCurrentIndexChangeEvent, self).__repr_properties__() + (
-            "old_current_index",
-            "new_current_index",
-        )
-
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(HistoryCurrentIndexChangeEvent, self).__str_properties__() + (
-            "old_current_index",
-            "new_current_index",
-        )
-
-    @property
-    def old_current_index(self):
-        # type: () -> int
-        """Old index."""
-        return self.__old_current_index
-
-    @property
-    def new_current_index(self):
-        # type: () -> int
-        """New index."""
-        return self.__new_current_index
+    old_current_index = field()
+    new_current_index = field()
 
 
 class HistoryInsertEvent(HistoryCurrentIndexChangeEvent):
     """Emitted when commands are inserted into the history."""
-
-    __slots__ = ("__index", "__last_index", "__new_commands")
-
-    def __init__(
-        self,
-        history,  # type: History
-        old_current_index,  # type: int
-        new_current_index,  # type: int
-        index,  # type: int
-        last_index,  # type: int
-        new_commands,  # type: Tuple[Any, ...]
-    ):
-        # type: (...) -> None
-        """Initialize with index, last index, and new commands."""
-        super(HistoryInsertEvent, self).__init__(
-            history, old_current_index, new_current_index
-        )
-        self.__index = index
-        self.__last_index = last_index
-        self.__new_commands = new_commands
-
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(HistoryInsertEvent, self).__eq_equal_properties__() + (
-            "index",
-            "last_index",
-            "new_commands",
-        )
-
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(HistoryInsertEvent, self).__repr_properties__() + (
-            "index",
-            "last_index",
-            "new_commands",
-        )
-
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(HistoryInsertEvent, self).__str_properties__() + (
-            "index",
-            "last_index",
-            "new_commands",
-        )
-
-    @property
-    def index(self):
-        # type: () -> int
-        """Index."""
-        return self.__index
-
-    @property
-    def last_index(self):
-        # type: () -> int
-        """Last index."""
-        return self.__last_index
-
-    @property
-    def new_commands(self):
-        # type: () -> Tuple[Command, ...]
-        """New commands."""
-        return self.__new_commands
+    index = field()
+    last_index = field()
+    new_commands = field()
 
 
 class HistoryPopEvent(HistoryCurrentIndexChangeEvent):
     """Emitted when commands are popped from the history."""
+    index = field()
+    last_index = field()
+    old_commands = field()
 
-    __slots__ = ("__index", "__last_index", "__old_commands")
 
-    def __init__(
-        self,
-        history,  # type: History
-        old_current_index,  # type: int
-        new_current_index,  # type: int
-        index,  # type: int
-        last_index,  # type: int
-        old_commands,  # type: Tuple[Any, ...]
-    ):
-        # type: (...) -> None
-        """Initialize with index, last index, and old commands."""
-        super(HistoryPopEvent, self).__init__(
-            history, old_current_index, new_current_index
-        )
-        self.__index = index
-        self.__last_index = last_index
-        self.__old_commands = old_commands
+class HistoryException(ObjettoException):
+    """History exception."""
 
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(HistoryPopEvent, self).__eq_equal_properties__() + (
-            "index",
-            "last_index",
-            "old_commands",
-        )
 
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(HistoryPopEvent, self).__repr_properties__() + (
-            "index",
-            "last_index",
-            "old_commands",
-        )
+class HistoryError(ObjettoError, HistoryException):
+    """History error."""
 
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(HistoryPopEvent, self).__str_properties__() + (
-            "index",
-            "last_index",
-            "old_commands",
-        )
 
-    @property
-    def index(self):
-        # type: () -> int
-        """Index."""
-        return self.__index
+class WhileRunningError(HistoryError):
+    """Raised when trying to perform an operation during an ongoing execution."""
 
-    @property
-    def last_index(self):
-        # type: () -> int
-        """Last index."""
-        return self.__last_index
 
-    @property
-    def old_commands(self):
-        # type: () -> Tuple[Command, ...]
-        """Old commands."""
-        return self.__old_commands
+class AlreadyRanError(HistoryError):
+    """Raised when trying to run a command that has already been used before."""
+
+
+class CannotUndoError(HistoryError):
+    """Raised when trying to undo but no more commands are available."""
+
+
+class CannotRedoError(HistoryError):
+    """Raised when trying to redo but no more commands are available."""
 
 
 class History(Slotted):
@@ -904,27 +721,3 @@ class UndoableBatchCommand(BatchCommand, UndoableCommand):
         """Undo delegate."""
         for command in reversed(self.commands):
             cast(UndoableCommand, command).__undo__()
-
-
-class HistoryException(ModeloException):
-    """History exception."""
-
-
-class HistoryError(ModeloError, HistoryException):
-    """History error."""
-
-
-class WhileRunningError(HistoryError):
-    """Raised when trying to perform an operation during an ongoing execution."""
-
-
-class AlreadyRanError(HistoryError):
-    """Raised when trying to run a command that has already been used before."""
-
-
-class CannotUndoError(HistoryError):
-    """Raised when trying to undo but no more commands are available."""
-
-
-class CannotRedoError(HistoryError):
-    """Raised when trying to redo but no more commands are available."""

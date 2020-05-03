@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Set model."""
+"""Set object."""
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
+from collections import Counter
 from six import with_metaclass, string_types
 from typing import (
     FrozenSet,
@@ -17,108 +18,49 @@ from typing import (
     Tuple,
     cast,
 )
-from collections import Counter
+from .._components.events import EventPhase, field
 
-from .._components.broadcaster import EventPhase
-from ..utils.type_checking import assert_is_instance
 from ..utils.partial import Partial
-from .base import Model, ModelEvent
-from .container import ContainerModelMeta, ContainerModel
+from ..utils.type_checking import assert_is_instance
+
+from .base import BaseObjectEvent, BaseObject
+from .container import (
+    ContainerObjectEvent,
+    ContainerObjectMeta,
+    ContainerObject,
+)
 
 __all__ = [
+    "SetObjectEvent",
     "SetAddEvent",
     "SetRemoveEvent",
-    "SetModelMeta",
-    "SetModel",
-    "MutableSetModel",
-    "SetProxyModel",
+    "SetObjectMeta",
+    "SetObject",
+    "MutableSetObject",
+    "SetProxyObject",
 ]
 
 
-class SetAddEvent(ModelEvent):
-    """Emitted when values are added to a set model."""
-
-    __slots__ = ("__new_values",)
-
-    def __init__(
-        self,
-        model,  # type: SetModel
-        adoptions,  # type: FrozenSet[Model, ...]
-        releases,  # type: FrozenSet[Model, ...]
-        new_values,  # type: FrozenSet[Hashable, ...]
-    ):
-        # type: (...) -> None
-        """Initialize with new values."""
-        super(SetAddEvent, self).__init__(model, adoptions, releases)
-        self.__new_values = new_values
-
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(SetAddEvent, self).__eq_equal_properties__() + ("new_values",)
-
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(SetAddEvent, self).__repr_properties__() + ("new_values",)
-
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(SetAddEvent, self).__str_properties__() + ("new_values",)
-
-    @property
-    def new_values(self):
-        # type: () -> FrozenSet[Hashable, ...]
-        """New values."""
-        return self.__new_values
+class SetObjectEvent(ContainerObjectEvent):
+    """Set object event."""
 
 
-class SetRemoveEvent(ModelEvent):
-    """Emitted when values are removed from a set model."""
-
-    __slots__ = ("__old_values",)
-
-    def __init__(
-        self,
-        model,  # type: SetModel
-        adoptions,  # type: FrozenSet[Model, ...]
-        releases,  # type: FrozenSet[Model, ...]
-        old_values,  # type: FrozenSet[Hashable, ...]
-    ):
-        # type: (...) -> None
-        """Initialize with old values."""
-        super(SetRemoveEvent, self).__init__(model, adoptions, releases)
-        self.__old_values = old_values
-
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(SetRemoveEvent, self).__eq_equal_properties__() + ("old_values",)
-
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(SetRemoveEvent, self).__repr_properties__() + ("old_values",)
-
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(SetRemoveEvent, self).__str_properties__() + ("old_values",)
-
-    @property
-    def old_values(self):
-        # type: () -> FrozenSet[Hashable, ...]
-        """New values."""
-        return self.__old_values
+class SetAddEvent(SetObjectEvent):
+    """Emitted when values are added to a set object."""
+    new_values = field()
 
 
-class SetModelMeta(ContainerModelMeta):
-    """Metaclass for 'SetModel'."""
+class SetRemoveEvent(SetObjectEvent):
+    """Emitted when values are removed from a set object."""
+    old_values = field()
 
 
-class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
-    """Model that stores values in a set."""
+class SetObjectMeta(ContainerObjectMeta):
+    """Metaclass for 'SetObject'."""
+
+
+class SetObject(with_metaclass(SetObjectMeta, ContainerObject)):
+    """Object that stores values in a set."""
 
     __slots__ = ()
     __state_type__ = set
@@ -189,7 +131,7 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
         child_count = Counter()
         if self._parameters.parent:
             for value in new_values:
-                if isinstance(value, Model):
+                if isinstance(value, BaseObject):
                     child_count[value] += 1
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
@@ -198,7 +140,7 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
         history_adopters = set()
         if self._parameters.history:
             for value in new_values:
-                if isinstance(value, Model):
+                if isinstance(value, BaseObject):
                     history_adopters.add(value)
         history_adopters = frozenset(history_adopters)
 
@@ -212,13 +154,13 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
 
         # Create events
         redo_event = SetAddEvent(
-            model=self,
+            obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
             new_values=new_values,
         )
         undo_event = SetRemoveEvent(
-            model=self,
+            obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
             old_values=old_values,
@@ -246,7 +188,7 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
         child_count = Counter()
         if self._parameters.parent:
             for value in old_values:
-                if isinstance(value, Model):
+                if isinstance(value, BaseObject):
                     child_count[value] -= 1
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
@@ -264,13 +206,13 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
 
         # Create events
         redo_event = SetRemoveEvent(
-            model=self,
+            obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
             old_values=old_values,
         )
         undo_event = SetAddEvent(
-            model=self,
+            obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
             new_values=new_values,
@@ -386,11 +328,11 @@ class SetModel(with_metaclass(SetModelMeta, ContainerModel)):
     def __state(self):
         # type: () -> Set
         """Internal state."""
-        return cast(Set, super(SetModel, self).__get_state__())
+        return cast(Set, super(SetObject, self).__get_state__())
 
 
-class MutableSetModel(SetModel):
-    """Set model with public mutable methods."""
+class MutableSetObject(SetObject):
+    """Set object with public mutable methods."""
 
     __slots__ = ()
 
@@ -440,14 +382,14 @@ class MutableSetModel(SetModel):
         self._intersection_update(other)
 
 
-class SetProxyModel(SetModel):
-    """Read-only set model that reflects the values of another set model."""
+class SetProxyObject(SetObject):
+    """Read-only set object that reflects the values of another set object."""
 
     __slots__ = ("__source", "__reaction_phase")
 
     def __init__(
         self,
-        source=None,  # type: Optional[SetModel]
+        source=None,  # type: Optional[SetObject]
         source_factory=None,  # type: Optional[Callable]
         reaction_phase=EventPhase.POST,  # type: EventPhase
         value_factory=None,  # type: Optional[Callable]
@@ -468,20 +410,20 @@ class SetProxyModel(SetModel):
             error = "can't provide both 'source' and 'source_factory'"
             raise ValueError(error)
 
-        assert_is_instance(source, SetModel)
+        assert_is_instance(source, SetObject)
         assert_is_instance(reaction_phase, EventPhase)
 
         parent = bool(parent) if parent is not None else not source.parent
         history = bool(history) if history is not None else not source.history
 
         if getattr(source, "_parameters").parent and parent:
-            error = "both source and proxy container models have 'parent' set to True"
+            error = "both source and proxy container objects have 'parent' set to True"
             raise ValueError(error)
         if getattr(source, "_parameters").history and history:
-            error = "both source and proxy container models have 'history' set to True"
+            error = "both source and proxy container objects have 'history' set to True"
             raise ValueError(error)
 
-        super(SetProxyModel, self).__init__(
+        super(SetProxyObject, self).__init__(
             value_type=None,
             value_factory=value_factory,
             exact_value_type=None,
@@ -503,9 +445,9 @@ class SetProxyModel(SetModel):
         source.events.add_listener(self)
 
     def __react__(self, event, phase):
-        # type: (ModelEvent, EventPhase) -> None
+        # type: (BaseObjectEvent, EventPhase) -> None
         """React to an event."""
-        if isinstance(event, ModelEvent) and event.model is self._source:
+        if isinstance(event, BaseObjectEvent) and event.obj is self._source:
             if phase is self.__reaction_phase:
                 if type(event) is SetAddEvent:
                     event = cast(SetAddEvent, event)
@@ -516,8 +458,8 @@ class SetProxyModel(SetModel):
 
     @property
     def _source(self):
-        # type: () -> SetModel
-        """Source set model."""
+        # type: () -> SetObject
+        """Source set object."""
         return self.__source
 
     @property

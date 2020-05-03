@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Models manage data access and modification."""
+"""Base object."""
 
 from abc import abstractmethod
 from contextlib import contextmanager
@@ -8,13 +8,14 @@ from six import with_metaclass, iteritems
 from typing import FrozenSet, ContextManager, Optional, Type, Tuple, Any, Dict, cast
 from slotted import SlottedABCMeta, SlottedABC, Slotted
 
-from .._base.constants import DEAD_REF
-from .._base.events import Event
-from .._components.broadcaster import (
+from .._base.constants import DEAD_WEAKREF
+from .._components.events import (
+    EventPhase,
+    Event,
+    field,
     Broadcaster,
     EventListenerMixin,
-    EventPhase,
-    EventEmitter,
+    EventEmitter
 )
 from .._components.hierarchy import (
     Hierarchy,
@@ -23,31 +24,45 @@ from .._components.hierarchy import (
     ChildrenUpdates,
 )
 from .._components.history import UndoableCommand, History
+
 from ..utils.partial import Partial
 
-__all__ = ["HistoryDescriptor", "ModelMeta", "Model", "ModelEvent", "ModelCommand"]
+__all__ = [
+    "BaseObjectEvent",
+    "HistoryDescriptor",
+    "BaseObjectMeta",
+    "BaseObject",
+    "BaseObjectCommand"
+]
 
 
-class ModelHierarchy(Hierarchy):
-    """Model hierarchy."""
+class BaseObjectEvent(Event):
+    """Base object event. Describes the adoption and/or release of child objects."""
+    obj = field()
+    adoptions = field()
+    releases = field()
+
+
+class BaseObjectHierarchy(Hierarchy):
+    """BaseObject hierarchy."""
 
     def update_children(self, children_updates):
         # type: (ChildrenUpdates) -> None
         """Perform children adoptions and/or releases."""
         for adoption in children_updates.adoptions:
-            adoption = cast(Model, adoption)
-            parent = cast(Model, self.obj)
+            adoption = cast(BaseObject, adoption)
+            parent = cast(BaseObject, self.obj)
             last_parent_history = adoption.__get_last_parent_history__()
             parent_history = parent.__get_history__()
             if last_parent_history is not parent_history:
                 if last_parent_history is not None:
                     last_parent_history.flush()
                 adoption.__set_last_parent_history__(parent_history)
-        super(ModelHierarchy, self).update_children(children_updates)
+        super(BaseObjectHierarchy, self).update_children(children_updates)
 
 
 class HistoryDescriptor(Slotted):
-    """Descriptor that gives access to a model's command history."""
+    """Descriptor that gives access to a obj's command history."""
 
     __slots__ = ("__size",)
 
@@ -59,25 +74,25 @@ class HistoryDescriptor(Slotted):
             size = -1
         self.__size = size
 
-    def __get__(self, model, model_cls=None):
-        # type: (Optional[Model], Optional[Type[Model]]) -> Any
+    def __get__(self, obj, obj_cls=None):
+        # type: (Optional[BaseObject], Optional[Type[BaseObject]]) -> Any
         """Descriptor 'get' access."""
-        if model is None:
+        if obj is None:
             return self
-        if not model.__initialized__:
+        if not obj.__initialized__:
             raise AttributeError(
                 "can't access history before instance is fully initialized"
             )
-        return model.__get_history__()
+        return obj.__get_history__()
 
-    def __set__(self, model, value):
-        # type: (Model, Any) -> None
+    def __set__(self, obj, value):
+        # type: (BaseObject, Any) -> None
         """Descriptor 'set' access."""
         error = "attribute is read-only"
         raise AttributeError(error)
 
-    def __delete__(self, model):
-        # type: (Model) -> None
+    def __delete__(self, obj):
+        # type: (BaseObject) -> None
         """Descriptor 'delete' access."""
         error = "attribute is read-only"
         raise AttributeError(error)
@@ -89,25 +104,25 @@ class HistoryDescriptor(Slotted):
         return self.__size
 
 
-def _make_model_class(
-    mcs,  # type: Type[ModelMeta]
+def _make_base_object_class(
+    mcs,  # type: Type[BaseObjectMeta]
     name,  # type: str
     bases,  # type: Tuple[Type, ...]
     dct,  # type: Dict[str, Any]
 ):
-    # type: (...) -> ModelMeta
-    """Make model class/subclass."""
+    # type: (...) -> BaseObjectMeta
+    """Make obj class/subclass."""
     dct = dict(dct)
 
     # Init 'history_descriptor'
     dct["__history_descriptor__"] = None
 
     # Make class
-    cls = super(ModelMeta, mcs).__new__(mcs, name, bases, dct)
+    cls = super(BaseObjectMeta, mcs).__new__(mcs, name, bases, dct)
 
     # Find a history descriptor
     for base in cls.__mro__:
-        if base is not cls and isinstance(base, ModelMeta):
+        if base is not cls and isinstance(base, BaseObjectMeta):
             if base.__history_descriptor__ is not None:
                 type.__setattr__(
                     cls, "__history_descriptor__", base.__history_descriptor__
@@ -126,10 +141,10 @@ def _make_model_class(
     return cls
 
 
-class ModelMeta(SlottedABCMeta):
-    """Metaclass for 'Model'."""
+class BaseObjectMeta(SlottedABCMeta):
+    """Metaclass for 'BaseObject'."""
 
-    __new__ = staticmethod(_make_model_class)
+    __new__ = staticmethod(_make_base_object_class)
     __history_descriptor__ = None  # type: Optional[HistoryDescriptor]
 
     def __call__(cls, *args, **kwargs):
@@ -160,7 +175,7 @@ class ModelMeta(SlottedABCMeta):
         if name not in SlottedABC.__dict__:
             error = "'{}' class attributes are read-only".format(cls.__name__)
             raise AttributeError(error)
-        super(ModelMeta, cls).__setattr__(name, value)
+        super(BaseObjectMeta, cls).__setattr__(name, value)
 
     def __delattr__(cls, name):
         # type: (str) -> None
@@ -168,7 +183,7 @@ class ModelMeta(SlottedABCMeta):
         if name not in SlottedABC.__dict__:
             error = "'{}' class attributes are read-only".format(cls.__name__)
             raise AttributeError(error)
-        super(ModelMeta, cls).__delattr__(name)
+        super(BaseObjectMeta, cls).__delattr__(name)
 
     @property
     def history_descriptor(cls):
@@ -177,10 +192,10 @@ class ModelMeta(SlottedABCMeta):
         return cls.__history_descriptor__
 
 
-class Model(
-    with_metaclass(ModelMeta, HierarchicalMixin, EventListenerMixin, SlottedABC)
+class BaseObject(
+    with_metaclass(BaseObjectMeta, HierarchicalMixin, EventListenerMixin, SlottedABC)
 ):
-    """Abstract model."""
+    """Abstract obj."""
 
     __slots__ = (
         "__initialized__",
@@ -199,16 +214,16 @@ class Model(
             self.__history_provider_ref = ref(self)
         else:
             self.__history = None
-            self.__history_provider_ref = DEAD_REF
-        self.__hierarchy = ModelHierarchy(self)
+            self.__history_provider_ref = DEAD_WEAKREF
+        self.__hierarchy = BaseObjectHierarchy(self)
         self.__hierarchy_access = HierarchyAccess(self.__hierarchy)
         self.__broadcaster = Broadcaster()
-        self.__last_parent_history_ref = DEAD_REF
+        self.__last_parent_history_ref = DEAD_WEAKREF
 
     def __getattr__(self, name):
         # type: (str) -> Any
         """Raise informative exception if missed call to super's '__init__'."""
-        if name in Model.__members__:
+        if name in BaseObject.__members__:
             error = (
                 "missing attribute '{}', maybe super-class '__init__' of type '{}' "
                 "was never called?"
@@ -230,12 +245,12 @@ class Model(
 
     @abstractmethod
     def __eq__(self, other):
-        # type: (Model) -> bool
+        # type: (BaseObject) -> bool
         """Compare for equality."""
         raise NotImplementedError()
 
     def __ne__(self, other):
-        # type: (Model) -> bool
+        # type: (BaseObject) -> bool
         """Compare for inequality."""
         return not self.__eq__(other)
 
@@ -267,7 +282,7 @@ class Model(
         # type: (Optional[History]) -> None
         """Set last parent history."""
         if last_parent_history is None:
-            self.__last_parent_history_ref = DEAD_REF
+            self.__last_parent_history_ref = DEAD_WEAKREF
         else:
             self.__last_parent_history_ref = ref(last_parent_history)
 
@@ -275,14 +290,14 @@ class Model(
         self,
         name,  # type: str
         redo,  # type: Partial
-        redo_event,  # type: ModelEvent
+        redo_event,  # type: BaseObjectEvent
         undo,  # type: Partial
-        undo_event,  # type: ModelEvent
-        history_adopters,  # type: FrozenSet[Model, ...]
+        undo_event,  # type: BaseObjectEvent
+        history_adopters,  # type: FrozenSet[BaseObject, ...]
     ):
         # type: (...) -> bool
-        """Change the model by dispatching events and commands accordingly."""
-        command = ModelCommand(name, self, redo, redo_event, undo, undo_event)
+        """Change the obj by dispatching events and commands accordingly."""
+        command = BaseObjectCommand(name, self, redo, redo_event, undo, undo_event)
 
         # Emit event (internal pre phase), which will return True if event was accepted
         if self.__broadcaster.emit(redo_event, EventPhase.INTERNAL_PRE):
@@ -322,13 +337,13 @@ class Model(
             return False
 
     def __react__(self, event, phase):
-        # type: (ModelEvent, EventPhase) -> None
+        # type: (BaseObjectEvent, EventPhase) -> None
         """React to an event."""
         pass
 
     @contextmanager
     def __event_context__(self, event):
-        # type: (ModelEvent) -> ContextManager
+        # type: (BaseObjectEvent) -> ContextManager
         """Internal event context."""
         self.__broadcaster.emit(event, EventPhase.PRE)
         yield
@@ -358,70 +373,24 @@ class Model(
         return self.__broadcaster.emitter
 
 
-class ModelEvent(Event):
-    """Abstract event. Describes the adoption and/or release of child models."""
+class BaseObjectCommand(UndoableCommand):
+    """Command to change the object."""
 
-    __slots__ = ("__model", "__adoptions", "__releases")
+    __slots__ = ("__obj", "__redo", "__redo_event", "__undo", "__undo_event")
 
-    def __init__(self, model, adoptions, releases):
-        # type: (Model, FrozenSet[Model, ...], FrozenSet[Model, ...]) -> None
-        """Initialize with adoptions and releases."""
-        self.__model = model
-        self.__adoptions = adoptions
-        self.__releases = releases
-
-    def __eq_id_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using object identity."""
-        return ("model",)
-
-    @abstractmethod
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return "adoptions", "releases"
-
-    @abstractmethod
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return "adoptions", "releases"
-
-    @abstractmethod
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return "history", "adoptions", "releases"
-
-    @property
-    def model(self):
-        # type: () -> Model
-        """Model."""
-        return self.__model
-
-    @property
-    def adoptions(self):
-        # type: () -> FrozenSet[Model, ...]
-        """Adoptions."""
-        return self.__adoptions
-
-    @property
-    def releases(self):
-        # type: () -> FrozenSet[Model, ...]
-        """Releases."""
-        return self.__releases
-
-
-class ModelCommand(UndoableCommand):
-    """Command to change the model."""
-
-    __slots__ = ("__model", "__redo", "__redo_event", "__undo", "__undo_event")
-
-    def __init__(self, name, model, redo, redo_event, undo, undo_event):
-        # type: (str, Model, Partial, ModelEvent, Partial, ModelEvent) -> None
+    def __init__(
+        self,
+        name,  # type: str
+        obj,  # type: BaseObject
+        redo,  # type: Partial
+        redo_event,  # type: BaseObjectEvent
+        undo,  # type: Partial
+        undo_event,  # type: BaseObjectEvent
+    ):
+        # type: (...) -> None
         """Initialize with name, partials, and events."""
-        super(ModelCommand, self).__init__(name)
-        self.__model = model
+        super(BaseObjectCommand, self).__init__(name)
+        self.__obj = obj
         self.__redo = redo
         self.__redo_event = redo_event
         self.__undo = undo
@@ -430,29 +399,29 @@ class ModelCommand(UndoableCommand):
     def __redo__(self):
         # type: () -> None
         """Run 'redo' partial within its associated event context."""
-        with self.model.__event_context__(self.redo_event):
+        with self.obj.__event_context__(self.redo_event):
             self.__redo()
 
     def __undo__(self):
         # type: () -> None
         """Run 'undo' partial within its associated event context."""
-        with self.model.__event_context__(self.undo_event):
+        with self.obj.__event_context__(self.undo_event):
             self.__undo()
 
     @property
-    def model(self):
-        # type: () -> Model
-        """Model."""
-        return self.__model
+    def obj(self):
+        # type: () -> BaseObject
+        """BaseObject."""
+        return self.__obj
 
     @property
     def redo_event(self):
-        # type: () -> ModelEvent
+        # type: () -> BaseObjectEvent
         """Redo event."""
         return self.__redo_event
 
     @property
     def undo_event(self):
-        # type: () -> ModelEvent
+        # type: () -> BaseObjectEvent
         """Undo event."""
         return self.__undo_event

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """Exceptions."""
 
-from ._base.exceptions import ModeloException, ModeloError, SpecialValueError
+from ._base.exceptions import (
+    ObjettoException,
+    ObjettoError,
+)
 from ._components.attributes import (
     AttributesException,
     AttributesError,
@@ -13,9 +16,9 @@ from ._components.attributes import (
     IncompatibleDependenciesError,
     MissingDependencyError,
 )
-from ._components.broadcaster import (
-    BroadcasterException,
-    BroadcasterError,
+from ._components.events import (
+    EventsException,
+    EventsError,
     AlreadyEmittingError,
     PhaseError,
     StopEventPropagationException,
@@ -31,7 +34,6 @@ from ._components.hierarchy import (
     MultipleUnparentingError,
 )
 from ._components.history import (
-    HistoryException,
     HistoryError,
     WhileRunningError,
     AlreadyRanError,
@@ -40,9 +42,8 @@ from ._components.history import (
 )
 
 __all__ = [
-    "ModeloException",
-    "ModeloError",
-    "SpecialValueError",
+    "ObjettoException",
+    "ObjettoError",
     "AttributesException",
     "AttributesError",
     "AttributeNameError",
@@ -52,8 +53,8 @@ __all__ = [
     "IncompatibleParametersError",
     "IncompatibleDependenciesError",
     "MissingDependencyError",
-    "BroadcasterException",
-    "BroadcasterError",
+    "EventsException",
+    "EventsError",
     "AlreadyEmittingError",
     "PhaseError",
     "StopEventPropagationException",
@@ -65,7 +66,6 @@ __all__ = [
     "ParentCycleError",
     "MultipleParentingError",
     "MultipleUnparentingError",
-    "HistoryException",
     "HistoryError",
     "WhileRunningError",
     "AlreadyRanError",

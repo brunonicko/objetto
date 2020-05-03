@@ -2,7 +2,7 @@
 """Default factories."""
 
 import re
-from typing import Any, Optional, Callable, Tuple
+from typing import Any, Optional, Tuple
 
 from .utils.type_checking import assert_is_instance
 

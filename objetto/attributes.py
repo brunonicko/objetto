@@ -3,14 +3,15 @@
 
 from typing import Any, Optional, Callable, Iterable, Union, Tuple
 
-from ._base.constants import SpecialValue
+from ._base.constants import MISSING
 from ._components.attributes import AttributeDelegate
-from ._components.broadcaster import EventPhase
-from ._models.base import HistoryDescriptor
-from ._models.object import AttributeDescriptor, AttributeDescriptorDependencyPromise
-from ._models.sequence import MutableSequenceModel, SequenceProxyModel
-from ._models.mapping import MutableMappingModel, MappingProxyModel
-from ._models.set import MutableSetModel, SetProxyModel
+from ._components.events import EventPhase
+from ._objects.base import HistoryDescriptor
+from ._objects.object import AttributeDescriptor, AttributeDescriptorDependencyPromise
+from ._objects.sequence import MutableSequenceObject, SequenceProxyObject
+from ._objects.mapping import MutableMappingObject, MappingProxyObject
+from ._objects.set import MutableSetObject, SetProxyObject
+
 from .utils.type_checking import UnresolvedType as UType
 
 __all__ = [
@@ -72,7 +73,7 @@ def attribute(
     delegated=False,  # type: bool
     settable=None,  # type: Optional[bool]
     deletable=None,  # type: Optional[bool]
-    default=SpecialValue.MISSING,  # type: Any
+    default=MISSING,  # type: Any
     default_factory=None,  # type: Optional[Callable]
     parent=True,  # type: bool
     history=True,  # type: bool
@@ -123,7 +124,7 @@ def permanent_attribute(
     comparable=None,  # type: Optional[bool]
     represented=False,  # type: Optional[bool]
     printed=None,  # type: Optional[bool]
-    default=SpecialValue.MISSING,  # type: Any
+    default=MISSING,  # type: Any
     default_factory=None,  # type: Optional[Callable]
     parent=True,  # type: bool
     history=True,  # type: bool
@@ -131,7 +132,7 @@ def permanent_attribute(
 ):
     # type: (...) -> AttributeDescriptor
     """Make an read-only attribute that initializes with a default/default factory."""
-    if default is SpecialValue.MISSING and default_factory is None:
+    if default is MISSING and default_factory is None:
         error = "need to specify 'default' or 'default_factory' for permanent attribute"
         raise ValueError(error)
 
@@ -164,7 +165,7 @@ def protected_attribute_pair(
     comparable=None,  # type: Optional[bool]
     represented=False,  # type: Optional[bool]
     printed=None,  # type: Optional[bool]
-    default=SpecialValue.MISSING,  # type: Any
+    default=MISSING,  # type: Any
     default_factory=None,  # type: Optional[Callable]
     parent=True,  # type: bool
     history=True,  # type: bool
@@ -198,7 +199,7 @@ def protected_attribute_pair(
         represented=represented,
         printed=printed,
         delegated=True,
-        default=SpecialValue.MISSING,
+        default=MISSING,
         default_factory=None,
         parent=parent,
         history=False,
@@ -232,7 +233,7 @@ def sequence_attribute(
     """Make a sequence attribute."""
 
     def default_factory():
-        return MutableSequenceModel(
+        return MutableSequenceObject(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -278,7 +279,7 @@ def protected_sequence_attribute_pair(
     """Make two sequence attributes, one internal and one external (read-only)."""
 
     def default_factory():
-        source = MutableSequenceModel(
+        source = MutableSequenceObject(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -295,7 +296,7 @@ def protected_sequence_attribute_pair(
         proxy_type_name = "ReadOnly{}".format(
             source.default_type_name if type_name is None else type_name
         )
-        return SequenceProxyModel(
+        return SequenceProxyObject(
             source=source,
             reaction_phase=reaction_phase,
             comparable=comparable,
@@ -359,7 +360,7 @@ def mapping_attribute(
     """Make a mapping attribute."""
 
     def default_factory():
-        return MutableMappingModel(
+        return MutableMappingObject(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -415,7 +416,7 @@ def protected_mapping_attribute_pair(
     """Make two mapping attributes, one internal and one external (read-only)."""
 
     def default_factory():
-        source = MutableMappingModel(
+        source = MutableMappingObject(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -437,7 +438,7 @@ def protected_mapping_attribute_pair(
         proxy_type_name = "ReadOnly{}".format(
             source.default_type_name if type_name is None else type_name
         )
-        return MappingProxyModel(
+        return MappingProxyObject(
             source=source,
             reaction_phase=reaction_phase,
             comparable=comparable,
@@ -498,7 +499,7 @@ def set_attribute(
     """Make a set attribute."""
 
     def default_factory():
-        return MutableSetModel(
+        return MutableSetObject(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -544,7 +545,7 @@ def protected_set_attribute_pair(
     """Make two set attributes, one internal and one external (read-only)."""
 
     def default_factory():
-        source = MutableSetModel(
+        source = MutableSetObject(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -561,7 +562,7 @@ def protected_set_attribute_pair(
         proxy_type_name = "ReadOnly{}".format(
             source.default_type_name if type_name is None else type_name
         )
-        return SetProxyModel(
+        return SetProxyObject(
             source=source,
             reaction_phase=reaction_phase,
             comparable=comparable,

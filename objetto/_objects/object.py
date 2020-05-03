@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Object model."""
+"""Object."""
 
 try:
     import collections.abc as collections_abc
@@ -21,7 +21,8 @@ from typing import (
 from slotted import Slotted
 from collections import Counter
 
-from .._base.constants import SpecialValue
+from .._base.constants import MISSING, DELETED
+from .._components.events import field
 from .._components.attributes import (
     ObjectState,
     Attribute,
@@ -29,6 +30,7 @@ from .._components.attributes import (
     DependencyPromise,
     make_object_state_class,
 )
+
 from ..utils.type_checking import UnresolvedType as UType
 from ..utils.wrapped_dict import WrappedDict
 from ..utils.recursive_repr import recursive_repr
@@ -36,79 +38,28 @@ from ..utils.naming import privatize_name
 from ..utils.partial import Partial
 from ..utils.object_repr import object_repr
 from ..utils.type_checking import assert_is_instance
-from .base import ModelMeta, Model, ModelEvent
+
+from .base import BaseObjectEvent, BaseObjectMeta, BaseObject
 
 __all__ = [
+    "ObjectEvent",
     "AttributesUpdateEvent",
     "AttributeDescriptor",
     "AttributeDescriptorDependencyPromise",
-    "ObjectModelMeta",
-    "ObjectModel",
+    "ObjectMeta",
+    "Object",
 ]
 
 
-class AttributesUpdateEvent(ModelEvent):
-    """Emitted when values for an object model's attributes change."""
+class ObjectEvent(BaseObjectEvent):
+    """Object event."""
 
-    __slots__ = ("__new_values", "__old_values", "__input_values")
 
-    def __init__(
-        self,
-        model,  # type: ObjectModel
-        adoptions,  # type: FrozenSet[Model, ...]
-        releases,  # type: FrozenSet[Model, ...]
-        new_values,  # type: Mapping[str, Any]
-        old_values,  # type: Mapping[str, Any]
-        input_values=None,  # type: Optional[Tuple[Tuple[str, Any], ...]]
-    ):
-        # type: (...) -> None
-        """Initialize with new values and old values."""
-        super(AttributesUpdateEvent, self).__init__(model, adoptions, releases)
-        self.__new_values = new_values
-        self.__old_values = old_values
-        self.__input_values = input_values
-
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(AttributesUpdateEvent, self).__eq_equal_properties__() + (
-            "new_values",
-            "old_values",
-        )
-
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(AttributesUpdateEvent, self).__repr_properties__() + (
-            "new_values",
-            "old_values",
-        )
-
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(AttributesUpdateEvent, self).__str_properties__() + (
-            "new_values",
-            "old_values",
-        )
-
-    @property
-    def new_values(self):
-        # type: () -> Mapping[str, Any]
-        """New values."""
-        return self.__new_values
-
-    @property
-    def old_values(self):
-        # type: () -> Mapping[str, Any]
-        """Old values."""
-        return self.__old_values
-
-    @property
-    def input_values(self):
-        # type: () -> Optional[Tuple[Tuple[str, Any], ...]]
-        """Input values."""
-        return self.__input_values
+class AttributesUpdateEvent(ObjectEvent):
+    """Emitted when values for an object's attributes change."""
+    new_values = field()
+    old_values = field()
+    input_values = field()
 
 
 class AttributeDescriptorDependencyPromise(DependencyPromise):
@@ -122,7 +73,7 @@ class AttributeDescriptorDependencyPromise(DependencyPromise):
 
 
 class AttributeDescriptor(Slotted):
-    """Attribute descriptor for _models."""
+    """Attribute descriptor for _objects."""
 
     __slots__ = (
         "__owner",
@@ -154,7 +105,7 @@ class AttributeDescriptor(Slotted):
         delegated=False,  # type: bool
         settable=None,  # type: Optional[bool]
         deletable=None,  # type: Optional[bool]
-        default=SpecialValue.MISSING,  # type: Any
+        default=MISSING,  # type: Any
         default_factory=None,  # type: Optional[Callable]
         parent=True,  # type: bool
         history=True,  # type: bool
@@ -181,10 +132,10 @@ class AttributeDescriptor(Slotted):
         final = bool(final)
 
         # Check parameters
-        if default is not SpecialValue.MISSING and default_factory is not None:
+        if default is not MISSING and default_factory is not None:
             error = "can't specify both 'default' and 'default_factory' parameters"
             raise ValueError(error)
-        if default is not SpecialValue.MISSING or default_factory is not None:
+        if default is not MISSING or default_factory is not None:
             if default_factory is not None and not callable(default_factory):
                 error = (
                     "specified 'default_factory' of type '{}' is not callable"
@@ -196,7 +147,7 @@ class AttributeDescriptor(Slotted):
                     "delegated attributes"
                 )
                 raise ValueError(error)
-        elif default is SpecialValue.MISSING and default_factory is None:
+        elif default is MISSING and default_factory is None:
             if settable is False:
                 error = (
                     "need to specify 'default' or 'default_factory' if 'settable' is "
@@ -247,13 +198,13 @@ class AttributeDescriptor(Slotted):
         # Attribute
         self.__attribute = None
 
-    def __get__(self, model, model_cls=None):
-        # type: (Optional[ObjectModel], Optional[Type[ObjectModel]]) -> Any
+    def __get__(self, obj, obj_cls=None):
+        # type: (Optional[Object], Optional[Type[Object]]) -> Any
         """Descriptor 'get' access."""
         name = self.__name
-        if model is None:
-            if name is not None and model_cls is not None:
-                constants = model_cls.constants
+        if obj is None:
+            if name is not None and obj_cls is not None:
+                constants = obj_cls.constants
                 if name in constants:
                     return constants[name]
             return self
@@ -261,30 +212,30 @@ class AttributeDescriptor(Slotted):
             error = "attribute has no owner"
             raise RuntimeError(error)
         try:
-            return model[name]
+            return obj[name]
         except KeyError as e:
             exc = AttributeError(e)
             raise_from(exc, None)
             raise exc
 
-    def __set__(self, model, value):
-        # type: (ObjectModel, Any) -> None
+    def __set__(self, obj, value):
+        # type: (Object, Any) -> None
         """Descriptor 'set' access."""
         name = self.__name
         if name is None:
             error = "attribute has no owner"
             raise RuntimeError(error)
-        model[name] = value
+        obj[name] = value
 
-    def __delete__(self, model):
-        # type: (ObjectModel) -> None
+    def __delete__(self, obj):
+        # type: (Object) -> None
         """Descriptor 'delete' access."""
         name = self.__name
         if name is None:
             error = "attribute has no owner"
             raise RuntimeError(error)
         try:
-            del model[name]
+            del obj[name]
         except KeyError as e:
             exc = AttributeError(e)
             raise_from(exc, None)
@@ -476,7 +427,7 @@ class AttributeDescriptor(Slotted):
 
     @property
     def owner(self):
-        # type: () -> Type[ObjectModel]
+        # type: () -> Type[Object]
         """Owner class."""
         if self.__owner is None:
             error = "attribute descriptor has no owner"
@@ -683,7 +634,7 @@ class AttributeDescriptor(Slotted):
     @property
     def parent(self):
         # type: () -> bool
-        """Whether model used as value should attach as a child."""
+        """Whether obj used as value should attach as a child."""
         if self.__attribute is None:
             error = "attribute descriptor has no owner"
             raise RuntimeError(error)
@@ -692,7 +643,7 @@ class AttributeDescriptor(Slotted):
     @property
     def history(self):
         # type: () -> bool
-        """Whether model used as value should be assigned to the same history."""
+        """Whether obj used as value should be assigned to the same history."""
         if self.__attribute is None:
             error = "attribute descriptor has no owner"
             raise RuntimeError(error)
@@ -708,14 +659,14 @@ class AttributeDescriptor(Slotted):
         return self.__final
 
 
-def _make_object_model_class(
-    mcs,  # type: Type[ObjectModelMeta]
+def _make_object_class(
+    mcs,  # type: Type[ObjectMeta]
     name,  # type: str
     bases,  # type: Tuple[Type, ...]
     dct,  # type: Dict[str, Any]
 ):
-    # type: (...) -> ObjectModelMeta
-    """Make model class/subclass."""
+    # type: (...) -> ObjectMeta
+    """Make obj class/subclass."""
     dct = dict(dct)
 
     # Prepare dictionaries
@@ -725,7 +676,7 @@ def _make_object_model_class(
     dct["__factories__"] = WrappedDict(factories)
 
     # Make class
-    cls = super(ObjectModelMeta, mcs).__new__(mcs, name, bases, dct)
+    cls = super(ObjectMeta, mcs).__new__(mcs, name, bases, dct)
 
     # Collect attribute descriptors
     new_attributes = set()
@@ -738,7 +689,7 @@ def _make_object_model_class(
                     )
                     raise TypeError(error)
             if isinstance(member, AttributeDescriptor):
-                if isinstance(base, ObjectModelMeta):
+                if isinstance(base, ObjectMeta):
                     attributes[member_name] = member
                     if base is cls:
                         member.__set_owner__(cls, member_name)
@@ -786,7 +737,7 @@ def _make_object_model_class(
 
         # Has default/default factory, collect it
         factory = None
-        if attribute.default is not SpecialValue.MISSING:
+        if attribute.default is not MISSING:
             factory = lambda _v=attribute.default: _v
         elif attribute.default_factory is not None:
             factory = attribute.default_factory
@@ -796,10 +747,10 @@ def _make_object_model_class(
     return cls
 
 
-class ObjectModelMeta(ModelMeta):
-    """Metaclass for 'ObjectModel'."""
+class ObjectMeta(BaseObjectMeta):
+    """Metaclass for 'Object'."""
 
-    __new__ = staticmethod(_make_object_model_class)
+    __new__ = staticmethod(_make_object_class)
 
     __attributes__ = {}  # type: Mapping[str, AttributeDescriptor]
     __factories__ = {}  # type: Mapping[str, Callable]
@@ -830,8 +781,8 @@ class ObjectModelMeta(ModelMeta):
         return cls.__state_type__.constants
 
 
-class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
-    """Model described by attributes."""
+class Object(with_metaclass(ObjectMeta, BaseObject)):
+    """BaseObject described by attributes."""
 
     __slots__ = ("__state",)
     __state_type__ = ObjectState
@@ -839,7 +790,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
     def __pre_init__(self):
         # type: () -> None
         """Pre-initialize."""
-        super(ObjectModel, self).__pre_init__()
+        super(Object, self).__pre_init__()
         cls = type(self)
         self.__state = cls.__state_type__(self)
         if cls.factories:
@@ -867,7 +818,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         )
 
     def __eq__(self, other):
-        # type: (ObjectModel) -> bool
+        # type: (Object) -> bool
         """Compare for equality."""
         if type(self) is not type(other):
             return False
@@ -891,7 +842,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         """Delete attribute."""
         self.__getitem__(name)
         with self._batch_context("Delete Attribute"):
-            self.update((name, SpecialValue.DELETED))
+            self.update((name, DELETED))
 
     def update(self, *name_value_pairs):
         # type: (Tuple[Tuple[str, Any], ...]) -> None
@@ -914,9 +865,9 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
             attribute = type(self).attributes[name]
             if attribute.parent:
                 old_value = undo_update[name]
-                if isinstance(old_value, Model):
+                if isinstance(old_value, BaseObject):
                     child_count[old_value] -= 1
-                if isinstance(value, Model):
+                if isinstance(value, BaseObject):
                     child_count[value] += 1
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
@@ -925,7 +876,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
         history_adopters = set()
         for name, value in iteritems(redo_update):
             attribute = type(self).attributes[name]
-            if attribute.history and isinstance(value, Model):
+            if attribute.history and isinstance(value, BaseObject):
                 history_adopters.add(value)
         history_adopters = frozenset(history_adopters)
 
@@ -937,7 +888,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
             self.__state.update, undo_update
         )
         redo_event = AttributesUpdateEvent(
-            model=self,
+            obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
             new_values=redo_update,
@@ -945,7 +896,7 @@ class ObjectModel(with_metaclass(ObjectModelMeta, Model)):
             input_values=name_value_pairs,
         )
         undo_event = AttributesUpdateEvent(
-            model=self,
+            obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
             new_values=undo_update,

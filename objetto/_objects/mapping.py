@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
-"""Mapping model."""
+"""Mapping object."""
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
+from collections import Counter
 from six import with_metaclass, iteritems, iterkeys, itervalues, string_types
 from typing import (
     Dict,
     Callable,
     Any,
     Optional,
-    FrozenSet,
     Mapping,
     Hashable,
     Iterable,
@@ -21,88 +21,50 @@ from typing import (
     List,
     cast,
 )
-from collections import Counter
 
-from .._base.constants import SpecialValue
-from .._components.broadcaster import EventPhase
-from ..utils.type_checking import UnresolvedType as UType
-from ..utils.type_checking import assert_is_instance
+from .._base.constants import MISSING, DELETED
+from .._components.events import EventPhase, field
+
 from ..utils.partial import Partial
 from ..utils.wrapped_dict import WrappedDict
-from .base import Model, ModelEvent
-from .container import ContainerModelMeta, ContainerModel, ContainerModelParameters
+from ..utils.type_checking import UnresolvedType as UType
+from ..utils.type_checking import assert_is_instance
+
+from .base import BaseObjectEvent, BaseObject
+from .container import (
+    ContainerObjectEvent,
+    ContainerObjectMeta,
+    ContainerObject,
+    ContainerObjectParameters
+)
+
 
 __all__ = [
+    "MappingObjectEvent",
     "MappingUpdateEvent",
-    "MappingModelMeta",
-    "MappingModel",
-    "MutableMappingModel",
-    "MappingProxyModel",
+    "MappingObjectMeta",
+    "MappingObject",
+    "MutableMappingObject",
+    "MappingProxyObject",
 ]
 
 
-class MappingUpdateEvent(ModelEvent):
-    """Emitted when key-value pairs in a mapping model change."""
-
-    __slots__ = ("__new_values", "__old_values")
-
-    def __init__(
-        self,
-        model,  # type: MappingModel
-        adoptions,  # type: FrozenSet[Model, ...]
-        releases,  # type: FrozenSet[Model, ...]
-        new_values,  # type: Mapping[Hashable, Any]
-        old_values,  # type: Mapping[Hashable, Any]
-    ):
-        # type: (...) -> None
-        """Initialize with new values and old values."""
-        super(MappingUpdateEvent, self).__init__(model, adoptions, releases)
-        self.__new_values = new_values
-        self.__old_values = old_values
-
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(MappingUpdateEvent, self).__eq_equal_properties__() + (
-            "new_values",
-            "old_values",
-        )
-
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(MappingUpdateEvent, self).__repr_properties__() + (
-            "new_values",
-            "old_values",
-        )
-
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(MappingUpdateEvent, self).__str_properties__() + (
-            "new_values",
-            "old_values",
-        )
-
-    @property
-    def new_values(self):
-        # type: () -> Mapping[Hashable, Any]
-        """New values."""
-        return self.__new_values
-
-    @property
-    def old_values(self):
-        # type: () -> Mapping[Hashable, Any]
-        """Old values."""
-        return self.__old_values
+class MappingObjectEvent(ContainerObjectEvent):
+    """Mapping object event."""
 
 
-class MappingModelMeta(ContainerModelMeta):
-    """Metaclass for 'MappingModel'."""
+class MappingUpdateEvent(MappingObjectEvent):
+    """Emitted when key-value pairs in a mapping object change."""
+    new_values = field()
+    old_values = field()
 
 
-class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
-    """Model that stores values in a mapping."""
+class MappingObjectMeta(ContainerObjectMeta):
+    """Metaclass for 'MappingObject'."""
+
+
+class MappingObject(with_metaclass(MappingObjectMeta, ContainerObject)):
+    """Object that stores values in a mapping."""
 
     __slots__ = ("__key_parameters",)
     __state_type__ = dict
@@ -129,7 +91,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
     ):
         # type: (...) -> None
         """Initialize with value parameters and key parameters."""
-        super(MappingModel, self).__init__(
+        super(MappingObject, self).__init__(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -143,7 +105,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
             type_name=type_name,
             reaction=reaction,
         )
-        self.__key_parameters = ContainerModelParameters(
+        self.__key_parameters = ContainerObjectParameters(
             value_type=key_type,
             value_factory=None,
             exact_value_type=exact_key_type,
@@ -195,12 +157,12 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
             value = self._parameters.fabricate(
                 value, accepts_deleted=True, accepts_missing=False
             )
-            if value is SpecialValue.DELETED:
+            if value is DELETED:
                 if key not in self.__state:
                     raise KeyError(key)
                 processed_revert[key] = self.__state[key]
             elif key not in self.__state:
-                processed_revert[key] = SpecialValue.DELETED
+                processed_revert[key] = DELETED
             else:
                 processed_revert[key] = self.__state[key]
             processed_update[key] = value
@@ -211,7 +173,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
         # type: (Mapping[Hashable, Any]) -> None
         """Update."""
         for key, value in iteritems(mapping_update):
-            if value in (SpecialValue.MISSING, SpecialValue.DELETED):
+            if value in (MISSING, DELETED):
                 del self.__state[key]
             else:
                 self.__state[key] = value
@@ -228,29 +190,29 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
 
         # Count children
         child_count = Counter()
-        special_drop_values = SpecialValue.MISSING, SpecialValue.DELETED
+        special_drop_values = MISSING, DELETED
         if self._key_parameters.parent or self._parameters.parent:
             for key, value in iteritems(redo_update):
                 if value in special_drop_values:
                     if self._key_parameters.parent:
-                        if isinstance(key, Model):
+                        if isinstance(key, BaseObject):
                             child_count[key] -= 1
                     if self._parameters.parent:
                         old_value = undo_update[key]
-                        if isinstance(old_value, Model):
+                        if isinstance(old_value, BaseObject):
                             child_count[old_value] -= 1
                 else:
                     if self._key_parameters.parent:
                         if (
-                            isinstance(key, Model)
+                            isinstance(key, BaseObject)
                             and undo_update[key] in special_drop_values
                         ):
                             child_count[key] += 1
                     if self._parameters.parent:
                         old_value = undo_update[key]
-                        if isinstance(value, Model):
+                        if isinstance(value, BaseObject):
                             child_count[value] += 1
-                        if isinstance(old_value, Model):
+                        if isinstance(old_value, BaseObject):
                             child_count[old_value] -= 1
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
@@ -259,9 +221,9 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
         history_adopters = set()
         if self._key_parameters.history or self._parameters.history:
             for key, value in iteritems(redo_update):
-                if self._key_parameters.history and isinstance(key, Model):
+                if self._key_parameters.history and isinstance(key, BaseObject):
                     history_adopters.add(key)
-                if self._parameters.history and isinstance(value, Model):
+                if self._parameters.history and isinstance(value, BaseObject):
                     history_adopters.add(value)
         history_adopters = frozenset(history_adopters)
 
@@ -275,14 +237,14 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
 
         # Create events
         redo_event = MappingUpdateEvent(
-            model=self,
+            obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
             new_values=redo_update,
             old_values=undo_update,
         )
         undo_event = MappingUpdateEvent(
-            model=self,
+            obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
             new_values=undo_update,
@@ -298,18 +260,18 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
         # type: () -> None
         """Clear mapping."""
         with self._batch_context("Clear Items"):
-            self._update(dict((k, SpecialValue.DELETED) for k in self.__state))
+            self._update(dict((k, DELETED) for k in self.__state))
 
-    def _pop(self, key, fallback=SpecialValue.MISSING):
+    def _pop(self, key, fallback=MISSING):
         # type: (Hashable, Any) -> Any
         """Pop key"""
         if key not in self.__state:
-            if fallback is SpecialValue.MISSING:
+            if fallback is MISSING:
                 raise KeyError(key)
             return fallback
         value = self.__state[key]
         with self._batch_context("Remove Item"):
-            self._update({key: SpecialValue.DELETED})
+            self._update({key: DELETED})
         return value
 
     def _popitem(self):
@@ -339,7 +301,7 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
     def has_key(self, key):
         # type: (Hashable) -> bool
         """Whether key is in the mapping."""
-        return self.__state.has_key(key)
+        return key in self.__state
 
     def iteritems(self):
         # type: () -> Iterator[Tuple[str, Any]]
@@ -408,17 +370,17 @@ class MappingModel(with_metaclass(MappingModelMeta, ContainerModel)):
     def __state(self):
         # type: () -> Dict
         """Internal state."""
-        return cast(Dict, super(MappingModel, self).__get_state__())
+        return cast(Dict, super(MappingObject, self).__get_state__())
 
     @property
     def _key_parameters(self):
-        # type: () -> ContainerModelParameters
+        # type: () -> ContainerObjectParameters
         """Container key parameters."""
         return self.__key_parameters
 
 
-class MutableMappingModel(MappingModel):
-    """Mapping model with public mutable methods."""
+class MutableMappingObject(MappingObject):
+    """Mapping object with public mutable methods."""
 
     __slots__ = ()
 
@@ -430,7 +392,7 @@ class MutableMappingModel(MappingModel):
     def __delitem__(self, key):
         # type: (Hashable) -> None
         """Delete value associated with key."""
-        self.update({key: SpecialValue.DELETED})
+        self.update({key: DELETED})
 
     def update(self, *args, **kwargs):
         # type: (Tuple[Mapping], Dict[str, Any]) -> None
@@ -442,7 +404,7 @@ class MutableMappingModel(MappingModel):
         """Clear mapping."""
         return self._clear()
 
-    def pop(self, key, fallback=SpecialValue.MISSING):
+    def pop(self, key, fallback=MISSING):
         # type: (Hashable, Any) -> Any
         """Pop key"""
         return self._pop(key, fallback=fallback)
@@ -458,14 +420,14 @@ class MutableMappingModel(MappingModel):
         return self._setdefault(key, value)
 
 
-class MappingProxyModel(MappingModel):
-    """Read-only mapping model that reflects the values of another mapping model."""
+class MappingProxyObject(MappingObject):
+    """Read-only mapping object that reflects the values of another mapping object."""
 
     __slots__ = ("__source", "__reaction_phase")
 
     def __init__(
         self,
-        source=None,  # type: Optional[MappingModel]
+        source=None,  # type: Optional[MappingObject]
         source_factory=None,  # type: Optional[Callable]
         reaction_phase=EventPhase.POST,  # type: EventPhase
         value_factory=None,  # type: Optional[Callable]
@@ -488,7 +450,7 @@ class MappingProxyModel(MappingModel):
             error = "can't provide both 'source' and 'source_factory'"
             raise ValueError(error)
 
-        assert_is_instance(source, MappingModel)
+        assert_is_instance(source, MappingObject)
         assert_is_instance(reaction_phase, EventPhase)
 
         parent = bool(parent) if parent is not None else not source.parent
@@ -501,23 +463,23 @@ class MappingProxyModel(MappingModel):
         )
 
         if getattr(source, "_parameters").parent and parent:
-            error = "both source and proxy container models have 'parent' set to True"
+            error = "both source and proxy container objects have 'parent' set to True"
             raise ValueError(error)
         if getattr(source, "_parameters").history and history:
-            error = "both source and proxy container models have 'history' set to True"
+            error = "both source and proxy container objects have 'history' set to True"
             raise ValueError(error)
         if getattr(source, "_key_parameters").key_parent and key_parent:
             error = (
-                "both source and proxy container models have 'key_parent' set to True"
+                "both source and proxy container objects have 'key_parent' set to True"
             )
             raise ValueError(error)
         if getattr(source, "_key_parameters").key_history and key_history:
             error = (
-                "both source and proxy container models have 'key_history' set to True"
+                "both source and proxy container objects have 'key_history' set to True"
             )
             raise ValueError(error)
 
-        super(MappingProxyModel, self).__init__(
+        super(MappingProxyObject, self).__init__(
             value_type=None,
             value_factory=value_factory,
             exact_value_type=None,
@@ -541,9 +503,9 @@ class MappingProxyModel(MappingModel):
         source.events.add_listener(self)
 
     def __react__(self, event, phase):
-        # type: (ModelEvent, EventPhase) -> None
+        # type: (BaseObjectEvent, EventPhase) -> None
         """React to an event."""
-        if isinstance(event, ModelEvent) and event.model is self._source:
+        if isinstance(event, BaseObjectEvent) and event.obj is self._source:
             if phase is self.__reaction_phase:
                 if type(event) is MappingUpdateEvent:
                     event = cast(MappingUpdateEvent, event)
@@ -551,8 +513,8 @@ class MappingProxyModel(MappingModel):
 
     @property
     def _source(self):
-        # type: () -> MappingModel
-        """Source mapping model."""
+        # type: () -> MappingObject
+        """Source mapping object."""
         return self.__source
 
     @property

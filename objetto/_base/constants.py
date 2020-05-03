@@ -6,11 +6,16 @@ from enum import Enum as _Enum
 
 
 # Dead weak reference object
-DEAD_REF = _ref(type("DeadRef", (object,), {"__slots__": ("__weakref__",)})())
+DEAD_WEAKREF = _ref(type("DeadRef", (object,), {"__slots__": ("__weakref__",)})())
 
 
-class SpecialValue(_Enum):
+# Special values
+class _SpecialValue(_Enum):
     """Special value enum."""
 
     MISSING = "missing"  # represents the absence of a value
     DELETED = "deleted"  # indicates that the value was deleted
+
+
+MISSING = _SpecialValue.MISSING
+DELETED = _SpecialValue.DELETED

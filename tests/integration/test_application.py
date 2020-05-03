@@ -9,25 +9,25 @@ class TestApplication(unittest.TestCase):
     """Test simple application."""
 
     def test_default(self):
-        from modelo.models import ObjectModel
-        from modelo.attributes import (
+        from objetto.objects import Object
+        from objetto.attributes import (
             attribute,
             history_attribute,
             permanent_attribute,
             sequence_attribute,
             protected_sequence_attribute_pair,
         )
-        from modelo.factories import integer, curated
-        from modelo.reactions import unique_attributes, limit
+        from objetto.factories import integer, curated
+        from objetto.reactions import unique_attributes, limit
 
-        class Layer(ObjectModel):
+        class Layer(Object):
             name = attribute(value_factory=str, represented=True)
 
             def __init__(self, name="master"):
                 super(Layer, self).__init__()
                 self.name = name
 
-        class Comp(ObjectModel):
+        class Comp(Object):
             name = attribute(value_factory=str, represented=True)
             order = attribute(
                 default=0,
@@ -43,7 +43,7 @@ class TestApplication(unittest.TestCase):
                 self.name = name
                 self._nodes.append("Node A", "Node B", "Node C")
 
-        class Document(ObjectModel):
+        class Document(Object):
             layers = sequence_attribute(
                 Layer, reaction=unique_attributes("name") + limit(maximum=4)
             )
@@ -52,7 +52,7 @@ class TestApplication(unittest.TestCase):
                 reaction=unique_attributes("name", order=lambda v, vs: max(vs) + 1),
             )
 
-        class Application(ObjectModel):
+        class Application(Object):
             template = permanent_attribute(default_factory=Document)
             history = history_attribute()
 

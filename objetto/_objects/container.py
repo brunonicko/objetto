@@ -1,31 +1,41 @@
 # -*- coding: utf-8 -*-
-"""Abstract container model."""
+"""Abstract container object."""
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
-from six import with_metaclass, string_types
+from six import with_metaclass
 from typing import Any, Optional, Callable, Iterable, Union
 from slotted import Slotted
 
-from .._components.broadcaster import EventPhase
-from .._base.constants import SpecialValue
-from .._base.exceptions import SpecialValueError
+from .._base.constants import MISSING, DELETED
+from .._components.events import EventPhase
+
 from ..utils.type_checking import UnresolvedType as UType
 from ..utils.recursive_repr import recursive_repr
 from ..utils.type_checking import assert_is_unresolved_type, assert_is_instance
-from .base import ModelMeta, Model, ModelEvent
 
-__all__ = ["ContainerModelMeta", "ContainerModel", "ContainerModelParameters"]
+from .base import BaseObjectEvent, BaseObjectMeta, BaseObject
+
+__all__ = [
+    "ContainerObjectEvent",
+    "ContainerObjectMeta",
+    "ContainerObject",
+    "ContainerObjectParameters"
+]
 
 
-class ContainerModelMeta(ModelMeta):
-    """Metaclass for 'ContainerModel'."""
+class ContainerObjectEvent(BaseObjectEvent):
+    """Container object event."""
 
 
-class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
-    """Model that stores values in a mapping."""
+class ContainerObjectMeta(BaseObjectMeta):
+    """Metaclass for 'ContainerObject'."""
+
+
+class ContainerObject(with_metaclass(ContainerObjectMeta, BaseObject)):
+    """Object that stores values in a container."""
 
     __slots__ = ("__type_name", "__state", "__parameters", "__reaction")
     __state_type__ = NotImplemented
@@ -47,7 +57,7 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
     ):
         # type: (...) -> None
         """Initialize with parameters."""
-        super(ContainerModel, self).__init__()
+        super(ContainerObject, self).__init__()
 
         # Type name
         self.__type_name = (str(type_name) if type_name is not None else None) or None
@@ -60,7 +70,7 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         self.__state = state_type()
 
         # Parameters
-        self.__parameters = ContainerModelParameters(
+        self.__parameters = ContainerObjectParameters(
             value_type=value_type,
             value_factory=value_factory,
             exact_value_type=exact_value_type,
@@ -111,7 +121,7 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         )
 
     def __eq__(self, other):
-        # type: (ContainerModel) -> bool
+        # type: (ContainerObject) -> bool
         """Compare for equality."""
         if self is other:
             return True
@@ -124,7 +134,7 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
         return self_state == other_state
 
     def __react__(self, event, phase):
-        # type: (ModelEvent, EventPhase) -> None
+        # type: (BaseObjectEvent, EventPhase) -> None
         """React to an event."""
         if self.__reaction is not None:
             self.__reaction(self, event, phase)
@@ -148,13 +158,13 @@ class ContainerModel(with_metaclass(ContainerModelMeta, Model)):
 
     @property
     def _parameters(self):
-        # type: () -> ContainerModelParameters
+        # type: () -> ContainerObjectParameters
         """Container parameters."""
         return self.__parameters
 
 
-class ContainerModelParameters(Slotted):
-    """Holds parameter values for a container model."""
+class ContainerObjectParameters(Slotted):
+    """Holds parameter values for a container obj."""
 
     __slots__ = (
         "__value_type",
@@ -257,12 +267,12 @@ class ContainerModelParameters(Slotted):
             error = "can't use None"
             raise TypeError(error)
 
-        if not accepts_missing and value is SpecialValue.MISSING:
+        if not accepts_missing and value is MISSING:
             error = "can't use special value {}".format(value)
-            raise SpecialValueError(error)
-        if not accepts_deleted and value is SpecialValue.DELETED:
+            raise ValueError(error)
+        if not accepts_deleted and value is DELETED:
             error = "can't use special value {}".format(value)
-            raise SpecialValueError(error)
+            raise ValueError(error)
 
         return value
 
@@ -317,11 +327,11 @@ class ContainerModelParameters(Slotted):
     @property
     def parent(self):
         # type: () -> bool
-        """Whether model used as value should attach as a child."""
+        """Whether obj used as value should attach as a child."""
         return self.__parent
 
     @property
     def history(self):
         # type: () -> bool
-        """Whether model used as value should be assigned to the same history."""
+        """Whether obj used as value should be assigned to the same history."""
         return self.__history

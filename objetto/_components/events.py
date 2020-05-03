@@ -1,29 +1,36 @@
 # -*- coding: utf-8 -*-
-"""AbstractEvent broadcasting."""
+"""Event broadcasting."""
 
 from abc import abstractmethod
 from enum import Enum
 from weakref import WeakKeyDictionary, WeakSet, ref
 from slotted import Slotted
 from six import raise_from
-from typing import Any, FrozenSet, Optional, Callable, Union
+from typing import Any, FrozenSet, Optional, Union, Callable
 
-from .._base.exceptions import ModeloException, ModeloError
-from .._base.events import AbstractEvent
+from .._base.exceptions import ObjettoException, ObjettoError
+
+from ..utils.frozen import FrozenObject, field
 from ..utils.type_checking import assert_is_instance
 
 __all__ = [
     "EventPhase",
-    "Broadcaster",
-    "EventListenerMixin",
-    "ListenerToken",
-    "EventEmitter",
-    "BroadcasterException",
-    "BroadcasterError",
+    "Event",
+    "field",
+    "EventsException",
+    "EventsError",
     "AlreadyEmittingError",
     "PhaseError",
     "StopEventPropagationException",
     "RejectEventException",
+    "AlreadyEmittingError",
+    "PhaseError",
+    "StopEventPropagationException",
+    "RejectEventException",
+    "Broadcaster",
+    "EventListenerMixin",
+    "ListenerToken",
+    "EventEmitter"
 ]
 
 
@@ -34,6 +41,56 @@ class EventPhase(Enum):
     PRE = "pre"
     POST = "post"
     INTERNAL_POST = "internal_post"
+
+
+class Event(FrozenObject):
+    """Event."""
+
+
+class EventsException(ObjettoException):
+    """Events exception."""
+
+
+class EventsError(ObjettoError, EventsException):
+    """Events error."""
+
+
+class AlreadyEmittingError(StandardError):
+    """Raised when trying to emit during an ongoing emission."""
+
+
+class PhaseError(StandardError):
+    """Raised when the current phase is not the expected one."""
+
+
+class StopEventPropagationException(Exception):
+    """When raised during event emission, will prevent next listeners to react."""
+
+
+class RejectEventException(Exception):
+    """
+    When raised during event emission, will prevent the action that originated the
+    event from happening at all.
+    """
+
+    __slots__ = ("__callback",)
+
+    def __init__(self, callback=None):
+        # type: (Optional[Callable]) -> None
+        """Initialize with an optional callback."""
+        super(RejectEventException, self).__init__()
+        if callback is not None and not callable(callback):
+            error = (
+                "expected None or a callable for 'callback' parameter, got '{}'"
+            ).format(type(callback).__name__)
+            raise TypeError(error)
+        self.__callback = callback
+
+    @property
+    def callback(self):
+        # type: () -> Optional[Callable]
+        """Callback."""
+        return self.__callback
 
 
 class Broadcaster(Slotted):
@@ -47,14 +104,14 @@ class Broadcaster(Slotted):
         self.__emitter = EventEmitter(self)
 
     def emit(self, event, phase):
-        # type: (Union[AbstractEvent, Any], EventPhase) -> bool
+        # type: (Union[Event, Any], EventPhase) -> bool
         """Emit event. Return False if event was rejected."""
         return self.__emitter.__emit__(event, phase)
 
     @property
     def emitter(self):
         # type: () -> EventEmitter
-        """AbstractEvent emitter."""
+        """Event emitter."""
         return self.__emitter
 
 
@@ -65,7 +122,7 @@ class EventListenerMixin(object):
 
     @abstractmethod
     def __react__(self, event, phase):
-        # type: (Union[AbstractEvent, Any], EventPhase) -> None
+        # type: (Union[Event, Any], EventPhase) -> None
         """React to an event."""
         error = "event listener class '{}' did not implement '__react__' method".format(
             type(self).__name__
@@ -98,7 +155,7 @@ class ListenerToken(Slotted):
     @property
     def emitter(self):
         # type: () -> EventEmitter
-        """AbstractEvent emitter."""
+        """Event emitter."""
         emitter = self.__emitter_ref()
         if emitter is not None:
             return emitter
@@ -108,7 +165,7 @@ class ListenerToken(Slotted):
     @property
     def listener(self):
         # type: () -> EventListenerMixin
-        """AbstractEvent listener."""
+        """Event listener."""
         listener = self.__listener_ref()
         if listener is not None:
             return listener
@@ -150,7 +207,7 @@ class EventEmitter(Slotted):
             listener.__react__(self.__emitting, self.__emitting_phase)
 
     def __emit__(self, event, phase):
-        # type: (Union[AbstractEvent, Any], EventPhase) -> bool
+        # type: (Union[Event, Any], EventPhase) -> bool
         """Emit event to all listeners. Return False if event was rejected."""
 
         # Check phase type
@@ -287,8 +344,8 @@ class EventEmitter(Slotted):
 
     @property
     def emitting(self):
-        # type: () -> Optional[AbstractEvent]
-        """AbstractEvent currently being emitted."""
+        # type: () -> Optional[Event]
+        """Event currently being emitted."""
         return self.__emitting
 
     @property
@@ -296,49 +353,3 @@ class EventEmitter(Slotted):
         # type: () -> Optional[EventPhase]
         """Current emitting phase."""
         return self.__emitting_phase
-
-
-class BroadcasterException(ModeloException):
-    """Broadcaster exception."""
-
-
-class BroadcasterError(ModeloError, BroadcasterException):
-    """Broadcaster error."""
-
-
-class AlreadyEmittingError(BroadcasterError):
-    """Raised when trying to emit during an ongoing emission."""
-
-
-class PhaseError(BroadcasterError):
-    """Raised when the current phase is not the expected one."""
-
-
-class StopEventPropagationException(BroadcasterException):
-    """When raised during event emission, will prevent next listeners to react."""
-
-
-class RejectEventException(BroadcasterException):
-    """
-    When raised during event emission, will prevent the action that originated the
-    event from happening at all.
-    """
-
-    __slots__ = ("__callback",)
-
-    def __init__(self, callback=None):
-        # type: (Optional[Callable]) -> None
-        """Initialize with an optional callback."""
-        super(RejectEventException, self).__init__()
-        if callback is not None and not callable(callback):
-            error = (
-                "expected None or a callable for 'callback' parameter, got '{}'"
-            ).format(type(callback).__name__)
-            raise TypeError(error)
-        self.__callback = callback
-
-    @property
-    def callback(self):
-        # type: () -> Optional[Callable]
-        """Callback."""
-        return self.__callback

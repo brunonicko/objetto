@@ -6,22 +6,22 @@ __all__ = ["TestSet"]
 
 
 class TestSet(unittest.TestCase):
-    """Tests for 'modelo._models.set' module."""
+    """Tests for 'objetto._objects.set' module."""
 
-    def test_set_model(self):
-        from modelo.models import SetModel
+    def test_set_obj(self):
+        from objetto.objects import SetObject
 
-        sa = SetModel(parent=True)
-        sb = SetModel(parent=True)
+        sa = SetObject(parent=True)
+        sb = SetObject(parent=True)
 
         sa._add(*[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, sb])
         sa._pop()
 
-    def test_mutable_set_model(self):
-        from modelo.models import MutableSetModel
+    def test_mutable_set_obj(self):
+        from objetto.objects import MutableSetObject
 
-        sa = MutableSetModel(parent=True)
-        sb = MutableSetModel(parent=True)
+        sa = MutableSetObject(parent=True)
+        sb = MutableSetObject(parent=True)
 
         sa.add(*[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, sb])
         sa.pop()
@@ -31,10 +31,10 @@ class TestSet(unittest.TestCase):
         sa.pop()
 
     def test_update(self):
-        from modelo.models import MutableSetModel
+        from objetto.objects import MutableSetObject
 
-        sa = MutableSetModel(parent=True)
-        sb = MutableSetModel(parent=True)
+        sa = MutableSetObject(parent=True)
+        sb = MutableSetObject(parent=True)
         sa.update(range(0, 10))
         sb.update(range(7, 17))
 
@@ -42,10 +42,10 @@ class TestSet(unittest.TestCase):
         self.assertEqual(set(sb), set(range(7, 17)))
 
     def test_difference_update(self):
-        from modelo.models import MutableSetModel
+        from objetto.objects import MutableSetObject
 
-        sa = MutableSetModel(parent=True)
-        sb = MutableSetModel(parent=True)
+        sa = MutableSetObject(parent=True)
+        sb = MutableSetObject(parent=True)
         sa.update(range(0, 10))
         sb.update(range(7, 17))
 
@@ -54,10 +54,10 @@ class TestSet(unittest.TestCase):
         self.assertEqual(set(sa), expected)
 
     def test_symmetric_difference_update(self):
-        from modelo.models import MutableSetModel
+        from objetto.objects import MutableSetObject
 
-        sa = MutableSetModel(parent=True)
-        sb = MutableSetModel(parent=True)
+        sa = MutableSetObject(parent=True)
+        sb = MutableSetObject(parent=True)
         sa.update(range(0, 10))
         sb.update(range(7, 17))
 
@@ -66,10 +66,10 @@ class TestSet(unittest.TestCase):
         self.assertEqual(set(sa), expected)
 
     def test_intersection_update(self):
-        from modelo.models import MutableSetModel
+        from objetto.objects import MutableSetObject
 
-        sa = MutableSetModel(parent=True)
-        sb = MutableSetModel(parent=True)
+        sa = MutableSetObject(parent=True)
+        sb = MutableSetObject(parent=True)
         sa.update(range(0, 10))
         sb.update(range(7, 17))
 

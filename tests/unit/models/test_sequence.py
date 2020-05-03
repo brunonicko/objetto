@@ -6,13 +6,13 @@ __all__ = ["TestSequence"]
 
 
 class TestSequence(unittest.TestCase):
-    """Tests for 'modelo._models.sequence' module."""
+    """Tests for 'objetto._objects.sequence' module."""
 
-    def test_sequence_model(self):
-        from modelo.models import SequenceModel
+    def test_sequence_obj(self):
+        from objetto.objects import SequenceObject
 
-        sa = SequenceModel(parent=True)
-        sb = SequenceModel(parent=True)
+        sa = SequenceObject(parent=True)
+        sb = SequenceObject(parent=True)
 
         sa._insert(0, *[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, sb])
         sa._move(2, 1, 5)
@@ -20,11 +20,11 @@ class TestSequence(unittest.TestCase):
         sa._pop()
         sa._pop(0, -1)
 
-    def test_mutable_sequence_model(self):
-        from modelo.models import MutableSequenceModel
+    def test_mutable_sequence_obj(self):
+        from objetto.objects import MutableSequenceObject
 
-        sa = MutableSequenceModel(parent=True)
-        sb = MutableSequenceModel(parent=True)
+        sa = MutableSequenceObject(parent=True)
+        sb = MutableSequenceObject(parent=True)
 
         sa.insert(0, *[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, sb])
         sa.move(2, 1, 5)

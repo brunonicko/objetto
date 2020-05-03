@@ -5,13 +5,19 @@ from abc import abstractmethod
 from weakref import ref
 from collections import Counter, namedtuple, deque
 from typing import Iterator, Optional, FrozenSet
-
 from slotted import Slotted
 
-from .._base.exceptions import ModeloException, ModeloError
-from .._base.constants import DEAD_REF
+from .._base.constants import DEAD_WEAKREF
+from .._base.exceptions import ObjettoError, ObjettoException
 
 __all__ = [
+    "HierarchyException",
+    "HierarchyError",
+    "AlreadyParentedError",
+    "NotParentedError",
+    "ParentCycleError",
+    "MultipleParentingError",
+    "MultipleUnparentingError",
     "Hierarchy",
     "HierarchicalMixin",
     "ChildrenUpdates",
@@ -26,6 +32,46 @@ __all__ = [
 ]
 
 
+class HierarchyException(ObjettoException):
+    """Hierarchy exception."""
+
+
+class HierarchyError(ObjettoError):
+    """Hierarchy error."""
+
+
+class AlreadyParentedError(HierarchyError):
+    """Raised when already parented to another parent."""
+
+
+class NotParentedError(HierarchyError):
+    """Raised when not parented to given parent."""
+
+
+class ParentCycleError(HierarchyError):
+    """Raised when a parent cycle is detected."""
+
+
+class MultipleParentingError(HierarchyError):
+    """Raised when trying to parent more than once."""
+
+
+class MultipleUnparentingError(HierarchyError):
+    """Raised when trying to un-parent more than once."""
+
+
+class HierarchicalMixin(object):
+    """Mix-in class that defines a node object in the hierarchy."""
+
+    __slots__ = ("__weakref__",)
+
+    @abstractmethod
+    def __get_hierarchy__(self):
+        # type: () -> Hierarchy
+        """Get hierarchy."""
+        raise NotImplementedError()
+
+
 class Hierarchy(Slotted):
     """Parent-child hierarchy node."""
 
@@ -35,8 +81,8 @@ class Hierarchy(Slotted):
         # type: (HierarchicalMixin) -> None
         """Initialize with hierarchical object."""
         self.__obj_ref = ref(obj)
-        self.__parent_ref = DEAD_REF
-        self.__last_parent_ref = DEAD_REF
+        self.__parent_ref = DEAD_WEAKREF
+        self.__last_parent_ref = DEAD_WEAKREF
         self.__children = set()
 
     def prepare_children_updates(self, children_count):
@@ -89,7 +135,7 @@ class Hierarchy(Slotted):
             self.__children.add(adoption)
         for release in children_updates.releases:
             release_hierarchy = release.__get_hierarchy__()
-            release_hierarchy.__parent_ref = DEAD_REF
+            release_hierarchy.__parent_ref = DEAD_WEAKREF
             self.__children.remove(release_hierarchy.obj)
 
     def has_parent(self):
@@ -183,7 +229,7 @@ class ChildrenUpdates(namedtuple("ChildrenUpdates", "adoptions releases")):
 
 
 class HierarchyAccess(Slotted):
-    """Provides read-only access to the hierarchy component."""
+    """Provides read-only access to the hierarchy."""
 
     __slots__ = ("__hierarchy",)
 
@@ -244,43 +290,3 @@ class HierarchyAccess(Slotted):
         # type: () -> FrozenSet[HierarchicalMixin, ...]
         """Children."""
         return self.__hierarchy.children
-
-
-class HierarchicalMixin(object):
-    """Mix-in class that defines a node object in the hierarchy."""
-
-    __slots__ = ("__weakref__",)
-
-    @abstractmethod
-    def __get_hierarchy__(self):
-        # type: () -> Hierarchy
-        """Get hierarchy."""
-        raise NotImplementedError()
-
-
-class HierarchyException(ModeloException):
-    """Hierarchy exception."""
-
-
-class HierarchyError(ModeloError, HierarchyException):
-    """Hierarchy error."""
-
-
-class AlreadyParentedError(HierarchyError):
-    """Raised when already parented to another parent."""
-
-
-class NotParentedError(HierarchyError):
-    """Raised when not parented to given parent."""
-
-
-class ParentCycleError(HierarchyError):
-    """Raised when a parent cycle is detected."""
-
-
-class MultipleParentingError(HierarchyError):
-    """Raised when trying to parent more than once."""
-
-
-class MultipleUnparentingError(HierarchyError):
-    """Raised when trying to un-parent more than once."""

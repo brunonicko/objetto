@@ -4,14 +4,14 @@ with open("README.rst", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="modelo",
+    name="objetto",
     version="0.0.1a1",
     author="Bruno Nicko",
     author_email="brunonicko@gmail.com",
     description="Framework for building data-centric Applications/APIs",
     long_description=long_description,
     long_description_content_type="text/x-rst",
-    url="https://github.com/brunonicko/modelo",
+    url="https://github.com/brunonicko/objetto",
     packages=setuptools.find_packages(),
     install_requires=["six", "slotted", "typing", "enum34"],
     classifiers=[

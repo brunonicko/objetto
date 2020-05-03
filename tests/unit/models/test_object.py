@@ -6,13 +6,13 @@ __all__ = ["TestObject"]
 
 
 class TestObject(unittest.TestCase):
-    """Tests for 'modelo._models.object' module."""
+    """Tests for 'objetto._objects.object' module."""
 
     def test_usage(self):
-        from modelo.models import ObjectModel
-        from modelo.attributes import attribute, history_attribute
+        from objetto.objects import Object
+        from objetto.attributes import attribute, history_attribute
 
-        class Person(ObjectModel):
+        class Person(Object):
             name = attribute()
             sibling = attribute(parent=True)
             history = history_attribute()
@@ -43,10 +43,10 @@ class TestObject(unittest.TestCase):
         self.assertIs(bianca_hierarchy.last_parent, bruno)
 
     def test_attributes(self):
-        from modelo.models import ObjectModel
-        from modelo.attributes import attribute, dependencies, constant_attribute
+        from objetto.objects import Object
+        from objetto.attributes import attribute, dependencies, constant_attribute
 
-        class Person(ObjectModel):
+        class Person(Object):
             first_name = attribute()
             last_name = attribute()
             _tested = attribute()
@@ -95,11 +95,11 @@ class TestObject(unittest.TestCase):
         self.assertEqual(Person.constantine, 12)
 
     def test_attribute_b(self):
-        from modelo.events import EventListenerMixin
-        from modelo.models import ObjectModel
-        from modelo.attributes import attribute, dependencies
+        from objetto.events import EventListenerMixin
+        from objetto.objects import Object
+        from objetto.attributes import attribute, dependencies
 
-        class Person(ObjectModel):
+        class Person(Object):
             first_name = attribute(str)  # type: str
             last_name = attribute(str)  # type: str
             age = attribute(int)  # type: int
@@ -161,46 +161,46 @@ class TestObject(unittest.TestCase):
         p.sibling = pp
 
     def test_mixin(self):
-        from modelo.models import ObjectModel
-        from modelo.attributes import attribute
+        from objetto.objects import Object
+        from objetto.attributes import attribute
 
-        class ModelA(ObjectModel):
+        class ObjectA(Object):
             a = attribute()
 
-        class ModelB(ObjectModel):
+        class ObjectB(Object):
             b = attribute()
 
         class Mixin(object):
             __slots__ = ()
             mixin = attribute()
 
-        class MixedModelA(ModelA, Mixin):
+        class MixedObjectA(ObjectA, Mixin):
             mixed_a = attribute()
 
-        class MixedModelB(ModelB, Mixin):
+        class MixedObjectB(ObjectB, Mixin):
             mixed_b = attribute()
 
-        self.assertEqual(set(MixedModelA.attributes.keys()), {"a", "mixin", "mixed_a"})
-        self.assertEqual(set(MixedModelB.attributes.keys()), {"b", "mixin", "mixed_b"})
+        self.assertEqual(set(MixedObjectA.attributes.keys()), {"a", "mixin", "mixed_a"})
+        self.assertEqual(set(MixedObjectB.attributes.keys()), {"b", "mixin", "mixed_b"})
 
     def test_constant(self):
-        from modelo.models import ObjectModel
-        from modelo.attributes import constant_attribute
+        from objetto.objects import Object
+        from objetto.attributes import constant_attribute
 
-        class ModelA(ObjectModel):
+        class ObjectA(Object):
             a = constant_attribute("test")
 
-        model_a = ModelA()
+        obj_a = ObjectA()
 
-        self.assertEqual(ModelA.a, "test")
-        self.assertEqual(model_a.a, "test")
-        self.assertRaises(AttributeError, setattr, model_a, "a", None)
+        self.assertEqual(ObjectA.a, "test")
+        self.assertEqual(obj_a.a, "test")
+        self.assertRaises(AttributeError, setattr, obj_a, "a", None)
 
     def test_dependency_promises(self):
-        from modelo.models import ObjectModel
-        from modelo.attributes import attribute, dependencies
+        from objetto.objects import Object
+        from objetto.attributes import attribute, dependencies
 
-        class Person(ObjectModel):
+        class Person(Object):
             first_name = attribute(str)  # type: str
             last_name = attribute(str)  # type: str
             full_name = attribute(str, delegated=True, represented=True)

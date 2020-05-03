@@ -7,18 +7,14 @@ from weakref import WeakSet
 from six import string_types, iteritems
 from typing import Any, Tuple, Dict, Callable, Mapping, Union, Optional, FrozenSet, cast
 
-from ._base.events import AbstractEvent
-from ._components.broadcaster import (
-    EventPhase,
-    EventListenerMixin,
-    RejectEventException,
-)
-from ._models.base import ModelEvent
-from ._models.object import ObjectModel, AttributesUpdateEvent
-from ._models.container import ContainerModel
+from ._components.events import EventListenerMixin, EventPhase, RejectEventException
+from ._objects.base import BaseObjectEvent
+from ._objects.container import ContainerObject
+from ._objects.object import AttributesUpdateEvent, Object
+
 from .utils.partial import MergeableCallableMixin, Partial
-from .utils.wrapped_dict import WrappedDict
 from .utils.type_checking import assert_is_instance
+from .utils.wrapped_dict import WrappedDict
 
 __all__ = ["unique_attributes", "limit"]
 
@@ -51,20 +47,20 @@ class UniqueAttributesReaction(MergeableCallableMixin, EventListenerMixin, Slott
         self.__watching = WeakSet()
 
     def __react__(self, event, phase):
-        # type: (Union[AbstractEvent, Any], EventPhase) -> None
+        # type: (Union[BaseObjectEvent, Any], EventPhase) -> None
         """React to an event coming from a container's child."""
         if (
-            isinstance(event.model, ObjectModel)
+            isinstance(event.obj, Object)
             and isinstance(event, AttributesUpdateEvent)
             and phase is EventPhase.INTERNAL_PRE
         ):
             # React before they are actually get updated
-            child = event.model
+            child = event.obj
             parent = child.hierarchy.parent
             if parent in self.__watching:
-                child = cast(ObjectModel, child)
-                children = frozenset((cast(ObjectModel, event.model),))
-                container = cast(ContainerModel, event.model.hierarchy.parent)
+                child = cast(Object, child)
+                children = frozenset((cast(Object, event.obj),))
+                container = cast(ContainerObject, event.obj.hierarchy.parent)
                 all_new_values = self.__react(
                     container, children, {child: event.new_values}
                 )
@@ -83,11 +79,11 @@ class UniqueAttributesReaction(MergeableCallableMixin, EventListenerMixin, Slott
 
     def __react(
         self,
-        container,  # type: ContainerModel
-        children,  # type: FrozenSet[ObjectModel, ...]
-        child_new_values=None,  # type: Optional[Dict[ObjectModel, Mapping[str, Any]]]
+        container,  # type: ContainerObject
+        children,  # type: FrozenSet[Object, ...]
+        child_new_values=None,  # type: Optional[Dict[Object, Mapping[str, Any]]]
     ):
-        # type: (...) -> Dict[ObjectModel, Dict[str, Any]]
+        # type: (...) -> Dict[Object, Dict[str, Any]]
         """React and return new values."""
 
         # Build a dictionary with existing values
@@ -95,7 +91,7 @@ class UniqueAttributesReaction(MergeableCallableMixin, EventListenerMixin, Slott
         existing_children = frozenset(
             child
             for child in container.hierarchy.children
-            if isinstance(child, ObjectModel)
+            if isinstance(child, Object)
         )
         for child in existing_children:
 
@@ -164,7 +160,7 @@ class UniqueAttributesReaction(MergeableCallableMixin, EventListenerMixin, Slott
         """Reaction."""
 
         # Children are being added to the container
-        if isinstance(event, ModelEvent) and event.model is container:
+        if isinstance(event, BaseObjectEvent) and event.obj is container:
 
             # Add container to 'watching' set
             self.__watching.add(container)
@@ -172,7 +168,7 @@ class UniqueAttributesReaction(MergeableCallableMixin, EventListenerMixin, Slott
             # React before they are actually added
             if phase is EventPhase.INTERNAL_PRE and event.adoptions:
                 children = frozenset(
-                    child for child in event.adoptions if isinstance(child, ObjectModel)
+                    child for child in event.adoptions if isinstance(child, Object)
                 )
                 all_new_values = self.__react(container, children)
 
@@ -184,10 +180,10 @@ class UniqueAttributesReaction(MergeableCallableMixin, EventListenerMixin, Slott
             # change their values later.
             elif phase is EventPhase.POST:
                 for child in event.adoptions:
-                    if isinstance(child, ObjectModel):
+                    if isinstance(child, Object):
                         child.events.__add_listener__(self, force=True)
                 for child in event.releases:
-                    if isinstance(child, ObjectModel):
+                    if isinstance(child, Object):
                         child.events.__remove_listener__(self, force=True)
 
     @property
@@ -222,7 +218,7 @@ def limit(minimum=None, maximum=None):
         """Reaction."""
 
         # Children are being added to the container
-        if isinstance(event, ModelEvent) and event.model is container:
+        if isinstance(event, BaseObjectEvent) and event.obj is container:
             if phase is EventPhase.INTERNAL_PRE and (event.adoptions or event.releases):
                 current_len = len(container)
                 new_len = current_len - len(event.releases) + len(event.adoptions)

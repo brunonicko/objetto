@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Sequence model."""
+"""Sequence object."""
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc
-from collections import namedtuple
+from collections import Counter, namedtuple
 from itertools import chain
 from six import with_metaclass, string_types
 from typing import (
@@ -13,329 +13,77 @@ from typing import (
     Callable,
     Any,
     Optional,
-    FrozenSet,
     List,
     Iterator,
     Union,
-    Iterable,
     cast,
 )
-from collections import Counter
 
-from .._components.broadcaster import EventPhase
-from ..utils.type_checking import assert_is_instance
+from .._components.events import EventPhase, field
+
 from ..utils.partial import Partial
-from .base import Model, ModelEvent
-from .container import ContainerModelMeta, ContainerModel
+from ..utils.type_checking import assert_is_instance
+
+from .base import BaseObjectEvent, BaseObject
+from .container import (
+    ContainerObjectEvent,
+    ContainerObjectMeta,
+    ContainerObject
+)
 
 __all__ = [
+    "SequenceObjectEvent",
     "SequenceInsertEvent",
     "SequencePopEvent",
     "SequenceMoveEvent",
     "SequenceChangeEvent",
-    "SequenceModelMeta",
-    "SequenceModel",
-    "MutableSequenceModel",
-    "SequenceProxyModel",
+    "SequenceObjectMeta",
+    "SequenceObject",
+    "MutableSequenceObject",
+    "SequenceProxyObject",
 ]
 
 
-class SequenceInsertEvent(ModelEvent):
+class SequenceObjectEvent(ContainerObjectEvent):
+    """Sequence object event."""
+
+
+class SequenceInsertEvent(SequenceObjectEvent):
     """Emitted when values are inserted into the sequence."""
-
-    __slots__ = ("__index", "__last_index", "__new_values")
-
-    def __init__(
-        self,
-        model,  # type: SequenceModel
-        adoptions,  # type: FrozenSet[Model, ...]
-        releases,  # type: FrozenSet[Model, ...]
-        index,  # type: int
-        last_index,  # type: int
-        new_values,  # type: Tuple[Any, ...]
-    ):
-        # type: (...) -> None
-        """Initialize with index, last index, and new values."""
-        super(SequenceInsertEvent, self).__init__(model, adoptions, releases)
-        self.__index = index
-        self.__last_index = last_index
-        self.__new_values = new_values
-
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(SequenceInsertEvent, self).__eq_equal_properties__() + (
-            "index",
-            "last_index",
-            "new_values",
-        )
-
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(SequenceInsertEvent, self).__repr_properties__() + (
-            "index",
-            "last_index",
-            "new_values",
-        )
-
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(SequenceInsertEvent, self).__str_properties__() + (
-            "index",
-            "last_index",
-            "new_values",
-        )
-
-    @property
-    def index(self):
-        # type: () -> int
-        """Index."""
-        return self.__index
-
-    @property
-    def last_index(self):
-        # type: () -> int
-        """Last index."""
-        return self.__last_index
-
-    @property
-    def new_values(self):
-        # type: () -> Tuple[Any, ...]
-        """New values."""
-        return self.__new_values
+    index = field()
+    last_index = field()
+    new_values = field()
 
 
-class SequencePopEvent(ModelEvent):
+class SequencePopEvent(SequenceObjectEvent):
     """Emitted when values are popped from the sequence."""
-
-    __slots__ = ("__index", "__last_index", "__old_values")
-
-    def __init__(
-        self,
-        model,  # type: SequenceModel
-        adoptions,  # type: FrozenSet[Model, ...]
-        releases,  # type: FrozenSet[Model, ...]
-        index,  # type: int
-        last_index,  # type: int
-        old_values,  # type: Tuple[Any, ...]
-    ):
-        # type: (...) -> None
-        """Initialize with index, last index, and old values."""
-        super(SequencePopEvent, self).__init__(model, adoptions, releases)
-        self.__index = index
-        self.__last_index = last_index
-        self.__old_values = old_values
-
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(SequencePopEvent, self).__eq_equal_properties__() + (
-            "index",
-            "last_index",
-            "old_values",
-        )
-
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(SequencePopEvent, self).__repr_properties__() + (
-            "index",
-            "last_index",
-            "old_values",
-        )
-
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(SequencePopEvent, self).__str_properties__() + (
-            "index",
-            "last_index",
-            "old_values",
-        )
-
-    @property
-    def index(self):
-        # type: () -> int
-        """Index."""
-        return self.__index
-
-    @property
-    def last_index(self):
-        # type: () -> int
-        """Last index."""
-        return self.__last_index
-
-    @property
-    def old_values(self):
-        # type: () -> Tuple[Any, ...]
-        """Old values."""
-        return self.__old_values
+    index = field()
+    last_index = field()
+    old_values = field()
 
 
-class SequenceMoveEvent(ModelEvent):
+class SequenceMoveEvent(SequenceObjectEvent):
     """Emitted when values are moved within the sequence."""
-
-    __slots__ = ("__index", "__target_index", "__last_index", "__values")
-
-    def __init__(
-        self,
-        model,  # type: SequenceModel
-        adoptions,  # type: FrozenSet[Model, ...]
-        releases,  # type: FrozenSet[Model, ...]
-        index,  # type: int
-        target_index,  # type: int
-        last_index,  # type: int
-        values,  # type: Tuple[Any, ...]
-    ):
-        # type: (...) -> None
-        """Initialize with index, last index, and old values."""
-        super(SequenceMoveEvent, self).__init__(model, adoptions, releases)
-        self.__index = index
-        self.__target_index = target_index
-        self.__last_index = last_index
-        self.__values = values
-
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(SequenceMoveEvent, self).__eq_equal_properties__() + (
-            "index",
-            "target_index",
-            "last_index",
-            "values",
-        )
-
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(SequenceMoveEvent, self).__repr_properties__() + (
-            "index",
-            "target_index",
-            "last_index",
-            "values",
-        )
-
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(SequenceMoveEvent, self).__str_properties__() + (
-            "index",
-            "target_index",
-            "last_index",
-            "values",
-        )
-
-    @property
-    def index(self):
-        # type: () -> int
-        """Index."""
-        return self.__index
-
-    @property
-    def target_index(self):
-        # type: () -> int
-        """Target index."""
-        return self.__target_index
-
-    @property
-    def last_index(self):
-        # type: () -> int
-        """Last index."""
-        return self.__last_index
-
-    @property
-    def values(self):
-        # type: () -> Tuple[Any, ...]
-        """Old values."""
-        return self.__values
+    index = field()
+    target_index = field()
+    last_index = field()
+    values = field()
 
 
-class SequenceChangeEvent(ModelEvent):
+class SequenceChangeEvent(SequenceObjectEvent):
     """Emitted when values in the sequence change."""
-
-    __slots__ = ("__index", "__last_index", "__new_values", "__old_values")
-
-    def __init__(
-        self,
-        model,  # type: SequenceModel
-        adoptions,  # type: FrozenSet[Model, ...]
-        releases,  # type: FrozenSet[Model, ...]
-        index,  # type: int
-        last_index,  # type: int
-        new_values,  # type: Tuple[Any, ...]
-        old_values,  # type: Tuple[Any, ...]
-    ):
-        # type: (...) -> None
-        """Initialize with index, last index, and old values."""
-        super(SequenceChangeEvent, self).__init__(model, adoptions, releases)
-        self.__index = index
-        self.__last_index = last_index
-        self.__new_values = new_values
-        self.__old_values = old_values
-
-    def __eq_equal_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should compared using equality."""
-        return super(SequenceChangeEvent, self).__eq_equal_properties__() + (
-            "index",
-            "last_index",
-            "new_values",
-            "old_values",
-        )
-
-    def __repr_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__repr__'."""
-        return super(SequenceChangeEvent, self).__repr_properties__() + (
-            "index",
-            "last_index",
-            "new_values",
-            "old_values",
-        )
-
-    def __str_properties__(self):
-        # type: () -> Tuple[str, ...]
-        """Get names of properties that should show up in the result of '__str__'."""
-        return super(SequenceChangeEvent, self).__str_properties__() + (
-            "index",
-            "last_index",
-            "new_values",
-            "old_values",
-        )
-
-    @property
-    def index(self):
-        # type: () -> int
-        """Index."""
-        return self.__index
-
-    @property
-    def last_index(self):
-        # type: () -> int
-        """Last index."""
-        return self.__last_index
-
-    @property
-    def new_values(self):
-        # type: () -> Tuple[Any, ...]
-        """New values."""
-        return self.__new_values
-
-    @property
-    def old_values(self):
-        # type: () -> Tuple[Any, ...]
-        """Old values."""
-        return self.__old_values
+    index = field()
+    last_index = field()
+    new_values = field()
+    old_values = field()
 
 
-class SequenceModelMeta(ContainerModelMeta):
-    """Metaclass for 'SequenceModel'."""
+class SequenceObjectMeta(ContainerObjectMeta):
+    """Metaclass for 'SequenceObject'."""
 
 
-class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
-    """Model that stores values in a sequence."""
+class SequenceObject(with_metaclass(SequenceObjectMeta, ContainerObject)):
+    """Object that stores values in a sequence."""
 
     __slots__ = ()
     __state_type__ = list
@@ -516,7 +264,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         child_count = Counter()
         if self._parameters.parent:
             for value in redo_insert.new_values:
-                if isinstance(value, Model):
+                if isinstance(value, BaseObject):
                     child_count[value] += 1
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
@@ -525,7 +273,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         history_adopters = set()
         if self._parameters.history:
             for value in redo_insert.new_values:
-                if isinstance(value, Model):
+                if isinstance(value, BaseObject):
                     history_adopters.add(value)
         history_adopters = frozenset(history_adopters)
 
@@ -539,7 +287,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
 
         # Create events
         redo_event = SequenceInsertEvent(
-            model=self,
+            obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
             index=redo_insert.index,
@@ -547,7 +295,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             new_values=redo_insert.new_values,
         )
         undo_event = SequencePopEvent(
-            model=self,
+            obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
             index=undo_pop.index,
@@ -577,7 +325,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         child_count = Counter()
         if self._parameters.parent:
             for value in redo_pop.old_values:
-                if isinstance(value, Model):
+                if isinstance(value, BaseObject):
                     child_count[value] -= 1
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
@@ -595,7 +343,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
 
         # Create events
         redo_event = SequencePopEvent(
-            model=self,
+            obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
             index=redo_pop.index,
@@ -603,7 +351,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             old_values=redo_pop.old_values,
         )
         undo_event = SequenceInsertEvent(
-            model=self,
+            obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
             index=undo_insert.index,
@@ -658,7 +406,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
 
         # Create events
         redo_event = SequenceMoveEvent(
-            model=self,
+            obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
             index=redo_move.index,
@@ -667,7 +415,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             values=redo_move.values,
         )
         undo_event = SequenceMoveEvent(
-            model=self,
+            obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
             index=undo_move.index,
@@ -704,10 +452,10 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         child_count = Counter()
         if self._parameters.parent:
             for value in redo_change.new_values:
-                if isinstance(value, Model):
+                if isinstance(value, BaseObject):
                     child_count[value] += 1
             for value in redo_change.old_values:
-                if isinstance(value, Model):
+                if isinstance(value, BaseObject):
                     child_count[value] -= 1
         redo_children = hierarchy.prepare_children_updates(child_count)
         undo_children = ~redo_children
@@ -716,13 +464,13 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
         history_adopters = set()
         if self._parameters.history:
             for value in redo_change.new_values:
-                if isinstance(value, Model):
+                if isinstance(value, BaseObject):
                     history_adopters.add(value)
         history_adopters = frozenset(history_adopters)
 
         # Create events
         redo_event = SequenceChangeEvent(
-            model=self,
+            obj=self,
             adoptions=redo_children.adoptions,
             releases=redo_children.releases,
             index=redo_change.index,
@@ -731,7 +479,7 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
             old_values=redo_change.old_values,
         )
         undo_event = SequenceChangeEvent(
-            model=self,
+            obj=self,
             adoptions=undo_children.adoptions,
             releases=undo_children.releases,
             index=undo_change.index,
@@ -813,11 +561,11 @@ class SequenceModel(with_metaclass(SequenceModelMeta, ContainerModel)):
     def __state(self):
         # type: () -> List
         """Internal state."""
-        return cast(List, super(SequenceModel, self).__get_state__())
+        return cast(List, super(SequenceObject, self).__get_state__())
 
 
-class MutableSequenceModel(SequenceModel):
-    """Sequence model with public mutable methods."""
+class MutableSequenceObject(SequenceObject):
+    """Sequence object with public mutable methods."""
 
     __slots__ = ()
 
@@ -908,14 +656,14 @@ class MutableSequenceModel(SequenceModel):
         self._sort(key=key, reverse=reverse)
 
 
-class SequenceProxyModel(SequenceModel):
-    """Read-only sequence model that reflects the values of another sequence model."""
+class SequenceProxyObject(SequenceObject):
+    """Read-only sequence object that reflects the values of another sequence object."""
 
     __slots__ = ("__source", "__reaction_phase")
 
     def __init__(
         self,
-        source=None,  # type: Optional[SequenceModel]
+        source=None,  # type: Optional[SequenceObject]
         source_factory=None,  # type: Optional[Callable]
         reaction_phase=EventPhase.POST,  # type: EventPhase
         value_factory=None,  # type: Optional[Callable]
@@ -936,20 +684,20 @@ class SequenceProxyModel(SequenceModel):
             error = "can't provide both 'source' and 'source_factory'"
             raise ValueError(error)
 
-        assert_is_instance(source, SequenceModel)
+        assert_is_instance(source, SequenceObject)
         assert_is_instance(reaction_phase, EventPhase)
 
         parent = bool(parent) if parent is not None else not source.parent
         history = bool(history) if history is not None else not source.history
 
         if getattr(source, "_parameters").parent and parent:
-            error = "both source and proxy container models have 'parent' set to True"
+            error = "both source and proxy container objects have 'parent' set to True"
             raise ValueError(error)
         if getattr(source, "_parameters").history and history:
-            error = "both source and proxy container models have 'history' set to True"
+            error = "both source and proxy container objects have 'history' set to True"
             raise ValueError(error)
 
-        super(SequenceProxyModel, self).__init__(
+        super(SequenceProxyObject, self).__init__(
             value_type=None,
             value_factory=value_factory,
             exact_value_type=None,
@@ -971,9 +719,9 @@ class SequenceProxyModel(SequenceModel):
         source.events.add_listener(self)
 
     def __react__(self, event, phase):
-        # type: (ModelEvent, EventPhase) -> None
+        # type: (BaseObjectEvent, EventPhase) -> None
         """React to an event."""
-        if isinstance(event, ModelEvent) and event.model is self._source:
+        if isinstance(event, BaseObjectEvent) and event.obj is self._source:
             if phase is self.__reaction_phase:
                 if type(event) is SequenceInsertEvent:
                     event = cast(SequenceInsertEvent, event)
@@ -990,8 +738,8 @@ class SequenceProxyModel(SequenceModel):
 
     @property
     def _source(self):
-        # type: () -> SequenceModel
-        """Source sequence model."""
+        # type: () -> SequenceObject
+        """Source sequence object."""
         return self.__source
 
     @property
