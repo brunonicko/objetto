@@ -117,6 +117,7 @@ def regex_match(pattern):
         if not re.match(compiled, value):
             error_msg = "'{}' does not match regex pattern '{}'".format(value, pattern)
             raise ValueError(error_msg)
+        return value
 
     return factory
 
