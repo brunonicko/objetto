@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="objetto",
-    version="0.1.0",
+    version="0.1.1",
     author="Bruno Nicko",
     author_email="brunonicko@gmail.com",
     description="Framework for building data-centric Applications/APIs",
