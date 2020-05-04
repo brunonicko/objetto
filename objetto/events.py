@@ -6,6 +6,8 @@ from ._components.events import (
     EventListenerMixin,
     Event,
     field,
+    StopEventPropagationException,
+    RejectEventException,
 )
 from ._components.history import (
     HistoryEvent,
@@ -39,6 +41,8 @@ __all__ = [
     "EventListenerMixin",
     "Event",
     "field",
+    "StopEventPropagationException",
+    "RejectEventException",
     "HistoryEvent",
     "HistoryCurrentIndexChangeEvent",
     "HistoryInsertEvent",
