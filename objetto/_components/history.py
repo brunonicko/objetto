@@ -402,6 +402,44 @@ class History(Slotted):
             raise exc
 
     @contextmanager
+    def temp_context(self):
+        # type: () -> ContextManager
+        """Temp context."""
+        old_size = self.size
+        old_current_index = self.current_index
+        old_command = self[old_current_index]
+        self.size = -1
+        try:
+            yield
+        finally:
+            try:
+                if self[old_current_index] is old_command:
+                    self.current_index = old_current_index
+                else:
+                    error = "could not revert changes from temp context"
+                    raise RuntimeError(error)
+            finally:
+                self.size = old_size
+
+    @contextmanager
+    def flush_context(self):
+        # type: () -> ContextManager
+        """Flush context."""
+        if not self.__running and self.__batch is None:
+            old_size = self.size
+            self.size = 0
+        else:
+            old_size = None
+            self.flush()
+        try:
+            yield
+        finally:
+            if not self.__running and self.__batch is None:
+                self.size = old_size
+            else:
+                self.flush()
+
+    @contextmanager
     def batch_context(self, name):
         # type: (str) -> ContextManager
         """Batch context."""
