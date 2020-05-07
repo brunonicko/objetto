@@ -35,6 +35,29 @@ class TestList(unittest.TestCase):
         del sa[2:4]
         del sa[0]
 
+    def test_move(self):
+        from objetto.attributes import history_attribute
+        from objetto.objects import MutableListObject
+
+        class MyList(MutableListObject):
+            history = history_attribute()
+
+        ma = MyList()
+        ma.extend(range(10))
+        self.assertEqual(list(ma), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+        ma.move(1, 6, 3)
+        self.assertEqual(list(ma), [0, 4, 5, 1, 2, 3, 6, 7, 8, 9])
+
+        ma.history.undo()
+        self.assertEqual(list(ma), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
+        ma.move(6, 1, 8)
+        self.assertEqual(list(ma), [0, 6, 7, 8, 1, 2, 3, 4, 5, 9])
+
+        ma.history.undo()
+        self.assertEqual(list(ma), [0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -148,33 +148,33 @@ def _make_base_object_class(
     return cls
 
 
+def _make_base_object_instance(cls, *args, **kwargs):
+    """Make an instance an initialize it."""
+
+    # Make an instance
+    self = cls.__new__(cls, *args, **kwargs)
+
+    # Mark as not initialized
+    self.__initialized__ = False
+
+    # Initialize it
+    self.__pre_init__()
+    self.__init__(*args, **kwargs)
+
+    # Post initialize history
+    if cls.history_descriptor is not None:
+        self.__post_initialize_history__()
+
+    # Mark as initialized
+    self.__initialized__ = True
+    return self
+
+
 class BaseObjectMeta(SlottedABCMeta):
     """Metaclass for 'BaseObject'."""
 
     __new__ = staticmethod(_make_base_object_class)
     __history_descriptor__ = None  # type: Optional[HistoryDescriptor]
-
-    def __call__(cls, *args, **kwargs):
-        """Make an instance an initialize it."""
-
-        # Make an instance
-        self = cls.__new__(cls, *args, **kwargs)
-
-        # Mark as not initialized
-        self.__initialized__ = False
-
-        # Initialize it
-        self.__pre_init__()
-        self.__init__(*args, **kwargs)
-
-        # Post initialize history
-        if cls.history_descriptor is not None:
-            self.__post_initialize_history__()
-
-        # Mark as initialized
-        self.__initialized__ = True
-
-        return self
 
     def __setattr__(cls, name, value):
         # type: (str, Any) -> None
@@ -197,6 +197,10 @@ class BaseObjectMeta(SlottedABCMeta):
         # type: () -> Optional[HistoryDescriptor]
         """History descriptor."""
         return cls.__history_descriptor__
+
+
+# noinspection PyCallByClass
+type.__setattr__(BaseObjectMeta, "__call__", _make_base_object_instance)
 
 
 class BaseObject(

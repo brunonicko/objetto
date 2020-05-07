@@ -67,6 +67,8 @@ class ListMoveEvent(ListObjectEvent):
     target_index = field()
     last_index = field()
     values = field()
+    post_index = field()
+    post_last_index = field()
 
 
 class ListChangeEvent(ListObjectEvent):
@@ -173,16 +175,16 @@ class ListObject(with_metaclass(ListObjectMeta, ContainerObject)):
         if target_index < index:
             undo_move = ListMove(
                 index=target_index,
-                target_index=last_index + index - target_index,
+                target_index=last_index + 1,
                 values=values,
                 last_index=target_index + last_index - index,
             )
-        elif target_index > last_index:
+        elif target_index > last_index + 1:
             undo_move = ListMove(
-                index=index + target_index - last_index,
+                index=index + target_index - last_index - 1,
                 target_index=index,
                 values=values,
-                last_index=target_index,
+                last_index=target_index - 1,
             )
         else:
             error = "target index is within range of index and last index"
@@ -381,7 +383,7 @@ class ListObject(with_metaclass(ListObjectMeta, ContainerObject)):
             last_index = index
         else:
             last_index = self.__normalize_index(last_index)
-        if index <= target_index <= last_index:
+        if index <= target_index <= last_index + 1:
             return
 
         # Get hierarchy
@@ -412,6 +414,8 @@ class ListObject(with_metaclass(ListObjectMeta, ContainerObject)):
             index=redo_move.index,
             target_index=redo_move.target_index,
             last_index=redo_move.last_index,
+            post_index=undo_move.index,
+            post_last_index=undo_move.last_index,
             values=redo_move.values,
         )
         undo_event = ListMoveEvent(
@@ -421,6 +425,8 @@ class ListObject(with_metaclass(ListObjectMeta, ContainerObject)):
             index=undo_move.index,
             target_index=undo_move.target_index,
             last_index=undo_move.last_index,
+            post_index=redo_move.index,
+            post_last_index=redo_move.last_index,
             values=undo_move.values,
         )
 
@@ -716,7 +722,7 @@ class ListProxyObject(ListObject):
         self.__reaction_phase = reaction_phase
 
         self._extend(source)
-        source.events.add_listener(self)
+        source.events.__add_listener__(self)
 
     def __react__(self, event, phase):
         # type: (BaseObjectEvent, EventPhase) -> None

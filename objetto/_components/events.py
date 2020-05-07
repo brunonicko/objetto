@@ -337,6 +337,12 @@ class EventEmitter(Slotted):
         raise ReferenceError(error)
 
     @property
+    def __listeners__(self):
+        # type: () -> FrozenSet[EventListenerMixin, ...]
+        """Listeners."""
+        return frozenset(self.__listeners)
+
+    @property
     def listeners(self):
         # type: () -> FrozenSet[EventListenerMixin, ...]
         """Listeners."""

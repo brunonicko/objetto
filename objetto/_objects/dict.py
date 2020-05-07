@@ -501,7 +501,7 @@ class DictProxyObject(DictObject):
         self.__reaction_phase = reaction_phase
 
         self._extend(source)
-        source.events.add_listener(self)
+        source.events.__add_listener__(self)
 
     def __react__(self, event, phase):
         # type: (BaseObjectEvent, EventPhase) -> None
