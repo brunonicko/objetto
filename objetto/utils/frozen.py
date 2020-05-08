@@ -179,7 +179,11 @@ class FrozenObjectMeta(type):
 
 class FrozenObject(with_metaclass(FrozenObjectMeta, object)):
     def __init__(self, **field_values):
-        raise RuntimeError("cannot implement '__init__' on ")
+        raise RuntimeError(
+            "cannot implement '__init__' on frozen class '{}'".format(
+                type(self).__name__
+            )
+        )
 
     def __evolver__(self):
         return pmap(self.__dict__).evolver()

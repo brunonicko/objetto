@@ -3,8 +3,8 @@
 
 
 class ObjettoException(Exception):
-    """Objetto exception."""
+    """Objetto base exception."""
 
 
 class ObjettoError(ObjettoException):
-    """Objetto error."""
+    """Objetto base error."""

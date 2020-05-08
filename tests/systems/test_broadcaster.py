@@ -11,7 +11,7 @@ class TestBroadcaster(unittest.TestCase):
     def test_broadcaster(self):
         from objetto._components.events import (
             Broadcaster,
-            EventListenerMixin,
+            SlottedEventListenerMixin,
             EventPhase,
         )
 
@@ -23,7 +23,7 @@ class TestBroadcaster(unittest.TestCase):
             self.assertIs(phase_, phase)
             reacted[0] = True
 
-        class Listener(EventListenerMixin):
+        class Listener(SlottedEventListenerMixin):
             __slots__ = ()
             __react__ = react
 

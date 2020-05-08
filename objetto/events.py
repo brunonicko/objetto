@@ -4,6 +4,8 @@
 from ._components.events import (
     EventPhase,
     EventListenerMixin,
+    SlottedEventListenerMixin,
+    EventListenerType,
     Event,
     field,
     StopEventPropagationException,
@@ -39,6 +41,8 @@ from ._objects.set import (
 __all__ = [
     "EventPhase",
     "EventListenerMixin",
+    "SlottedEventListenerMixin",
+    "EventListenerType",
     "Event",
     "field",
     "StopEventPropagationException",

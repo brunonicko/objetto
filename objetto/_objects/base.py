@@ -14,7 +14,7 @@ from .._components.events import (
     Event,
     field,
     Broadcaster,
-    EventListenerMixin,
+    SlottedEventListenerMixin,
     EventEmitter,
 )
 from .._components.hierarchy import (
@@ -199,17 +199,19 @@ class BaseObjectMeta(SlottedABCMeta):
         return cls.__history_descriptor__
 
 
+# Set '__call__' method to control initialization
 # noinspection PyCallByClass
 type.__setattr__(BaseObjectMeta, "__call__", _make_base_object_instance)
 
 
 class BaseObject(
-    with_metaclass(BaseObjectMeta, HierarchicalMixin, EventListenerMixin, SlottedABC)
+    with_metaclass(BaseObjectMeta, HierarchicalMixin, SlottedEventListenerMixin, SlottedABC)
 ):
     """Abstract obj."""
 
     __slots__ = (
-        "__initialized__",
+        "__initialized",
+        "__metadata",
         "__history",
         "__history_provider_ref",
         "__hierarchy",
@@ -370,6 +372,26 @@ class BaseObject(
                 yield
         else:
             yield
+
+    @property
+    def __initialized__(self):
+        try:
+            initialized = self.__initialized
+        except AttributeError:
+            initialized = self.__initialized = True
+        return initialized
+
+    @__initialized__.setter
+    def __initialized__(self, initialized):
+        self.__initialized = initialized
+
+    @property
+    def __metadata__(self):
+        try:
+            metadata = self.__metadata
+        except AttributeError:
+            metadata = self.__metadata = {}
+        return metadata
 
     @property
     def hierarchy(self):

@@ -2,7 +2,8 @@
 """Default factories."""
 
 import re
-from typing import Any, Optional, Tuple
+from six import ensure_text
+from typing import Any, Optional, Tuple, AnyStr
 
 from .utils.type_checking import assert_is_instance
 
@@ -11,6 +12,7 @@ __all__ = [
     "floating_point",
     "regex_match",
     "regex_sub",
+    "string",
     "curated",
 ]
 
@@ -106,14 +108,14 @@ def floating_point(minimum=None, maximum=None, clamp=False):
 
 
 def regex_match(pattern):
-    # type: (str) -> Factory
+    # type: (AnyStr) -> Factory
     """String regex match factory."""
     compiled = re.compile(pattern)
 
     @Factory
     def factory(value):
         """Factory function."""
-        value = str(value)
+        value = ensure_text(value)
         if not re.match(compiled, value):
             error_msg = "'{}' does not match regex pattern '{}'".format(value, pattern)
             raise ValueError(error_msg)
@@ -123,15 +125,27 @@ def regex_match(pattern):
 
 
 def regex_sub(pattern, repl):
-    # type: (str, str) -> Factory
+    # type: (AnyStr, AnyStr) -> Factory
     """String regex sub factory."""
     compiled = re.compile(pattern)
 
     @Factory
     def factory(value):
         """Factory function."""
-        value = str(value)
+        value = ensure_text(value)
         return re.sub(compiled, repl, value)
+
+    return factory
+
+
+def string():
+    # type: () -> Factory
+    """String factory."""
+
+    @Factory
+    def factory(value):
+        """Factory function."""
+        return ensure_text(value)
 
     return factory
 

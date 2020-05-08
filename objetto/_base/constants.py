@@ -19,3 +19,7 @@ class _SpecialValue(_Enum):
 
 MISSING = _SpecialValue.MISSING
 DELETED = _SpecialValue.DELETED
+
+
+# Serialization
+SERIALIZED_DOT_PATH_KEY = "class"

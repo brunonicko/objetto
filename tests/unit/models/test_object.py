@@ -95,7 +95,7 @@ class TestObject(unittest.TestCase):
         self.assertEqual(Person.constantine, 12)
 
     def test_attribute_b(self):
-        from objetto.events import EventListenerMixin
+        from objetto.events import SlottedEventListenerMixin
         from objetto.objects import Object
         from objetto.attributes import attribute, dependencies
 
@@ -122,7 +122,7 @@ class TestObject(unittest.TestCase):
                 # type: (str) -> None
                 self.first_name, self.last_name = value.split(" ")
 
-        class PersonListener(EventListenerMixin):
+        class PersonListener(SlottedEventListenerMixin):
             def __react__(_, event, phase):
                 self.assertEqual(
                     getattr(event, "old_values"),
