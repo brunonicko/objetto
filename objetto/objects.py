@@ -6,7 +6,7 @@ from ._objects.object import Object
 from ._objects.list import ListObject, MutableListObject, ListProxyObject
 from ._objects.dict import DictObject, MutableDictObject, DictProxyObject
 from ._objects.set import SetObject, MutableSetObject, SetProxyObject
-from ._objects.serializable import SerializableObjectMixin
+from ._objects.serializable import SerializableMixin, serialize, create
 
 __all__ = [
     "BaseObject",
@@ -20,5 +20,7 @@ __all__ = [
     "SetObject",
     "MutableSetObject",
     "SetProxyObject",
-    "SerializableObjectMixin",
+    "SerializableMixin",
+    "serialize",
+    "create",
 ]

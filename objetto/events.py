@@ -8,6 +8,7 @@ from ._components.events import (
     EventListenerType,
     Event,
     field,
+    ListenerToken,
     StopEventPropagationException,
     RejectEventException,
 )
@@ -45,6 +46,7 @@ __all__ = [
     "EventListenerType",
     "Event",
     "field",
+    "ListenerToken",
     "StopEventPropagationException",
     "RejectEventException",
     "HistoryEvent",

@@ -7,52 +7,43 @@ from typing import Dict, Any
 from .._base.constants import SERIALIZED_DOT_PATH_KEY
 from ..utils.type_checking import resolve_dot_path
 
-__all__ = ["SerializableObjectMixin"]
+__all__ = ["SerializableMixin", "serialize", "create"]
 
 
-class SerializableObjectMixin(object):
+class SerializableMixin(object):
     """Serializable object mix-in."""
 
     __slots__ = ()
 
     @abstractmethod
-    def _serialize(self):
+    def __serialize__(self):
         # type: () -> Dict[str, Any]
         """Serialize."""
         raise NotImplementedError()
 
     @classmethod
     @abstractmethod
-    def _create(cls, serialized):
+    def __create__(cls, serialized):
         """Create from serialized."""
         raise NotImplementedError()
 
-    def serialize(self):
-        # type: () -> Dict[str, Any]
-        """Serialize."""
-        serialized = self._serialize()
-        serialized.update(
-            {
-                SERIALIZED_DOT_PATH_KEY: type(self).__module__
-                + "."
-                + type(self).__name__,
-            }
-        )
-        return serialized
 
-    @classmethod
-    def create(cls, serialized):
-        """Create from serialized."""
-        class_dot_path = serialized[SERIALIZED_DOT_PATH_KEY]
-        actual_cls = resolve_dot_path(class_dot_path)
-        if (
-            actual_cls is not cls
-            and not issubclass(cls, actual_cls)
-            and not issubclass(actual_cls, cls)
-        ):
-            error = (
-                "serialized object's class is '{}', cannot be deserialized by "
-                "'{}.create'"
-            ).format(actual_cls.__name__, cls.__name__)
-            raise TypeError(error)
-        return actual_cls._create(serialized)
+def serialize(obj):
+    # type: (SerializableMixin) -> Dict[str, Any]
+    """Serialize."""
+    serialized = obj.__serialize__()
+    serialized.update(
+        {
+            SERIALIZED_DOT_PATH_KEY: type(obj).__module__
+            + "."
+            + type(obj).__name__,
+        }
+    )
+    return serialized
+
+
+def create(serialized):
+    """Create from serialized."""
+    class_dot_path = serialized[SERIALIZED_DOT_PATH_KEY]
+    cls = resolve_dot_path(class_dot_path)
+    return cls.__create__(serialized)
