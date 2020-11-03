@@ -2,7 +2,7 @@ from pytest import main
 
 
 def test_application():
-    from sandbox._application import Application
+    from objetto._application import Application
 
     app = Application()
 

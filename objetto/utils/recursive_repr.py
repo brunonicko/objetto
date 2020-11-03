@@ -17,7 +17,26 @@ _local = local()
 @decorator
 def recursive_repr(func, *args, **kwargs):
     # type: (Callable, Any, Any) -> str
-    """Decorate a `__repr__` or a `__str__` method and prevents infinite recursion."""
+    """
+    Decorate a representation method/function and prevents infinite recursion.
+
+    .. code:: python
+
+        >>> from objetto.utils.recursive_repr import recursive_repr
+
+        >>> class MyClass(object):
+        ...
+        ...     @recursive_repr
+        ...     def __repr__(self):
+        ...         return "MyClass<" + repr(self) + ">"
+        ...
+        >>> my_obj = MyClass()
+        >>> repr(my_obj)
+        'MyClass<(...)>'
+
+    :param func: The '__repr__' or '__str__' method/function.
+    :return: Decorated method function.
+    """
     self_id = id(args[0])
     try:
         reprs = _local.reprs

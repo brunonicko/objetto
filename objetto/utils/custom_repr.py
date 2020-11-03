@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Custom `repr` functions."""
+"""Custom representation functions."""
 
 from typing import TYPE_CHECKING
 
@@ -27,7 +27,29 @@ def custom_mapping_repr(
     value_repr=repr,  # type: Callable[[Any], Any]
 ):
     # type: (...) -> str
-    """Get custom string representation of a mapping."""
+    """
+    Get custom representation of a mapping.
+
+    .. code:: python
+
+        >>> from objetto.utils.custom_repr import custom_mapping_repr
+
+        >>> dct = {"a": 1, "b": 2}
+        >>> custom_mapping_repr(dct, prefix="<", suffix=">", template="{key}={value}")
+        "<'a'=1, 'b'=2>"
+
+    :param mapping: Mapping.
+    :param prefix: Prefix.
+    :param template: Item format template ({key} and {value}).
+    :param separator: Separator.
+    :param suffix: Suffix.
+    :param sorting: Whether to sort keys.
+    :param sort_key: Sorting key.
+    :param reverse: Reverse sorting.
+    :param key_repr: Key representation function.
+    :param value_repr: Value representation function.
+    :return: Custom representation.
+    """
     parts = []
     iterable = iteritems(mapping)  # type: Iterable[Tuple[Hashable, Any]]
     if sorting:
@@ -51,7 +73,28 @@ def custom_iterable_repr(
     value_repr=repr,  # type: Callable[[Any], Any]
 ):
     # type: (...) -> str
-    """Get custom string representation of an iterable."""
+    """
+    Get custom representation of an iterable.
+
+    .. code:: python
+
+        >>> from objetto.utils.custom_repr import custom_iterable_repr
+
+        >>> tup = ("a", "b", "c", 1, 2, 3)
+        >>> custom_iterable_repr(tup, prefix="<", suffix=">", value_repr=str)
+        '<a, b, c, 1, 2, 3>'
+
+    :param iterable: Iterable.
+    :param prefix: Prefix.
+    :param template: Item format template ({key} and {value}).
+    :param separator: Separator.
+    :param suffix: Suffix.
+    :param sorting: Whether to sort the iterable or not.
+    :param sort_key: Sorting key.
+    :param reverse: Reverse sorting.
+    :param value_repr: Value representation function.
+    :return: Custom representation.
+    """
     parts = []
     if sorting:
         iterable = sorted(iterable, key=sort_key, reverse=reverse)
