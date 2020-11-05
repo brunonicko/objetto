@@ -3,13 +3,11 @@
 
 from abc import abstractmethod
 from re import sub as re_sub
-from uuid import uuid4
-from typing import TYPE_CHECKING, cast
-from weakref import WeakValueDictionary
+from typing import TYPE_CHECKING
 
 from six import with_metaclass
 
-from .._bases import BaseMeta, Base, final
+from .._bases import BaseMeta, Base, ProtectedBase, final, make_base_cls
 from ..utils.type_checking import (
     get_type_names, format_types, import_types, assert_is_instance
 )
@@ -42,7 +40,12 @@ _SERIALIZED_VALUE_KEY = "value"
 
 def _escape_serialized_class(dct):
     # type: (Dict[str, Any]) -> Dict[str, Any]
-    """Escape serialized '__class__' key."""
+    """
+    Escape serialized '__class__' key.
+
+    :param dct: Serialized dictionary.
+    :return: Escaped serialized dictionary.
+    """
     if _SERIALIZED_CLASS_KEY in dct:
         dct = dct.copy()
         dct[_ESCAPED_SERIALIZED_CLASS_KEY] = dct.pop(_SERIALIZED_CLASS_KEY)
@@ -51,7 +54,12 @@ def _escape_serialized_class(dct):
 
 def _unescape_serialized_class(dct):
     # type: (Dict[str, Any]) -> Dict[str, Any]
-    """Un-escape serialized '__class__' key."""
+    """
+    Unescape serialized '__class__' key.
+
+    :param dct: Serialized dictionary.
+    :return: Unescaped serialized dictionary.
+    """
     if _ESCAPED_SERIALIZED_CLASS_KEY in dct:
         dct = dct.copy()
         dct[_SERIALIZED_CLASS_KEY] = dct.pop(_ESCAPED_SERIALIZED_CLASS_KEY)
@@ -60,129 +68,68 @@ def _unescape_serialized_class(dct):
 
 def _capitalize_first(string):
     # type: (str) -> str
-    """Capitalize first letter of string, without touching the rest of it."""
+    """
+    Capitalize first letter of string, without touching the rest of it.
+
+    :param string: String.
+    :return: Capitalized string.
+    """
     return string[:1].upper() + string[1:]
 
 
-_auxiliary_cls_cache = WeakValueDictionary(
-    {}
-)  # type: MutableMapping[str, Type[BaseAuxiliaryContainer]]
-
-
 def make_auxiliary_cls(
-    base,  # type: Type[BaseAuxiliaryContainer]
-    relationship,  # type: BaseRelationship
-    name=None,  # type: Optional[str]
+    base,  # type: Optional[Type[BaseAuxiliaryContainer]]
+    relationship=None,  # type: Optional[BaseRelationship]
     qual_name=None,  # type: Optional[str]
     module=None,  # type: Optional[str]
     dct=None,  # type: Optional[Mapping[str, Any]]
-    _uuid=None,  # type: Optional[str]
 ):
     # type: (...) -> Type[BaseAuxiliaryContainer]
-    """Make an auxiliary container subclass on the fly, cached by an UUID."""
+    """
+    Make an auxiliary container subclass on the fly.
 
-    # Get metaclass and uuid.
-    mcs = type(base)
-    uuid = str(uuid4()) if _uuid is None else _uuid
+    :param base: Base auxiliary container class.
+    :param relationship: Relationship.
+    :param qual_name: Qualified name.
+    :param module: Module.
+    :param dct: Members dictionary.
+    :return: Generated auxiliary container subclass.
+    """
 
-    # Copy dct.
-    dct_copy = dict(dct or {})  # type: Dict[str, Any]
-
-    # Generate name if not provided.
-    if name is None:
-        if qual_name is not None:
-            name = qual_name.split(".")[-1]
+    # Generate default qualified name based on relationship types.
+    if qual_name is None:
+        type_names = get_type_names(set(relationship.types).difference((type(None),)))
+        if not type_names:
+            qual_name = base.__fullname__
         else:
-            type_names = get_type_names(
-                set(relationship.types).difference((type(None),))
+            base_qual_name = base.__fullname__
+            root_name = (
+                ".".join(base_qual_name.split(".")[:-1]) + "."
+                if "." in base_qual_name else ""
             )
-            if not type_names:
-                name = base.__name__
-            else:
-                base_name = base.__name__
-                prefix = "".join(
-                    _capitalize_first(re_sub(r"[^A-Za-z]+", "", tn))
-                    for tn in type_names
-                )
-                name = "{}{}".format(prefix if prefix != base_name else "", base_name)
+            base_name = base_qual_name.split(".")[-1]
+            prefix = "".join(
+                _capitalize_first(re_sub(r"[^A-Za-z]+", "", tn)) for tn in type_names
+            )
+            qual_name = "{}{}{}".format(
+                root_name,
+                prefix if prefix != base_name else "",
+                base_name,
+            )
 
-    # Check/generate qualname.
-    if qual_name is not None and qual_name.split(".")[-1] != name:
-        error = "qualname '{}' and name '{}' mismatch".format(qual_name, name)
-        raise ValueError(error)
-    elif qual_name is None:
-        qual_name = name
+    # Copy dct and add relationship to it.
+    dct_copy = dict(dct or {})
+    dct_copy["_relationship"] = relationship
 
-    # Define reduce method for pickling instances of the subclass.
-    def __reduce__(self):
-        state = self.__getstate__()
-        return _make_auxiliary_instance, (
-            base,
-            relationship,
-            state,
-            name,
-            qual_name,
-            module,
-            dct_copy,
-            uuid,
-        )
-
-    # Assemble class dict by copying dct once again.
-    cls_dct = dct_copy.copy()  # type: Dict[str, Any]
-    cls_dct_update = {
-        "_relationship": relationship,
-        "__reduce__": __reduce__,
-        "__qualname__": qual_name,
-        "__module__": module,
-    }  # type: Dict[str, Any]
-    cls_dct.update(cls_dct_update)
-
-    # Make new subclass and cache it by UUID.
-    cls = _auxiliary_cls_cache[uuid] = cast("BaseAuxiliaryContainerMeta", mcs)(
-        name, (base,), cls_dct
+    return make_base_cls(
+        base=base,
+        qual_name=qual_name,
+        module=module,
+        dct=dct,
     )
-    return cls
 
 
-def _make_auxiliary_instance(
-    base,  # type: Type[BaseAuxiliaryContainer]
-    relationship,  # type: BaseRelationship
-    state,  # type: Dict[str, Any]
-    name=None,  # type: Optional[str]
-    qual_name=None,  # type: Optional[str]
-    module=None,  # type: Optional[str]
-    dct=None,  # type: Optional[Mapping[str, Any]]
-    uuid=None,  # type: Optional[str]
-):
-    # type: (...) -> BaseAuxiliaryContainer
-    """Make an instance of an auxiliary container subclass generated on the fly."""
-
-    # Try to get class from cache using UUID.
-    try:
-        if uuid is None:
-            raise KeyError()
-        cls = _auxiliary_cls_cache[uuid]
-
-    # Not cached, make a new subclass and use it.
-    except KeyError:
-        cls = make_auxiliary_cls(
-            base,
-            relationship,
-            name=name,
-            qual_name=qual_name,
-            module=module,
-            dct=dct,
-            _uuid=uuid,
-        )
-
-    # Make new instance and unpickle its state.
-    self = cast("BaseAuxiliaryContainer", cls.__new__(cls))
-    self.__setstate__(state)
-
-    return self
-
-
-class BaseRelationship(Base):
+class BaseRelationship(ProtectedBase):
     """Relationship between a container and its values."""
 
     __slots__ = (
@@ -312,7 +259,7 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
         # Possible serialized container.
         if type(serialized) in (dict, list):
 
-            # Serialized in a dictonary.
+            # Serialized in a dictionary.
             if type(serialized) is dict:
 
                 # Serialized container with path to its class.

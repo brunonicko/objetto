@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """Base class and metaclass."""
 
-from weakref import WeakKeyDictionary
+from weakref import WeakKeyDictionary, WeakValueDictionary
 from inspect import getmro
 from contextlib import contextmanager
+from uuid import uuid4
 from typing import TYPE_CHECKING, final, cast
 
 from qualname import qualname  # type: ignore
@@ -15,7 +16,17 @@ from .utils.immutable import ImmutableSet
 
 if TYPE_CHECKING:
     from typing import (
-        Any, TypeVar, Iterator, Set, Optional, Type, List, Iterable, MutableMapping
+        Any,
+        Dict,
+        TypeVar,
+        Iterator,
+        Set,
+        Optional,
+        Type,
+        List,
+        Iterable,
+        Mapping,
+        MutableMapping,
     )
 
     _T = TypeVar("_T")
@@ -29,6 +40,7 @@ __all__ = [
     "init_context",
     "init",
     "simplify_member_names",
+    "make_base_cls",
     "BaseMeta",
     "Base",
     "ProtectedBase",
@@ -41,6 +53,7 @@ FINAL_METHOD_TAG = "__isfinalmethod__"
 INITIALIZING_TAG = "__isinitializing__"
 
 __final = final
+__base_cls_cache = WeakValueDictionary()  # type: MutableMapping[str, Type[Base]]
 
 
 def _final(obj):
@@ -118,6 +131,125 @@ def init(func, *args, **kwargs):
     with init_context(self):
         result = func(*args, **kwargs)
     return result
+
+
+def _make_base_cls(
+    base=None,  # type: Optional[Type[Base]]
+    qual_name=None,  # type: Optional[str]
+    module=None,  # type: Optional[str]
+    dct=None,  # type: Optional[Mapping[str, Any]]
+    uuid=None,  # type: Optional[str]
+):
+    # type: (...) -> Type[Base]
+    """
+    Make a subclass of :class:`Base` on the fly.
+
+    :param base: Base class.
+    :param qual_name: Qualified name.
+    :param module: Module.
+    :param dct: Members dictionary.
+    :param uuid: UUID used for caching.
+    :return: Generated subclass.
+    """
+
+    # Get base.
+    if base is None:
+        base = Base
+
+    # Get name.
+    qual_name = qual_name or base.__fullname__
+    name = qual_name.split(".")[-1]
+
+    # Get module.
+    module = module or base.__module__
+
+    # Get metaclass and uuid.
+    mcs = type(base)
+    uuid = str(uuid4()) if uuid is None else uuid
+
+    # Copy dct.
+    dct_copy = dict(dct or {})  # type: Dict[str, Any]
+
+    # Define reduce method for pickling instances of the subclass.
+    def __reduce__(self):
+        state = self.__getstate__()
+        return _make_base_instance, (base, qual_name, module, state, dct_copy, uuid)
+
+    # Assemble class dict by copying dct once again.
+    cls_dct = dct_copy.copy()  # type: Dict[str, Any]
+    cls_dct_update = {
+        "__reduce__": __reduce__,
+        "__qualname__": qual_name,
+        "__module__": module,
+    }  # type: Dict[str, Any]
+    cls_dct.update(cls_dct_update)
+
+    # Make new subclass and cache it by UUID.
+    cls = __base_cls_cache[uuid] = cast("BaseMeta", mcs)(name, (base,), cls_dct)
+    return cls
+
+
+def _make_base_instance(
+    base=None,  # type: Optional[Type[Base]]
+    qual_name=None,  # type: Optional[str]
+    module=None,  # type: Optional[str]
+    state=None,  # type: Optional[Dict[str, Any]]
+    dct=None,  # type: Optional[Mapping[str, Any]]
+    uuid=None,  # type: Optional[str]
+):
+    # type: (...) -> Base
+    """
+    Make an instance of a subclass of :class:`Base` on the fly.
+
+    :param base: Base class.
+    :param qual_name: Qualified name.
+    :param module: Module.
+    :param state: Pickled state.
+    :param dct: Members dictionary.
+    :param uuid: UUID used for caching.
+    :return: Generated instance.
+    """
+
+    # Try to get class from cache using UUID.
+    try:
+        if uuid is None:
+            raise KeyError()
+        cls = __base_cls_cache[uuid]
+
+    # Not cached, make a new subclass and use it.
+    except KeyError:
+        cls = _make_base_cls(
+            base=base,
+            qual_name=qual_name,
+            module=module,
+            dct=dct,
+            uuid=uuid,
+        )
+
+    # Make new instance and unpickle its state.
+    self = cast("Base", cls.__new__(cls))
+    self.__setstate__(state)
+
+    return self
+
+
+def make_base_cls(
+    base=None,  # type: Optional[Type[Base]]
+    qual_name=None,  # type: Optional[str]
+    module=None,  # type: Optional[str]
+    dct=None,  # type: Optional[Mapping[str, Any]]
+):
+    # type: (...) -> Type[Base]
+    """
+    Make a subclass of :class:`Base` on the fly.
+
+    :param base: Base class.
+    :param qual_name: Qualified name.
+    :param module: Module.
+    :param dct: Members dictionary.
+    :return: Generated subclass.
+    """
+    return _make_base_cls(base, qual_name, module, dct=dct)
 
 
 class BaseMeta(SlottedABCMeta):

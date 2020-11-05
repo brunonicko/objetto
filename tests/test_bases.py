@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import copy
+import pickle
 
 import pytest
 import six
@@ -15,6 +16,7 @@ from objetto._bases import (
     init,
     init_context,
     simplify_member_names,
+    make_base_cls,
 )
 
 
@@ -203,6 +205,37 @@ def test_copy():
 
     with pytest.raises(RuntimeError):
         _ = copy.copy(base)
+
+
+class GeneratedBaseParent(object):
+    GeneratedBase = None
+
+
+def test_make_base_cls():
+    default_base_cls = make_base_cls()
+    assert default_base_cls.__name__ == Base.__name__
+    assert default_base_cls.__qualname__ == Base.__fullname__
+    assert default_base_cls.__module__ == Base.__module__
+
+    base_cls = make_base_cls(
+        Base, "GeneratedBaseParent.GeneratedBase", __name__, {"class_var": 10}
+    )
+    assert issubclass(base_cls, Base)
+    assert base_cls.__name__ == "GeneratedBase"
+    assert base_cls.__qualname__ == "GeneratedBaseParent.GeneratedBase"
+    assert base_cls.__module__ == __name__
+    assert hasattr(base_cls, "__reduce__")
+
+    GeneratedBaseParent.GeneratedBase = base_cls
+
+    instance = base_cls()
+    assert isinstance(instance, base_cls)
+    assert type(instance) is base_cls
+
+    pickled_instance = pickle.loads(pickle.dumps(instance))
+    assert pickled_instance is not instance
+    assert isinstance(pickled_instance, base_cls)
+    assert type(pickled_instance) is base_cls
 
 
 def test_dir():
