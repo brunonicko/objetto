@@ -16,9 +16,7 @@ from ..utils.factoring import format_factory, run_factory
 from ..utils.immutable import ImmutableDict
 
 if TYPE_CHECKING:
-    from typing import (
-        Any, Tuple, Type, Optional, Union, Dict, List, Iterable, Mapping, MutableMapping
-    )
+    from typing import Any, Tuple, Type, Optional, Union, Dict, List, Iterable, Mapping
 
     from ..utils.type_checking import LazyTypes
     from ..utils.factoring import LazyFactory
