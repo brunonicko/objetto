@@ -13,13 +13,13 @@ from ..utils.type_checking import (
 )
 from ..utils.lazy_import import import_path, get_path
 from ..utils.factoring import format_factory, run_factory
-from ..utils.immutable import ImmutableDict
 
 if TYPE_CHECKING:
-    from typing import Any, Tuple, Type, Optional, Union, Dict, List, Iterable, Mapping
+    from typing import Any, Tuple, Type, Optional, Union, Dict, List, Hashable, Mapping
 
     from ..utils.type_checking import LazyTypes
     from ..utils.factoring import LazyFactory
+    from ..utils.immutable import ImmutableContainer
 
 __all__ = [
     "make_auxiliary_cls",
@@ -128,7 +128,19 @@ def make_auxiliary_cls(
 
 
 class BaseRelationship(ProtectedBase):
-    """Relationship between a container and its values."""
+    """
+    Relationship between a container and its values.
+
+    :param types: Types.
+    :param subtypes: Whether to accept subtypes.
+    :param type_checked: Whether to perform runtime type check.
+    :param module: Module path for lazy types/factories.
+    :param factory: Value factory.
+    :param serialized: Whether should be serialized.
+    :param serializer: Custom serializer.
+    :param deserializer: Custom deserializer.
+    :param represented: Whether should be represented.
+    """
 
     __slots__ = (
         "types",
@@ -140,7 +152,6 @@ class BaseRelationship(ProtectedBase):
         "serializer",
         "deserializer",
         "represented",
-        "passthrough",
     )
 
     def __init__(
@@ -155,23 +166,26 @@ class BaseRelationship(ProtectedBase):
         deserializer=None,  # type: LazyFactory
         represented=True,  # type: bool
     ):
+        # type: (...) -> None
         self.types = format_types(types, module=module)
         self.subtypes = bool(subtypes)
-        self.type_checked = bool(type_checked)
+        self.type_checked = types and bool(type_checked)
         self.module = module
         self.factory = format_factory(factory, module=module)
         self.serialized = bool(serialized)
         self.serializer = format_factory(serializer, module=module)
         self.deserializer = format_factory(deserializer, module=module)
         self.represented = bool(represented)
-        self.passthrough = bool(
-            (not self.type_checked or not self.types) and self.factory is None
-        )
 
     @final
     def get_single_exact_type(self, types=(type,)):
         # type: (LazyTypes) -> Optional[Type]
-        """Get single exact type from available types if possible."""
+        """
+        Get single exact type from available types if possible.
+        
+        :param types: Base types.
+        :return: Single exact type that is a subclass of one of provided base types.
+        """
         if not types or self.subtypes:
             return None
         filtered_types = set(
@@ -183,22 +197,27 @@ class BaseRelationship(ProtectedBase):
         else:
             return None
 
-    def fabricate_value(
-        self,
-        value,  # type: Any
-        factory=True,  # type: bool
-        args=(),  # type: Iterable[Any]
-        kwargs=ImmutableDict(),  # type: Mapping[str, Any]
-    ):
-        # type: (...) -> Any
-        """Fabricate value."""
-        if self.passthrough:
-            return value
+    def fabricate_value(self, value, factory=True, **kwargs):
+        # type: (Any, bool, Any) -> Any
+        """
+        Perform type check and run value through factory.
+        
+        :param value: Value.
+        :param factory: Whether to run value through factory.
+        :param kwargs: Keyword arguments to be passed to the factory.
+        :return: Fabricated value.
+        """
         if factory and self.factory is not None:
-            value = run_factory(self.factory, (value,) + tuple(args), kwargs)
-        if self.type_checked and self.types:
+            value = run_factory(self.factory, args=(value,), kwargs=kwargs)
+        if self.type_checked:
             assert_is_instance(value, self.types, subtypes=self.subtypes)
         return value
+
+    @property
+    def passthrough(self):
+        # type: () -> bool
+        """Whether attribute does not perform type checks and has no factory."""
+        return not self.type_checked and self.factory is None
 
 
 class BaseContainerMeta(BaseMeta):
@@ -226,7 +245,16 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
     @classmethod
     @final
     def deserialize_value(cls, serialized, location, **kwargs):
-        """Deserialize value at location."""
+        # type: (Any, Hashable, Any) -> Any
+        """
+        Deserialize value for location.
+
+        :param serialized: Serialized value.
+        :param location: Location.
+        :param kwargs: Keyword arguments to be passed to the deserializers.
+        :return: Deserialized value.
+        :raises ValueError: Can't deserialize value.
+        """
 
         # Get relationship.
         relationship = cls._get_relationship(location)
@@ -236,7 +264,7 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
                 "relationship{} does not allow for serialization/deserialization"
             ).format(
                 type(serialized).__name__,
-                cls.__name__,
+                cls.__fullname__,
                 " at location {}".format(location) if location is not None else "",
             )
             raise ValueError(error)
@@ -248,7 +276,7 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
             if type(serialized) is dict:
                 serialized = _unescape_serialized_class(serialized)
 
-            # Run deserializer.
+            # Run deserializer and return type-check deserialized value.
             value = run_factory(
                 relationship.deserializer, args=(serialized,), kwargs=kwargs
             )
@@ -289,16 +317,26 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
                     "deserializer, since relationship{} defines none or ambiguous types"
                 ).format(
                     type(serialized).__name__,
-                    cls.__name__,
+                    cls.__fullname__,
                     " at location {}".format(location) if location is not None else "",
                 )
                 raise TypeError(error)
 
+        # Return type-check deserialized value.
         return relationship.fabricate_value(serialized, factory=False)
 
     @final
     def serialize_value(self, value, location, **kwargs):
-        """Serialize value at location."""
+        # type: (Any, Hashable, Any) -> Any
+        """
+        Serialize value for location.
+
+        :param value: Value.
+        :param location: Location.
+        :param kwargs: Keyword arguments to be passed to the serializers.
+        :return: Serialized value.
+        :raises ValueError: Can't serialize value.
+        """
 
         # Get relationship.
         cls = type(self)
@@ -309,14 +347,16 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
                 "relationship{} does not allow for serialization/deserialization"
             ).format(
                 type(value).__name__,
-                cls.__name__,
+                cls.__fullname__,
                 " at location {}".format(location) if location is not None else "",
             )
             raise ValueError(error)
 
         # Custom serializer.
         if relationship.serializer is not None:
-            serialized_value = run_factory(relationship.serializer, (value,), kwargs)
+            serialized_value = run_factory(
+                relationship.serializer, args=(value,), kwargs=kwargs
+            )
 
             # Escape keys.
             if type(serialized_value) is dict:
@@ -354,17 +394,31 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
     @abstractmethod
     def deserialize(cls, serialized, **kwargs):
         # type: (Any, Any) -> BaseContainer
-        """Deserialize."""
+        """
+        Deserialize.
+        
+        :param serialized: Serialized.
+        :param kwargs: Keyword arguments to be passed to the deserializers.
+        :return: Deserialized.
+        """
         raise NotImplementedError()
 
     @abstractmethod
     def serialize(self, **kwargs):
-        """Serialize."""
+        # type: (Any) -> Any
+        """
+        Serialize.
+
+        :param kwargs: Keyword arguments to be passed to the serializers.
+        :return: Serialized.
+        """
         raise NotImplementedError()
 
     @property
     @abstractmethod
     def _state(self):
+        # type: () -> ImmutableContainer
+        """State."""
         raise NotImplementedError()
 
 
@@ -391,12 +445,17 @@ class BaseAuxiliaryContainer(BaseContainer):
     """Container with a single relationship."""
     __slots__ = ()
 
-    _relationship = BaseRelationship()
+    _relationship = BaseRelationship()  # type: BaseRelationship
     """Relationship for all locations."""
 
     @classmethod
     @final
     def _get_relationship(cls, location=None):
         # type: (Any) -> BaseRelationship
-        """Get relationship."""
+        """
+        Get relationship.
+        
+        :param location: Location.
+        :return: Relationship.
+        """
         return cls._relationship

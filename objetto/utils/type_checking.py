@@ -37,8 +37,8 @@ __all__ = [
 ]
 
 
-def format_types(types, module=None, usecase=None):
-    # type: (LazyTypes, Optional[str], Optional[str]) -> LazyTypesTuple
+def format_types(types, module=None):
+    # type: (LazyTypes, Optional[str]) -> LazyTypesTuple
     """
     Check and format types by adding a module path.
 
@@ -55,7 +55,6 @@ def format_types(types, module=None, usecase=None):
 
     :param types: Types.
     :param module: Module to prefix lazy paths without one.
-    :param usecase: Usecase message for errors.
     :return: Formatted types.
     :raises ValueError: Invalid type path/no module provided.
     :raises TypeError: Did not provide valid types.
@@ -67,8 +66,7 @@ def format_types(types, module=None, usecase=None):
     elif isinstance(types, collections_abc.Iterable):
         return tuple(chain.from_iterable(format_types(t, module=module) for t in types))
     else:
-        error = "{}'{}' object is not a valid type".format(
-            "{}; ".format(usecase) if usecase else "",
+        error = "'{}' object is not a valid type".format(
             type(types).__name__,
         )
         raise TypeError(error)
@@ -227,8 +225,8 @@ def is_subclass(cls, types, subtypes=True):
         return cls in imported_types
 
 
-def assert_is_instance(obj, types, subtypes=True, usecase=None):
-    # type: (Any, LazyTypes, bool, Optional[str]) -> None
+def assert_is_instance(obj, types, subtypes=True):
+    # type: (Any, LazyTypes, bool) -> None
     """
     Assert object is an instance of any of the provided types.
 
@@ -245,10 +243,10 @@ def assert_is_instance(obj, types, subtypes=True, usecase=None):
         >>> assert_is_instance(3, ())
         Traceback (most recent call last):
         ValueError: no types were provided to perform assertion
-        >>> assert_is_instance(3, "itertools|chain", usecase="custom message")
+        >>> assert_is_instance(3, "itertools|chain")
         Traceback (most recent call last):
-        TypeError: custom message; got 'int' object, expected instance of 'chain' or \
-any of its subclasses
+        TypeError: got 'int' object, expected instance of 'chain' or any of its \
+subclasses
         >>> assert_is_instance(chain(), "itertools|chain", subtypes=False)
         >>> assert_is_instance(SubChain(), "itertools|chain", subtypes=False)
         Traceback (most recent call last):
@@ -258,7 +256,6 @@ subclasses are not accepted)
     :param obj: Object.
     :param types: Types.
     :param subtypes: Whether to accept subtypes.
-    :param usecase: Usecase message for errors.
     :raises ValueError: No types were provided.
     :raises TypeError: Object is not an instance of provided types.
     """
@@ -267,8 +264,7 @@ subclasses are not accepted)
         if not types:
             error = "no types were provided to perform assertion"
             raise ValueError(error)
-        error = "{}got '{}' object, expected instance of {}{}".format(
-            "{}; ".format(usecase) if usecase else "",
+        error = "got '{}' object, expected instance of {}{}".format(
             type(obj).__name__,
             ", ".join("'{}'".format(name) for name in get_type_names(types)),
             " or any of {} subclasses".format("their" if len(types) > 1 else "its")
@@ -278,8 +274,8 @@ subclasses are not accepted)
         raise TypeError(error)
 
 
-def assert_is_subclass(cls, types, subtypes=True, usecase=None):
-    # type: (type, LazyTypes, bool, Optional[str]) -> None
+def assert_is_subclass(cls, types, subtypes=True):
+    # type: (type, LazyTypes, bool) -> None
     """
     Assert a class is a subclass of any of the provided types.
 
@@ -296,9 +292,9 @@ def assert_is_subclass(cls, types, subtypes=True, usecase=None):
         >>> assert_is_subclass(int, ())
         Traceback (most recent call last):
         ValueError: no types were provided to perform assertion
-        >>> assert_is_subclass(int, "itertools|chain", usecase="something")
+        >>> assert_is_subclass(int, "itertools|chain")
         Traceback (most recent call last):
-        TypeError: something; got 'int', expected class 'chain' or any of its subclasses
+        TypeError: got 'int', expected class 'chain' or any of its subclasses
         >>> assert_is_subclass(chain, "itertools|chain", subtypes=False)
         >>> assert_is_subclass(SubChain, "itertools|chain", subtypes=False)
         Traceback (most recent call last):
@@ -307,7 +303,6 @@ def assert_is_subclass(cls, types, subtypes=True, usecase=None):
     :param cls: Class.
     :param types: Types.
     :param subtypes: Whether to accept subtypes.
-    :param usecase: Usecase message for errors.
     :raises ValueError: No types were provided.
     :raises TypeError: Class is not a subclass of provided types.
     """
@@ -317,8 +312,7 @@ def assert_is_subclass(cls, types, subtypes=True, usecase=None):
             error = "no types were provided to perform assertion"
             raise ValueError(error)
 
-        error = "{}got '{}', expected {}{}{}".format(
-            "{}; ".format(usecase) if usecase else "",
+        error = "got '{}', expected {}{}{}".format(
             cls.__name__,
             "one of " if len(types) > 1 else "class ",
             ", ".join("'{}'".format(name) for name in get_type_names(types)),
@@ -329,8 +323,8 @@ def assert_is_subclass(cls, types, subtypes=True, usecase=None):
         raise TypeError(error)
 
 
-def assert_is_callable(value, usecase=None):
-    # type: (Any, Optional[str]) -> None
+def assert_is_callable(value):
+    # type: (Any) -> None
     """
     Assert a value is callable.
 
@@ -340,17 +334,15 @@ def assert_is_callable(value, usecase=None):
 
         >>> assert_is_callable(int)
         >>> assert_is_callable(lambda: None)
-        >>> assert_is_callable(3, usecase="my parameter")
+        >>> assert_is_callable(3)
         Traceback (most recent call last):
-        TypeError: my parameter; got non-callable 'int' object, expected a callable
+        TypeError: got non-callable 'int' object, expected a callable
 
     :param value: Value.
-    :param usecase: Usecase message for errors.
     :raises TypeError: Value is not a match.
     """
     if not callable(value):
-        error = "{}got non-callable '{}' object, expected a callable".format(
-            "{}; ".format(usecase) if usecase else "",
+        error = "got non-callable '{}' object, expected a callable".format(
             type(value).__name__,
         )
         raise TypeError(error)

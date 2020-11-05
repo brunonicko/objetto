@@ -85,7 +85,7 @@ class ImmutableDict(
         >>> from objetto.utils.immutable import ImmutableDict
 
         >>> ImmutableDict({"a": 1, "b": 2})
-        ImmutableDict({"a": 1, "b": 2})
+        ImmutableDict({'a': 1, 'b': 2})
 
     :param initial: Initial values.
     """
@@ -141,6 +141,8 @@ class ImmutableDict(
             self.__internal,
             prefix="{}({{".format(type(self).__name__),
             suffix="})",
+            sorting=True,
+            sort_key=lambda i: hash(i[0])
         )
 
     def __str__(self):
@@ -294,7 +296,7 @@ class ImmutableList(
         >>> from objetto.utils.immutable import ImmutableList
 
         >>> ImmutableList(["a", "b", "c", "c"])
-        ImmutableList(["a", "b", "c", "c"])
+        ImmutableList(['a', 'b', 'c', 'c'])
 
     :param initial: Initial values.
     """

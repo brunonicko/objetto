@@ -19,7 +19,6 @@ class WeakReference(Generic[_T], object):
 
     .. code:: python
 
-        >>> from pickle import dumps, loads
         >>> from objetto.utils.weak_reference import WeakReference
 
         >>> class MyClass(object):
@@ -31,8 +30,6 @@ class WeakReference(Generic[_T], object):
         True
         >>> del strong
         >>> weak() is None
-        True
-        >>> type(loads(dumps(weak))) is MyClass
         True
 
     :param obj: Object to reference.

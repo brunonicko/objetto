@@ -119,10 +119,8 @@ def test_assert_is_instance():
     assert_is_instance(Cls(), cls_path, subtypes=False)
     assert_is_instance(SubCls(), cls_path)
 
-    usecase = "test case"
-    with pytest.raises(TypeError) as exc_info:
-        assert_is_instance(SubCls(), cls_path, subtypes=False, usecase=usecase)
-    assert exc_info.value.args[0].startswith(usecase)
+    with pytest.raises(TypeError):
+        assert_is_instance(SubCls(), cls_path, subtypes=False)
 
     assert_is_instance(SubCls(), subcls_path, subtypes=False)
 
@@ -162,10 +160,8 @@ def test_assert_is_subclass():
     assert_is_subclass(Cls, cls_path, subtypes=False)
     assert_is_subclass(SubCls, cls_path)
 
-    usecase = "test case"
-    with pytest.raises(TypeError) as exc_info:
-        assert_is_subclass(SubCls, cls_path, subtypes=False, usecase=usecase)
-    assert exc_info.value.args[0].startswith(usecase)
+    with pytest.raises(TypeError):
+        assert_is_subclass(SubCls, cls_path, subtypes=False)
 
     assert_is_subclass(SubCls, subcls_path, subtypes=False)
 

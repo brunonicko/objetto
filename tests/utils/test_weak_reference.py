@@ -41,6 +41,7 @@ def test_pickling():
     assert isinstance(unpickled_strong, Cls)
     assert isinstance(unpickled_weak, WeakReference)
     assert unpickled_weak() is unpickled_strong
+    assert type(pickle.loads(pickle.dumps(weak()))) is Cls
 
 
 if __name__ == "__main__":
