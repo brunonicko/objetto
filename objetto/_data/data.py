@@ -7,8 +7,8 @@ from six import with_metaclass, iteritems
 from six.moves import collections_abc
 
 from .._containers.container import NOTHING, BaseAttribute, ContainerMeta, Container
-from .._base import init_context
-from .._base import final as final_
+from .._bases import init_context
+from .._bases import final as final_
 from .base import DataRelationship, BaseDataMeta, BaseData
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.immutable import ImmutableDict

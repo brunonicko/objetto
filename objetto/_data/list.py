@@ -5,7 +5,7 @@ from typing import Generic, TYPE_CHECKING, TypeVar, cast, overload
 from six import with_metaclass
 
 from .base import BaseAuxiliaryData, BaseAuxiliaryDataMeta
-from .._base import final, init_context
+from .._bases import final, init_context
 from .._containers.list import ListContainer, ListContainerMeta
 from ..utils.custom_repr import custom_iterable_repr
 from ..utils.immutable import ImmutableList

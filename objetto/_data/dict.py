@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar, cast
 from six import with_metaclass, iteritems
 from six.moves import collections_abc
 
-from .._base import final, init_context
+from .._bases import final, init_context
 from .base import BaseAuxiliaryDataMeta, BaseAuxiliaryData
 from .._containers.dict import DictContainerMeta, DictContainer
 from ..utils.custom_repr import custom_mapping_repr

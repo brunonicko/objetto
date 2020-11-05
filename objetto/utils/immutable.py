@@ -1,11 +1,15 @@
 # -*- coding: utf-8 -*-
 """Immutable container types."""
 
+from abc import abstractmethod
+
 from pyrsistent import pmap, pvector, pset
-from slotted import SlottedMapping, SlottedSequence, SlottedSet, SlottedHashable
+from slotted import (
+    SlottedMapping, SlottedSequence, SlottedSet, SlottedHashable, SlottedContainer
+)
 from typing import TYPE_CHECKING, TypeVar, Generic, cast, overload
 
-from six import iteritems
+from six import iteritems, iterkeys, itervalues
 from six.moves import collections_abc
 
 from .custom_repr import custom_iterable_repr, custom_mapping_repr
@@ -14,19 +18,16 @@ if TYPE_CHECKING:
     from pyrsistent.typing import PMap, PVector, PSet
     from typing import (
         Any,
-        Callable,
         Type,
         Mapping,
         Iterable,
         Tuple,
         Union,
         Iterator,
-        Sequence,
-        Set,
         Optional,
     )
 
-__all__ = ["ImmutableDict", "ImmutableList", "ImmutableSet"]
+__all__ = ["ImmutableContainer", "ImmutableDict", "ImmutableList", "ImmutableSet"]
 
 
 _KT = TypeVar("_KT")
@@ -37,14 +38,63 @@ _INTERNAL_LIST_TYPE = type(pvector())  # type: Type[PVector]
 _INTERNAL_SET_TYPE = type(pset())  # type: Type[PSet]
 
 
-class ImmutableDict(Generic[_KT, _VT], SlottedHashable, SlottedMapping):
-    """Immutable dictionary."""
+class ImmutableContainer(SlottedHashable, SlottedContainer):
+    """Abstract immutable container."""
+
+    @abstractmethod
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        raise NotImplementedError()
+
+    def __str__(self):
+        # type: () -> str
+        """
+        Get string representation.
+
+        :return: String representation.
+        """
+        return self.__repr__()
+
+    def __ne__(self, other):
+        # type: (Any) -> bool
+        """
+        Compare for inequality.
+
+        :param other: Other.
+        :return: True if not equal.
+        """
+        result = self.__eq__(other)
+        if result is NotImplemented:
+            return NotImplemented
+        return not result
+
+
+class ImmutableDict(
+    ImmutableContainer, SlottedHashable, SlottedMapping, Generic[_KT, _VT]
+):
+    """
+    Immutable dictionary.
+
+    .. code:: python
+
+        >>> from objetto.utils.immutable import ImmutableDict
+
+        >>> ImmutableDict({"a": 1, "b": 2})
+        ImmutableDict({"a": 1, "b": 2})
+
+    :param initial: Initial values.
+    """
 
     __slots__ = ("__internal", "__hash")
 
     def __init__(self, initial=()):
         # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> None
-        self.__hash = None
+        self.__hash = None  # type: Optional[int]
         initial_type = type(initial)
         if initial_type is _INTERNAL_DICT_TYPE:
             self.__internal = cast("PMap[_KT, _VT]", initial)
@@ -56,12 +106,23 @@ class ImmutableDict(Generic[_KT, _VT], SlottedHashable, SlottedMapping):
 
     def __hash__(self):
         # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
         if self.__hash is None:
             self.__hash = hash(self.__internal)
         return self.__hash
 
     def __eq__(self, other):
         # type: (Any) -> bool
+        """
+        Compare for equality.
+
+        :param other: Other.
+        :return: True if equal.
+        """
         if self is other:
             return True
         elif isinstance(other, ImmutableDict):
@@ -71,6 +132,11 @@ class ImmutableDict(Generic[_KT, _VT], SlottedHashable, SlottedMapping):
 
     def __repr__(self):
         # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
         return custom_mapping_repr(
             self.__internal,
             prefix="{}({{".format(type(self).__name__),
@@ -78,61 +144,166 @@ class ImmutableDict(Generic[_KT, _VT], SlottedHashable, SlottedMapping):
         )
 
     def __str__(self):
+        # type: () -> str
+        """
+        Get string representation.
+
+        :return: String representation.
+        """
         return self.__repr__()
 
     def __copy__(self):
         # type: () -> ImmutableDict
+        """
+        Get copy.
+
+        :return: Copy.
+        """
         return self
 
     def __getitem__(self, key):
         # type: (_KT) -> _VT
+        """
+        Get value for key.
+
+        :param key: Key.
+        :return: Value.
+        """
         return self.__internal[key]
 
     def __len__(self):
         # type: () -> int
+        """
+        Get key count.
+
+        :return: Key count.
+        """
         return len(self.__internal)
 
     def __iter__(self):
         # type: () -> Iterator[_KT]
-        for key in self.__internal:
+        """
+        Iterate over keys.
+
+        :return: Key iterator.
+        """
+        for key in iterkeys(self.__internal):
             yield key
 
     def copy(self):
         # type: () -> ImmutableDict
+        """
+        Get copy.
+
+        :return: Copy.
+        """
         return self
 
     def clear(self):
         # type: () -> ImmutableDict
+        """
+        Clear all keys and values.
+
+        :return: New version.
+        """
         return type(self)()
 
     def discard(self, key):
         # type: (_KT) -> ImmutableDict
+        """
+        Discard key if it exists.
+
+        :param key: Key.
+        :return: New version.
+        """
         return type(self)(self.__internal.discard(key))
 
     def remove(self, key):
         # type: (_KT) -> ImmutableDict
+        """
+        Delete existing key.
+
+        :param key: Key.
+        :return: New version.
+        """
         return type(self)(self.__internal.remove(key))
 
     def set(self, key, value):
         # type: (_KT, _VT) -> ImmutableDict
+        """
+        Set value for key.
+
+        :param key: Key.
+        :param value: Value.
+        :return: New version.
+        """
         return type(self)(self.__internal.set(key, value))
 
     def update(self, update):
         # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> ImmutableDict
+        """
+        Update keys and values.
+
+        :param update: Updates.
+        :return: New version.
+        """
         if isinstance(update, collections_abc.Mapping):
             return type(self)(self.__internal.update(update))
         else:
             return type(self)(self.__internal.update(pmap(update)))
 
+    def iteritems(self):
+        # type: () -> Iterator[Tuple[_KT, _VT]]
+        """
+        Iterate over keys.
 
-class ImmutableList(Generic[_T], SlottedHashable, SlottedSequence):
-    """Immutable list."""
+        :return: Key iterator.
+        """
+        for key, value in iteritems(self.__internal):
+            yield key, value
+
+    def iterkeys(self):
+        # type: () -> Iterator[_KT]
+        """
+        Iterate over keys.
+
+        :return: Keys iterator.
+        """
+        for key in iterkeys(self.__internal):
+            yield key
+
+    def itervalues(self):
+        # type: () -> Iterator[_VT]
+        """
+        Iterate over values.
+
+        :return: Values iterator.
+        """
+        for value in itervalues(self.__internal):
+            yield value
+
+
+class ImmutableList(
+    ImmutableContainer, SlottedHashable, SlottedSequence, Generic[_T]
+):
+    """
+    Immutable list.
+
+    .. code:: python
+
+        >>> from objetto.utils.immutable import ImmutableList
+
+        >>> ImmutableList(["a", "b", "c", "c"])
+        ImmutableList(["a", "b", "c", "c"])
+
+    :param initial: Initial values.
+    """
 
     __slots__ = ("__internal", "__hash")
 
     def __init__(self, initial=()):
         # type: (Iterable[_T]) -> None
-        self.__hash = None
+        self.__hash = None  # type: Optional[int]
         initial_type = type(initial)
         if initial_type is _INTERNAL_LIST_TYPE:
             self.__internal = cast("PVector[_T]", initial)
@@ -144,12 +315,23 @@ class ImmutableList(Generic[_T], SlottedHashable, SlottedSequence):
 
     def __hash__(self):
         # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
         if self.__hash is None:
             self.__hash = hash(self.__internal)
         return self.__hash
 
     def __eq__(self, other):
         # type: (Any) -> bool
+        """
+        Compare for equality.
+
+        :param other: Other.
+        :return: True if equal.
+        """
         if self is other:
             return True
         elif isinstance(other, ImmutableList):
@@ -159,6 +341,11 @@ class ImmutableList(Generic[_T], SlottedHashable, SlottedSequence):
 
     def __repr__(self):
         # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
         return custom_iterable_repr(
             self.__internal,
             prefix="{}([".format(type(self).__name__),
@@ -166,24 +353,53 @@ class ImmutableList(Generic[_T], SlottedHashable, SlottedSequence):
         )
 
     def __str__(self):
+        # type: () -> str
+        """
+        Get string representation.
+
+        :return: String representation.
+        """
         return self.__repr__()
 
     def __copy__(self):
         # type: () -> ImmutableList
+        """
+        Get copy.
+
+        :return: Copy.
+        """
         return self
 
     @overload
     def __getitem__(self, index):
         # type: (int) -> _T
+        """
+        Get value at index.
+
+        :param index: Index.
+        :return: Value.
+        """
         pass
 
     @overload
     def __getitem__(self, index):
         # type: (slice) -> ImmutableList
+        """
+        Get values from slice.
+
+        :param index: Slice.
+        :return: Values.
+        """
         pass
 
     def __getitem__(self, index):
         # type: (Union[int, slice]) -> Union[_T, ImmutableList]
+        """
+        Get value/values at index/from slice.
+
+        :param index: Index/slice.
+        :return: Value/values.
+        """
         if isinstance(index, slice):
             return type(self)(self.__internal[index])
         else:
@@ -191,56 +407,203 @@ class ImmutableList(Generic[_T], SlottedHashable, SlottedSequence):
 
     def __len__(self):
         # type: () -> int
+        """
+        Get value count.
+
+        :return: Value count.
+        """
         return len(self.__internal)
 
     def copy(self):
         # type: () -> ImmutableList
+        """
+        Get copy.
+
+        :return: Copy.
+        """
         return self
+
+    def resolve_index(self, index, clamp=False):
+        # type: (int, bool) -> int
+        """
+        Resolve index to a positive number.
+
+        :param index: Input index.
+        :param clamp: Whether to clamp between zero and the length.
+        :return: Resolved index.
+        :raises IndexError: Index out of range.
+        """
+        length = len(self.__internal)
+        if index < 0:
+            index += length
+        if clamp:
+            if index < 0:
+                index = 0
+            elif index > length:
+                index = length
+        elif index < 0 or index >= length:
+            error = "index out of range"
+            raise IndexError(error)
+        return index
+
+    def resolve_continuous_slice(self, slc):
+        # type: (slice) -> Tuple[int, int]
+        """
+        Resolve continuous slice according to length.
+
+        :param slc: Continuous slice.
+        :return: Index and stop.
+        :raises IndexError: Slice is noncontinuous.
+        """
+        length = len(self.__internal)
+        index, stop, step = slc.indices(length)
+        if step != 1 or stop < index:
+            error = "slice {} is noncontinuous".format(slc)
+            raise IndexError(error)
+        return index, stop
 
     def clear(self):
         # type: () -> ImmutableList
+        """
+        Clear all values.
+
+        :return: New version.
+        """
         return type(self)()
 
     def append(self, value):
         # type: (_T) -> ImmutableList
+        """
+        Append value at the end.
+
+        :param value: Value.
+        :return: New version.
+        """
         return type(self)(self.__internal.append(value))
 
     def extend(self, iterable):
         # type: (Iterable[_T]) -> ImmutableList
+        """
+        Extend at the end with iterable.
+
+        :param iterable: Iterable.
+        :return: New version.
+        """
         return type(self)(self.__internal.extend(iterable))
 
-    def insert(self, index, value):
+    def insert(self, index, *values):
         # type: (int, _T) -> ImmutableList
+        """
+        Insert value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: New version.
+        :raises ValueError: No values provided.
+        """
+        if not values:
+            error = "no values provided"
+            raise ValueError(error)
+
         if index == len(self.__internal):
-            return self.append(value)
+            return self.extend(values)
         elif index == 0:
-            return type(self)(pvector((value,)) + self.__internal)
+            return type(self)(pvector(values).extend(self.__internal))
         else:
             return type(self)(
-                self.__internal[:index] + pvector((value,)) + self.__internal[index:]
+                self.__internal[:index] + pvector(values) + self.__internal[index:]
             )
 
     def remove(self, value):
         # type: (_T) -> ImmutableList
+        """
+        Remove first occurrence of value.
+
+        :param value: Value.
+        :return: New version.
+        """
         return type(self)(self.__internal.remove(value))
 
     def reverse(self):
         # type: () -> ImmutableList
+        """
+        Reverse values.
+
+        :return: New version.
+        """
         return type(self)(reversed(self.__internal))
+
+    def move(self, item, target_index):
+        # type: (Union[slice, int], int) -> Any
+        """
+        Move values internally.
+
+        :param item: Index/slice.
+        :param target_index: Target index.
+        """
+
+        # Resolve slice/index.
+        if isinstance(item, slice):
+            index, stop = self.resolve_continuous_slice(item)
+            if index == stop:
+                return self
+        else:
+            index = self.resolve_index(item)
+            stop = index + 1
+
+        # Calculate post index and target index.
+        target_index = self.resolve_index(target_index, clamp=True)
+        if index <= target_index <= stop:
+            return self
+        elif target_index > stop:
+            post_index = target_index - (stop - index) + 1
+        else:
+            post_index = target_index
+
+        # Pop and re-insert values.
+        values = self.__internal[index:stop]
+        intermediary = self.__internal.delete(index, stop)
+
+        if post_index == len(intermediary):
+            return type(self)(intermediary.extend(values))
+        elif post_index == 0:
+            return type(self)(values.extend(intermediary))
+        else:
+            return type(self)(
+                intermediary[:post_index] + values + intermediary[post_index:]
+            )
 
     def sort(self, key=None, reverse=False):
         # type: (...) -> ImmutableList
+        """
+        Sort values.
+
+        :param key: Sorting key function.
+        :param reverse: Whether to reverse sort.
+        :return: New version.
+        """
         return type(self)(sorted(self.__internal, key=key, reverse=reverse))
 
 
-class ImmutableSet(Generic[_T], SlottedHashable, SlottedSet):
-    """Immutable set."""
+class ImmutableSet(ImmutableContainer, SlottedHashable, SlottedSet, Generic[_T]):
+    """
+    Immutable set.
+
+    .. code:: python
+
+        >>> from objetto.utils.immutable import ImmutableSet
+
+        >>> ImmutableSet([1, 2, 3, 3])
+        ImmutableSet([1, 2, 3])
+
+    :param initial: Initial values.
+    """
 
     __slots__ = ("__internal", "__hash")
 
     def __init__(self, initial=()):
         # type: (Iterable[_T]) -> None
-        self.__hash = None
+        self.__hash = None  # type: Optional[int]
         initial_type = type(initial)
         if initial_type is _INTERNAL_SET_TYPE:
             self.__internal = cast("PSet[_T]", initial)
@@ -252,12 +615,23 @@ class ImmutableSet(Generic[_T], SlottedHashable, SlottedSet):
 
     def __hash__(self):
         # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
         if self.__hash is None:
             self.__hash = hash(self.__internal)
         return self.__hash
 
     def __eq__(self, other):
         # type: (Any) -> bool
+        """
+        Compare for equality.
+
+        :param other: Other.
+        :return: True if equal.
+        """
         if self is other:
             return True
         elif isinstance(other, ImmutableSet):
@@ -267,76 +641,191 @@ class ImmutableSet(Generic[_T], SlottedHashable, SlottedSet):
 
     def __repr__(self):
         # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
         return custom_iterable_repr(
             self.__internal,
-            prefix="{}({{".format(type(self).__name__),
-            suffix="})",
+            prefix="{}([".format(type(self).__name__),
+            suffix="])",
+            sorting=True,
+            sort_key=lambda v: hash(v)
         )
 
     def __str__(self):
+        # type: () -> str
+        """
+        Get string representation.
+
+        :return: String representation.
+        """
         return self.__repr__()
 
     def __copy__(self):
         # type: () -> ImmutableSet
+        """
+        Get copy.
+
+        :return: Copy.
+        """
         return self
 
     def __contains__(self, value):
         # type: (object) -> bool
+        """
+        Get whether contains value.
+
+        :param value: Value.
+        :return: True if contains.
+        """
         return value in self.__internal
 
     def __len__(self):
         # type: () -> int
+        """
+        Get value count.
+
+        :return: Value count.
+        """
         return len(self.__internal)
 
     def __iter__(self):
         # type: () -> Iterator[_T]
+        """
+        Iterate over values.
+
+        :return: Value iterator.
+        """
         for value in self.__internal:
             yield value
 
-    def add(self, value):
-        # type: (_T) -> ImmutableSet
-        return type(self)(self.__internal.add(value))
-
     def copy(self):
         # type: () -> ImmutableSet
+        """
+        Get copy.
+
+        :return: Copy.
+        """
         return self
-
-    def clear(self):
-        # type: () -> ImmutableSet
-        return type(self)()
-
-    def difference(self, iterable):
-        # type: (Iterable[_T]) -> ImmutableSet
-        return type(self)(self.__internal.difference(iterable))
-
-    def discard(self, value):
-        # type: (_T) -> ImmutableSet
-        return type(self)(self.__internal.discard(value))
-
-    def intersection(self, iterable):
-        # type: (Iterable[_T]) -> ImmutableSet
-        return type(self)(self.__internal.intersection(iterable))
 
     def issubset(self, iterable):
         # type: (Iterable[_T]) -> bool
+        """
+        Get whether is a subset of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is subset.
+        """
         return self.__internal.issubset(iterable)
 
     def issuperset(self, iterable):
         # type: (Iterable[_T]) -> bool
+        """
+        Get whether is a superset of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is superset.
+        """
         return self.__internal.issuperset(iterable)
+
+    def add(self, *values):
+        # type: (_T) -> ImmutableSet
+        """
+        Add value(s).
+
+        :param values: Value(s).
+        :return: New version.
+        """
+        return type(self)(self.__internal.update(values))
+
+    def clear(self):
+        # type: () -> ImmutableSet
+        """
+        Clear all values.
+
+        :return: New version.
+        """
+        return type(self)()
+
+    def difference(self, iterable):
+        # type: (Iterable[_T]) -> ImmutableSet
+        """
+        Get difference.
+
+        :param iterable: Iterable.
+        :return: New version.
+        """
+        return type(self)(self.__internal.difference(iterable))
+
+    def discard(self, value):
+        # type: (_T) -> ImmutableSet
+        """
+        Discard value if it exists.
+
+        :param value: Value.
+        :return: New version.
+        """
+        return type(self)(self.__internal.discard(value))
 
     def remove(self, value):
         # type: (_T) -> ImmutableSet
+        """
+        Remove existing value.
+
+        :param value: Value.
+        :return: New version.
+        """
         return type(self)(self.__internal.remove(value))
+
+    def replace(self, value, new_value):
+        # type: (_T, _T) -> ImmutableSet
+        """
+        Replace existing value with a new one.
+
+        :param value: Existing value.
+        :param new_value: New value.
+        :return: New version.
+        """
+        return type(self)(self.__internal.remove(value).add(new_value))
+
+    def intersection(self, iterable):
+        # type: (Iterable[_T]) -> ImmutableSet
+        """
+        Get intersection.
+
+        :param iterable: Iterable.
+        :return: New version.
+        """
+        return type(self)(self.__internal.intersection(iterable))
 
     def symmetric_difference(self, iterable):
         # type: (Iterable[_T]) -> ImmutableSet
-        return type(self)(self.__internal.symmetric_difference(iterable))
+        """
+        Get symmetric difference.
+
+        :param iterable: Iterable.
+        :return: New version.
+        """
+        return type(self)(self.__internal.symmetric_difference(pset(iterable)))
 
     def union(self, iterable):
         # type: (Iterable[_T]) -> ImmutableSet
+        """
+        Get union.
+
+        :param iterable: Iterable.
+        :return: New version.
+        """
         return type(self)(self.__internal.union(iterable))
 
     def update(self, iterable):
         # type: (Iterable[_T]) -> ImmutableSet
+        """
+        Update with iterable.
+
+        :param iterable: Iterable.
+        :return: New version.
+        """
         return type(self)(self.__internal.update(iterable))

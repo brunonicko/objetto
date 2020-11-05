@@ -8,7 +8,7 @@ from inspect import getmro
 
 from six import with_metaclass, string_types, iteritems
 
-from .._base import Base, ProtectedBase, final
+from .._bases import Base, ProtectedBase, final
 from .._containers.base import (
     BaseRelationship,
     BaseContainerMeta,

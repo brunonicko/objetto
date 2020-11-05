@@ -33,7 +33,21 @@ IMPORT_PATH_REGEX = r"^((?:\w+\.{0,1})+)\|((?:\w+\.{0,1})+)$"
 
 def import_path(path):
     # type: (str) -> Any
-    """Import object from a full import path."""
+    """
+    Import object from a full import path.
+
+    .. code:: python
+
+        >>> from objetto.utils.lazy_import import import_path
+
+        >>> import_path("abc|abstractmethod")
+        <function abstractmethod at ...>
+
+    :param path: Import path.
+    :return: Imported object.
+    :raises ValueError: Invalid or empty path.
+    :raises AttributeError: No object with the provided name.
+    """
     if "|" not in path:
         if not path:
             error = "can't import from empty path"
@@ -62,7 +76,21 @@ def import_path(path):
 
 def get_path(obj):
     # type: (Any) -> str
-    """Get full import path to an object."""
+    """
+    Get full import path to an object.
+
+    .. code:: python
+
+        >>> from abc import abstractmethod
+        >>> from objetto.utils.lazy_import import get_path
+
+        >>> get_path(abstractmethod)
+        'abc|abstractmethod'
+
+    :param obj: Object.
+    :return: Import path.
+    :raises ValueError: Can't determine consistent import path.
+    """
     module = obj.__module__
     if not module:
         error = "can't get module for {}".format(obj)
@@ -95,7 +123,21 @@ def get_path(obj):
 
 def decorate_path(path, module=None):
     # type: (str, Optional[str]) -> str
-    """Validate and decorate partial/relative import path with module if applicable."""
+    """
+    Validate and decorate partial/relative import path with module if applicable.
+
+    .. code:: python
+
+        >>> from objetto.utils.lazy_import import decorate_path
+
+        >>> decorate_path("abstractmethod", module="abc")
+        'abc|abstractmethod'
+
+    :param path: Import path (partial or full)
+    :param module: Optional module path.
+    :return: Full import path.
+    :raises ValueError: Invalid path or no module provided.
+    """
     if not path:
         error = "can't decorate empty path"
         raise ValueError(error)

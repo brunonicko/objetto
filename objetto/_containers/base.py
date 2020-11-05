@@ -9,7 +9,7 @@ from weakref import WeakValueDictionary
 
 from six import with_metaclass
 
-from .._base import BaseMeta, Base, final
+from .._bases import BaseMeta, Base, final
 from ..utils.type_checking import (
     get_type_names, format_types, import_types, assert_is_instance
 )

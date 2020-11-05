@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from six import with_metaclass
 from slotted import SlottedMapping, SlottedMutableMapping
 
-from .._base import ProtectedBase, final
+from .._bases import ProtectedBase, final
 from .base import BaseAuxiliaryContainerMeta, BaseAuxiliaryContainer
 from ..utils.type_checking import assert_is_instance, format_types
 from ..utils.factoring import format_factory, run_factory

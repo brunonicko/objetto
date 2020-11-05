@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING, NamedTuple
 from slotted import Slotted
 from six import raise_from, iteritems
 
-from ._base import INITIALIZING_TAG, Base
+from ._bases import INITIALIZING_TAG, Base
 from ._data.base import BaseData
 from .utils.immutable import ImmutableDict, ImmutableList, ImmutableSet
 from .utils.weak_reference import WeakReference

@@ -8,7 +8,7 @@ from inspect import getmro
 
 from six import iteritems
 
-from .._base import ABSTRACT_TAG, FINAL_METHOD_TAG, ProtectedBase, final
+from .._bases import ABSTRACT_TAG, FINAL_METHOD_TAG, ProtectedBase, final
 from .base import BaseRelationship, BaseContainerMeta, BaseContainer
 from ..utils.factoring import format_factory, run_factory
 from ..utils.immutable import ImmutableDict

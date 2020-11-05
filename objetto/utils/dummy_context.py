@@ -5,7 +5,18 @@ __all__ = ["DummyContext"]
 
 
 class DummyContext(object):
-    """Dummy context manager."""
+    """
+    Dummy context manager.
+
+
+    .. code:: python
+
+        >>> from objetto.utils.dummy_context import DummyContext
+
+        >>> with DummyContext():
+        ...     pass
+
+    """
     __slots__ = ()
 
     def __enter__(self):

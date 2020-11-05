@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from six import with_metaclass
 
-from .._base import final
+from .._bases import final
 from .._containers.base import (
     BaseRelationship,
     BaseContainerMeta,
