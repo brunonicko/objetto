@@ -1,14 +1,23 @@
 # -*- coding: utf-8 -*-
 """Base container classes and metaclasses."""
 
+from inspect import getmro
 from abc import abstractmethod
 from re import sub as re_sub
+from weakref import WeakKeyDictionary
 from typing import TYPE_CHECKING
 
-from six import with_metaclass
+from six import with_metaclass, iteritems
+from slotted import SlottedHashable
 
 from .._bases import (
-    BaseMeta, Base, ProtectedBase, final, make_base_cls, abstract_member
+    FINAL_METHOD_TAG,
+    BaseMeta,
+    Base,
+    ProtectedBase,
+    final,
+    make_base_cls,
+    abstract_member,
 )
 from ..utils.type_checking import (
     get_type_names, format_types, import_types, assert_is_instance
@@ -17,8 +26,11 @@ from ..utils.lazy_import import import_path, get_path
 from ..utils.factoring import format_factory, run_factory
 
 if TYPE_CHECKING:
-    from typing import Any, Tuple, Type, Optional, Union, Dict, List, Hashable, Mapping
+    from typing import (
+        Any, Tuple, Type, Optional, Union, Dict, List, Hashable, Mapping, MutableMapping
+    )
 
+    from .._bases import AbstractType
     from ..utils.type_checking import LazyTypes
     from ..utils.factoring import LazyFactory
     from ..utils.immutable import ImmutableContainer
@@ -26,6 +38,7 @@ if TYPE_CHECKING:
 __all__ = [
     "make_auxiliary_cls",
     "BaseRelationship",
+    "UniqueDescriptor",
     "BaseContainerMeta",
     "BaseContainer",
     "BaseAuxiliaryContainerMeta",
@@ -218,8 +231,108 @@ class BaseRelationship(ProtectedBase):
         return (not self.types or not self.type_checked) and self.factory is None
 
 
+@final
+class UniqueDescriptor(Base):
+    """
+    Descriptor to be used on :class:`BaseContainer` classes.
+    When used, the object ID will be the hash, and the equality method will compare by
+    identity instead of by values.
+    If accessed through an instance, the descriptor will return the object ID.
+    """
+    __slots__ = (FINAL_METHOD_TAG,)
+
+    def __init__(self):
+        setattr(self, FINAL_METHOD_TAG, True)
+
+    def __get__(
+        self,
+        instance,  # type: Optional[BaseContainer]
+        owner,  # type: Optional[Type[BaseContainer]]
+    ):
+        # type: (...) -> Union[int, UniqueDescriptor]
+        """
+        Get object ID when accessing from instance or this descriptor otherwise.
+        
+        :param instance: Instance.
+        :param owner: Owner class.
+        :return: Object ID or this descriptor.
+        """
+        if instance is not None:
+            cls = type(instance)
+            if getattr(cls, "_unique_descriptor", None) is self:
+                return id(instance)
+        return self
+
+
 class BaseContainerMeta(BaseMeta):
     """Metaclass for :class:`BaseContainer`."""
+
+    __unique_descriptor_name = WeakKeyDictionary(
+        {}
+    )  # type: MutableMapping[BaseContainerMeta, Optional[str]]
+    __unique_descriptor = WeakKeyDictionary(
+        {}
+    )  # type: MutableMapping[BaseContainerMeta, Optional[UniqueDescriptor]]
+
+    def __init__(cls, name, bases, dct):
+        # type: (str, Tuple[Type, ...], Dict[str, Any]) -> None
+        super(BaseContainerMeta, cls).__init__(name, bases, dct)
+
+        # Find unique descriptors.
+        unique_descriptors = {}
+        for base in reversed(getmro(cls)):
+            base_is_base_container = isinstance(base, BaseContainerMeta)
+            for member_name, member in iteritems(base.__dict__):
+
+                # Found unique descriptor.
+                if type(member) is UniqueDescriptor:
+
+                    # Valid declaration.
+                    if base_is_base_container:
+                        unique_descriptors[member_name] = member
+
+                    # Invalid.
+                    else:
+                        error = (
+                            "unique descriptor '{}' can't be declared in base '{}', "
+                            "which is not a subclass of '{}'"
+                        ).format(member_name, base.__name__, BaseContainer.__name__)
+                        raise TypeError(error)
+
+                # Was overridden.
+                elif member_name in unique_descriptors:
+                    del unique_descriptors[member_name]
+
+        # Multiple unique descriptors.
+        if len(unique_descriptors) > 1:
+            error = "class '{}' has multiple unique descriptors at {}".format(
+                cls.__name__, ", ".join("'{}'".format(n) for n in unique_descriptors)
+            )
+            raise TypeError(error)
+
+        # Store unique descriptor.
+        unique_descriptor_name = None  # type: Optional[str]
+        unique_descriptor = None  # type: Optional[UniqueDescriptor]
+        if unique_descriptors:
+            unique_descriptor_name, unique_descriptor = next(
+                iteritems(unique_descriptors)
+            )
+        type(cls).__unique_descriptor_name[cls] = unique_descriptor_name
+        type(cls).__unique_descriptor[cls] = unique_descriptor
+
+    @property
+    @final
+    def _unique_descriptor_name(cls):
+        # type: () -> Optional[str]
+        """Unique descriptor name or None."""
+        return type(cls).__unique_descriptor_name[cls]
+
+    @property
+    @final
+    def _unique_descriptor(cls):
+        # type: () -> Optional[UniqueDescriptor]
+        """Unique descriptor or None."""
+        return type(cls).__unique_descriptor[cls]
 
     @property
     @abstractmethod
@@ -236,9 +349,61 @@ class BaseContainerMeta(BaseMeta):
         raise NotImplementedError()
 
 
-class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
+class BaseContainer(with_metaclass(BaseContainerMeta, Base, SlottedHashable)):
     """Base container class."""
     __slots__ = ()
+
+    @final
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        cls = type(self)
+        if cls._unique_descriptor:
+            return id(self)
+        else:
+            return self._hash()
+
+    @final
+    def __eq__(self, other):
+        # type: (Any) -> bool
+        """
+        Compare with another object for equality/identity.
+
+        :param other: Another object.
+        :return: True if equal or the exact same object.
+        """
+        if self is other:
+            return True
+        cls = type(self)
+        if cls._unique_descriptor:
+            return False
+        else:
+            return self._eq(other)
+
+    @abstractmethod
+    def _hash(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _eq(self, other):
+        # type: (Any) -> bool
+        """
+        Compare with another object for equality.
+
+        :param other: Another object.
+        :return: True if equal.
+        """
+        raise NotImplementedError()
 
     @classmethod
     @abstractmethod
@@ -440,20 +605,18 @@ class BaseAuxiliaryContainerMeta(BaseContainerMeta):
         super(BaseAuxiliaryContainerMeta, cls).__init__(name, bases, dct)
 
         # Check relationship type.
-        relationship = getattr(cls, "_relationship")
-        if isinstance(relationship, BaseRelationship):
-            assert_is_instance(
-                getattr(cls, "_relationship"),
-                cls._relationship_type,
-                subtypes=False
-            )
+        assert_is_instance(
+            getattr(cls, "_relationship"),
+            (cls._relationship_type, type(abstract_member())),
+            subtypes=False
+        )
 
 
 class BaseAuxiliaryContainer(BaseContainer):
     """Container with a single relationship."""
     __slots__ = ()
 
-    _relationship = abstract_member()
+    _relationship = abstract_member()  # type: Union[AbstractType, BaseRelationship]
     """Relationship for all locations."""
 
     @classmethod

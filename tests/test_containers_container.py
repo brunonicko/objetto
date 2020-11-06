@@ -5,7 +5,7 @@ import pytest
 from six import with_metaclass
 
 from objetto._bases import ABSTRACT_TAG, FINAL_METHOD_TAG
-from objetto._containers.bases import BaseRelationship, BaseContainer
+from objetto._containers.bases import BaseRelationship
 from objetto._containers.container import BaseAttribute, ContainerMeta, Container
 from objetto.utils.immutable import ImmutableDict
 
@@ -117,6 +117,12 @@ def test_stored_attributes():
     assert instance.foobar is FooBar.foobar
     assert instance.foo_bar is FooBar.foo_bar
     assert instance.bar_foo is FooBar.bar_foo
+
+    with pytest.raises(TypeError):
+        class Foo(MyContainer):
+            bad_foo = MyAttribute(BaseRelationship())
+
+        raise AssertionError(Foo)
 
 
 if __name__ == "__main__":

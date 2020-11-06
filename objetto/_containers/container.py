@@ -16,9 +16,7 @@ from ..utils.type_checking import assert_is_instance
 from ..utils.immutable import ImmutableDict
 
 if TYPE_CHECKING:
-    from typing import (
-        Any, Optional, Type, Union, Dict, MutableMapping, Iterator, Tuple, Hashable
-    )
+    from typing import Any, Optional, Type, Union, Dict, MutableMapping, Iterator, Tuple
 
     from ..utils.factoring import LazyFactory
 
@@ -267,3 +265,10 @@ class Container(with_metaclass(ContainerMeta, BaseContainer)):
         """
         attribute = cls._attributes[location]
         return attribute.relationship
+
+    @property
+    @abstractmethod
+    def _state(self):
+        # type: () -> ImmutableDict[str, Any]
+        """Internal state."""
+        raise NotImplementedError()

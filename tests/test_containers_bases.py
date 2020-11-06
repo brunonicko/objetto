@@ -15,7 +15,15 @@ from objetto._containers.bases import (
 from objetto.utils.immutable import ImmutableDict
 
 
+class MyRelationShip(BaseRelationship):
+    pass
+
+
 class MyContainerMeta(BaseContainerMeta):
+
+    @property
+    def _relationship_type(cls):
+        return MyRelationShip
 
     @property
     def _serializable_container_types(cls):
@@ -24,10 +32,17 @@ class MyContainerMeta(BaseContainerMeta):
 
 class MyContainer(with_metaclass(MyContainerMeta, BaseContainer)):
     __slots__ = ("__state",)
-    _relationship = BaseRelationship()
+    _relationship = MyRelationShip()
 
     def __init__(self, **kwargs):
         self.__state = ImmutableDict(kwargs)
+
+    def _hash(self):
+        return hash(self._state)
+
+    def _eq(self, other):
+        if self is other:
+            return True
 
     @classmethod
     def _get_relationship(cls, location=None):
@@ -143,6 +158,12 @@ def test_auxiliary_container():
         _relationship = MyRelationship()
 
     assert MyAuxiliaryContainer
+
+    with pytest.raises(TypeError):
+        class MyBadAuxiliaryContainer(BaseAuxiliaryContainer):
+            _relationship = 1
+
+        raise AssertionError(MyBadAuxiliaryContainer)
 
     with pytest.raises(TypeError):
         class MyBadAuxiliaryContainer(

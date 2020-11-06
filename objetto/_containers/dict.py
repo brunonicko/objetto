@@ -7,15 +7,16 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from six import with_metaclass
 from slotted import SlottedMapping, SlottedMutableMapping
 
-from .._bases import ProtectedBase, final
+from .._bases import ProtectedBase, final, abstract_member
 from .bases import BaseAuxiliaryContainerMeta, BaseAuxiliaryContainer
 from ..utils.type_checking import assert_is_instance, format_types
 from ..utils.factoring import format_factory, run_factory
 from ..utils.immutable import ImmutableDict
 
 if TYPE_CHECKING:
-    from typing import Any, Type, Mapping, Iterable, Optional
+    from typing import Any, Type, Optional, Hashable, Union
 
+    from .._bases import AbstractType
     from ..utils.type_checking import LazyTypes
     from ..utils.factoring import LazyFactory
 
@@ -29,7 +30,15 @@ _VT = TypeVar("_VT")
 
 @final
 class KeyRelationship(ProtectedBase):
-    """Relationship between a dict container and their keys."""
+    """
+    Relationship between a dict container and their keys.
+
+    :param types: Types.
+    :param subtypes: Whether to accept subtypes.
+    :param type_checked: Whether to perform runtime type check.
+    :param module: Module path for lazy types/factories.
+    :param factory: Key factory.
+    """
 
     __slots__ = (
         "types",
@@ -37,7 +46,6 @@ class KeyRelationship(ProtectedBase):
         "type_checked",
         "module",
         "factory",
-        "passthrough",
     )
 
     def __init__(
@@ -53,26 +61,28 @@ class KeyRelationship(ProtectedBase):
         self.type_checked = bool(type_checked)
         self.module = module
         self.factory = format_factory(factory, module=module)
-        self.passthrough = bool(
-            (not self.type_checked or not self.types) and self.factory is None
-        )
 
-    def fabricate_key(
-        self,
-        key,  # type: Any
-        factory=True,  # type: bool
-        args=(),  # type: Iterable[Any]
-        kwargs=ImmutableDict(),  # type: Mapping[str, Any]
-    ):
-        # type: (...) -> Any
-        """Fabricate key."""
-        if self.passthrough:
-            return key
+    def fabricate_value(self, key, factory=True, **kwargs):
+        # type: (Optional[Hashable], bool, Any) -> Optional[Hashable]
+        """
+        Perform type check and run key through factory.
+
+        :param key: Key.
+        :param factory: Whether to run value through factory.
+        :param kwargs: Keyword arguments to be passed to the factory.
+        :return: Fabricated value.
+        """
         if factory and self.factory is not None:
-            key = run_factory(self.factory, (key,) + tuple(args), kwargs)
-        if self.type_checked and self.types:
+            key = run_factory(self.factory, args=(key,), kwargs=kwargs)
+        if self.types and self.type_checked:
             assert_is_instance(key, self.types, subtypes=self.subtypes)
         return key
+
+    @property
+    def passthrough(self):
+        # type: () -> bool
+        """Whether does not perform type checks and has no factory."""
+        return (not self.types or not self.type_checked) and self.factory is None
 
 
 class DictContainerMeta(BaseAuxiliaryContainerMeta):
@@ -80,9 +90,11 @@ class DictContainerMeta(BaseAuxiliaryContainerMeta):
 
     def __init__(cls, name, bases, dct):
         super(DictContainerMeta, cls).__init__(name, bases, dct)
+
+        # Check key relationship type.
         assert_is_instance(
             getattr(cls, "_key_relationship"),
-            cls._key_relationship_type,
+            (cls._key_relationship_type, type(abstract_member())),
             subtypes=False
         )
 
@@ -104,7 +116,8 @@ class DictContainer(
 ):
     """Dictionary container."""
     __slots__ = ()
-    _key_relationship = KeyRelationship()
+
+    _key_relationship = abstract_member()  # type: Union[AbstractType, KeyRelationship]
     """Relationship for keys."""
 
     @property

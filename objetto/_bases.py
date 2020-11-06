@@ -30,6 +30,9 @@ if TYPE_CHECKING:
     )
 
     _T = TypeVar("_T")
+    AbstractType = Type["AbstractMember"]
+else:
+    AbstractType = None
 
 __all__ = [
     "ABSTRACT_TAG",
@@ -45,6 +48,7 @@ __all__ = [
     "Base",
     "ProtectedBase",
     "abstract_member",
+    "AbstractType",
 ]
 
 
