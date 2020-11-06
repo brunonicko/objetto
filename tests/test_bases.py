@@ -18,6 +18,7 @@ from objetto._bases import (
     init_context,
     simplify_member_names,
     make_base_cls,
+    abstract_member,
 )
 
 
@@ -345,6 +346,20 @@ def test_protected_base():
 
     with pytest.raises(AttributeError):
         protected.c = 3
+
+
+def test_abstract_member():
+    class AbstractClass(Base):
+        some_attribute = abstract_member()
+
+    with pytest.raises(TypeError):
+        AbstractClass()
+
+    class ConcreteClass(AbstractClass):
+        some_attribute = (1, 2, 3)
+
+    obj = ConcreteClass()
+    assert obj
 
 
 if __name__ == "__main__":

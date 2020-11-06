@@ -7,7 +7,7 @@ from typing import Generic, TypeVar
 from six import with_metaclass
 from slotted import SlottedSequence, SlottedMutableSequence
 
-from .base import BaseAuxiliaryContainerMeta, BaseAuxiliaryContainer
+from .bases import BaseAuxiliaryContainerMeta, BaseAuxiliaryContainer
 from ..utils.immutable import ImmutableList
 
 __all__ = ["ListContainerMeta", "ListContainer", "MutableListContainer"]

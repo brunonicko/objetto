@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Base container class and metaclass."""
+"""Base container classes and metaclasses."""
 
 from abc import abstractmethod
 from re import sub as re_sub
@@ -7,7 +7,9 @@ from typing import TYPE_CHECKING
 
 from six import with_metaclass
 
-from .._bases import BaseMeta, Base, ProtectedBase, final, make_base_cls
+from .._bases import (
+    BaseMeta, Base, ProtectedBase, final, make_base_cls, abstract_member
+)
 from ..utils.type_checking import (
     get_type_names, format_types, import_types, assert_is_instance
 )
@@ -94,23 +96,19 @@ def make_auxiliary_cls(
     :return: Generated auxiliary container subclass.
     """
 
-    # Generate default qualified name based on relationship types.
+    # Generate default name based on relationship types.
     if qual_name is None:
-        type_names = get_type_names(set(relationship.types).difference((type(None),)))
+        type_names = get_type_names(
+            tuple(t for t in relationship.types if type(None) is not t)
+        )
         if not type_names:
-            qual_name = base.__fullname__
+            qual_name = base.__name__
         else:
-            base_qual_name = base.__fullname__
-            root_name = (
-                ".".join(base_qual_name.split(".")[:-1]) + "."
-                if "." in base_qual_name else ""
-            )
-            base_name = base_qual_name.split(".")[-1]
+            base_name = base.__name__
             prefix = "".join(
                 _capitalize_first(re_sub(r"[^A-Za-z]+", "", tn)) for tn in type_names
             )
-            qual_name = "{}{}{}".format(
-                root_name,
+            qual_name = "{}{}".format(
                 prefix if prefix != base_name else "",
                 base_name,
             )
@@ -169,7 +167,7 @@ class BaseRelationship(ProtectedBase):
         # type: (...) -> None
         self.types = format_types(types, module=module)
         self.subtypes = bool(subtypes)
-        self.type_checked = types and bool(type_checked)
+        self.type_checked = bool(type_checked)
         self.module = module
         self.factory = format_factory(factory, module=module)
         self.serialized = bool(serialized)
@@ -209,15 +207,15 @@ class BaseRelationship(ProtectedBase):
         """
         if factory and self.factory is not None:
             value = run_factory(self.factory, args=(value,), kwargs=kwargs)
-        if self.type_checked:
+        if self.types and self.type_checked:
             assert_is_instance(value, self.types, subtypes=self.subtypes)
         return value
 
     @property
     def passthrough(self):
         # type: () -> bool
-        """Whether attribute does not perform type checks and has no factory."""
-        return not self.type_checked and self.factory is None
+        """Whether does not perform type checks and has no factory."""
+        return (not self.types or not self.type_checked) and self.factory is None
 
 
 class BaseContainerMeta(BaseMeta):
@@ -230,6 +228,13 @@ class BaseContainerMeta(BaseMeta):
         """Serializable container types."""
         raise NotImplementedError()
 
+    @property
+    @abstractmethod
+    def _relationship_type(cls):
+        # type: () -> Type[BaseRelationship]
+        """Relationship type."""
+        raise NotImplementedError()
+
 
 class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
     """Base container class."""
@@ -237,15 +242,20 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
 
     @classmethod
     @abstractmethod
-    def _get_relationship(cls, location=None):
-        # type: (Any) -> BaseRelationship
-        """Get relationship at location."""
+    def _get_relationship(cls, location):
+        # type: (Optional[Hashable]) -> BaseRelationship
+        """
+        Get relationship at location.
+
+        :param location: Location.
+        :return: Relationship.
+        """
         raise NotImplementedError()
 
     @classmethod
     @final
-    def deserialize_value(cls, serialized, location, **kwargs):
-        # type: (Any, Hashable, Any) -> Any
+    def deserialize_value(cls, serialized, location=None, **kwargs):
+        # type: (Any, Optional[Hashable], Any) -> Any
         """
         Deserialize value for location.
 
@@ -293,9 +303,10 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
                     serialized_class = import_path(
                         serialized[_SERIALIZED_CLASS_KEY]
                     )  # type: Type[BaseContainer]
-                    return serialized_class.deserialize(
-                        serialized[_SERIALIZED_VALUE_KEY], **kwargs
-                    )
+                    serialized_value = serialized[_SERIALIZED_VALUE_KEY]
+                    if type(serialized_value) is dict:
+                        serialized_value = _unescape_serialized_class(serialized_value)
+                    return serialized_class.deserialize(serialized_value, **kwargs)
 
                 # Unescape keys.
                 serialized = _unescape_serialized_class(serialized)
@@ -326,8 +337,8 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base)):
         return relationship.fabricate_value(serialized, factory=False)
 
     @final
-    def serialize_value(self, value, location, **kwargs):
-        # type: (Any, Hashable, Any) -> Any
+    def serialize_value(self, value, location=None, **kwargs):
+        # type: (Any, Optional[Hashable], Any) -> Any
         """
         Serialize value for location.
 
@@ -427,31 +438,28 @@ class BaseAuxiliaryContainerMeta(BaseContainerMeta):
 
     def __init__(cls, name, bases, dct):
         super(BaseAuxiliaryContainerMeta, cls).__init__(name, bases, dct)
-        assert_is_instance(
-            getattr(cls, "_relationship"),
-            cls._relationship_type,
-            subtypes=False
-        )
 
-    @property
-    @abstractmethod
-    def _relationship_type(cls):
-        # type: () -> Type[BaseRelationship]
-        """Relationship type."""
-        return BaseRelationship
+        # Check relationship type.
+        relationship = getattr(cls, "_relationship")
+        if isinstance(relationship, BaseRelationship):
+            assert_is_instance(
+                getattr(cls, "_relationship"),
+                cls._relationship_type,
+                subtypes=False
+            )
 
 
 class BaseAuxiliaryContainer(BaseContainer):
     """Container with a single relationship."""
     __slots__ = ()
 
-    _relationship = BaseRelationship()  # type: BaseRelationship
+    _relationship = abstract_member()
     """Relationship for all locations."""
 
     @classmethod
     @final
     def _get_relationship(cls, location=None):
-        # type: (Any) -> BaseRelationship
+        # type: (Optional[Hashable]) -> BaseRelationship
         """
         Get relationship.
         

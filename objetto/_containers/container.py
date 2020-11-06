@@ -6,16 +6,19 @@ from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
 from inspect import getmro
 
-from six import iteritems
+from six import iteritems, with_metaclass
 
 from .._bases import ABSTRACT_TAG, FINAL_METHOD_TAG, ProtectedBase
 from .._bases import final as final_
-from .base import BaseRelationship, BaseContainerMeta, BaseContainer
+from .bases import BaseRelationship, BaseContainerMeta, BaseContainer
 from ..utils.factoring import format_factory, run_factory
+from ..utils.type_checking import assert_is_instance
 from ..utils.immutable import ImmutableDict
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, Type, Union, Dict, MutableMapping, Iterator, Tuple
+    from typing import (
+        Any, Optional, Type, Union, Dict, MutableMapping, Iterator, Tuple, Hashable
+    )
 
     from ..utils.factoring import LazyFactory
 
@@ -62,11 +65,17 @@ class BaseAttribute(ProtectedBase):
         # type: (...) -> None
         self.relationship = relationship
         self.default = default
-        self.default_factory = format_factory(default_factory, module=module)
+        self.default_factory = format_factory(
+            default_factory, module=module or relationship.module
+        )
         self.module = module or relationship.module
         self.required = bool(required)
         self.final = bool(final)
         self.abstract = bool(abstract)
+
+        if self.default is not NOTHING and self.default_factory is not None:
+            error = "can't provide both 'default' and 'default_factory'"
+            raise ValueError(error)
 
         if self.final and self.abstract:
             error = "can't be final and abstract at the same time"
@@ -98,12 +107,11 @@ class BaseAttribute(ProtectedBase):
                     return instance[name]
         return self
 
-    def fabricate_default_value(self, factory=True, **kwargs):
-        # type: (bool, Any) -> Any
+    def fabricate_default_value(self, **kwargs):
+        # type: (Any) -> Any
         """
         Fabricate default value.
         
-        :param factory: Whether to run value through relationship factory.
         :param kwargs: Keyword arguments to be passed to the factories.
         :return: Fabricated value.
         :raises ValueError: Attribute has no default value or default factory.
@@ -114,7 +122,7 @@ class BaseAttribute(ProtectedBase):
         if default is NOTHING:
             error = "attribute has no 'default' or valid 'default_factory'"
             raise ValueError(error)
-        return self.relationship.fabricate_value(default, factory=factory, **kwargs)
+        return self.relationship.fabricate_value(default, factory=True, **kwargs)
 
     @property
     def has_default(self):
@@ -136,18 +144,46 @@ class ContainerMeta(BaseContainerMeta):
     def __init__(cls, name, bases, dct):
         super(ContainerMeta, cls).__init__(name, bases, dct)
 
+        # Store attributes.
         attributes = {}  # type: Dict[str, BaseAttribute]
         for base in reversed(getmro(cls)):
             base_is_container = isinstance(base, ContainerMeta)
             for member_name, member in iteritems(base.__dict__):
-                if base_is_container and isinstance(member, cls._attribute_type):
+
+                # Valid attribute.
+                if (
+                    base_is_container and
+                    isinstance(member, BaseAttribute) and
+                    type(member) is cls._attribute_type
+                ):
+
+                    # Check relationship type.
+                    assert_is_instance(
+                        member.relationship,
+                        cls._relationship_type,
+                        subtypes=False,
+                    )
+
+                    # Store it.
                     attributes[member_name] = member
+
+                # Attribute was overridden.
                 elif member_name in attributes:
                     del attributes[member_name]
         type(cls).__attributes[cls] = ImmutableDict(attributes)
 
+        # Store attribute names.
         attribute_names = {}  # type: Dict[BaseAttribute, str]
         for attribute_name, attribute in iteritems(attributes):
+
+            # Check if attribute is duplicated.
+            if attribute in attribute_names:
+                error = "can't use same attribute instance for '{}' and '{}'".format(
+                    attribute_names[attribute], attribute_name
+                )
+                raise ValueError(error)
+
+            # Store it.
             attribute_names[attribute] = attribute_name
         type(cls).__attribute_names[cls] = ImmutableDict(attribute_names)
 
@@ -173,7 +209,7 @@ class ContainerMeta(BaseContainerMeta):
         return type(cls).__attribute_names[cls]
 
 
-class Container(BaseContainer):
+class Container(with_metaclass(ContainerMeta, BaseContainer)):
     """Attribute container."""
     __slots__ = ()
 
@@ -218,3 +254,16 @@ class Container(BaseContainer):
         :return: How many attributes with values.
         """
         raise NotImplementedError()
+
+    @classmethod
+    @final_
+    def _get_relationship(cls, location):
+        # type: (str) -> BaseRelationship
+        """
+        Get relationship at location.
+
+        :param location: Location.
+        :return: Relationship.
+        """
+        attribute = cls._attributes[location]
+        return attribute.relationship

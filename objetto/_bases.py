@@ -44,6 +44,7 @@ __all__ = [
     "BaseMeta",
     "Base",
     "ProtectedBase",
+    "abstract_member",
 ]
 
 
@@ -518,3 +519,74 @@ class ProtectedBase(Base):
             error = "attribute '{}' is read-only".format(name)
             raise AttributeError(error)
         super(ProtectedBase, self).__delattr__(name)
+
+
+@final
+class AbstractMemberMeta(BaseMeta):
+    """Metaclass for :class:`AbstractMember`."""
+
+    @staticmethod
+    def __new__(mcs, name, bases, dct):
+        """Make :class:`AbstractMember` class."""
+        dct[ABSTRACT_TAG] = True
+        return super(AbstractMemberMeta, mcs).__new__(mcs, name, bases, dct)
+
+
+@final
+class AbstractMember(with_metaclass(AbstractMemberMeta, Base)):
+    """Abstract member for classes."""
+
+    __slots__ = ()
+
+    @staticmethod
+    def __new__(cls, *args, **kwargs):
+        """
+        Prevent instantiation.
+
+        :raises TypeError: Always raised.
+        """
+        error = "'{}' can't be instantiated".format(cls.__name__)
+        raise TypeError(error)
+
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        return "<abstract>"
+
+    def __str__(self):
+        # type: () -> str
+        """
+        Get string representation.
+
+        :return: String representation.
+        """
+        return self.__repr__()
+
+
+def abstract_member():
+    """
+    Used to indicate an abstract attribute member in a class.
+
+    .. code:: python
+
+        >>> from objetto.bases import Base, abstract_member
+
+        >>> class AbstractClass(Base):
+        ...     some_attribute = abstract_member()  # abstract
+        ...
+        >>> obj = AbstractClass()
+        Traceback (most recent call last):
+        TypeError: Can't instantiate abstract class AbstractClass with abstract \
+methods some_attribute
+
+        >>> class ConcreteClass(AbstractClass):
+        ...     some_attribute = (1, 2, 3)  # concrete
+        >>> obj = ConcreteClass()
+
+    :return: Abstract member.
+    """
+    return AbstractMember
