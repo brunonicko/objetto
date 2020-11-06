@@ -4,13 +4,22 @@ import pytest
 
 from six import with_metaclass
 
+from slotted import SlottedContainer, SlottedSized, SlottedIterable
+from objetto._bases import Base
 from objetto._containers.bases import (
     BaseRelationship,
+    UniqueDescriptor,
     BaseContainerMeta,
     BaseContainer,
+    BaseSemiInteractiveContainer,
+    BaseInteractiveContainer,
+    BaseMutableContainer,
     BaseAuxiliaryContainerMeta,
     BaseAuxiliaryContainer,
     make_auxiliary_cls,
+    BaseSemiInteractiveAuxiliaryContainer,
+    BaseInteractiveAuxiliaryContainer,
+    BaseMutableAuxiliaryContainer,
 )
 from objetto.utils.immutable import ImmutableDict
 
@@ -37,12 +46,25 @@ class MyContainer(with_metaclass(MyContainerMeta, BaseContainer)):
     def __init__(self, **kwargs):
         self.__state = ImmutableDict(kwargs)
 
+    def __contains__(self, item):
+        raise NotImplementedError()
+
+    def __iter__(self):
+        raise NotImplementedError()
+
+    def __len__(self):
+        raise NotImplementedError()
+
     def _hash(self):
         return hash(self._state)
 
     def _eq(self, other):
         if self is other:
             return True
+        elif isinstance(other, MyContainer):
+            return self.__state == other.__state
+        else:
+            return False
 
     @classmethod
     def _get_relationship(cls, location=None):
@@ -66,10 +88,21 @@ class MyContainer(with_metaclass(MyContainerMeta, BaseContainer)):
 class SimpleContainer(MyContainer):
     _relationship = BaseRelationship(types=(int, __name__ + "|SimpleContainer"))
 
+    def __iter__(self):
+        raise NotImplementedError()
+
+    def __len__(self):
+        raise NotImplementedError()
+
 
 class ComplexContainer(MyContainer):
     _relationship = BaseRelationship(types=(int, MyContainer), subtypes=True)
 
+    def __iter__(self):
+        raise NotImplementedError()
+
+    def __len__(self):
+        raise NotImplementedError()
 
 def test_base_relationship():
     relationship = BaseRelationship()
@@ -101,6 +134,26 @@ def test_base_relationship():
     assert BaseRelationship(SimpleContainer, subtypes=True).get_single_exact_type(
         (SimpleContainer,)
     ) is None
+
+
+def test_inheritance():
+    assert issubclass(BaseContainer, Base)
+    assert issubclass(BaseContainer, SlottedContainer)
+    assert issubclass(BaseContainer, SlottedSized)
+    assert issubclass(BaseContainer, SlottedIterable)
+
+    assert issubclass(BaseSemiInteractiveContainer, BaseContainer)
+    assert issubclass(BaseInteractiveContainer, BaseSemiInteractiveContainer)
+    assert issubclass(BaseMutableContainer, BaseInteractiveContainer)
+
+    assert issubclass(BaseSemiInteractiveAuxiliaryContainer, BaseAuxiliaryContainer)
+    assert issubclass(BaseSemiInteractiveAuxiliaryContainer, BaseSemiInteractiveContainer)
+    assert issubclass(
+        BaseInteractiveAuxiliaryContainer, BaseSemiInteractiveAuxiliaryContainer
+    )
+    assert issubclass(BaseInteractiveAuxiliaryContainer, BaseInteractiveContainer)
+    assert issubclass(BaseMutableAuxiliaryContainer, BaseInteractiveAuxiliaryContainer)
+    assert issubclass(BaseMutableAuxiliaryContainer, BaseMutableContainer)
 
 
 def test_value_serialization():
@@ -137,6 +190,24 @@ def test_value_serialization():
         ComplexContainer.deserialize_value("a")
 
 
+def test_unique_descriptor():
+    my_container = MyContainer(a=1, b=2)
+    assert hash(my_container) == hash(my_container._state)
+    assert my_container == MyContainer(a=1, b=2)
+    assert hash(my_container) != hash(MyContainer(a=1, b=2, c=3))
+    assert my_container != MyContainer(a=1, b=2, c=3)
+
+    class MyUniqueContainer(MyContainer):
+        hash = UniqueDescriptor()
+
+    my_unique_container = MyUniqueContainer(a=1, b=2)
+    assert my_unique_container == my_unique_container
+    assert hash(my_unique_container) == id(my_unique_container)
+    assert hash(my_unique_container) == my_unique_container.hash
+    assert my_unique_container != MyUniqueContainer(a=1, b=2)
+    assert hash(my_unique_container) != hash(MyUniqueContainer(a=1, b=2))
+
+
 def test_auxiliary_container():
 
     class MyRelationship(BaseRelationship):
@@ -160,14 +231,14 @@ def test_auxiliary_container():
     assert MyAuxiliaryContainer
 
     with pytest.raises(TypeError):
-        class MyBadAuxiliaryContainer(BaseAuxiliaryContainer):
+        class MyBadAuxiliaryContainer(MyAuxiliaryContainer):
             _relationship = 1
 
         raise AssertionError(MyBadAuxiliaryContainer)
 
     with pytest.raises(TypeError):
         class MyBadAuxiliaryContainer(
-            with_metaclass(MyAuxiliaryContainerMeta, BaseAuxiliaryContainer)
+            with_metaclass(MyAuxiliaryContainerMeta, MyAuxiliaryContainer)
         ):
             _relationship = BaseRelationship()
 

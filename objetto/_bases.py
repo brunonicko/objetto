@@ -361,15 +361,6 @@ class BaseMeta(SlottedABCMeta):
             name=name if name else "",
         )
 
-    def __str__(cls):
-        # type: () -> str
-        """
-        Get string representation.
-
-        :return: String representation.
-        """
-        return cls.__repr__()
-
     def __dir__(cls):
         # type: () -> List[str]
         """

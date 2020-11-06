@@ -5,8 +5,21 @@ import pytest
 from six import with_metaclass
 
 from objetto._bases import ABSTRACT_TAG, FINAL_METHOD_TAG
-from objetto._containers.bases import BaseRelationship
-from objetto._containers.container import BaseAttribute, ContainerMeta, Container
+from objetto._containers.bases import (
+    BaseRelationship,
+    BaseContainer,
+    BaseSemiInteractiveContainer,
+    BaseInteractiveContainer,
+    BaseMutableContainer,
+)
+from objetto._containers.container import (
+    BaseAttribute,
+    ContainerMeta,
+    Container,
+    SemiInteractiveContainer,
+    InteractiveContainer,
+    MutableContainer,
+)
 from objetto.utils.immutable import ImmutableDict
 
 
@@ -55,14 +68,18 @@ class MyContainer(with_metaclass(MyContainerMeta, Container)):
     def __len__(self):
         return len(self._state)
 
+    def _hash(self):
+        raise NotImplementedError()
+
+    def _eq(self, other):
+        raise NotImplementedError()
+
     @classmethod
     def deserialize(cls, serialized, **kwargs):
-        return cls(
-            **dict((n, cls.deserialize_value(v, n)) for n, v in serialized.items())
-        )
+        raise NotImplementedError()
 
     def serialize(self, **kwargs):
-        return dict((n, self.serialize_value(v, n)) for n, v in self._state.items())
+        raise NotImplementedError()
 
     @property
     def _state(self):
@@ -123,6 +140,35 @@ def test_stored_attributes():
             bad_foo = MyAttribute(BaseRelationship())
 
         raise AssertionError(Foo)
+
+
+def test_reserved_member_names():
+    with pytest.raises(TypeError):
+        class MyBadContainer(Container):
+            keys = 1
+
+        raise AssertionError(MyBadContainer)
+
+    with pytest.raises(TypeError):
+        class BadBase(object):
+            __slots__ = ()
+            keys = 1
+
+        class MyBadContainer(Container, BadBase):
+            pass
+
+        raise AssertionError(MyBadContainer)
+
+
+def test_inheritance():
+    assert issubclass(Container, BaseContainer)
+
+    assert issubclass(SemiInteractiveContainer, Container)
+    assert issubclass(SemiInteractiveContainer, BaseSemiInteractiveContainer)
+    assert issubclass(InteractiveContainer, SemiInteractiveContainer)
+    assert issubclass(InteractiveContainer, BaseInteractiveContainer)
+    assert issubclass(MutableContainer, InteractiveContainer)
+    assert issubclass(MutableContainer, BaseMutableContainer)
 
 
 if __name__ == "__main__":

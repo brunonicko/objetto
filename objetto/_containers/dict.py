@@ -8,7 +8,13 @@ from six import with_metaclass
 from slotted import SlottedMapping, SlottedMutableMapping
 
 from .._bases import ProtectedBase, final, abstract_member
-from .bases import BaseAuxiliaryContainerMeta, BaseAuxiliaryContainer
+from .bases import (
+    BaseAuxiliaryContainerMeta,
+    BaseAuxiliaryContainer,
+    BaseSemiInteractiveAuxiliaryContainer,
+    BaseInteractiveAuxiliaryContainer,
+    BaseMutableAuxiliaryContainer,
+)
 from ..utils.type_checking import assert_is_instance, format_types
 from ..utils.factoring import format_factory, run_factory
 from ..utils.immutable import ImmutableDict
@@ -21,7 +27,12 @@ if TYPE_CHECKING:
     from ..utils.factoring import LazyFactory
 
 __all__ = [
-    "KeyRelationship", "DictContainerMeta", "DictContainer", "MutableDictContainer"
+    "KeyRelationship",
+    "DictContainerMeta",
+    "DictContainer",
+    "SemiInteractiveDictContainer",
+    "InteractiveDictContainer",
+    "MutableDictContainer",
 ]
 
 _KT = TypeVar("_KT")
@@ -128,5 +139,22 @@ class DictContainer(
         raise NotImplementedError()
 
 
-class MutableDictContainer(DictContainer, SlottedMutableMapping):
+class SemiInteractiveDictContainer(
+    DictContainer, BaseSemiInteractiveAuxiliaryContainer
+):
+    """Semi-interactive dictionary container."""
+    __slots__ = ()
+
+
+class InteractiveDictContainer(
+    SemiInteractiveDictContainer, BaseInteractiveAuxiliaryContainer
+):
+    """Interactive dictionary container."""
+    __slots__ = ()
+
+
+class MutableDictContainer(
+    InteractiveDictContainer, BaseMutableAuxiliaryContainer, SlottedMutableMapping
+):
     """Mutable dictionary container."""
+    __slots__ = ()

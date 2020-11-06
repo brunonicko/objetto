@@ -10,17 +10,43 @@ from six import iteritems, with_metaclass
 
 from .._bases import ABSTRACT_TAG, FINAL_METHOD_TAG, ProtectedBase
 from .._bases import final as final_
-from .bases import BaseRelationship, BaseContainerMeta, BaseContainer
+from .bases import (
+    BaseRelationship,
+    BaseContainerMeta,
+    BaseContainer,
+    BaseSemiInteractiveContainer,
+    BaseInteractiveContainer,
+    BaseMutableContainer,
+)
 from ..utils.factoring import format_factory, run_factory
 from ..utils.type_checking import assert_is_instance
 from ..utils.immutable import ImmutableDict
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, Type, Union, Dict, MutableMapping, Iterator, Tuple
+    from typing import (
+        Any,
+        Optional,
+        Type,
+        Union,
+        Dict,
+        MutableMapping,
+        Iterator,
+        Tuple,
+        Mapping,
+        Iterable,
+    )
 
     from ..utils.factoring import LazyFactory
 
-__all__ = ["NOTHING", "BaseAttribute", "ContainerMeta", "Container"]
+__all__ = [
+    "NOTHING",
+    "BaseAttribute",
+    "ContainerMeta",
+    "Container",
+    "SemiInteractiveContainer",
+    "InteractiveContainer",
+    "MutableContainer",
+]
 
 NOTHING = object()
 
@@ -142,11 +168,24 @@ class ContainerMeta(BaseContainerMeta):
     def __init__(cls, name, bases, dct):
         super(ContainerMeta, cls).__init__(name, bases, dct)
 
+        # Prevent having a member called 'keys'.
+        if "keys" in dct:
+            error = "can't have member of '{}' with reserved name 'keys'".format(name)
+            raise TypeError(error)
+
         # Store attributes.
         attributes = {}  # type: Dict[str, BaseAttribute]
         for base in reversed(getmro(cls)):
             base_is_container = isinstance(base, ContainerMeta)
             for member_name, member in iteritems(base.__dict__):
+
+                # Prevent having a member called 'keys'.
+                if member_name == "keys":
+                    error = (
+                        "can't have base '{}' which defines member with reserved name "
+                        "'keys'"
+                    ).format(base.__name__)
+                    raise TypeError(error)
 
                 # Valid attribute.
                 if (
@@ -271,4 +310,63 @@ class Container(with_metaclass(ContainerMeta, BaseContainer)):
     def _state(self):
         # type: () -> ImmutableDict[str, Any]
         """Internal state."""
+        raise NotImplementedError()
+
+
+class SemiInteractiveContainer(Container, BaseSemiInteractiveContainer):
+    """Semi-interactive container."""
+
+    __slots__ = ()
+
+    @abstractmethod
+    def _update(self, updates):
+        # type: (Union[Mapping, Iterable[Tuple[str, Any]]]) -> Any
+        """
+        Update multiple attributes.
+
+        :param updates: Updates.
+        """
+        raise NotImplementedError()
+
+
+class InteractiveContainer(SemiInteractiveContainer, BaseInteractiveContainer):
+    """Interactive container."""
+
+    __slots__ = ()
+
+    @abstractmethod
+    def update(self, updates):
+        # type: (Union[Mapping, Iterable[Tuple[str, Any]]]) -> Any
+        """
+        Update multiple attributes.
+
+        :param updates: Updates.
+        """
+        raise NotImplementedError()
+
+
+class MutableContainer(InteractiveContainer, BaseMutableContainer):
+    """Mutable container."""
+
+    __slots__ = ()
+
+    @abstractmethod
+    def __setitem__(self, name, value):
+        # type: (str, Any) -> None
+        """
+        Set attribute value.
+
+        :param name: Name.
+        :param value: Value.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __delitem__(self, name):
+        # type: (str) -> None
+        """
+        Delete attribute.
+
+        :param name: Name.
+        """
         raise NotImplementedError()

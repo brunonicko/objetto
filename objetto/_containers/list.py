@@ -7,10 +7,22 @@ from typing import Generic, TypeVar
 from six import with_metaclass
 from slotted import SlottedSequence, SlottedMutableSequence
 
-from .bases import BaseAuxiliaryContainerMeta, BaseAuxiliaryContainer
+from .bases import (
+    BaseAuxiliaryContainerMeta,
+    BaseAuxiliaryContainer,
+    BaseSemiInteractiveAuxiliaryContainer,
+    BaseInteractiveAuxiliaryContainer,
+    BaseMutableAuxiliaryContainer,
+)
 from ..utils.immutable import ImmutableList
 
-__all__ = ["ListContainerMeta", "ListContainer", "MutableListContainer"]
+__all__ = [
+    "ListContainerMeta",
+    "ListContainer",
+    "SemiInteractiveListContainer",
+    "InteractiveListContainer",
+    "MutableListContainer",
+]
 
 _T = TypeVar("_T")
 
@@ -38,5 +50,22 @@ class ListContainer(
         raise NotImplementedError()
 
 
-class MutableListContainer(ListContainer, SlottedMutableSequence):
+class SemiInteractiveListContainer(
+    ListContainer, BaseSemiInteractiveAuxiliaryContainer
+):
+    """Semi-interactive list container."""
+    __slots__ = ()
+
+
+class InteractiveListContainer(
+    SemiInteractiveListContainer, BaseInteractiveAuxiliaryContainer
+):
+    """Interactive list container."""
+    __slots__ = ()
+
+
+class MutableListContainer(
+    InteractiveListContainer, BaseMutableAuxiliaryContainer, SlottedMutableSequence
+):
     """Mutable list container."""
+    __slots__ = ()

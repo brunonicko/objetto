@@ -8,7 +8,7 @@ from weakref import WeakKeyDictionary
 from typing import TYPE_CHECKING
 
 from six import with_metaclass, iteritems
-from slotted import SlottedHashable
+from slotted import SlottedHashable, SlottedContainer, SlottedSized, SlottedIterable
 
 from .._bases import (
     FINAL_METHOD_TAG,
@@ -41,8 +41,14 @@ __all__ = [
     "UniqueDescriptor",
     "BaseContainerMeta",
     "BaseContainer",
+    "BaseSemiInteractiveContainer",
+    "BaseInteractiveContainer",
+    "BaseMutableContainer",
     "BaseAuxiliaryContainerMeta",
     "BaseAuxiliaryContainer",
+    "BaseSemiInteractiveAuxiliaryContainer",
+    "BaseInteractiveAuxiliaryContainer",
+    "BaseMutableAuxiliaryContainer",
 ]
 
 
@@ -349,7 +355,16 @@ class BaseContainerMeta(BaseMeta):
         raise NotImplementedError()
 
 
-class BaseContainer(with_metaclass(BaseContainerMeta, Base, SlottedHashable)):
+class BaseContainer(
+    with_metaclass(
+        BaseContainerMeta,
+        Base,
+        SlottedHashable,
+        SlottedSized,
+        SlottedIterable,
+        SlottedContainer,
+    )
+):
     """Base container class."""
     __slots__ = ()
 
@@ -598,6 +613,24 @@ class BaseContainer(with_metaclass(BaseContainerMeta, Base, SlottedHashable)):
         raise NotImplementedError()
 
 
+class BaseSemiInteractiveContainer(BaseContainer):
+    """Base semi-interactive container."""
+
+    __slots__ = ()
+
+
+class BaseInteractiveContainer(BaseSemiInteractiveContainer):
+    """Base interactive container."""
+
+    __slots__ = ()
+
+
+class BaseMutableContainer(BaseInteractiveContainer):
+    """Base mutable container."""
+
+    __slots__ = ()
+
+
 class BaseAuxiliaryContainerMeta(BaseContainerMeta):
     """Metaclass for :class:`BaseAuxiliaryContainer`."""
 
@@ -605,14 +638,13 @@ class BaseAuxiliaryContainerMeta(BaseContainerMeta):
         super(BaseAuxiliaryContainerMeta, cls).__init__(name, bases, dct)
 
         # Check relationship type.
-        assert_is_instance(
-            getattr(cls, "_relationship"),
-            (cls._relationship_type, type(abstract_member())),
-            subtypes=False
-        )
+        relationship = getattr(cls, "_relationship")
+        if type(relationship) is not type(abstract_member()):
+            relationship_type = cls._relationship_type
+            assert_is_instance(relationship, relationship_type, subtypes=False)
 
 
-class BaseAuxiliaryContainer(BaseContainer):
+class BaseAuxiliaryContainer(with_metaclass(BaseAuxiliaryContainerMeta, BaseContainer)):
     """Container with a single relationship."""
     __slots__ = ()
 
@@ -630,3 +662,27 @@ class BaseAuxiliaryContainer(BaseContainer):
         :return: Relationship.
         """
         return cls._relationship
+
+
+class BaseSemiInteractiveAuxiliaryContainer(
+    BaseAuxiliaryContainer, BaseSemiInteractiveContainer
+):
+    """Base semi-interactive auxiliary container."""
+
+    __slots__ = ()
+
+
+class BaseInteractiveAuxiliaryContainer(
+    BaseSemiInteractiveAuxiliaryContainer, BaseInteractiveContainer
+):
+    """Base interactive auxiliary container."""
+
+    __slots__ = ()
+
+
+class BaseMutableAuxiliaryContainer(
+    BaseInteractiveAuxiliaryContainer, BaseMutableContainer
+):
+    """Base mutable auxiliary container."""
+
+    __slots__ = ()

@@ -3,23 +3,44 @@
 import pytest
 
 from six import with_metaclass
+from slotted import SlottedMapping, SlottedMutableMapping
 
-from objetto._containers.bases import BaseRelationship
+from objetto._containers.bases import (
+    BaseRelationship,
+    BaseAuxiliaryContainer,
+    BaseSemiInteractiveAuxiliaryContainer,
+    BaseInteractiveAuxiliaryContainer,
+    BaseMutableAuxiliaryContainer,
+)
 from objetto._containers.dict import (
     KeyRelationship,
+    DictContainerMeta,
     DictContainer,
+    SemiInteractiveDictContainer,
+    InteractiveDictContainer,
     MutableDictContainer,
 )
 from objetto.utils.immutable import ImmutableDict
 
 
-class MyDictContainer(DictContainer):
+class MyDictContainerMeta(DictContainerMeta):
+
+    @property
+    def _serializable_container_types(cls):
+        return (MyDictContainer,)
+
+    @property
+    def _relationship_type(cls):
+        return BaseRelationship
+
+
+class MyDictContainer(with_metaclass(MyDictContainerMeta, DictContainer)):
     __slots__ = ("__state",)
     _relationship = BaseRelationship()
     _key_relationship = KeyRelationship()
 
-    def __init__(self, **kwargs):
-        self.__state = ImmutableDict(kwargs)
+    def __init__(self, initial=()):
+        self.__state = ImmutableDict(initial)
 
     def __getitem__(self, key):
         return self._state[key]
@@ -31,14 +52,23 @@ class MyDictContainer(DictContainer):
         for key in self._state:
             yield key
 
+    def _hash(self):
+        return hash(self._state)
+
+    def _eq(self, other):
+        if self is other:
+            return True
+        elif isinstance(other, MyDictContainer):
+            return self.__state == other.__state
+        else:
+            return False
+
     @classmethod
     def deserialize(cls, serialized, **kwargs):
-        return cls(
-            **dict((k, cls.deserialize_value(v)) for k, v in serialized.items())
-        )
+        raise NotImplementedError()
 
     def serialize(self, **kwargs):
-        return dict((k, self.serialize_value(v)) for k, v in self._state.items())
+        raise NotImplementedError()
 
     @property
     def _state(self):
@@ -71,16 +101,6 @@ def test_key_relationship():
     assert relationship.factory == int
     assert relationship.passthrough is False
 
-    assert BaseRelationship(SimpleContainer).get_single_exact_type(
-        (SimpleContainer,)
-    ) is SimpleContainer
-    assert BaseRelationship((SimpleContainer, int)).get_single_exact_type(
-        (SimpleContainer,)
-    ) is SimpleContainer
-    assert BaseRelationship(SimpleContainer, subtypes=True).get_single_exact_type(
-        (SimpleContainer,)
-    ) is None
-
 
 def test_dict_container():
 
@@ -89,6 +109,25 @@ def test_dict_container():
             _key_relationship = 1
 
         raise AssertionError(MyBadDictContainer)
+
+    my_dict_container = MyDictContainer({"a": 1, 2: "b"})
+    assert hash(my_dict_container) == hash(my_dict_container._state)
+    assert my_dict_container == MyDictContainer({"a": 1, 2: "b"})
+
+
+def test_inheritance():
+    assert issubclass(DictContainer, BaseAuxiliaryContainer)
+    assert issubclass(DictContainer, SlottedMapping)
+
+    assert issubclass(SemiInteractiveDictContainer, DictContainer)
+    assert issubclass(
+        SemiInteractiveDictContainer, BaseSemiInteractiveAuxiliaryContainer
+    )
+    assert issubclass(InteractiveDictContainer, SemiInteractiveDictContainer)
+    assert issubclass(InteractiveDictContainer, BaseInteractiveAuxiliaryContainer)
+    assert issubclass(MutableDictContainer, InteractiveDictContainer)
+    assert issubclass(MutableDictContainer, BaseMutableAuxiliaryContainer)
+    assert issubclass(MutableDictContainer, SlottedMutableMapping)
 
 
 if __name__ == "__main__":
