@@ -73,7 +73,7 @@ class KeyRelationship(ProtectedBase):
         self.module = module
         self.factory = format_factory(factory, module=module)
 
-    def fabricate_value(self, key, factory=True, **kwargs):
+    def fabricate_key(self, key, factory=True, **kwargs):
         # type: (Optional[Hashable], bool, Any) -> Optional[Hashable]
         """
         Perform type check and run key through factory.

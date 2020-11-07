@@ -443,7 +443,7 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
     __slots__ = (INITIALIZING_TAG,)
 
     def __copy__(self):
-        # type: () -> None
+        # type: () -> Any
         """
         Prevents shallow copy by default.
 

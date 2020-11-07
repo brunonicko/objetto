@@ -63,6 +63,9 @@ class MyDictContainer(with_metaclass(MyDictContainerMeta, DictContainer)):
         else:
             return False
 
+    def get(self, location, fallback=None):
+        raise NotImplementedError()
+
     @classmethod
     def deserialize(cls, serialized, **kwargs):
         raise NotImplementedError()

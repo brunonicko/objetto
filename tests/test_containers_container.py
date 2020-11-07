@@ -74,6 +74,9 @@ class MyContainer(with_metaclass(MyContainerMeta, Container)):
     def _eq(self, other):
         raise NotImplementedError()
 
+    def get(self, location, fallback=None):
+        raise NotImplementedError()
+
     @classmethod
     def deserialize(cls, serialized, **kwargs):
         raise NotImplementedError()

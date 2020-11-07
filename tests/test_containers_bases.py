@@ -70,6 +70,9 @@ class MyContainer(with_metaclass(MyContainerMeta, BaseContainer)):
     def _get_relationship(cls, location=None):
         return cls._relationship
 
+    def get(self, location, fallback=None):
+        raise NotImplementedError()
+
     @classmethod
     def deserialize(cls, serialized, **kwargs):
         return cls(
@@ -94,6 +97,9 @@ class SimpleContainer(MyContainer):
     def __len__(self):
         raise NotImplementedError()
 
+    def get(self, location, fallback=None):
+        raise NotImplementedError()
+
 
 class ComplexContainer(MyContainer):
     _relationship = BaseRelationship(types=(int, MyContainer), subtypes=True)
@@ -103,6 +109,10 @@ class ComplexContainer(MyContainer):
 
     def __len__(self):
         raise NotImplementedError()
+
+    def get(self, location, fallback=None):
+        raise NotImplementedError()
+
 
 def test_base_relationship():
     relationship = BaseRelationship()
@@ -134,6 +144,16 @@ def test_base_relationship():
     assert BaseRelationship(SimpleContainer, subtypes=True).get_single_exact_type(
         (SimpleContainer,)
     ) is None
+
+    assert hash(BaseRelationship()) == hash(BaseRelationship())
+    assert BaseRelationship() == BaseRelationship()
+    assert BaseRelationship((str, int)) == BaseRelationship((int, str))
+    assert BaseRelationship(int) != BaseRelationship(str)
+    assert set(
+        m for m in BaseRelationship.__members__ if not m.startswith("_")
+    ).issuperset(
+        BaseRelationship().to_dict()
+    )
 
 
 def test_inheritance():

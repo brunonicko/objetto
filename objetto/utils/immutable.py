@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
-"""Immutable container types."""
+"""Immutable collection types."""
 
 from abc import abstractmethod
 
 from pyrsistent import pmap, pvector, pset
 from slotted import (
-    SlottedMapping, SlottedSequence, SlottedSet, SlottedHashable, SlottedContainer
+    SlottedMapping,
+    SlottedSequence,
+    SlottedSet,
+    SlottedHashable,
+    SlottedContainer,
+    SlottedSized,
+    SlottedIterable,
 )
 from typing import TYPE_CHECKING, TypeVar, Generic, cast, overload
 
@@ -27,7 +33,7 @@ if TYPE_CHECKING:
         Optional,
     )
 
-__all__ = ["ImmutableContainer", "ImmutableDict", "ImmutableList", "ImmutableSet"]
+__all__ = ["Immutable", "ImmutableDict", "ImmutableList", "ImmutableSet"]
 
 
 _KT = TypeVar("_KT")
@@ -38,8 +44,8 @@ _INTERNAL_LIST_TYPE = type(pvector())  # type: Type[PVector]
 _INTERNAL_SET_TYPE = type(pset())  # type: Type[PSet]
 
 
-class ImmutableContainer(SlottedHashable, SlottedContainer):
-    """Abstract immutable container."""
+class Immutable(SlottedHashable, SlottedSized, SlottedIterable, SlottedContainer):
+    """Abstract immutable collection."""
 
     @abstractmethod
     def __repr__(self):
@@ -74,9 +80,7 @@ class ImmutableContainer(SlottedHashable, SlottedContainer):
         return not result
 
 
-class ImmutableDict(
-    ImmutableContainer, SlottedHashable, SlottedMapping, Generic[_KT, _VT]
-):
+class ImmutableDict(Immutable, SlottedHashable, SlottedMapping, Generic[_KT, _VT]):
     """
     Immutable dictionary.
 
@@ -192,6 +196,36 @@ class ImmutableDict(
         for key in iterkeys(self.__internal):
             yield key
 
+    def iteritems(self):
+        # type: () -> Iterator[Tuple[_KT, _VT]]
+        """
+        Iterate over keys.
+
+        :return: Key iterator.
+        """
+        for key, value in iteritems(self.__internal):
+            yield key, value
+
+    def iterkeys(self):
+        # type: () -> Iterator[_KT]
+        """
+        Iterate over keys.
+
+        :return: Keys iterator.
+        """
+        for key in iterkeys(self.__internal):
+            yield key
+
+    def itervalues(self):
+        # type: () -> Iterator[_VT]
+        """
+        Iterate over values.
+
+        :return: Values iterator.
+        """
+        for value in itervalues(self.__internal):
+            yield value
+
     def copy(self):
         # type: () -> ImmutableDict
         """
@@ -254,40 +288,8 @@ class ImmutableDict(
         else:
             return type(self)(self.__internal.update(pmap(update)))
 
-    def iteritems(self):
-        # type: () -> Iterator[Tuple[_KT, _VT]]
-        """
-        Iterate over keys.
 
-        :return: Key iterator.
-        """
-        for key, value in iteritems(self.__internal):
-            yield key, value
-
-    def iterkeys(self):
-        # type: () -> Iterator[_KT]
-        """
-        Iterate over keys.
-
-        :return: Keys iterator.
-        """
-        for key in iterkeys(self.__internal):
-            yield key
-
-    def itervalues(self):
-        # type: () -> Iterator[_VT]
-        """
-        Iterate over values.
-
-        :return: Values iterator.
-        """
-        for value in itervalues(self.__internal):
-            yield value
-
-
-class ImmutableList(
-    ImmutableContainer, SlottedHashable, SlottedSequence, Generic[_T]
-):
+class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
     """
     Immutable list.
 
@@ -587,7 +589,7 @@ class ImmutableList(
         return type(self)(sorted(self.__internal, key=key, reverse=reverse))
 
 
-class ImmutableSet(ImmutableContainer, SlottedHashable, SlottedSet, Generic[_T]):
+class ImmutableSet(Immutable, SlottedHashable, SlottedSet, Generic[_T]):
     """
     Immutable set.
 

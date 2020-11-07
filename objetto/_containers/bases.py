@@ -23,7 +23,8 @@ from ..utils.type_checking import (
     get_type_names, format_types, import_types, assert_is_instance
 )
 from ..utils.lazy_import import import_path, get_path
-from ..utils.factoring import format_factory, run_factory
+from ..utils.factoring import format_factory, run_factory, import_factory
+from ..utils.custom_repr import custom_mapping_repr
 
 if TYPE_CHECKING:
     from typing import (
@@ -33,7 +34,7 @@ if TYPE_CHECKING:
     from .._bases import AbstractType
     from ..utils.type_checking import LazyTypes
     from ..utils.factoring import LazyFactory
-    from ..utils.immutable import ImmutableContainer
+    from ..utils.immutable import Immutable
 
 __all__ = [
     "make_auxiliary_cls",
@@ -160,6 +161,7 @@ class BaseRelationship(ProtectedBase):
     """
 
     __slots__ = (
+        "__hash",
         "types",
         "subtypes",
         "type_checked",
@@ -193,6 +195,69 @@ class BaseRelationship(ProtectedBase):
         self.serializer = format_factory(serializer, module=module)
         self.deserializer = format_factory(deserializer, module=module)
         self.represented = bool(represented)
+
+    @final
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        try:
+            return self.__hash  # type: ignore
+        except AttributeError:
+            self.__hash = hash(frozenset(iteritems(self.to_dict())))
+        return self.__hash
+
+    @final
+    def __eq__(self, other):
+        # type: (object) -> bool
+        """
+        Compare with another object for equality.
+
+        :param other: Another object.
+        :return: True if considered equal.
+        """
+        if type(self) is not type(other):
+            return False
+        assert isinstance(other, BaseRelationship)
+        return self.to_dict() == other.to_dict()
+
+    @final
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        return custom_mapping_repr(
+            self.to_dict(),
+            prefix="{}(".format(type(self).__name__),
+            template="{key}={value}",
+            suffix=")",
+            key_repr=str,
+        )
+
+    def to_dict(self):
+        # type: () -> Dict[str, Any]
+        """
+        Convert to dictionary.
+
+        :return: Dictionary.
+        """
+        return {
+            "types": frozenset(import_types(self.types)),
+            "subtypes": self.subtypes,
+            "type_checked": self.type_checked,
+            "module": self.module,
+            "factory": import_factory(self.factory),
+            "serialized": self.serialized,
+            "serializer": import_factory(self.serializer),
+            "deserializer": import_factory(self.deserializer),
+            "represented": self.represented,
+        }
 
     @final
     def get_single_exact_type(self, types=(type,)):
@@ -396,6 +461,8 @@ class BaseContainer(
         cls = type(self)
         if cls._unique_descriptor:
             return False
+        elif isinstance(other, BaseContainer) and type(other)._unique_descriptor:
+            return False
         else:
             return self._eq(other)
 
@@ -429,6 +496,18 @@ class BaseContainer(
 
         :param location: Location.
         :return: Relationship.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get(self, location, fallback=None):
+        # type: (Optional[Hashable], Any) -> Any
+        """
+        Get value at location, return fallback value if not found.
+
+        :param location: Location.
+        :param fallback: Fallback value.
+        :return: Value or fallback value.
         """
         raise NotImplementedError()
 
@@ -608,7 +687,7 @@ class BaseContainer(
     @property
     @abstractmethod
     def _state(self):
-        # type: () -> ImmutableContainer
+        # type: () -> Immutable
         """State."""
         raise NotImplementedError()
 
@@ -618,11 +697,21 @@ class BaseSemiInteractiveContainer(BaseContainer):
 
     __slots__ = ()
 
+    @abstractmethod
+    def _set(self, location, value):
+        # type: (Optional[Hashable], Any) -> Any
+        raise NotImplementedError()
+
 
 class BaseInteractiveContainer(BaseSemiInteractiveContainer):
     """Base interactive container."""
 
     __slots__ = ()
+
+    @abstractmethod
+    def set(self, location, value):
+        # type: (Optional[Hashable], Any) -> Any
+        raise NotImplementedError()
 
 
 class BaseMutableContainer(BaseInteractiveContainer):
@@ -642,6 +731,13 @@ class BaseAuxiliaryContainerMeta(BaseContainerMeta):
         if type(relationship) is not type(abstract_member()):
             relationship_type = cls._relationship_type
             assert_is_instance(relationship, relationship_type, subtypes=False)
+
+    @property
+    @abstractmethod
+    def _base_auxiliary_type(cls):
+        # type: () -> Type[BaseAuxiliaryContainer]
+        """Base auxiliary container type."""
+        raise NotImplementedError()
 
 
 class BaseAuxiliaryContainer(with_metaclass(BaseAuxiliaryContainerMeta, BaseContainer)):

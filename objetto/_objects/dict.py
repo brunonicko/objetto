@@ -7,7 +7,7 @@ from six import with_metaclass, iteritems
 from six.moves import collections_abc
 
 from .._bases import final, init_context
-from .base import BaseAuxiliaryObjectMeta, BaseAuxiliaryObject
+from .bases import BaseAuxiliaryObjectMeta, BaseAuxiliaryObject
 from .._containers.dict import DictContainerMeta, DictContainer, MutableDictContainer
 from ..utils.immutable import ImmutableDict
 

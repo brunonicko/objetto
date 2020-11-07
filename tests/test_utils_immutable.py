@@ -6,7 +6,7 @@ import copy
 from six.moves import collections_abc
 
 from objetto.utils.immutable import (
-    ImmutableContainer,
+    Immutable,
     ImmutableDict,
     ImmutableList,
     ImmutableSet,
@@ -23,15 +23,15 @@ class HashCollider(object):
 
 
 def test_immutable_container():
-    assert issubclass(ImmutableContainer, collections_abc.Container)
+    assert issubclass(Immutable, collections_abc.Container)
 
     # Can't instantiate abstract class.
     with pytest.raises(TypeError):
-        ImmutableContainer()
+        Immutable()
 
 
 def test_immutable_dict():
-    assert issubclass(ImmutableDict, ImmutableContainer)
+    assert issubclass(ImmutableDict, Immutable)
     assert issubclass(ImmutableDict, collections_abc.Mapping)
 
     # Hash.
@@ -87,7 +87,7 @@ def test_immutable_dict():
 
 
 def test_immutable_list():
-    assert issubclass(ImmutableList, ImmutableContainer)
+    assert issubclass(ImmutableList, Immutable)
     assert issubclass(ImmutableList, collections_abc.Sequence)
 
     # Hash.
@@ -179,7 +179,7 @@ def test_immutable_list():
 
 
 def test_immutable_set():
-    assert issubclass(ImmutableSet, ImmutableContainer)
+    assert issubclass(ImmutableSet, Immutable)
     assert issubclass(ImmutableSet, collections_abc.Set)
 
     # Hash.

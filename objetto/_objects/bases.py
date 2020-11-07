@@ -16,7 +16,7 @@ from .._containers.bases import (
     BaseAuxiliaryContainerMeta,
     BaseAuxiliaryContainer,
 )
-from .._data.base import DataRelationship, BaseData
+from .._data.bases import DataRelationship, BaseData
 from ..utils.type_checking import import_types
 
 if TYPE_CHECKING:

@@ -10,7 +10,7 @@ from slotted import Slotted
 from six import raise_from, iteritems
 
 from ._bases import INITIALIZING_TAG, Base
-from ._data.base import BaseData
+from ._data.bases import BaseData
 from .utils.immutable import ImmutableDict, ImmutableList, ImmutableSet
 from .utils.weak_reference import WeakReference
 from .utils.dummy_context import DummyContext
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
         Optional, Union, AbstractSet, List
     )
 
-    from ._objects.base import BaseObject
+    from ._objects.bases import BaseObject
     from ._objects.history import History
 
     # assert (

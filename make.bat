@@ -4,9 +4,9 @@ pushd %~dp0
 cd /d %~dp0
 
 IF "%1" == "" (
-    goto test
-) ELSE IF "%1" == "test" (
-    goto test
+    goto tests
+) ELSE IF "%1" == "tests" (
+    goto tests
 ) ELSE IF "%1" == "mypy" (
     goto mypy
 ) ELSE IF "%1" == "environment" (
@@ -22,9 +22,9 @@ IF "%1" == "" (
     goto end
 )
 
-:test
-pytest tests
-pytest sandbox --doctest-modules
+:tests
+python -m pytest .\tests
+rem # pytest sandbox --doctest-modules
 goto end
 
 :mypy

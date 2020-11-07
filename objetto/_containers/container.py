@@ -18,9 +18,10 @@ from .bases import (
     BaseInteractiveContainer,
     BaseMutableContainer,
 )
-from ..utils.factoring import format_factory, run_factory
+from ..utils.factoring import format_factory, run_factory, import_factory
 from ..utils.type_checking import assert_is_instance
 from ..utils.immutable import ImmutableDict
+from ..utils.custom_repr import custom_mapping_repr
 
 if TYPE_CHECKING:
     from typing import (
@@ -108,6 +109,60 @@ class BaseAttribute(ProtectedBase):
             setattr(self, FINAL_METHOD_TAG, True)
         elif self.abstract:
             setattr(self, ABSTRACT_TAG, True)
+
+    @final_
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        return id(self)
+
+    @final_
+    def __eq__(self, other):
+        # type: (object) -> bool
+        """
+        Compare with another object for identity.
+
+        :param other: Another object.
+        :return: True if the same object.
+        """
+        return self is other
+
+    @final_
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        return custom_mapping_repr(
+            self.to_dict(),
+            prefix="{}(".format(type(self).__name__),
+            template="{key}={value}",
+            suffix=")",
+            key_repr=str,
+        )
+
+    def to_dict(self):
+        # type: () -> Dict[str, Any]
+        """
+        Convert to dictionary.
+
+        :return: Dictionary.
+        """
+        return {
+            "relationship": self.relationship.to_dict(),
+            "default": self.default,
+            "default_factory": import_factory(self.default_factory),
+            "module": self.module,
+            "required": self.required,
+            "final": self.final,
+            "abstract": self.abstract,
+        }
 
     def __get__(
         self,

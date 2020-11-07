@@ -3,12 +3,12 @@
 
 from typing import TYPE_CHECKING, Generic, TypeVar, cast
 
-from six import with_metaclass, iteritems
+from six import with_metaclass, iteritems, iterkeys, itervalues
 from six.moves import collections_abc
 
 from .._bases import final, init_context
-from .base import BaseAuxiliaryDataMeta, BaseAuxiliaryData
-from .._containers.dict import DictContainerMeta, DictContainer
+from .bases import BaseAuxiliaryDataMeta, BaseAuxiliaryData
+from .._containers.dict import DictContainerMeta, SemiInteractiveDictContainer
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.immutable import ImmutableDict
 
@@ -26,38 +26,51 @@ class DictDataMeta(BaseAuxiliaryDataMeta, DictContainerMeta):
 
     @property
     @final
-    def _auxiliary_data_type(cls):
+    def _base_auxiliary_type(cls):
         # type: () -> Type[DictData]
-        """Base auxiliary data type."""
+        """Base auxiliary container type."""
         return DictData
 
 
 class DictData(
-    with_metaclass(DictDataMeta, BaseAuxiliaryData, DictContainer, Generic[_KT, _VT])
+    with_metaclass(
+        DictDataMeta, BaseAuxiliaryData, SemiInteractiveDictContainer, Generic[_KT, _VT]
+    )
 ):
-    """Dictionary data."""
-    __slots__ = ("__state",)
+    """
+    Dictionary data.
+
+    :param initial: Initial values.
+    """
+    __slots__ = ()
 
     @classmethod
     @final
     def __make__(cls, state=ImmutableDict()):
-        # type: (Any) -> DictData
-        self = cast("DictData", cls.__new__(cls))
-        with init_context(self):
-            self.__state = state
-        return self
+        # type: (ImmutableDict) -> DictData
+        """
+        Make a new dictionary data.
+
+        :param state: Internal state.
+        :return: New dictionary data.
+        """
+        return cast("DictData", super(DictData, cls).__make__(state))
 
     @final
     def __init__(self, initial=()):
         # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> None
         if type(initial) is type(self):
-            self.__state = cast("DictData", initial).__state
+            self._init_state(getattr(initial, "_state"))
         else:
-            self.__state = self.__get_initial_state(dict(initial))
+            self._init_state(self.__get_initial_state(dict(initial)))
 
     def __repr__(self):
         # type: () -> str
-        """Get representation."""
+        """
+        Get representation.
+
+        :return: Representation.
+        """
         if type(self)._relationship.represented:
             return custom_mapping_repr(
                 self._state,
@@ -69,26 +82,75 @@ class DictData(
 
     def __getitem__(self, key):
         # type: (_KT) -> _VT
+        """
+        Get value for key.
+
+        :param key: Key.
+        :return: Value.
+        :raises KeyError: Invalid key.
+        """
         return self._state[key]
 
     def __len__(self):
         # type: () -> int
+        """
+        Get key count.
+
+        :return: Key count.
+        """
         return len(self._state)
 
     def __iter__(self):
         # type: () -> Iterator[_KT]
+        """
+        Iterate over keys.
+
+        :return: Key iterator.
+        """
         for key in self._state:
             yield key
 
+    def iteritems(self):
+        # type: () -> Iterator[Tuple[_KT, _VT]]
+        """
+        Iterate over keys.
+
+        :return: Key iterator.
+        """
+        for key, value in iteritems(self.__internal):
+            yield key, value
+
+    def iterkeys(self):
+        # type: () -> Iterator[_KT]
+        """
+        Iterate over keys.
+
+        :return: Keys iterator.
+        """
+        for key in iterkeys(self.__internal):
+            yield key
+
+    def itervalues(self):
+        # type: () -> Iterator[_VT]
+        """
+        Iterate over values.
+
+        :return: Values iterator.
+        """
+        for value in itervalues(self.__internal):
+            yield value
+
     @classmethod
     @final
-    def __get_initial_state(
-        cls,
-        input_values,  # type: Mapping
-        factory=True,  # type: bool
-    ):
-        # type: (...) -> ImmutableDict
-        """Get initial state."""
+    def __get_initial_state(cls, input_values, factory=True):
+        # type: (Mapping, bool) -> ImmutableDict
+        """
+        Get initial state.
+
+        :param input_values: Input mapping.
+        :param factory: Whether to run values through factory.
+        :return: Initial state.
+        """
         state = ImmutableDict(
             (
                 cls._key_relationship.fabricate_key(k, factory=factory),
@@ -97,6 +159,18 @@ class DictData(
             for k, v in iteritems(input_values)
         )
         return state
+
+    @final
+    def get(self, key, fallback=None):
+        # type: (_KT, Any) -> _VT
+        """
+        Get value at key, return fallback value if not found.
+
+        :param key: Key.
+        :param fallback: Fallback value.
+        :return: Value or fallback value.
+        """
+        return self._state.get(key, fallback)
 
     @classmethod
     @final
