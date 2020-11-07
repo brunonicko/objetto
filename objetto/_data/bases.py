@@ -119,6 +119,16 @@ class BaseData(with_metaclass(BaseDataMeta, BaseSemiInteractiveContainer)):
     """Base data class."""
     __slots__ = ("__state",)
 
+    @final
+    def __copy__(self):
+        # type: () -> BaseData
+        """
+        Get copy.
+
+        :return: Copy.
+        """
+        return self
+
     @classmethod
     def __make__(cls, state):
         # type: (Immutable) -> BaseData

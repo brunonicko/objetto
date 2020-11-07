@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar, cast
 from six import with_metaclass, iteritems, iterkeys, itervalues
 from six.moves import collections_abc
 
-from .._bases import final, init_context
+from .._bases import final
 from .bases import BaseAuxiliaryDataMeta, BaseAuxiliaryData
 from .._containers.dict import DictContainerMeta, SemiInteractiveDictContainer
 from ..utils.custom_repr import custom_mapping_repr
@@ -110,36 +110,6 @@ class DictData(
         for key in self._state:
             yield key
 
-    def iteritems(self):
-        # type: () -> Iterator[Tuple[_KT, _VT]]
-        """
-        Iterate over keys.
-
-        :return: Key iterator.
-        """
-        for key, value in iteritems(self.__internal):
-            yield key, value
-
-    def iterkeys(self):
-        # type: () -> Iterator[_KT]
-        """
-        Iterate over keys.
-
-        :return: Keys iterator.
-        """
-        for key in iterkeys(self.__internal):
-            yield key
-
-    def itervalues(self):
-        # type: () -> Iterator[_VT]
-        """
-        Iterate over values.
-
-        :return: Values iterator.
-        """
-        for value in itervalues(self.__internal):
-            yield value
-
     @classmethod
     @final
     def __get_initial_state(cls, input_values, factory=True):
@@ -160,6 +130,36 @@ class DictData(
         )
         return state
 
+    def iteritems(self):
+        # type: () -> Iterator[Tuple[_KT, _VT]]
+        """
+        Iterate over keys.
+
+        :return: Key iterator.
+        """
+        for key, value in iteritems(self._state):
+            yield key, value
+
+    def iterkeys(self):
+        # type: () -> Iterator[_KT]
+        """
+        Iterate over keys.
+
+        :return: Keys iterator.
+        """
+        for key in iterkeys(self._state):
+            yield key
+
+    def itervalues(self):
+        # type: () -> Iterator[_VT]
+        """
+        Iterate over values.
+
+        :return: Values iterator.
+        """
+        for value in itervalues(self._state):
+            yield value
+
     @final
     def get(self, key, fallback=None):
         # type: (_KT, Any) -> _VT
@@ -176,49 +176,91 @@ class DictData(
     @final
     def deserialize(cls, serialized, **kwargs):
         # type: (Dict, Any) -> DictData
-        """Deserialize."""
+        """
+        Deserialize.
+
+        :param serialized: Serialized.
+        :param kwargs: Keyword arguments to be passed to the deserializers.
+        :return: Deserialized.
+        """
         if not cls._relationship.serialized:
             error = "'{}' is not deserializable".format(cls.__name__)
             raise RuntimeError(error)
 
-        input_values = dict(
-            (k, cls.deserialize_value(v, None, **kwargs))
+        state = ImmutableDict(
+            (
+                cls._key_relationship.fabricate_key(k, factory=False),
+                cls.deserialize_value(v, **kwargs)
+            )
             for k, v in iteritems(serialized)
         )
-        state = cls.__get_initial_state(input_values, factory=False)
         return cls.__make__(state)
 
     @final
     def serialize(self, **kwargs):
         # type: (Any) -> Dict
-        """Serialize."""
+        """
+        Serialize.
+
+        :param kwargs: Keyword arguments to be passed to the serializers.
+        :return: Serialized.
+        """
         if not type(self)._relationship.serialized:
             error = "'{}' is not serializable".format(type(self).__fullname__)
             raise RuntimeError(error)
 
         return dict(
-            (k, self.serialize_value(v, None, **kwargs))
+            (k, self.serialize_value(v, **kwargs))
             for k, v in iteritems(self._state)
         )
 
     def copy(self):
         # type: () -> DictData
+        """
+        Get copy.
+
+        :return: Copy.
+        """
         return self
 
     def _clear(self):
         # type: () -> DictData
+        """
+        Clear all keys and values.
+
+        :return: New version.
+        """
         return type(self).__make__()
 
     def _discard(self, key):
         # type: (_KT) -> DictData
+        """
+        Discard key if it exists.
+
+        :param key: Key.
+        :return: New version.
+        """
         return type(self).__make__(self._state.discard(key))
 
     def _remove(self, key):
         # type: (_KT) -> DictData
+        """
+        Delete existing key.
+
+        :param key: Key.
+        :return: New version.
+        """
         return type(self).__make__(self._state.remove(key))
 
     def _set(self, key, value):
         # type: (_KT, _VT) -> DictData
+        """
+        Set value for key.
+
+        :param key: Key.
+        :param value: Value.
+        :return: New version.
+        """
         cls = type(self)
         key = cls._key_relationship.fabricate_key(key)
         value = cls._relationship.fabricate_value(value)
@@ -226,6 +268,12 @@ class DictData(
 
     def _update(self, update):
         # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> DictData
+        """
+        Update keys and values.
+
+        :param update: Updates.
+        :return: New version.
+        """
         cls = type(self)
         update = (
             (
