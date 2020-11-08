@@ -80,6 +80,7 @@ class DictData(
         else:
             return "<{}>".format(type(self).__fullname__)
 
+    @final
     def __getitem__(self, key):
         # type: (_KT) -> _VT
         """
@@ -91,6 +92,7 @@ class DictData(
         """
         return self._state[key]
 
+    @final
     def __len__(self):
         # type: () -> int
         """
@@ -100,6 +102,7 @@ class DictData(
         """
         return len(self._state)
 
+    @final
     def __iter__(self):
         # type: () -> Iterator[_KT]
         """
@@ -121,15 +124,19 @@ class DictData(
         :param factory: Whether to run values through factory.
         :return: Initial state.
         """
-        state = ImmutableDict(
-            (
-                cls._key_relationship.fabricate_key(k, factory=factory),
-                cls._relationship.fabricate_value(v, factory=factory),
+        if not cls._key_relationship.passthrough or not cls._relationship.passthrough:
+            state = ImmutableDict(
+                (
+                    cls._key_relationship.fabricate_key(k, factory=factory),
+                    cls._relationship.fabricate_value(v, factory=factory),
+                )
+                for k, v in iteritems(input_values)
             )
-            for k, v in iteritems(input_values)
-        )
+        else:
+            state = ImmutableDict(input_values)
         return state
 
+    @final
     def iteritems(self):
         # type: () -> Iterator[Tuple[_KT, _VT]]
         """
@@ -140,6 +147,7 @@ class DictData(
         for key, value in iteritems(self._state):
             yield key, value
 
+    @final
     def iterkeys(self):
         # type: () -> Iterator[_KT]
         """
@@ -150,6 +158,7 @@ class DictData(
         for key in iterkeys(self._state):
             yield key
 
+    @final
     def itervalues(self):
         # type: () -> Iterator[_VT]
         """
@@ -186,7 +195,6 @@ class DictData(
         if not cls._relationship.serialized:
             error = "'{}' is not deserializable".format(cls.__name__)
             raise RuntimeError(error)
-
         state = ImmutableDict(
             (
                 cls._key_relationship.fabricate_key(k, factory=False),
@@ -208,12 +216,12 @@ class DictData(
         if not type(self)._relationship.serialized:
             error = "'{}' is not serializable".format(type(self).__fullname__)
             raise RuntimeError(error)
-
         return dict(
             (k, self.serialize_value(v, **kwargs))
             for k, v in iteritems(self._state)
         )
 
+    @final
     def copy(self):
         # type: () -> DictData
         """
@@ -223,6 +231,7 @@ class DictData(
         """
         return self
 
+    @final
     def _clear(self):
         # type: () -> DictData
         """
@@ -232,6 +241,7 @@ class DictData(
         """
         return type(self).__make__()
 
+    @final
     def _discard(self, key):
         # type: (_KT) -> DictData
         """
@@ -242,6 +252,7 @@ class DictData(
         """
         return type(self).__make__(self._state.discard(key))
 
+    @final
     def _remove(self, key):
         # type: (_KT) -> DictData
         """
@@ -252,6 +263,7 @@ class DictData(
         """
         return type(self).__make__(self._state.remove(key))
 
+    @final
     def _set(self, key, value):
         # type: (_KT, _VT) -> DictData
         """
@@ -262,10 +274,12 @@ class DictData(
         :return: New version.
         """
         cls = type(self)
-        key = cls._key_relationship.fabricate_key(key)
-        value = cls._relationship.fabricate_value(value)
+        if not cls._key_relationship.passthrough or not cls._relationship.passthrough:
+            key = cls._key_relationship.fabricate_key(key)
+            value = cls._relationship.fabricate_value(value)
         return cls.__make__(self._state.set(key, value))
 
+    @final
     def _update(self, update):
         # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> DictData
         """
@@ -275,16 +289,17 @@ class DictData(
         :return: New version.
         """
         cls = type(self)
-        update = (
-            (
-                cls._key_relationship.fabricate_key(k),
-                cls._relationship.fabricate_value(v),
+        if not cls._key_relationship.passthrough or not cls._relationship.passthrough:
+            update = (
+                (
+                    cls._key_relationship.fabricate_key(k),
+                    cls._relationship.fabricate_value(v),
+                )
+                for k, v in (
+                    iteritems(update) if isinstance(update, collections_abc.Mapping)
+                    else update
+                )
             )
-            for k, v in (
-                iteritems(update) if isinstance(update, collections_abc.Mapping)
-                else update
-            )
-        )
         return cls.__make__(self._state.update(update))
 
     @property
@@ -298,22 +313,57 @@ class DictData(
 class InteractiveDictData(DictData):
     """Interactive dictionary data."""
 
+    @final
     def clear(self):
         # type: () -> InteractiveDictData
+        """
+        Clear all keys and values.
+
+        :return: New version.
+        """
         return self._clear()
 
+    @final
     def discard(self, key):
         # type: (_KT) -> InteractiveDictData
+        """
+        Discard key if it exists.
+
+        :param key: Key.
+        :return: New version.
+        """
         return self._discard(key)
 
+    @final
     def remove(self, key):
         # type: (_KT) -> InteractiveDictData
+        """
+        Delete existing key.
+
+        :param key: Key.
+        :return: New version.
+        """
         return self._remove(key)
 
+    @final
     def set(self, key, value):
         # type: (_KT, _VT) -> InteractiveDictData
+        """
+        Set value for key.
+
+        :param key: Key.
+        :param value: Value.
+        :return: New version.
+        """
         return self._set(key, value)
 
+    @final
     def update(self, update):
         # type: (Mapping[_KT, _VT]) -> InteractiveDictData
+        """
+        Update keys and values.
+
+        :param update: Updates.
+        :return: New version.
+        """
         return self._update(update)
