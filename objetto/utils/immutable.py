@@ -2,6 +2,7 @@
 """Immutable collection types."""
 
 from abc import abstractmethod
+from itertools import chain
 
 from pyrsistent import pmap, pvector, pset
 from slotted import (
@@ -387,7 +388,7 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
 
     @overload
     def __getitem__(self, index):
-        # type: (slice) -> ImmutableList
+        # type: (slice) -> ImmutableList[_T]
         """
         Get values from slice.
 
@@ -397,7 +398,7 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
         pass
 
     def __getitem__(self, index):
-        # type: (Union[int, slice]) -> Union[_T, ImmutableList]
+        # type: (Union[int, slice]) -> Union[_T, ImmutableList[_T]]
         """
         Get value/values at index/from slice.
 
@@ -475,6 +476,24 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
         """
         return type(self)()
 
+    def change(self, index, *values):
+        # type: (int, _T) -> ImmutableList
+        """
+        Change value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: New version.
+        :raises ValueError: No values provided.
+        """
+        if not values:
+            error = "no values provided"
+            raise ValueError(error)
+        index = self.resolve_index(index)
+        stop = self.resolve_index(index + len(values) - 1) + 1
+        pairs = chain.from_iterable(zip(range(index, stop), values))
+        return type(self)(self.__internal.mset(*pairs))
+
     def append(self, value):
         # type: (_T) -> ImmutableList
         """
@@ -508,7 +527,6 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
         if not values:
             error = "no values provided"
             raise ValueError(error)
-
         if index == len(self.__internal):
             return self.extend(values)
         elif index == 0:
@@ -544,6 +562,7 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
 
         :param item: Index/slice.
         :param target_index: Target index.
+        :return: New version.
         """
 
         # Resolve slice/index.
@@ -741,7 +760,11 @@ class ImmutableSet(Immutable, SlottedHashable, SlottedSet, Generic[_T]):
 
         :param values: Value(s).
         :return: New version.
+        :raises ValueError: No values provided.
         """
+        if not values:
+            error = "no values provided"
+            raise ValueError(error)
         return type(self)(self.__internal.update(values))
 
     def clear(self):

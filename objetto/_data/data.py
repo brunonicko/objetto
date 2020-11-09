@@ -7,9 +7,8 @@ from six import with_metaclass, iteritems
 from six.moves import collections_abc
 
 from .._containers.container import NOTHING, BaseAttribute, ContainerMeta, Container
-from .._bases import init_context
 from .._bases import final as final_
-from .bases import DataRelationship, BaseDataMeta, BaseData
+from .bases import DataRelationship, BaseDataMeta, BaseData, BaseInteractiveData
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.immutable import ImmutableDict
 
@@ -33,6 +32,18 @@ __all__ = ["DataAttribute", "DataMeta", "Data", "InteractiveData"]
 
 
 class DataAttribute(BaseAttribute):
+    """
+    Attribute descriptor for data containers.
+
+    :param relationship: Relationship.
+    :param default: Default value.
+    :param default_factory: Default value factory.
+    :param module: Module path for lazy types/factories.
+    :param required: Whether attribute is required to have a value.
+    :param final: Whether attribute is final (can't be overridden).
+    :param abstract: Whether attribute is abstract (needs to be overridden).
+    """
+
     __slots__ = ()
 
     def __init__(
@@ -68,26 +79,40 @@ class DataMeta(BaseDataMeta, ContainerMeta):
 
 
 class Data(with_metaclass(DataMeta, BaseData, Container)):
-    """Data attribute container."""
-    __slots__ = ("__state",)
+    """
+    Data attribute container.
+
+    :param initial: Initial values.
+    """
+    __slots__ = ("__hash",)
 
     @classmethod
     @final_
     def __make__(cls, state=ImmutableDict()):
-        # type: (Any) -> Data
-        self = cast("Data", cls.__new__(cls))
-        with init_context(self):
-            self.__state = state
-        return self
+        # type: (ImmutableDict) -> Data
+        """
+        Make a new data.
+
+        :param state: Internal state.
+        :return: New data.
+        """
+        return cast("Data", super(Data, cls).__make__(state))
 
     @final_
     def __init__(self, **initial):
         # type: (Any) -> None
-        self.__state = self.__get_initial_state(initial)
+        if type(initial) is type(self):
+            self._init_state(getattr(initial, "_state"))
+        else:
+            self._init_state(self.__get_initial_state(dict(initial)))
 
     def __repr__(self):
         # type: () -> str
-        """Get representation."""
+        """
+        Get representation.
+
+        :return: Representation.
+        """
         return custom_mapping_repr(
             dict(
                 (n, v)
@@ -98,20 +123,53 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
             template="{key}={value}",
             suffix=")",
             key_repr=str,
+            sorting=True,
+            sort_key=lambda p: p[0]
         )
 
+    @final_
     def __getitem__(self, name):
         # type: (str) -> Any
+        """
+        Get attribute value.
+
+        :param name: Name.
+        :return: Value.
+        """
         return self._state[name]
 
+    @final_
     def __len__(self):
         # type: () -> int
+        """
+        Get count of attributes with values.
+
+        :return: How many attributes with values.
+        """
         return len(self._state)
 
+    @final_
     def __iter__(self):
         # type: () -> Iterator[Tuple[str, Any]]
+        """
+        Iterate over name-value pairs.
+
+        :return: Name-value pairs iterator.
+        """
         for name, value in iteritems(self._state):
             yield name, value
+
+    @final_
+    def __contains__(self, pair):
+        # type: (Tuple[str, Any]) -> bool
+        """
+        Get whether contains name-value pair.
+
+        :param pair: Name-value pair.
+        :return: True if contains.
+        """
+        name, value = pair
+        return name in self._state and self._state[name] == value
 
     @classmethod
     @final_
@@ -121,7 +179,14 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
         factory=True,  # type: bool
     ):
         # type: (...) -> ImmutableDict
-        """Get initial state."""
+        """
+        Get initial state.
+
+        :param input_values: Input values.
+        :param factory: Whether to run values through factory.
+        :return: Initial state.
+        :raises ValueError: Raised when required attributes are missing.
+        """
 
         initial = {}
         for name, value in iteritems(input_values):
@@ -135,9 +200,8 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
             if name not in initial:
                 if attribute.has_default:
                     if not missing_attributes:
-                        initial[name] = attribute.fabricate_default_value(
-                            factory=factory
-                        )
+                        value = attribute.fabricate_default_value()
+                        initial[name] = value
                 elif attribute.required:
                     missing_attributes.add(name)
 
@@ -146,23 +210,105 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
                 "s" if len(missing_attributes) != 1 else "",
                 ", ".join("'{}'".format(n) for n in missing_attributes),
             )
-            raise TypeError(error)
+            raise ValueError(error)
 
         state = ImmutableDict(initial)
         return state
 
-    @classmethod
     @final_
-    def _get_relationship(cls, location=None):
-        # type: (str) -> DataRelationship
-        """Get relationship for attribute name."""
-        return cls._attributes[location].relationship
+    def _hash(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        try:
+            return self.__hash  # type: ignore
+        except AttributeError:
+            cls = type(self)
+            eq_attributes = set(
+                n for n, a in iteritems(cls._attributes) if a.relationship.eq
+            )
+            if not eq_attributes:
+                return id(self)
+            eq_state = dict((n, v) for n, v in self._state if n in eq_attributes)
+            self.__hash = hash(
+                (frozenset(iteritems(eq_state)), frozenset(eq_attributes))
+            )
+            return self.__hash
+
+    @final_
+    def _eq(self, other):
+        # type: (Any) -> bool
+        """
+        Compare with another object for equality.
+
+        :param other: Another object.
+        :return: True if equal.
+        """
+        if self is other:
+            return True
+        if type(self) is not type(other):
+            return False
+        cls = type(self)
+        eq_attributes = set(
+            n for n, a in iteritems(cls._attributes) if a.relationship.eq
+        )
+        if not eq_attributes:
+            return self is other
+        eq_state = dict(
+            (n, v) for n, v in self._state if cls._get_relationship(n).eq
+        )
+        other_eq_state = dict(
+            (n, v) for n, v in other._state if cls._get_relationship(n).eq
+        )
+        return eq_state == other_eq_state
+
+    @final_
+    def _set(self, name, value):
+        # type: (str, Any) -> Data
+        """
+        Set attribute value.
+
+        :param name: Name.
+        :param value: Value.
+        :return: New version.
+        """
+        cls = type(self)
+        value = cls._get_relationship(name).fabricate_value(value)
+        return cls.__make__(self._state.set(name, value))
+
+    @final_
+    def _update(self, update):
+        # type: (Union[Mapping[str, Any], Iterable[Tuple[str, Any]]]) -> Data
+        """
+        Update attribute values.
+
+        :param update: Updates.
+        :return: New version.
+        """
+        cls = type(self)
+        update = (
+            (n, cls._get_relationship(n).fabricate_value(v))
+            for n, v in (
+                iteritems(update) if isinstance(update, collections_abc.Mapping)
+                else update
+            )
+        )
+        return cls.__make__(self._state.update(update))
 
     @classmethod
     @final_
     def deserialize(cls, serialized, **kwargs):
         # type: (Dict[str, Any], Any) -> Data
-        """Deserialize."""
+        """
+        Deserialize.
+
+        :param serialized: Serialized.
+        :param kwargs: Keyword arguments to be passed to the deserializers.
+        :return: Deserialized.
+        """
         input_values = dict(
             (n, cls.deserialize_value(v, n, **kwargs))
             for n, v in iteritems(serialized)
@@ -174,51 +320,61 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
     @final_
     def serialize(self, **kwargs):
         # type: (Any) -> Dict[str, Any]
-        """Serialize."""
+        """
+        Serialize.
+
+        :param kwargs: Keyword arguments to be passed to the serializers.
+        :return: Serialized.
+        """
         return dict(
             (n, self.serialize_value(v, n, **kwargs))
             for n, v in iteritems(self._state)
             if type(self)._get_relationship(n).serialized
         )
 
+    @final_
     def get(self, name, fallback=None):
         # type: (str, Any) -> Union[Any, Any]
-        return self._state.get(name, fallback=fallback)
+        """
+        Get value for attribute, return fallback value if not set.
 
-    def _set(self, name, value):
-        # type: (str, Any) -> Data
-        cls = type(self)
-        value = cls._get_relationship(name).fabricate_value(value)
-        return cls.__make__(self._state.set(name, value))
-
-    def _update(self, update):
-        # type: (Union[Mapping[str, Any], Iterable[Tuple[str, Any]]]) -> Data
-        cls = type(self)
-        update = (
-            (n, cls._get_relationship(n).fabricate_value(v))
-            for n, v in (
-                iteritems(update) if isinstance(update, collections_abc.Mapping)
-                else update
-            )
-        )
-        return cls.__make__(self._state.update(update))
+        :param name: Name.
+        :param fallback: Fallback value.
+        :return: Value or fallback value.
+        """
+        return self._state.get(name, fallback)
 
     @property
     @final_
     def _state(self):
         # type: () -> ImmutableDict[str, Any]
         """Internal state."""
-        return self.__state
+        return cast("ImmutableDict", super(Data, self)._state)
 
 
-class InteractiveData(Data):
+class InteractiveData(Data, BaseInteractiveData):
     """Interactive data attribute container."""
     __slots__ = ()
 
+    @final_
     def set(self, name, value):
         # type: (str, Any) -> InteractiveData
+        """
+        Set attribute value.
+
+        :param name: Name.
+        :param value: Value.
+        :return: New version.
+        """
         return self._set(name, value)
 
+    @final_
     def update(self, update):
         # type: (Union[Mapping[str, Any], Iterable[Tuple[str, Any]]]) -> InteractiveData
+        """
+        Update attribute values.
+
+        :param update: Updates.
+        :return: New version.
+        """
         return self._update(update)

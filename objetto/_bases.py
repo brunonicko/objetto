@@ -563,6 +563,7 @@ class AbstractMember(with_metaclass(AbstractMemberMeta, Base)):
 
 
 def abstract_member():
+    # type: () -> AbstractType
     """
     Used to indicate an abstract attribute member in a class.
 

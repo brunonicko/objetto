@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 """List data."""
-from typing import Generic, TYPE_CHECKING, TypeVar, cast, overload
+
+from typing import TYPE_CHECKING, Generic, TypeVar, overload, cast
 
 from six import with_metaclass
 
-from .bases import BaseAuxiliaryData, BaseAuxiliaryDataMeta
-from .._bases import final, init_context
-from .._containers.list import ListContainer, ListContainerMeta
+from .._bases import final
+from .bases import (
+    BaseAuxiliaryDataMeta, BaseAuxiliaryData, BaseInteractiveAuxiliaryData
+)
+from .._containers.list import ListContainerMeta, SemiInteractiveListContainer
 from ..utils.custom_repr import custom_iterable_repr
 from ..utils.immutable import ImmutableList
 
@@ -23,39 +26,54 @@ class ListDataMeta(BaseAuxiliaryDataMeta, ListContainerMeta):
 
     @property
     @final
-    def _auxiliary_data_type(cls):
+    def _base_auxiliary_type(cls):
         # type: () -> Type[ListData]
-        """Base auxiliary data type."""
+        """Base auxiliary container type."""
         return ListData
 
 
 class ListData(
-    with_metaclass(ListDataMeta, BaseAuxiliaryData, ListContainer, Generic[_T])
+    with_metaclass(
+        ListDataMeta,
+        BaseAuxiliaryData,
+        SemiInteractiveListContainer,
+        Generic[_T],
+    )
 ):
-    """List data."""
+    """
+    List data.
 
-    __slots__ = ("__state",)
+    :param initial: Initial values.
+    """
+    __slots__ = ()
 
     @classmethod
     @final
     def __make__(cls, state=ImmutableList()):
-        # type: (Any) -> ListData
-        self = cast("ListData", cls.__new__(cls))
-        with init_context(self):
-            self.__state = state
-        return self
+        # type: (ImmutableList) -> ListData
+        """
+        Make a new list data.
+
+        :param state: Internal state.
+        :return: New list data.
+        """
+        return cast("ListData", super(ListData, cls).__make__(state))
 
     @final
     def __init__(self, initial=()):
         # type: (Iterable) -> None
         if type(initial) is type(self):
-            self.__state = cast("ListData", initial).__state
+            self._init_state(getattr(initial, "_state"))
         else:
-            self.__state = self.__get_initial_state(initial)
+            self._init_state(self.__get_initial_state(initial))
 
     def __repr__(self):
         # type: () -> str
-        """Get representation."""
+        """
+        Get representation.
+
+        :return: Representation.
+        """
         if type(self)._relationship.represented:
             return custom_iterable_repr(
                 self._state,
@@ -68,22 +86,47 @@ class ListData(
     @overload
     def __getitem__(self, index):
         # type: (int) -> _T
+        """
+        Get value at index.
+
+        :param index: Index.
+        :return: Value.
+        """
         pass
 
     @overload
     def __getitem__(self, index):
-        # type: (slice) -> ImmutableList
+        # type: (slice) -> ImmutableList[_T]
+        """
+        Get values from slice.
+
+        :param index: Slice.
+        :return: Values.
+        """
         pass
 
+    @final
     def __getitem__(self, index):
-        # type: (Union[int, slice]) -> Union[_T, ImmutableList]
+        # type: (Union[int, slice]) -> Union[_T, ImmutableList[_T]]
+        """
+        Get value/values at index/from slice.
+
+        :param index: Index/slice.
+        :return: Value/values.
+        """
         if isinstance(index, slice):
-            return type(self).__make__(self._state[index])
+            return ImmutableList(self._state[index])
         else:
             return self._state[index]
 
+    @final
     def __len__(self):
         # type: () -> int
+        """
+        Get value count.
+
+        :return: Value count.
+        """
         return len(self._state)
 
     @classmethod
@@ -94,113 +137,316 @@ class ListData(
         factory=True,  # type: bool
     ):
         # type: (...) -> ImmutableList
-        """Get initial state."""
-        state = ImmutableList(
-            cls._relationship.fabricate_value(v, factory=factory)
-            for v in input_values
-        )
+        """
+        Get initial state.
+
+        :param input_values: Input values.
+        :param factory: Whether to run values through factory.
+        :return: Initial state.
+        """
+        if not cls._relationship.passthrough:
+            state = ImmutableList(
+                cls._relationship.fabricate_value(v, factory=factory)
+                for v in input_values
+            )
+        else:
+            state = ImmutableList(input_values)
         return state
+
+    @final
+    def _clear(self):
+        # type: () -> ListData
+        """
+        Clear all values.
+
+        :return: New version.
+        """
+        return type(self).__make__()
+
+    @final
+    def _set(self, index, value):
+        # type: (int, _T) -> ListData
+        """
+        Set value at index.
+
+        :param index: Index.
+        :param value: Value.
+        :return: New version.
+        """
+        return self._change(index, value)
+
+    @final
+    def _change(self, index, *values):
+        # type: (int, _T) -> ListData
+        """
+        Change value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: New version.
+        """
+        cls = type(self)
+        if not cls._relationship.passthrough:
+            values = (cls._relationship.fabricate_value(v) for v in values)
+        return cls.__make__(self._state.change(index, *values))
+
+    @final
+    def _append(self, value):
+        # type: (_T) -> ListData
+        """
+        Append value at the end.
+
+        :param value: Value.
+        :return: New version.
+        """
+        cls = type(self)
+        value = cls._relationship.fabricate_value(value)
+        return cls.__make__(self._state.append(value))
+
+    @final
+    def _extend(self, iterable):
+        # type: (Iterable[_T]) -> ListData
+        """
+        Extend at the end with iterable.
+
+        :param iterable: Iterable.
+        :return: New version.
+        """
+        cls = type(self)
+        if not cls._relationship.passthrough:
+            iterable = (cls._relationship.fabricate_value(v) for v in iterable)
+        return cls.__make__(self._state.extend(iterable))
+
+    @final
+    def _insert(self, index, *values):
+        # type: (int, _T) -> ListData
+        """
+        Insert value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: New version.
+        :raises ValueError: No values provided.
+        """
+        cls = type(self)
+        if not cls._relationship.passthrough:
+            values = (cls._relationship.fabricate_value(v) for v in values)
+        return cls.__make__(self._state.insert(index, *values))
+
+    @final
+    def _remove(self, value):
+        # type: (_T) -> ListData
+        """
+        Remove first occurrence of value.
+
+        :param value: Value.
+        :return: New version.
+        """
+        return type(self).__make__(self._state.remove(value))
+
+    @final
+    def _reverse(self):
+        # type: () -> ListData
+        """
+        Reverse values.
+
+        :return: New version.
+        """
+        return type(self).__make__(self._state.reverse())
+
+    @final
+    def _move(self, item, target_index):
+        # type: (Union[slice, int], int) -> Any
+        """
+        Move values internally.
+
+        :param item: Index/slice.
+        :param target_index: Target index.
+        :return: New version.
+        """
+        return type(self).__make__(self._state.move(item, target_index))
+
+    @final
+    def _sort(self, key=None, reverse=False):
+        # type: (...) -> ListData
+        """
+        Sort values.
+
+        :param key: Sorting key function.
+        :param reverse: Whether to reverse sort.
+        :return: New version.
+        """
+        return type(self).__make__(self._state.sort(key=key, reverse=reverse))
+
+    @final
+    def get(self, index, fallback=None):
+        # type: (int, Any) -> _T
+        """
+        Get value at index, return fallback value if index is not valid.
+
+        :param index: Index.
+        :param fallback: Fallback value.
+        :return: Value or fallback value.
+        """
+        try:
+            return self._state[index]
+        except IndexError:
+            return fallback
 
     @classmethod
     @final
     def deserialize(cls, serialized, **kwargs):
         # type: (List, Any) -> ListData
-        """Deserialize."""
+        """
+        Deserialize.
+
+        :param serialized: Serialized.
+        :param kwargs: Keyword arguments to be passed to the deserializers.
+        :return: Deserialized.
+        """
         if not cls._relationship.serialized:
             error = "'{}' is not deserializable".format(cls.__name__)
             raise RuntimeError(error)
-
-        input_values = (cls.deserialize_value(v, None, **kwargs) for v in serialized)
-        state = cls.__get_initial_state(input_values, factory=False)
+        state = ImmutableList(
+            cls.deserialize_value(v, location=None, **kwargs) for v in serialized
+        )
         return cls.__make__(state)
 
     @final
     def serialize(self, **kwargs):
         # type: (Any) -> List
-        """Serialize."""
+        """
+        Serialize.
+
+        :param kwargs: Keyword arguments to be passed to the serializers.
+        :return: Serialized.
+        """
         if not type(self)._relationship.serialized:
             error = "'{}' is not serializable".format(type(self).__fullname__)
             raise RuntimeError(error)
+        return list(
+            self.serialize_value(v, location=None, **kwargs) for v in self._state
+        )
 
-        return list(self.serialize_value(v, None, **kwargs) for v in self._state)
-
-    def _copy(self):
+    @final
+    def copy(self):
         # type: () -> ListData
+        """
+        Get copy.
+
+        :return: Copy.
+        """
         return self
-
-    def _clear(self):
-        # type: () -> ListData
-        return type(self).__make__()
-
-    def _append(self, value):
-        # type: (_T) -> ListData
-        cls = type(self)
-        value = cls._relationship.fabricate_value(value)
-        return cls.__make__(self._state.append(value))
-
-    def _extend(self, iterable):
-        # type: (Iterable[_T]) -> ListData
-        cls = type(self)
-        iterable = (v for v in cls._relationship.fabricate_value(iterable))
-        return cls.__make__(self._state.extend(iterable))
-
-    def _insert(self, index, value):
-        # type: (int, _T) -> ListData
-        cls = type(self)
-        value = cls._relationship.fabricate_value(value)
-        return cls.__make__(self._state.insert(index, value))
-
-    def _remove(self, value):
-        # type: (_T) -> ListData
-        return type(self).__make__(self._state.remove(value))
-
-    def _reverse(self):
-        # type: () -> ListData
-        return type(self).__make__(self._state.reverse())
-
-    def _sort(self, key=None, reverse=False):
-        # type: (...) -> ListData
-        return type(self).__make__(self._state.sort(key=key, reverse=reverse))
 
     @property
     @final
     def _state(self):
         # type: () -> ImmutableList[_T]
         """Internal state."""
-        return self.__state
+        return cast("ImmutableList", super(ListData, self)._state)
 
 
-class InteractiveListData(ListData):
+class InteractiveListData(ListData, BaseInteractiveAuxiliaryData):
     """Interactive list data."""
 
-    def copy(self):
-        # type: () -> InteractiveListData
-        return self._copy()
-
+    @final
     def clear(self):
         # type: () -> InteractiveListData
+        """
+        Clear all values.
+
+        :return: New version.
+        """
         return self._clear()
 
+    @final
+    def change(self, index, *values):
+        # type: (int, _T) -> ListData
+        """
+        Change value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: New version.
+        """
+        return self._change(index, *values)
+
+    @final
     def append(self, value):
         # type: (_T) -> InteractiveListData
+        """
+        Append value at the end.
+
+        :param value: Value.
+        :return: New version.
+        """
         return self._append(value)
 
+    @final
     def extend(self, iterable):
         # type: (Iterable[_T]) -> InteractiveListData
+        """
+        Extend at the end with iterable.
+
+        :param iterable: Iterable.
+        :return: New version.
+        """
         return self._extend(iterable)
 
-    def insert(self, index, value):
+    @final
+    def insert(self, index, *values):
         # type: (int, _T) -> InteractiveListData
-        return self._insert(index, value)
+        """
+        Insert value(s) at index.
 
+        :param index: Index.
+        :param values: Value(s).
+        :return: New version.
+        :raises ValueError: No values provided.
+        """
+        return self._insert(index, *values)
+
+    @final
     def remove(self, value):
         # type: (_T) -> InteractiveListData
+        """
+        Remove first occurrence of value.
+
+        :param value: Value.
+        :return: New version.
+        """
         return self._remove(value)
 
+    @final
     def reverse(self):
         # type: () -> InteractiveListData
+        """
+        Reverse values.
+
+        :return: New version.
+        """
         return self._reverse()
 
+    @final
+    def move(self, item, target_index):
+        # type: (Union[slice, int], int) -> Any
+        """
+        Move values internally.
+
+        :param item: Index/slice.
+        :param target_index: Target index.
+        :return: New version.
+        """
+        return self._move(item, target_index)
+
+    @final
     def sort(self, key=None, reverse=False):
         # type: (...) -> InteractiveListData
+        """
+        Sort values.
+
+        :param key: Sorting key function.
+        :param reverse: Whether to reverse sort.
+        :return: New version.
+        """
         return self._sort(key=key, reverse=reverse)

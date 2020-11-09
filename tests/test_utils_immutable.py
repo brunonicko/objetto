@@ -148,6 +148,11 @@ def test_immutable_list():
 
     # Transformations.
     assert immutable_list.clear() == ImmutableList()
+    assert immutable_list.change(1, "x", "y") == ImmutableList(
+        ["a", "x", "y", "c"]
+    )
+    with pytest.raises(IndexError):
+        immutable_list.change(2, "x", "y", "z")
     assert immutable_list.append("d") == ImmutableList(["a", "b", "c", "c", "d"])
     assert immutable_list.extend(["d", "e"]) == ImmutableList(
         ["a", "b", "c", "c", "d", "e"]

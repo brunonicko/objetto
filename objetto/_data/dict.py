@@ -7,7 +7,9 @@ from six import with_metaclass, iteritems, iterkeys, itervalues
 from six.moves import collections_abc
 
 from .._bases import final
-from .bases import BaseAuxiliaryDataMeta, BaseAuxiliaryData
+from .bases import (
+    BaseAuxiliaryDataMeta, BaseAuxiliaryData, BaseInteractiveAuxiliaryData
+)
 from .._containers.dict import DictContainerMeta, SemiInteractiveDictContainer
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.immutable import ImmutableDict
@@ -34,7 +36,10 @@ class DictDataMeta(BaseAuxiliaryDataMeta, DictContainerMeta):
 
 class DictData(
     with_metaclass(
-        DictDataMeta, BaseAuxiliaryData, SemiInteractiveDictContainer, Generic[_KT, _VT]
+        DictDataMeta,
+        BaseAuxiliaryData,
+        SemiInteractiveDictContainer,
+        Generic[_KT, _VT],
     )
 ):
     """
@@ -120,7 +125,7 @@ class DictData(
         """
         Get initial state.
 
-        :param input_values: Input mapping.
+        :param input_values: Input values.
         :param factory: Whether to run values through factory.
         :return: Initial state.
         """
@@ -135,6 +140,76 @@ class DictData(
         else:
             state = ImmutableDict(input_values)
         return state
+
+    @final
+    def _clear(self):
+        # type: () -> DictData
+        """
+        Clear all keys and values.
+
+        :return: New version.
+        """
+        return type(self).__make__()
+
+    @final
+    def _set(self, key, value):
+        # type: (_KT, _VT) -> DictData
+        """
+        Set value for key.
+
+        :param key: Key.
+        :param value: Value.
+        :return: New version.
+        """
+        cls = type(self)
+        key = cls._key_relationship.fabricate_key(key)
+        value = cls._relationship.fabricate_value(value)
+        return cls.__make__(self._state.set(key, value))
+
+    @final
+    def _discard(self, key):
+        # type: (_KT) -> DictData
+        """
+        Discard key if it exists.
+
+        :param key: Key.
+        :return: New version.
+        """
+        return type(self).__make__(self._state.discard(key))
+
+    @final
+    def _remove(self, key):
+        # type: (_KT) -> DictData
+        """
+        Delete existing key.
+
+        :param key: Key.
+        :return: New version.
+        """
+        return type(self).__make__(self._state.remove(key))
+
+    @final
+    def _update(self, update):
+        # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> DictData
+        """
+        Update keys and values.
+
+        :param update: Updates.
+        :return: New version.
+        """
+        cls = type(self)
+        if not cls._key_relationship.passthrough or not cls._relationship.passthrough:
+            update = (
+                (
+                    cls._key_relationship.fabricate_key(k),
+                    cls._relationship.fabricate_value(v),
+                )
+                for k, v in (
+                    iteritems(update) if isinstance(update, collections_abc.Mapping)
+                    else update
+                )
+            )
+        return cls.__make__(self._state.update(update))
 
     @final
     def iteritems(self):
@@ -198,7 +273,7 @@ class DictData(
         state = ImmutableDict(
             (
                 cls._key_relationship.fabricate_key(k, factory=False),
-                cls.deserialize_value(v, **kwargs)
+                cls.deserialize_value(v, location=None, **kwargs)
             )
             for k, v in iteritems(serialized)
         )
@@ -217,7 +292,7 @@ class DictData(
             error = "'{}' is not serializable".format(type(self).__fullname__)
             raise RuntimeError(error)
         return dict(
-            (k, self.serialize_value(v, **kwargs))
+            (k, self.serialize_value(v, location=None, **kwargs))
             for k, v in iteritems(self._state)
         )
 
@@ -231,86 +306,15 @@ class DictData(
         """
         return self
 
-    @final
-    def _clear(self):
-        # type: () -> DictData
-        """
-        Clear all keys and values.
-
-        :return: New version.
-        """
-        return type(self).__make__()
-
-    @final
-    def _discard(self, key):
-        # type: (_KT) -> DictData
-        """
-        Discard key if it exists.
-
-        :param key: Key.
-        :return: New version.
-        """
-        return type(self).__make__(self._state.discard(key))
-
-    @final
-    def _remove(self, key):
-        # type: (_KT) -> DictData
-        """
-        Delete existing key.
-
-        :param key: Key.
-        :return: New version.
-        """
-        return type(self).__make__(self._state.remove(key))
-
-    @final
-    def _set(self, key, value):
-        # type: (_KT, _VT) -> DictData
-        """
-        Set value for key.
-
-        :param key: Key.
-        :param value: Value.
-        :return: New version.
-        """
-        cls = type(self)
-        if not cls._key_relationship.passthrough or not cls._relationship.passthrough:
-            key = cls._key_relationship.fabricate_key(key)
-            value = cls._relationship.fabricate_value(value)
-        return cls.__make__(self._state.set(key, value))
-
-    @final
-    def _update(self, update):
-        # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> DictData
-        """
-        Update keys and values.
-
-        :param update: Updates.
-        :return: New version.
-        """
-        cls = type(self)
-        if not cls._key_relationship.passthrough or not cls._relationship.passthrough:
-            update = (
-                (
-                    cls._key_relationship.fabricate_key(k),
-                    cls._relationship.fabricate_value(v),
-                )
-                for k, v in (
-                    iteritems(update) if isinstance(update, collections_abc.Mapping)
-                    else update
-                )
-            )
-        return cls.__make__(self._state.update(update))
-
     @property
     @final
     def _state(self):
         # type: () -> ImmutableDict[_KT, _VT]
         """Internal state."""
-        return self.__state
+        return cast("ImmutableDict", super(DictData, self)._state)
 
 
-class InteractiveDictData(DictData):
+class InteractiveDictData(DictData, BaseInteractiveAuxiliaryData):
     """Interactive dictionary data."""
 
     @final
