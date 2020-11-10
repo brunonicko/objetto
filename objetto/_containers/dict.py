@@ -46,7 +46,7 @@ class KeyRelationship(ProtectedBase):
 
     :param types: Types.
     :param subtypes: Whether to accept subtypes.
-    :param type_checked: Whether to perform runtime type check.
+    :param checked: Whether to perform runtime type check.
     :param module: Module path for lazy types/factories.
     :param factory: Key factory.
     """
@@ -54,7 +54,7 @@ class KeyRelationship(ProtectedBase):
     __slots__ = (
         "types",
         "subtypes",
-        "type_checked",
+        "checked",
         "module",
         "factory",
     )
@@ -63,13 +63,13 @@ class KeyRelationship(ProtectedBase):
         self,
         types=(),  # type: LazyTypes
         subtypes=False,  # type: bool
-        type_checked=True,  # type: bool
+        checked=True,  # type: bool
         module=None,  # type: Optional[str]
         factory=None,  # type: LazyFactory
     ):
         self.types = format_types(types, module=module)
         self.subtypes = bool(subtypes)
-        self.type_checked = bool(type_checked)
+        self.checked = bool(checked)
         self.module = module
         self.factory = format_factory(factory, module=module)
 
@@ -85,7 +85,7 @@ class KeyRelationship(ProtectedBase):
         """
         if factory and self.factory is not None:
             key = run_factory(self.factory, args=(key,), kwargs=kwargs)
-        if self.types and self.type_checked:
+        if self.types and self.checked:
             assert_is_instance(key, self.types, subtypes=self.subtypes)
         return key
 
@@ -93,7 +93,7 @@ class KeyRelationship(ProtectedBase):
     def passthrough(self):
         # type: () -> bool
         """Whether does not perform type checks and has no factory."""
-        return (not self.types or not self.type_checked) and self.factory is None
+        return (not self.types or not self.checked) and self.factory is None
 
 
 class DictContainerMeta(BaseAuxiliaryContainerMeta):

@@ -45,35 +45,35 @@ class DataRelationship(BaseRelationship):
 
     :param types: Types.
     :param subtypes: Whether to accept subtypes.
-    :param type_checked: Whether to perform runtime type check.
+    :param checked: Whether to perform runtime type check.
     :param module: Module path for lazy types/factories.
     :param factory: Value factory.
     :param serialized: Whether should be serialized.
     :param serializer: Custom serializer.
     :param deserializer: Custom deserializer.
     :param represented: Whether should be represented.
-    :param eq: Whether the value should be leverage when comparing for equality.
+    :param compared: Whether the value should be leverage when comparing for equality.
     """
 
-    __slots__ = ("eq",)
+    __slots__ = ("compared",)
 
     def __init__(
         self,
         types=(),  # type: LazyTypes
         subtypes=False,  # type: bool
-        type_checked=True,  # type: bool
+        checked=True,  # type: bool
         module=None,  # type: Optional[str]
         factory=None,  # type: LazyFactory
         serialized=True,  # type: bool
         serializer=None,  # type: LazyFactory
         deserializer=None,  # type: LazyFactory
         represented=True,  # type: bool
-        eq=True,  # type: bool
+        compared=True,  # type: bool
     ):
         super(DataRelationship, self).__init__(
             types=types,
             subtypes=subtypes,
-            type_checked=type_checked,
+            checked=checked,
             module=module,
             factory=factory,
             serialized=serialized,
@@ -81,7 +81,7 @@ class DataRelationship(BaseRelationship):
             deserializer=deserializer,
             represented=represented,
         )
-        self.eq = bool(eq)
+        self.compared = bool(compared)
 
     def to_dict(self):
         # type: () -> Dict[str, Any]
@@ -92,7 +92,7 @@ class DataRelationship(BaseRelationship):
         """
         dct = super(DataRelationship, self).to_dict()
         dct.update({
-            "eq": self.eq,
+            "compared": self.compared,
         })
         return dct
 
@@ -266,7 +266,7 @@ class BaseAuxiliaryData(
         try:
             return self.__hash  # type: ignore
         except AttributeError:
-            if not type(self)._relationship.eq:
+            if not type(self)._relationship.compared:
                 self.__hash = id(self)
             else:
                 self.__hash = hash(self._state)
@@ -283,7 +283,7 @@ class BaseAuxiliaryData(
         """
         if self is other:
             return True
-        if not type(self)._relationship.eq:
+        if not type(self)._relationship.compared:
             return False
         if not isinstance(other, BaseAuxiliaryData):
             return False

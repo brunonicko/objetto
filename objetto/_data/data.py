@@ -228,7 +228,8 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
         except AttributeError:
             cls = type(self)
             eq_state = dict(
-                (n, v) for n, v in iteritems(self._state) if cls._get_relationship(n).eq
+                (n, v) for n, v in iteritems(self._state)
+                if cast("DataRelationship", cls._get_relationship(n)).compared
             )
             self.__hash = hash(frozenset(iteritems(eq_state)))
             return self.__hash
@@ -248,12 +249,12 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
         if cls is not type(other):
             return False
         eq_state = dict(
-            (n, v) for n, v in iteritems(self._state) if cls._get_relationship(n).eq
+            (n, v) for n, v in iteritems(self._state)
+            if cast("DataRelationship", cls._get_relationship(n)).compared
         )
-        if not eq_state:
-            return False
         other_eq_state = dict(
-            (n, v) for n, v in iteritems(other._state) if cls._get_relationship(n).eq
+            (n, v) for n, v in iteritems(other._state)
+            if cast("DataRelationship", cls._get_relationship(n)).compared
         )
         return eq_state == other_eq_state
 

@@ -121,11 +121,11 @@ def test_base_relationship():
     relationship = BaseRelationship(factory=int)
     assert relationship.passthrough is False
 
-    relationship = BaseRelationship(types=int, type_checked=False)
+    relationship = BaseRelationship(types=int, checked=False)
     assert relationship.types == (int,)
     assert relationship.passthrough is True
 
-    relationship = BaseRelationship(types=int, type_checked=False, factory=int)
+    relationship = BaseRelationship(types=int, checked=False, factory=int)
     assert relationship.types == (int,)
     assert relationship.factory == int
     assert relationship.passthrough is False

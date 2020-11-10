@@ -49,7 +49,7 @@ class ObjectRelationship(BaseRelationship):
         self,
         types=(),  # type: LazyTypes
         subtypes=False,  # type: bool
-        type_checked=True,  # type: bool
+        checked=True,  # type: bool
         module=None,  # type: Optional[str]
         factory=None,  # type: LazyFactory
         serialized=True,  # type: bool
@@ -64,7 +64,7 @@ class ObjectRelationship(BaseRelationship):
         super(ObjectRelationship, self).__init__(
             types=types,
             subtypes=subtypes,
-            type_checked=type_checked,
+            checked=checked,
             module=module,
             factory=factory,
             serialized=bool(serialized) if child else False,
@@ -92,7 +92,7 @@ class ObjectRelationship(BaseRelationship):
             self._data_relationship = DataRelationship(
                 types=types,
                 subtypes=self.subtypes,
-                type_checked=self.type_checked,
+                checked=self.checked,
                 module=self.module,
                 factory=self.factory,
                 serialized=self.serialized,
