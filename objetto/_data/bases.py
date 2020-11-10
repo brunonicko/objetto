@@ -269,7 +269,7 @@ class BaseAuxiliaryData(
             if not type(self)._relationship.eq:
                 self.__hash = id(self)
             else:
-                self.__hash = hash((self._state, type(self)._relationship))
+                self.__hash = hash(self._state)
             return self.__hash
 
     @final
@@ -285,7 +285,15 @@ class BaseAuxiliaryData(
             return True
         if not type(self)._relationship.eq:
             return False
-        if isinstance(other, type(self)._base_auxiliary_type):
+        if not isinstance(other, BaseAuxiliaryData):
+            return False
+        if isinstance(
+            self, BaseInteractiveAuxiliaryData
+        ) != isinstance(
+            other, BaseInteractiveAuxiliaryData
+        ):
+            return False
+        if type(other)._base_auxiliary_type is type(self)._base_auxiliary_type:
             if type(self)._relationship == type(other)._relationship:
                 return self._state == other._state
         return False

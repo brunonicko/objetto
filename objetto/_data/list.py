@@ -12,9 +12,10 @@ from .bases import (
 from .._containers.list import ListContainerMeta, SemiInteractiveListContainer
 from ..utils.custom_repr import custom_iterable_repr
 from ..utils.immutable import ImmutableList
+from ..utils.list_operations import resolve_index, resolve_continuous_slice
 
 if TYPE_CHECKING:
-    from typing import Any, Type, Union, Iterable, List
+    from typing import Any, Type, Union, Iterable, List, Tuple
 
 __all__ = ["ListDataMeta", "ListData", "InteractiveListData"]
 
@@ -338,6 +339,31 @@ class ListData(
         """
         return self
 
+    @final
+    def resolve_index(self, index, clamp=False):
+        # type: (int, bool) -> int
+        """
+        Resolve index to a positive number.
+
+        :param index: Input index.
+        :param clamp: Whether to clamp between zero and the length.
+        :return: Resolved index.
+        :raises IndexError: Index out of range.
+        """
+        return resolve_index(len(self._state), index, clamp=clamp)
+
+    @final
+    def resolve_continuous_slice(self, slc):
+        # type: (slice) -> Tuple[int, int]
+        """
+        Resolve continuous slice according to length.
+
+        :param slc: Continuous slice.
+        :return: Index and stop.
+        :raises IndexError: Slice is noncontinuous.
+        """
+        return resolve_continuous_slice(len(self._state), slc)
+
     @property
     @final
     def _state(self):
@@ -360,8 +386,20 @@ class InteractiveListData(ListData, BaseInteractiveAuxiliaryData):
         return self._clear()
 
     @final
+    def set(self, index, value):
+        # type: (int, _T) -> InteractiveListData
+        """
+        Set value at index.
+
+        :param index: Index.
+        :param value: Value.
+        :return: New version.
+        """
+        return self._set(index, value)
+
+    @final
     def change(self, index, *values):
-        # type: (int, _T) -> ListData
+        # type: (int, _T) -> InteractiveListData
         """
         Change value(s) at index.
 
@@ -429,7 +467,7 @@ class InteractiveListData(ListData, BaseInteractiveAuxiliaryData):
 
     @final
     def move(self, item, target_index):
-        # type: (Union[slice, int], int) -> Any
+        # type: (Union[slice, int], int) -> InteractiveListData
         """
         Move values internally.
 

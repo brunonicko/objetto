@@ -227,15 +227,10 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
             return self.__hash  # type: ignore
         except AttributeError:
             cls = type(self)
-            eq_attributes = set(
-                n for n, a in iteritems(cls._attributes) if a.relationship.eq
+            eq_state = dict(
+                (n, v) for n, v in iteritems(self._state) if cls._get_relationship(n).eq
             )
-            if not eq_attributes:
-                return id(self)
-            eq_state = dict((n, v) for n, v in self._state if n in eq_attributes)
-            self.__hash = hash(
-                (frozenset(iteritems(eq_state)), frozenset(eq_attributes))
-            )
+            self.__hash = hash(frozenset(iteritems(eq_state)))
             return self.__hash
 
     @final_
@@ -249,19 +244,16 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
         """
         if self is other:
             return True
-        if type(self) is not type(other):
-            return False
         cls = type(self)
-        eq_attributes = set(
-            n for n, a in iteritems(cls._attributes) if a.relationship.eq
-        )
-        if not eq_attributes:
-            return self is other
+        if cls is not type(other):
+            return False
         eq_state = dict(
-            (n, v) for n, v in self._state if cls._get_relationship(n).eq
+            (n, v) for n, v in iteritems(self._state) if cls._get_relationship(n).eq
         )
+        if not eq_state:
+            return False
         other_eq_state = dict(
-            (n, v) for n, v in other._state if cls._get_relationship(n).eq
+            (n, v) for n, v in iteritems(other._state) if cls._get_relationship(n).eq
         )
         return eq_state == other_eq_state
 
@@ -278,6 +270,28 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
         cls = type(self)
         value = cls._get_relationship(name).fabricate_value(value)
         return cls.__make__(self._state.set(name, value))
+
+    @final_
+    def _delete(self, name):
+        # type: (str) -> Data
+        """
+        Delete attribute value.
+
+        :param name: Attribute name.
+        :return: New version.
+        :raises AttributeError: Attribute can't be deleted or has no value.
+        """
+        cls = type(self)
+        attribute = cls._attributes[name]
+        if attribute.required:
+            error = "'{}' attribute '{}' is required and cannot be deleted".format(
+                cls.__fullname__, name
+            )
+            raise AttributeError(error)
+        if name not in self._state:
+            error = "'{}' attribute '{}' has no value".format(cls.__fullname__, name)
+            raise AttributeError(error)
+        return cls.__make__(self._state.remove(name))
 
     @final_
     def _update(self, update):
@@ -367,6 +381,18 @@ class InteractiveData(Data, BaseInteractiveData):
         :return: New version.
         """
         return self._set(name, value)
+
+    @final_
+    def delete(self, name):
+        # type: (str) -> InteractiveData
+        """
+        Delete attribute value.
+
+        :param name: Attribute name.
+        :return: New version.
+        :raises AttributeError: Attribute can't be deleted or has no value.
+        """
+        return self._delete(name)
 
     @final_
     def update(self, update):

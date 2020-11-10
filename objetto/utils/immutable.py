@@ -20,6 +20,7 @@ from six import iteritems, iterkeys, itervalues
 from six.moves import collections_abc
 
 from .custom_repr import custom_iterable_repr, custom_mapping_repr
+from .list_operations import resolve_index, resolve_continuous_slice, pre_move
 
 if TYPE_CHECKING:
     from pyrsistent.typing import PMap, PVector, PSet
@@ -35,7 +36,6 @@ if TYPE_CHECKING:
     )
 
 __all__ = ["Immutable", "ImmutableDict", "ImmutableList", "ImmutableSet"]
-
 
 _KT = TypeVar("_KT")
 _VT = TypeVar("_VT")
@@ -438,18 +438,7 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
         :return: Resolved index.
         :raises IndexError: Index out of range.
         """
-        length = len(self.__internal)
-        if index < 0:
-            index += length
-        if clamp:
-            if index < 0:
-                index = 0
-            elif index > length:
-                index = length
-        elif index < 0 or index >= length:
-            error = "index out of range"
-            raise IndexError(error)
-        return index
+        return resolve_index(len(self.__internal), index, clamp=clamp)
 
     def resolve_continuous_slice(self, slc):
         # type: (slice) -> Tuple[int, int]
@@ -460,12 +449,7 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
         :return: Index and stop.
         :raises IndexError: Slice is noncontinuous.
         """
-        length = len(self.__internal)
-        index, stop, step = slc.indices(length)
-        if step != 1 or stop < index:
-            error = "slice {} is noncontinuous".format(slc)
-            raise IndexError(error)
-        return index, stop
+        return resolve_continuous_slice(len(self.__internal), slc)
 
     def clear(self):
         # type: () -> ImmutableList
@@ -565,23 +549,11 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
         :return: New version.
         """
 
-        # Resolve slice/index.
-        if isinstance(item, slice):
-            index, stop = self.resolve_continuous_slice(item)
-            if index == stop:
-                return self
-        else:
-            index = self.resolve_index(item)
-            stop = index + 1
-
-        # Calculate post index and target index.
-        target_index = self.resolve_index(target_index, clamp=True)
-        if index <= target_index <= stop:
+        # Pre-move checks.
+        result = pre_move(len(self.__internal), item, target_index)
+        if result is None:
             return self
-        elif target_index > stop:
-            post_index = target_index - (stop - index) + 1
-        else:
-            post_index = target_index
+        index, stop, target_index, post_index = result
 
         # Pop and re-insert values.
         values = self.__internal[index:stop]

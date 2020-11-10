@@ -94,7 +94,7 @@ class SetData(
         :param value: Value.
         :return: True if contains.
         """
-        return value in self.__internal
+        return value in self._state
 
     @final
     def __len__(self):
@@ -114,7 +114,7 @@ class SetData(
 
         :return: Value iterator.
         """
-        for value in self.__internal:
+        for value in self._state:
             yield value
 
     @classmethod
@@ -369,7 +369,7 @@ class InteractiveSetData(SetData, BaseInteractiveAuxiliaryData):
 
     @final
     def clear(self):
-        # type: () -> SetData
+        # type: () -> InteractiveSetData
         """
         Clear all values.
 
@@ -379,7 +379,7 @@ class InteractiveSetData(SetData, BaseInteractiveAuxiliaryData):
 
     @final
     def set(self, value, new_value):
-        # type: (_T, _T) -> SetData
+        # type: (_T, _T) -> InteractiveSetData
         """
         Replace existing value with a new one.
 
@@ -391,7 +391,7 @@ class InteractiveSetData(SetData, BaseInteractiveAuxiliaryData):
 
     @final
     def add(self, *values):
-        # type: (_T) -> SetData
+        # type: (_T) -> InteractiveSetData
         """
         Add value(s).
 
@@ -402,7 +402,7 @@ class InteractiveSetData(SetData, BaseInteractiveAuxiliaryData):
 
     @final
     def discard(self, value):
-        # type: (_T) -> SetData
+        # type: (_T) -> InteractiveSetData
         """
         Discard value if it exists.
 
@@ -413,7 +413,7 @@ class InteractiveSetData(SetData, BaseInteractiveAuxiliaryData):
 
     @final
     def remove(self, value):
-        # type: (_T) -> SetData
+        # type: (_T) -> InteractiveSetData
         """
         Remove existing value.
 
@@ -424,7 +424,7 @@ class InteractiveSetData(SetData, BaseInteractiveAuxiliaryData):
 
     @final
     def replace(self, value, new_value):
-        # type: (_T, _T) -> SetData
+        # type: (_T, _T) -> InteractiveSetData
         """
         Replace existing value with a new one.
 
@@ -436,7 +436,7 @@ class InteractiveSetData(SetData, BaseInteractiveAuxiliaryData):
 
     @final
     def update(self, iterable):
-        # type: (Iterable[_T]) -> SetData
+        # type: (Iterable[_T]) -> InteractiveSetData
         """
         Update with iterable.
 

@@ -10,7 +10,9 @@ from .._bases import final
 from .bases import (
     BaseAuxiliaryDataMeta, BaseAuxiliaryData, BaseInteractiveAuxiliaryData
 )
-from .._containers.dict import DictContainerMeta, SemiInteractiveDictContainer
+from .._containers.dict import (
+    KeyRelationship, DictContainerMeta, SemiInteractiveDictContainer
+)
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.immutable import ImmutableDict
 
@@ -48,6 +50,7 @@ class DictData(
     :param initial: Initial values.
     """
     __slots__ = ()
+    _key_relationship = KeyRelationship()
 
     @classmethod
     @final
