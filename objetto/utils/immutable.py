@@ -5,20 +5,18 @@ from abc import abstractmethod
 from itertools import chain
 
 from pyrsistent import pmap, pvector, pset
-from slotted import (
-    SlottedMapping,
-    SlottedSequence,
-    SlottedSet,
-    SlottedHashable,
-    SlottedContainer,
-    SlottedSized,
-    SlottedIterable,
-)
+from slotted import SlottedHashable
 from typing import TYPE_CHECKING, TypeVar, Generic, cast, overload
 
 from six import iteritems, iterkeys, itervalues
 from six.moves import collections_abc
 
+from .interfaces import (
+    InteractiveInterface,
+    InteractiveDictInterface,
+    InteractiveListInterface,
+    InteractiveSetInterface,
+)
 from .custom_repr import custom_iterable_repr, custom_mapping_repr
 from .list_operations import resolve_index, resolve_continuous_slice, pre_move
 
@@ -45,7 +43,7 @@ _INTERNAL_LIST_TYPE = type(pvector())  # type: Type[PVector]
 _INTERNAL_SET_TYPE = type(pset())  # type: Type[PSet]
 
 
-class Immutable(SlottedHashable, SlottedSized, SlottedIterable, SlottedContainer):
+class Immutable(SlottedHashable, InteractiveInterface):
     """Abstract immutable collection."""
 
     @abstractmethod
@@ -109,7 +107,7 @@ class Immutable(SlottedHashable, SlottedSized, SlottedIterable, SlottedContainer
         raise NotImplementedError()
 
 
-class ImmutableDict(Immutable, SlottedHashable, SlottedMapping, Generic[_KT, _VT]):
+class ImmutableDict(Immutable, InteractiveDictInterface, Generic[_KT, _VT]):
     """
     Immutable dictionary.
 
@@ -329,7 +327,7 @@ class ImmutableDict(Immutable, SlottedHashable, SlottedMapping, Generic[_KT, _VT
             return type(self)(self.__internal.update(pmap(update)))
 
 
-class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
+class ImmutableList(Immutable, InteractiveListInterface, Generic[_T]):
     """
     Immutable list.
 
@@ -630,7 +628,7 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
         return type(self)(sorted(self.__internal, key=key, reverse=reverse))
 
 
-class ImmutableSet(Immutable, SlottedHashable, SlottedSet, Generic[_T]):
+class ImmutableSet(Immutable, InteractiveSetInterface, Generic[_T]):
     """
     Immutable set.
 
