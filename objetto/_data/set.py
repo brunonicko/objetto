@@ -152,18 +152,6 @@ class SetData(
         return type(self).__make__()
 
     @final
-    def _set(self, value, new_value):
-        # type: (_T, _T) -> SetData
-        """
-        Replace existing value with a new one.
-
-        :param value: Existing value.
-        :param new_value: New value.
-        :return: New version.
-        """
-        return self._replace(value, new_value)
-
-    @final
     def _add(self, *values):
         # type: (_T) -> SetData
         """
@@ -228,21 +216,6 @@ class SetData(
         if not cls._relationship.passthrough:
             iterable = (cls._relationship.fabricate_value(v) for v in iterable)
         return cls.__make__(self._state.update(iterable))
-
-    @final
-    def get(self, value, fallback=None):
-        # type: (_T, Any) -> _T
-        """
-        Get value if it's in the set, return fallback value otherwise.
-
-        :param value: Value.
-        :param fallback: Fallback value.
-        :return: Value or fallback value.
-        """
-        if value in self._state:
-            return value
-        else:
-            return fallback
 
     @final
     def difference(self, iterable):
@@ -325,16 +298,6 @@ class SetData(
         )
 
     @final
-    def copy(self):
-        # type: () -> SetData
-        """
-        Get copy.
-
-        :return: Copy.
-        """
-        return self
-
-    @final
     def issubset(self, iterable):
         # type: (Iterable[_T]) -> bool
         """
@@ -376,18 +339,6 @@ class InteractiveSetData(SetData, BaseInteractiveAuxiliaryData):
         :return: New version.
         """
         return self._clear()
-
-    @final
-    def set(self, value, new_value):
-        # type: (_T, _T) -> InteractiveSetData
-        """
-        Replace existing value with a new one.
-
-        :param value: Existing value.
-        :param new_value: New value.
-        :return: New version.
-        """
-        return self._set(value, new_value)
 
     @final
     def add(self, *values):

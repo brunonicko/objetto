@@ -80,6 +80,34 @@ class Immutable(SlottedHashable, SlottedSized, SlottedIterable, SlottedContainer
             return NotImplemented
         return not result
 
+    def copy(self):
+        # type: () -> Immutable
+        """
+        Get copy.
+
+        :return: Copy.
+        """
+        return self
+
+    def clear(self):
+        # type: () -> Immutable
+        """
+        Clear all keys and values.
+
+        :return: New version.
+        """
+        return type(self)()
+
+    @abstractmethod
+    def find(self, **attributes):
+        """
+        Find first value that matches unique attribute values.
+
+        :param attributes: Attributes to match.
+        :return: Value.
+        """
+        raise NotImplementedError()
+
 
 class ImmutableDict(Immutable, SlottedHashable, SlottedMapping, Generic[_KT, _VT]):
     """
@@ -227,23 +255,34 @@ class ImmutableDict(Immutable, SlottedHashable, SlottedMapping, Generic[_KT, _VT
         for value in itervalues(self.__internal):
             yield value
 
-    def copy(self):
-        # type: () -> ImmutableDict
+    def find(self, **attributes):
+        # type: (Any) -> Any
         """
-        Get copy.
+        Find first value that matches unique attribute values.
 
-        :return: Copy.
+        :param attributes: Attributes to match.
+        :return: Value or None if nothing was found.
+        :raises ValueError: No attributes provided or no match found.
         """
-        return self
-
-    def clear(self):
-        # type: () -> ImmutableDict
-        """
-        Clear all keys and values.
-
-        :return: New version.
-        """
-        return type(self)()
+        if not attributes:
+            error = "no attributes provided"
+            raise ValueError(error)
+        for value in self.itervalues():
+            for a_name, a_value in iteritems(attributes):
+                if not hasattr(value, a_name) or getattr(value, a_name) != a_value:
+                    break
+            else:
+                return value
+        error = "could not find a match for {}".format(
+            custom_mapping_repr(
+                attributes,
+                prefix="(",
+                template="{key}={value}",
+                suffix=")",
+                key_repr=str,
+            ),
+        )
+        raise ValueError(error)
 
     def discard(self, key):
         # type: (_KT) -> ImmutableDict
@@ -419,15 +458,6 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
         """
         return len(self.__internal)
 
-    def copy(self):
-        # type: () -> ImmutableList
-        """
-        Get copy.
-
-        :return: Copy.
-        """
-        return self
-
     def resolve_index(self, index, clamp=False):
         # type: (int, bool) -> int
         """
@@ -451,14 +481,34 @@ class ImmutableList(Immutable, SlottedHashable, SlottedSequence, Generic[_T]):
         """
         return resolve_continuous_slice(len(self.__internal), slc)
 
-    def clear(self):
-        # type: () -> ImmutableList
+    def find(self, **attributes):
+        # type: (Any) -> Any
         """
-        Clear all values.
+        Find first value that matches unique attribute values.
 
-        :return: New version.
+        :param attributes: Attributes to match.
+        :return: Value or None if nothing was found.
+        :raises ValueError: No attributes provided or no match found.
         """
-        return type(self)()
+        if not attributes:
+            error = "no attributes provided"
+            raise ValueError(error)
+        for value in self:
+            for a_name, a_value in iteritems(attributes):
+                if not hasattr(value, a_name) or getattr(value, a_name) != a_value:
+                    break
+            else:
+                return value
+        error = "could not find a match for {}".format(
+            custom_mapping_repr(
+                attributes,
+                prefix="(",
+                template="{key}={value}",
+                suffix=")",
+                key_repr=str,
+            ),
+        )
+        raise ValueError(error)
 
     def change(self, index, *values):
         # type: (int, _T) -> ImmutableList
@@ -696,14 +746,34 @@ class ImmutableSet(Immutable, SlottedHashable, SlottedSet, Generic[_T]):
         for value in self.__internal:
             yield value
 
-    def copy(self):
-        # type: () -> ImmutableSet
+    def find(self, **attributes):
+        # type: (Any) -> Any
         """
-        Get copy.
+        Find first value that matches unique attribute values.
 
-        :return: Copy.
+        :param attributes: Attributes to match.
+        :return: Value or None if nothing was found.
+        :raises ValueError: No attributes provided or no match found.
         """
-        return self
+        if not attributes:
+            error = "no attributes provided"
+            raise ValueError(error)
+        for value in self:
+            for a_name, a_value in iteritems(attributes):
+                if not hasattr(value, a_name) or getattr(value, a_name) != a_value:
+                    break
+            else:
+                return value
+        error = "could not find a match for {}".format(
+            custom_mapping_repr(
+                attributes,
+                prefix="(",
+                template="{key}={value}",
+                suffix=")",
+                key_repr=str,
+            ),
+        )
+        raise ValueError(error)
 
     def issubset(self, iterable):
         # type: (Iterable[_T]) -> bool
@@ -738,15 +808,6 @@ class ImmutableSet(Immutable, SlottedHashable, SlottedSet, Generic[_T]):
             error = "no values provided"
             raise ValueError(error)
         return type(self)(self.__internal.update(values))
-
-    def clear(self):
-        # type: () -> ImmutableSet
-        """
-        Clear all values.
-
-        :return: New version.
-        """
-        return type(self)()
 
     def difference(self, iterable):
         # type: (Iterable[_T]) -> ImmutableSet

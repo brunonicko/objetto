@@ -118,7 +118,7 @@ class BaseAttribute(ProtectedBase):
 
         :return: Hash.
         """
-        return id(self)
+        return hash(id(self))
 
     @final_
     def __eq__(self, other):

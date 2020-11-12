@@ -247,18 +247,6 @@ class DictData(
         for value in itervalues(self._state):
             yield value
 
-    @final
-    def get(self, key, fallback=None):
-        # type: (_KT, Any) -> _VT
-        """
-        Get value at key, return fallback value if not found.
-
-        :param key: Key.
-        :param fallback: Fallback value.
-        :return: Value or fallback value.
-        """
-        return self._state.get(key, fallback)
-
     @classmethod
     @final
     def deserialize(cls, serialized, **kwargs):
@@ -298,16 +286,6 @@ class DictData(
             (k, self.serialize_value(v, location=None, **kwargs))
             for k, v in iteritems(self._state)
         )
-
-    @final
-    def copy(self):
-        # type: () -> DictData
-        """
-        Get copy.
-
-        :return: Copy.
-        """
-        return self
 
     @property
     @final

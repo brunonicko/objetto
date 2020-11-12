@@ -27,7 +27,7 @@ class DictObjectMeta(BaseAuxiliaryObjectMeta, DictContainerMeta):
 
     @property
     @final
-    def _auxiliary_obj_type(cls):
+    def _base_auxiliary_type(cls):
         # type: () -> Type[DictObject]
         """Base auxiliary object type."""
         return DictObject

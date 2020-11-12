@@ -224,7 +224,6 @@ class BaseRelationship(ProtectedBase):
         assert isinstance(other, BaseRelationship)
         return self.to_dict() == other.to_dict()
 
-    @final
     def __repr__(self):
         # type: () -> str
         """
@@ -279,6 +278,7 @@ class BaseRelationship(ProtectedBase):
         else:
             return None
 
+    @final
     def fabricate_value(self, value, factory=True, **kwargs):
         # type: (Any, bool, Any) -> Any
         """
@@ -322,16 +322,16 @@ class UniqueDescriptor(Base):
     ):
         # type: (...) -> Union[int, UniqueDescriptor]
         """
-        Get object ID when accessing from instance or this descriptor otherwise.
+        Get object hash when accessing from instance or this descriptor otherwise.
         
         :param instance: Instance.
         :param owner: Owner class.
-        :return: Object ID or this descriptor.
+        :return: Object hash or this descriptor.
         """
         if instance is not None:
             cls = type(instance)
             if getattr(cls, "_unique_descriptor", None) is self:
-                return id(instance)
+                return hash(id(instance))
         return self
 
 
@@ -443,7 +443,7 @@ class BaseContainer(
         """
         cls = type(self)
         if cls._unique_descriptor:
-            return id(self)
+            return hash(id(self))
         else:
             return self._hash()
 
@@ -496,18 +496,6 @@ class BaseContainer(
 
         :param location: Location.
         :return: Relationship.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def get(self, location, fallback=None):
-        # type: (Optional[Hashable], Any) -> Any
-        """
-        Get value at location, return fallback value if not found.
-
-        :param location: Location.
-        :param fallback: Fallback value.
-        :return: Value or fallback value.
         """
         raise NotImplementedError()
 
@@ -697,21 +685,11 @@ class BaseSemiInteractiveContainer(BaseContainer):
 
     __slots__ = ()
 
-    @abstractmethod
-    def _set(self, location, value):
-        # type: (Optional[Hashable], Any) -> Any
-        raise NotImplementedError()
-
 
 class BaseInteractiveContainer(BaseSemiInteractiveContainer):
     """Base interactive container."""
 
     __slots__ = ()
-
-    @abstractmethod
-    def set(self, location, value):
-        # type: (Optional[Hashable], Any) -> Any
-        raise NotImplementedError()
 
 
 class BaseMutableContainer(BaseInteractiveContainer):

@@ -143,6 +143,16 @@ class BaseData(with_metaclass(BaseDataMeta, BaseSemiInteractiveContainer)):
         return self
 
     @final
+    def copy(self):
+        # type: () -> BaseData
+        """
+        Get copy.
+
+        :return: Copy.
+        """
+        return self
+
+    @final
     def _init_state(self, state):
         # type: (Immutable) -> None
         """
@@ -213,7 +223,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseSemiInteractiveContainer)):
 
 
 class BaseInteractiveData(BaseData, BaseInteractiveContainer):
-    """Base data interactive container."""
+    """Base interactive data container."""
     __slots__ = ()
 
     @final
@@ -249,7 +259,7 @@ class BaseAuxiliaryData(
         BaseAuxiliaryDataMeta, BaseData, BaseSemiInteractiveAuxiliaryContainer
     )
 ):
-    """Base data auxiliary container with a single relationship."""
+    """Base auxiliary data container with a single relationship."""
     __slots__ = ("__hash",)
 
     _relationship = DataRelationship()
@@ -267,7 +277,7 @@ class BaseAuxiliaryData(
             return self.__hash  # type: ignore
         except AttributeError:
             if not type(self)._relationship.compared:
-                self.__hash = id(self)
+                self.__hash = hash(id(self))
             else:
                 self.__hash = hash(self._state)
             return self.__hash
@@ -302,6 +312,6 @@ class BaseAuxiliaryData(
 class BaseInteractiveAuxiliaryData(
     BaseAuxiliaryData, BaseInteractiveData, BaseInteractiveAuxiliaryContainer
 ):
-    """Base data auxiliary interactive container with a single relationship."""
+    """Base auxiliary data interactive container with a single relationship."""
 
     __slots__ = ()

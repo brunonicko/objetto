@@ -2,9 +2,10 @@
 """Object container."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from weakref import WeakKeyDictionary
 from inspect import getmro
+from contextlib import contextmanager
 
 from six import with_metaclass, string_types, iteritems
 
@@ -12,21 +13,25 @@ from .._bases import Base, ProtectedBase, final
 from .._containers.bases import (
     BaseRelationship,
     BaseContainerMeta,
-    BaseContainer,
+    BaseSemiInteractiveContainer,
+    BaseMutableContainer,
     BaseAuxiliaryContainerMeta,
-    BaseAuxiliaryContainer,
+    BaseSemiInteractiveAuxiliaryContainer,
+    BaseMutableAuxiliaryContainer,
 )
 from .._data.bases import DataRelationship, BaseData
-from ..utils.type_checking import import_types
+from ..utils.type_checking import import_types, assert_is_instance
 
 if TYPE_CHECKING:
     from typing import (
-        Dict, Callable, Any, Tuple, Type, Optional, Set, Union, MutableMapping
+        Dict, Callable, Any, Tuple, Type, Optional, Set, Union, MutableMapping,
+        Hashable, Iterable, Mapping
     )
 
     from .._application import Application
     from ..utils.type_checking import LazyTypes
     from ..utils.factoring import LazyFactory
+    from ..utils.immutable import Immutable
 
 __all__ = [
     "ObjectRelationship",
@@ -37,11 +42,24 @@ __all__ = [
 ]
 
 REACTION_TAG = "__isreaction__"
+UNIQUE_ATTRIBUTES_METADATA_KEY = "unique_attributes"
 
 
 @final
 class ObjectRelationship(BaseRelationship):
-    """Relationship between an object and its values."""
+    """
+    Relationship between an object container and its values.
+
+    :param types: Types.
+    :param subtypes: Whether to accept subtypes.
+    :param checked: Whether to perform runtime type check.
+    :param module: Module path for lazy types/factories.
+    :param factory: Value factory.
+    :param serialized: Whether should be serialized.
+    :param serializer: Custom serializer.
+    :param deserializer: Custom deserializer.
+    :param represented: Whether should be represented.
+    """
 
     __slots__ = ("child", "history", "data", "_data_relationship")
 
@@ -77,8 +95,26 @@ class ObjectRelationship(BaseRelationship):
         self.data = self.child and bool(data)
         self._data_relationship = data_relationship if self.data else None
 
+    def to_dict(self):
+        # type: () -> Dict[str, Any]
+        """
+        Convert to dictionary.
+
+        :return: Dictionary.
+        """
+        dct = super(ObjectRelationship, self).to_dict()
+        dct.update({
+            "child": self.child,
+            "history": self.history,
+            "data": self.data,
+            "data_relationship": self.data_relationship,
+        })
+        return dct
+
     @property
     def data_relationship(self):
+        # type: () -> Optional[DataRelationship]
+        """Data relationship."""
         if self._data_relationship is None and self.data:
             types = set()  # type: Set[Union[Type, str]]
             for lazy, typ in zip(self.types, import_types(self.types)):
@@ -94,18 +130,23 @@ class ObjectRelationship(BaseRelationship):
                 subtypes=self.subtypes,
                 checked=self.checked,
                 module=self.module,
-                factory=self.factory,
+                factory=None,
                 serialized=self.serialized,
                 serializer=None,
                 deserializer=None,
                 represented=self.represented,
-                eq=True,
+                compared=True,
             )
         return self._data_relationship
 
 
 @final
 class HistoryDescriptor(ProtectedBase):
+    """
+    Descriptor to be used on :class:`BaseObject` classes.
+    When used, a history object will keep track of changes, allowing for undo/redo.
+    If accessed through an instance, the descriptor will return the history object.
+    """
     __slots__ = ("size",)
 
     def __init__(self, size=None):
@@ -115,28 +156,65 @@ class HistoryDescriptor(ProtectedBase):
             if size < 0:
                 size = 0
         self.size = size
-    #
-    # def __get__(
-    #     self,
-    #     instance,  # type: Optional[BaseObject]
-    #     owner,  # type: Optional[Type[BaseObject]]
-    # ):
-    #     # type: (...) -> Union[History, HistoryDescriptor]
-    #     if instance is not None:
-    #         cls = type(instance)
-    #         if getattr(cls, "_history_descriptor", None) is self:
-    #             history = instance._history
-    #             assert history is not None
-    #             return history
-    #     return self
+
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        return hash(id(self))
+
+    def __eq__(self, other):
+        # type: (object) -> bool
+        """
+        Compare with another object for identity.
+
+        :param other: Another object.
+        :return: True if the same object.
+        """
+        return self is other
+
+    def __get__(
+        self,
+        instance,  # type: Optional[BaseObject]
+        owner,  # type: Optional[Type[BaseObject]]
+    ):
+        # type: (...) -> Union[History, HistoryDescriptor]
+        """
+        Get history object when accessing from instance or this descriptor otherwise.
+
+        :param instance: Instance.
+        :param owner: Owner class.
+        :return: History object or this descriptor.
+        """
+        if instance is not None:
+            cls = type(instance)
+            if getattr(cls, "_history_descriptor", None) is self:
+                history = instance._history
+                assert history is not None
+                return history
+        return self
 
 
 class BaseObjectFunctions(Base):
+    """Internal object static functions."""
     __slots__ = ()
 
     @staticmethod
+    @abstractmethod
     def replace_child_data(data, child_data, location, data_relationship):
         # type: (BaseData, BaseData, Any, DataRelationship) -> BaseData
+        """
+        Replace child data.
+
+        :param data: Current data.
+        :param child_data: New child data.
+        :param location: Old child data location.
+        :param data_relationship: Data relationship for the location.
+        :return: New data.
+        """
         raise NotImplementedError()
 
 
@@ -171,7 +249,8 @@ class BaseObjectMeta(BaseContainerMeta):
         # Can't have more than one history descriptor.
         if len(history_descriptors) > 1:
             error = "class '{}' has multiple history descriptors at {}".format(
-                cls.__name__, ", ".join("'{}'".format(n) for n in history_descriptors)
+                cls.__fullname__,
+                ", ".join("'{}'".format(n) for n in history_descriptors),
             )
             raise TypeError(error)
 
@@ -186,7 +265,7 @@ class BaseObjectMeta(BaseContainerMeta):
         type(cls).__history_descriptor_name[cls] = history_descriptor_name
         type(cls).__history_descriptor[cls] = history_descriptor
 
-        # Store reactions in a tuple, sort them by priority.
+        # Store reaction method names in a tuple, sort them by priority.
         sorted_reactions = tuple(
             r for r, _ in sorted(
                 iteritems(reactions), key=lambda p: (p[1] is None, p[1])
@@ -237,53 +316,139 @@ class BaseObjectMeta(BaseContainerMeta):
         raise NotImplementedError()
 
 
-class BaseObject(with_metaclass(BaseObjectMeta, BaseContainer)):
-    """Base obj class."""
+class BaseObject(with_metaclass(BaseObjectMeta, BaseSemiInteractiveContainer)):
+    """Base object class."""
     __slots__ = ("__weakref__", "__app")
     __functions__ = BaseObjectFunctions
 
     def __init__(self, app):
         # type: (Application) -> None
+        assert_is_instance(app, Application)
         self.__app = app
 
     @final
-    def __hash__(self):
-        """Get hash."""
-        return object.__hash__(self)
+    def _hash(self):
+        """
+        Get hash based on object id.
+
+        :return: Hash based on object id.
+        """
+        return hash(id(self))
 
     @final
-    def __eq__(self, other):
-        # type: (Any) -> bool
-        """Compare with another object for identity."""
-        return other is self
+    def _eq(self, other):
+        """
+        Compare with another object for identity.
+
+        :param other: Another object.
+        :return: True if the same object.
+        """
+        return self is other
 
     @final
     def __copy__(self):
         # type: () -> BaseObject
+        """
+        Get shallow copy.
+
+        :return: Shallow copy.
+        """
         return type(self).deserialize(self.serialize(), app=self.app)
 
     @abstractmethod
     def _locate(self, child):
-        # type: (BaseObject) -> Any
-        """Locate child object."""
+        # type: (BaseObject) -> Optional[Hashable]
+        """
+        Locate child object.
+
+        :param child: Child object.
+        :return: Location.
+        """
         raise NotImplementedError()
+
+    @abstractmethod
+    def _locate_data(self, child):
+        # type: (BaseObject) -> Optional[Hashable]
+        """
+        Locate child object's data.
+
+        :param child: Child object.
+        :return: Data location.
+        """
+        raise NotImplementedError()
+
+    @final
+    @contextmanager
+    def _batch_context(self, name="Batch", **metadata):
+        # type: (str, Any) -> Iterator[Batch]
+        """
+        Batch change context manager.
+
+        :return: Batch change.
+        """
+        change = Batch(name=str(name), obj=self, metadata=metadata)
+        with self.app.__.batch_context(self, change):
+            yield change
+
+    @property
+    def _state(self):
+        # type: () -> Immutable
+        """State."""
+        with self.app.__.read_context(self) as read:
+            return read().state
+
+    @property
+    @final
+    def _parent(self):
+        # type: () -> Optional[BaseObject]
+        """Parent object or None."""
+        with self.app.__.read_context(self) as read:
+            return read().parent_ref()
+
+    @property
+    @final
+    def _children(self):
+        # type: () -> Set[BaseObject]
+        """Children objects."""
+        with self.app.__.read_context(self) as read:
+            return read().children
+
+    @property
+    @final
+    def _history(self):
+        # type: () -> Optional[History]
+        """History or None."""
+        with self.app.__.read_context(self) as read:
+            store = read()
+            if store.history is not None:
+                return store.history
+            provider = store.history_provider_ref()
+            if provider is not None:
+                assert isinstance(provider, BaseObject)
+                return provider._history
+        return None
 
     @property
     @final
     def app(self):
         # type: () -> Application
+        """Application."""
         return self.__app
+
+    @property
+    def data(self):
+        # type: () -> Optional[BaseData]
+        """Data."""
+        with self.app.__.read_context(self) as read:
+            return read().data
+
+
+class BaseMutableObject(BaseObject, BaseMutableContainer):
+    """Base mutable object container."""
 
 
 class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryContainerMeta):
     """Metaclass for :class:`BaseAuxiliaryObject`."""
-
-    @property
-    @abstractmethod
-    def _auxiliary_obj_type(cls):
-        # type: () -> Type[BaseAuxiliaryObject]
-        """Base auxiliary obj type."""
-        raise NotImplementedError()
 
     @property
     @final
@@ -294,10 +459,118 @@ class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryContainerMeta):
 
 
 class BaseAuxiliaryObject(
-    with_metaclass(BaseAuxiliaryObjectMeta, BaseObject, BaseAuxiliaryContainer)
+    with_metaclass(
+        BaseAuxiliaryObjectMeta,
+        BaseObject,
+        BaseSemiInteractiveAuxiliaryContainer,
+    )
 ):
-    """Object container with a single relationship."""
+    """Base auxiliary object container with a single relationship."""
     __slots__ = ()
 
     _relationship = ObjectRelationship()
     """Relationship for all locations."""
+
+    @final
+    def find(self, **attributes):
+        # type: (Any) -> Any
+        """
+        Find first value that matches unique attribute values.
+
+        :param attributes: Attributes to match.
+        :return: Value.
+        """
+        with self.app.__.read_context(self) as read:
+            metadata = read().metadata
+
+            # The 'UniqueAttributes' reaction caches children with unique attributes.
+            if UNIQUE_ATTRIBUTES_METADATA_KEY in metadata:
+                if not attributes:
+                    error = "no attributes provided"
+                    raise ValueError(error)
+                cache = metadata[UNIQUE_ATTRIBUTES_METADATA_KEY]
+                if set(cache).issuperset(attributes):
+                    match = None
+                    for name, value in iteritems(attributes):
+                        if value not in cache[name]:
+                            break
+                        this_match = cache[name][value]
+                        if match is not None and this_match is not match:
+                            break
+                        match = this_match
+                    else:
+                        return match
+
+            # Fallback to iterating over the state (slower).
+            return self._state.find(**attributes)
+
+
+class BaseMutableAuxiliaryObject(
+    BaseAuxiliaryObject, BaseMutableObject, BaseMutableAuxiliaryContainer
+):
+    """Base auxiliary object mutable container with a single relationship."""
+
+    __slots__ = ()
+
+
+class BaseProxy(Base):
+    """
+    Base auxiliary proxy.
+
+    :param obj: Auxiliary object.
+    """
+
+    __slots__ = ("__obj",)
+
+    def __init__(self, obj):
+        # type: (BaseAuxiliaryObject) -> None
+        self.__obj = obj
+
+    @final
+    def __hash__(self):
+        """
+        Get hash based on object id.
+
+        :return: Hash based on object id.
+        """
+        return hash(self.__obj)
+
+    @final
+    def __eq__(self, other):
+        """
+        Compare with another object for identity.
+
+        :param other: Another object.
+        :return: True if the same object.
+        """
+        return self is other
+
+    @final
+    def find(self, **attributes):
+        # type: (Any) -> Any
+        """
+        Find first value that matches unique attribute values.
+
+        :param attributes: Attributes to match.
+        :return: Value.
+        """
+        return self._obj.find(**attributes)
+
+    @property
+    def _obj(self):
+        # type: () -> BaseAuxiliaryObject
+        """Auxiliary object."""
+        return self.__obj
+
+    @property
+    @final
+    def app(self):
+        # type: () -> Application
+        """Application."""
+        return self._obj.app
+
+    @property
+    def data(self):
+        # type: () -> Optional[BaseData]
+        """Data."""
+        return self._obj.data

@@ -279,21 +279,6 @@ class ListData(
         """
         return type(self).__make__(self._state.sort(key=key, reverse=reverse))
 
-    @final
-    def get(self, index, fallback=None):
-        # type: (int, Any) -> _T
-        """
-        Get value at index, return fallback value if index is not valid.
-
-        :param index: Index.
-        :param fallback: Fallback value.
-        :return: Value or fallback value.
-        """
-        try:
-            return self._state[index]
-        except IndexError:
-            return fallback
-
     @classmethod
     @final
     def deserialize(cls, serialized, **kwargs):
@@ -328,16 +313,6 @@ class ListData(
         return list(
             self.serialize_value(v, location=None, **kwargs) for v in self._state
         )
-
-    @final
-    def copy(self):
-        # type: () -> ListData
-        """
-        Get copy.
-
-        :return: Copy.
-        """
-        return self
 
     @final
     def resolve_index(self, index, clamp=False):
