@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     DictInternal = PMap[_KT, _VT]
     ListInternal = PVector[_T]
     SetInternal = PSet[_T]
+    Internal = Union[DictInternal, ListInternal, SetInternal]
 
 
 _BS = TypeVar("_BS", bound="BaseState")
@@ -67,7 +68,7 @@ class BaseState(BaseHashable, BaseInteractiveCollection[_T]):
     @staticmethod
     @abstractmethod
     def _make_internal(initial):
-        # type: (Any) -> Any
+        # type: (Any) -> Internal
         """
         Initialize internal state.
 
@@ -136,7 +137,7 @@ class BaseState(BaseHashable, BaseInteractiveCollection[_T]):
     @property
     @abstractmethod
     def _internal(self):
-        # type: () -> Any
+        # type: () -> Internal
         """Internal state."""
         return self.__internal
 
@@ -414,7 +415,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
     def _internal(self):
         # type: () -> DictInternal
         """Internal state."""
-        return super(DictState, self)._internal
+        return cast("DictInternal", super(DictState, self)._internal)
 
 
 _LS = TypeVar("_LS", bound="ListState")
@@ -725,7 +726,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
     def _internal(self):
         # type: () -> ListInternal
         """Internal state."""
-        return super(ListState, self)._internal
+        return cast("ListInternal", super(ListState, self)._internal)
 
 
 _SS = TypeVar("_SS", bound="SetState")
@@ -994,4 +995,4 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
     def _internal(self):
         # type: () -> SetInternal
         """Internal state."""
-        return super(SetState, self)._internal
+        return cast("SetInternal", super(SetState, self)._internal)
