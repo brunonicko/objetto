@@ -2,45 +2,45 @@
 """Base classes and metaclasses."""
 
 from abc import abstractmethod
-from weakref import WeakKeyDictionary, WeakValueDictionary
-from inspect import getmro
 from contextlib import contextmanager
+from inspect import getmro
+from typing import TYPE_CHECKING, Callable, Generic, TypeVar, cast, final, overload
 from uuid import uuid4
-from typing import TYPE_CHECKING, Callable, Generic, TypeVar, overload, final, cast
+from weakref import WeakKeyDictionary, WeakValueDictionary
 
-from qualname import qualname  # type: ignore
 from decorator import decorator
-from six import with_metaclass, iteritems
+from qualname import qualname  # type: ignore
+from six import iteritems, with_metaclass
 from slotted import (
-    SlottedABCMeta,
     SlottedABC,
-    SlottedHashable,
-    SlottedSized,
-    SlottedIterable,
+    SlottedABCMeta,
     SlottedContainer,
+    SlottedHashable,
+    SlottedIterable,
     SlottedMapping,
     SlottedMutableMapping,
-    SlottedSequence,
     SlottedMutableSequence,
-    SlottedSet,
     SlottedMutableSet,
+    SlottedSequence,
+    SlottedSet,
+    SlottedSized,
 )
 
 if TYPE_CHECKING:
     from typing import (
         Any,
         Dict,
-        Iterator,
-        Set,
-        Optional,
-        Type,
-        List,
-        Tuple,
-        Iterable,
-        Union,
-        Mapping,
         FrozenSet,
+        Iterable,
+        Iterator,
+        List,
+        Mapping,
         MutableMapping,
+        Optional,
+        Set,
+        Tuple,
+        Type,
+        Union,
     )
 
     AbstractType = Type["AbstractMember"]
@@ -345,9 +345,7 @@ class BaseMeta(SlottedABCMeta):
                 error = (
                     "invalid resolution order when defining '{}'; "
                     "base '{}' does not inherit from '{}'"
-                ).format(
-                    name, base.__name__, expected_base.__name__
-                )
+                ).format(name, base.__name__, expected_base.__name__)
                 raise TypeError(error)
             elif required_bases and base is required_bases[-1]:
                 seen_bases.append(required_bases.pop())
@@ -528,6 +526,7 @@ class ProtectedBase(Base):
 
       - Prevents setting public instance attributes when not initializing.
     """
+
     __slots__ = ()
 
     @final
@@ -638,6 +637,7 @@ class BaseHashable(Base, SlottedHashable):
 
       - Forces implementation of `__hash__` method.
     """
+
     __slots__ = ()
 
     @abstractmethod
@@ -657,6 +657,7 @@ class BaseSized(Base, SlottedSized):
 
       - Has a length (count).
     """
+
     __slots__ = ()
 
     @abstractmethod
@@ -676,6 +677,7 @@ class BaseIterable(Base, SlottedIterable, Generic[_T_co]):
 
       - Can be iterated over.
     """
+
     __slots__ = ()
 
     @abstractmethod
@@ -695,6 +697,7 @@ class BaseContainer(Base, SlottedContainer, Generic[_T_co]):
 
       - Contains values.
     """
+
     __slots__ = ()
 
     @abstractmethod
@@ -717,6 +720,7 @@ class BaseCollection(BaseSized, BaseIterable[_T_co], BaseContainer[_T_co], Base)
       - Can be iterated over.
       - Contains values.
     """
+
     __slots__ = ()
 
     @abstractmethod
@@ -742,6 +746,7 @@ class BaseProtectedCollection(BaseCollection[_T]):
       - Has protected transformation methods.
       - Transformations return a transformed version (immutable) or self (mutable).
     """
+
     __slots__ = ()
 
     @abstractmethod
@@ -765,6 +770,7 @@ class BaseInteractiveCollection(BaseProtectedCollection[_T]):
       - Has public transformation methods.
       - Transformations return a transformed version (immutable) or self (mutable).
     """
+
     __slots__ = ()
 
     def clear(self):
@@ -784,6 +790,7 @@ class BaseMutableCollection(BaseProtectedCollection[_T]):
       - Has public mutable transformation and magic methods.
       - Transformations return self (mutable).
     """
+
     __slots__ = ()
 
     def clear(self):
@@ -794,6 +801,7 @@ class BaseMutableCollection(BaseProtectedCollection[_T]):
 
 class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
     """Base dictionary-like collection."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -896,6 +904,7 @@ _BPD = TypeVar("_BPD", bound="BaseProtectedDict")
 
 class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
     """Base protected dictionary-like collection."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -948,10 +957,9 @@ class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
 _BID = TypeVar("_BID", bound="BaseInteractiveDict")
 
 
-class BaseInteractiveDict(
-    BaseProtectedDict[_KT, _VT], BaseInteractiveCollection[_KT]
-):
+class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection[_KT]):
     """Base interactive dictionary-like collection."""
+
     __slots__ = ()
 
     def discard(self, key):
@@ -997,9 +1005,11 @@ class BaseInteractiveDict(
         return self._update(update)
 
 
-class BaseMutableDict(BaseProtectedDict[_KT, _VT], SlottedMutableMapping,
-                      BaseMutableCollection[_KT]):
+class BaseMutableDict(
+    BaseProtectedDict[_KT, _VT], SlottedMutableMapping, BaseMutableCollection[_KT]
+):
     """Base mutable dictionary-like collection."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -1102,6 +1112,7 @@ class BaseMutableDict(BaseProtectedDict[_KT, _VT], SlottedMutableMapping,
 
 class BaseList(BaseCollection[_T_co], SlottedSequence, Generic[_T_co]):
     """Base list-like collection."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -1192,6 +1203,7 @@ _BPL = TypeVar("_BPL", bound="BaseProtectedList")
 
 class BaseProtectedList(BaseList[_T], BaseProtectedCollection[_T]):
     """Base protected list-like collection."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -1270,6 +1282,7 @@ _BIL = TypeVar("_BIL", bound="BaseInteractiveList")
 
 class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
     """Base interactive list-like collection."""
+
     __slots__ = ()
 
     def insert(self, index, *values):
@@ -1337,9 +1350,11 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
         return self._change(index, *values)
 
 
-class BaseMutableList(BaseProtectedList[_T], SlottedMutableSequence,
-                      BaseMutableCollection[_T]):
+class BaseMutableList(
+    BaseProtectedList[_T], SlottedMutableSequence, BaseMutableCollection[_T]
+):
     """Base mutable list-like collection."""
+
     __slots__ = ()
 
     def __getitem__(self, index):  # type: ignore
@@ -1468,6 +1483,7 @@ class BaseMutableList(BaseProtectedList[_T], SlottedMutableSequence,
 
 class BaseSet(BaseCollection[_T_co], SlottedSet, Generic[_T_co]):
     """Base set-like collection."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -1553,6 +1569,7 @@ _BPS = TypeVar("_BPS", bound="BaseProtectedSet")
 
 class BaseProtectedSet(BaseSet[_T], BaseProtectedCollection[_T]):
     """Base protected set-like collection."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -1619,6 +1636,7 @@ _BIS = TypeVar("_BIS", bound="BaseInteractiveSet")
 
 class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
     """Base interactive set-like collection."""
+
     __slots__ = ()
 
     def add(self, value):
@@ -1675,9 +1693,11 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
         return self._update(iterable)
 
 
-class BaseMutableSet(BaseProtectedSet[_T], SlottedMutableSet,
-                     BaseMutableCollection[_T]):
+class BaseMutableSet(
+    BaseProtectedSet[_T], SlottedMutableSet, BaseMutableCollection[_T]
+):
     """Base mutable set-like collection."""
+
     __slots__ = ()
 
     @abstractmethod

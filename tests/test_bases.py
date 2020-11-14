@@ -10,15 +10,15 @@ from objetto._bases import (
     FINAL_CLASS_TAG,
     FINAL_METHOD_TAG,
     INITIALIZING_TAG,
-    BaseMeta,
     Base,
+    BaseMeta,
     ProtectedBase,
+    abstract_member,
     final,
     init,
     init_context,
-    simplify_member_names,
     make_base_cls,
-    abstract_member,
+    simplify_member_names,
 )
 
 

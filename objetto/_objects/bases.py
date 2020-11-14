@@ -2,36 +2,46 @@
 """Object container."""
 
 from abc import abstractmethod
+from contextlib import contextmanager
+from inspect import getmro
 from typing import TYPE_CHECKING, cast
 from weakref import WeakKeyDictionary
-from inspect import getmro
-from contextlib import contextmanager
 
-from six import with_metaclass, string_types, iteritems
+from six import iteritems, string_types, with_metaclass
 
 from .._bases import Base, ProtectedBase, final
 from .._containers.bases import (
-    BaseRelationship,
-    BaseContainerMeta,
-    BaseSemiInteractiveContainer,
-    BaseMutableContainer,
     BaseAuxiliaryContainerMeta,
-    BaseSemiInteractiveAuxiliaryContainer,
+    BaseContainerMeta,
     BaseMutableAuxiliaryContainer,
+    BaseMutableContainer,
+    BaseRelationship,
+    BaseSemiInteractiveAuxiliaryContainer,
+    BaseSemiInteractiveContainer,
 )
-from .._data.bases import DataRelationship, BaseData
-from ..utils.type_checking import import_types, assert_is_instance
+from .._data.bases import BaseData, DataRelationship
+from ..utils.type_checking import assert_is_instance, import_types
 
 if TYPE_CHECKING:
     from typing import (
-        Dict, Callable, Any, Tuple, Type, Optional, Set, Union, MutableMapping,
-        Hashable, Iterable, Mapping
+        Any,
+        Callable,
+        Dict,
+        Hashable,
+        Iterable,
+        Mapping,
+        MutableMapping,
+        Optional,
+        Set,
+        Tuple,
+        Type,
+        Union,
     )
 
     from .._application import Application
-    from ..utils.type_checking import LazyTypes
     from ..utils.factoring import LazyFactory
     from ..utils.immutable import Immutable
+    from ..utils.type_checking import LazyTypes
 
 __all__ = [
     "ObjectRelationship",
@@ -103,12 +113,14 @@ class ObjectRelationship(BaseRelationship):
         :return: Dictionary.
         """
         dct = super(ObjectRelationship, self).to_dict()
-        dct.update({
-            "child": self.child,
-            "history": self.history,
-            "data": self.data,
-            "data_relationship": self.data_relationship,
-        })
+        dct.update(
+            {
+                "child": self.child,
+                "history": self.history,
+                "data": self.data,
+                "data_relationship": self.data_relationship,
+            }
+        )
         return dct
 
     @property
@@ -147,6 +159,7 @@ class HistoryDescriptor(ProtectedBase):
     When used, a history object will keep track of changes, allowing for undo/redo.
     If accessed through an instance, the descriptor will return the history object.
     """
+
     __slots__ = ("size",)
 
     def __init__(self, size=None):
@@ -200,6 +213,7 @@ class HistoryDescriptor(ProtectedBase):
 
 class BaseObjectFunctions(Base):
     """Internal object static functions."""
+
     __slots__ = ()
 
     @staticmethod
@@ -267,9 +281,8 @@ class BaseObjectMeta(BaseContainerMeta):
 
         # Store reaction method names in a tuple, sort them by priority.
         sorted_reactions = tuple(
-            r for r, _ in sorted(
-                iteritems(reactions), key=lambda p: (p[1] is None, p[1])
-            )
+            r
+            for r, _ in sorted(iteritems(reactions), key=lambda p: (p[1] is None, p[1]))
         )
         type(cls).__reactions[cls] = sorted_reactions
 
@@ -318,6 +331,7 @@ class BaseObjectMeta(BaseContainerMeta):
 
 class BaseObject(with_metaclass(BaseObjectMeta, BaseSemiInteractiveContainer)):
     """Base object class."""
+
     __slots__ = ("__weakref__", "__app")
     __functions__ = BaseObjectFunctions
 
@@ -466,6 +480,7 @@ class BaseAuxiliaryObject(
     )
 ):
     """Base auxiliary object container with a single relationship."""
+
     __slots__ = ()
 
     _relationship = ObjectRelationship()

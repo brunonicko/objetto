@@ -1,27 +1,27 @@
 # -*- coding: utf-8 -*-
 
-import pytest
 from typing import cast
 
+import pytest
 from six import with_metaclass
 
 from objetto._containers.bases import (
-    BaseRelationship,
-    BaseContainerMeta,
-    BaseSemiInteractiveContainer,
-    BaseInteractiveContainer,
     BaseAuxiliaryContainerMeta,
-    BaseSemiInteractiveAuxiliaryContainer,
+    BaseContainerMeta,
     BaseInteractiveAuxiliaryContainer,
+    BaseInteractiveContainer,
+    BaseRelationship,
+    BaseSemiInteractiveAuxiliaryContainer,
+    BaseSemiInteractiveContainer,
 )
 from objetto._data.bases import (
-    DataRelationship,
-    BaseDataMeta,
-    BaseData,
-    BaseInteractiveData,
-    BaseAuxiliaryDataMeta,
     BaseAuxiliaryData,
+    BaseAuxiliaryDataMeta,
+    BaseData,
+    BaseDataMeta,
     BaseInteractiveAuxiliaryData,
+    BaseInteractiveData,
+    DataRelationship,
 )
 from objetto.utils.immutable import ImmutableDict
 

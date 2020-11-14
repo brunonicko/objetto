@@ -1,24 +1,34 @@
 # -*- coding: utf-8 -*-
 
 from collections import Counter as ColCounter
-from weakref import WeakKeyDictionary
 from contextlib import contextmanager
 from threading import RLock
 from typing import TYPE_CHECKING, NamedTuple
+from weakref import WeakKeyDictionary
 
+from six import iteritems, raise_from
 from slotted import Slotted
-from six import raise_from, iteritems
 
 from ._bases import INITIALIZING_TAG, Base
 from ._data.bases import BaseData
+from .utils.dummy_context import DummyContext
 from .utils.immutable import ImmutableDict, ImmutableList, ImmutableSet
 from .utils.weak_reference import WeakReference
-from .utils.dummy_context import DummyContext
 
 if TYPE_CHECKING:
     from typing import (
-        Any, Counter, MutableMapping, Mapping, Iterator, ContextManager, Set, Tuple,
-        Optional, Union, AbstractSet, List
+        AbstractSet,
+        Any,
+        ContextManager,
+        Counter,
+        Iterator,
+        List,
+        Mapping,
+        MutableMapping,
+        Optional,
+        Set,
+        Tuple,
+        Union,
     )
 
     from ._objects.bases import BaseObject
@@ -38,12 +48,13 @@ __all__ = ["Application"]
 
 class Action(
     NamedTuple(
-        "Action", (
+        "Action",
+        (
             ("sender", "BaseObject"),
             ("receiver", "BaseObject"),
             ("locations", "Tuple"),
             ("change", "BaseChange"),
-        )
+        ),
     )
 ):
     """Holds information about a change and where it happened in the hierarchy."""
@@ -51,7 +62,8 @@ class Action(
 
 class Storage(
     NamedTuple(
-        "Storage", (
+        "Storage",
+        (
             ("state", "Any"),
             ("data", "Optional[BaseData]"),
             ("metadata", "ImmutableDict[str, Any]"),
@@ -60,7 +72,7 @@ class Storage(
             ("history_provider_ref", "WeakReference[Optional[BaseObject]]"),
             ("last_parent_history_ref", "WeakReference[Optional[BaseObject]]"),
             ("history", "Optional[History]"),
-        )
+        ),
     )
 ):
     """Holds an object's state, data, metadata, hierarchy, and history information."""
@@ -115,9 +127,7 @@ class Store(object):
             )
 
         self.__storages[obj] = _INITIAL_STORAGE._replace(
-            state=state,
-            data=data,
-            **kwargs
+            state=state, data=data, **kwargs
         )
 
     def merge(self, commit):
@@ -131,11 +141,12 @@ class Store(object):
 
 class ActionContextResult(
     NamedTuple(
-        "ActionContextResult", (
+        "ActionContextResult",
+        (
             ("hierarchy", "Tuple[BaseObject, ...]"),
             ("actions", "Tuple[Action, ...]"),
             ("locations", "Tuple"),
-        )
+        ),
     )
 ):
     """Result of action context."""
@@ -143,11 +154,12 @@ class ActionContextResult(
 
 class Commit(
     NamedTuple(
-        "Commit", (
+        "Commit",
+        (
             ("store", "Store"),
             ("storages", "ImmutableDict[BaseObject, Storage]"),
             ("actions", "Tuple[Action, ...]"),
-        )
+        ),
     )
 ):
     """Holds unmerged changes to objects' storages."""
@@ -222,7 +234,9 @@ class ApplicationInternals(Base):
         self.__writing_objs.add(obj)
         try:
             with self.__action_context(obj, change, reach) as (
-                hierarchy, actions, locations
+                hierarchy,
+                actions,
+                locations,
             ):
                 self.__pre_parent_check(obj, hierarchy, child_counter)
                 with self.__new_children_context(change.new_children):
@@ -246,9 +260,7 @@ class ApplicationInternals(Base):
                         if last_parent_history is not history:
                             if last_parent_history is not None:
                                 histories_to_flush.add(last_parent_history)
-                            new_children_last_parent_history_updates.add(
-                                new_child
-                            )
+                            new_children_last_parent_history_updates.add(new_child)
                     for adopter in change.history_adopters:
                         if type(adopter)._history_descriptor is not None:
                             continue

@@ -3,35 +3,26 @@
 
 from abc import abstractmethod
 from itertools import chain
-from typing import TYPE_CHECKING, TypeVar, Generic, cast, overload
+from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
 
-from pyrsistent import pmap, pvector, pset
+from pyrsistent import pmap, pset, pvector
 from six import iteritems, iterkeys, itervalues, raise_from
 
 from ._bases import (
-    final,
     BaseHashable,
     BaseInteractiveCollection,
     BaseInteractiveDict,
     BaseInteractiveList,
     BaseInteractiveSet,
+    final,
 )
 from .utils.custom_repr import custom_iterable_repr, custom_mapping_repr
-from .utils.list_operations import resolve_index, resolve_continuous_slice, pre_move
-from .utils.list_operations import resolve_index, resolve_continuous_slice
+from .utils.list_operations import pre_move, resolve_continuous_slice, resolve_index
 
 if TYPE_CHECKING:
-    from pyrsistent.typing import PMap, PVector, PSet
-    from typing import (
-        Any,
-        Type,
-        Mapping,
-        Iterable,
-        Tuple,
-        Union,
-        Iterator,
-        Optional,
-    )
+    from typing import Any, Iterable, Iterator, Mapping, Optional, Tuple, Type, Union
+
+    from pyrsistent.typing import PMap, PSet, PVector
 
 __all__ = ["BaseState", "DictState", "ListState", "SetState"]
 
@@ -55,6 +46,7 @@ class BaseState(BaseHashable, BaseInteractiveCollection[_T]):
 
     :param initial: Initial values.
     """
+
     __slots__ = ("__hash", "__internal")
 
     @classmethod
@@ -180,7 +172,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
     def __init__(self, initial=()):
         # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> None
         super(DictState, self).__init__(initial=initial)
-    
+
     def __hash__(self):
         # type: () -> int
         """
@@ -234,7 +226,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         :return: Key count.
         """
         return len(self._internal)
-    
+
     def __repr__(self):
         # type: () -> str
         """
@@ -247,9 +239,9 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
             prefix="{}({{".format(type(self).__fullname__),
             suffix="})",
             sorting=True,
-            sort_key=lambda i: hash(i[0])
+            sort_key=lambda i: hash(i[0]),
         )
-    
+
     def __reversed__(self):
         # type: () -> Iterator[_KT]
         """
@@ -278,7 +270,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         :return: Transformed.
         """
         return self._make()
-    
+
     def _discard(self, key):
         # type: (_DS, _KT) -> _DS
         """
@@ -510,7 +502,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         :return: Value count.
         """
         return len(self._internal)
-    
+
     def __repr__(self):
         # type: () -> str
         """
@@ -564,7 +556,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         :return: Transformed.
         """
         return self._make()
-    
+
     def _insert(self, index, *values):
         # type: (_LS, int, _T) -> _LS
         """
@@ -645,7 +637,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         pairs = chain.from_iterable(zip(range(index, stop), values))
         new_internal = self._internal.mset(*pairs)  # type: ignore
         return self._make(new_internal)
-    
+
     def count(self, value):
         # type: (Any) -> int
         """
@@ -699,7 +691,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         :raises IndexError: Slice is noncontinuous.
         """
         return resolve_continuous_slice(len(self._internal), slc)
-    
+
     def find_with_attributes(self, **attributes):
         # type: (Any) -> _T
         """
@@ -821,7 +813,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         :return: Value count.
         """
         return len(self._internal)
-    
+
     def __repr__(self):
         # type: () -> str
         """
@@ -834,7 +826,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
             prefix="{}([".format(type(self).__name__),
             suffix="])",
             sorting=True,
-            sort_key=lambda v: hash(v)
+            sort_key=lambda v: hash(v),
         )
 
     def _clear(self):
@@ -898,7 +890,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         :return: Transformed.
         """
         return self._make(self._internal.update(iterable))
-    
+
     def isdisjoint(self, iterable):
         # type: (Iterable) -> bool
         """

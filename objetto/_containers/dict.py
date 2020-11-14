@@ -7,24 +7,24 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from six import with_metaclass
 from slotted import SlottedMapping, SlottedMutableMapping
 
-from .._bases import ProtectedBase, final, abstract_member
-from .bases import (
-    BaseAuxiliaryContainerMeta,
-    BaseAuxiliaryContainer,
-    BaseSemiInteractiveAuxiliaryContainer,
-    BaseInteractiveAuxiliaryContainer,
-    BaseMutableAuxiliaryContainer,
-)
-from ..utils.type_checking import assert_is_instance, format_types
+from .._bases import ProtectedBase, abstract_member, final
 from ..utils.factoring import format_factory, run_factory
 from ..utils.immutable import ImmutableDict
+from ..utils.type_checking import assert_is_instance, format_types
+from .bases import (
+    BaseAuxiliaryContainer,
+    BaseAuxiliaryContainerMeta,
+    BaseInteractiveAuxiliaryContainer,
+    BaseMutableAuxiliaryContainer,
+    BaseSemiInteractiveAuxiliaryContainer,
+)
 
 if TYPE_CHECKING:
-    from typing import Any, Type, Optional, Hashable, Union
+    from typing import Any, Hashable, Optional, Type, Union
 
     from .._bases import AbstractType
-    from ..utils.type_checking import LazyTypes
     from ..utils.factoring import LazyFactory
+    from ..utils.type_checking import LazyTypes
 
 __all__ = [
     "KeyRelationship",
@@ -106,7 +106,7 @@ class DictContainerMeta(BaseAuxiliaryContainerMeta):
         assert_is_instance(
             getattr(cls, "_key_relationship"),
             (cls._key_relationship_type, type(abstract_member())),
-            subtypes=False
+            subtypes=False,
         )
 
     @property
@@ -126,6 +126,7 @@ class DictContainer(
     )
 ):
     """Dictionary container."""
+
     __slots__ = ()
 
     _key_relationship = abstract_member()  # type: Union[AbstractType, KeyRelationship]
@@ -143,6 +144,7 @@ class SemiInteractiveDictContainer(
     DictContainer, BaseSemiInteractiveAuxiliaryContainer
 ):
     """Semi-interactive dictionary container."""
+
     __slots__ = ()
 
 
@@ -150,6 +152,7 @@ class InteractiveDictContainer(
     SemiInteractiveDictContainer, BaseInteractiveAuxiliaryContainer
 ):
     """Interactive dictionary container."""
+
     __slots__ = ()
 
 
@@ -157,4 +160,5 @@ class MutableDictContainer(
     InteractiveDictContainer, BaseMutableAuxiliaryContainer, SlottedMutableMapping
 ):
     """Mutable dictionary container."""
+
     __slots__ = ()

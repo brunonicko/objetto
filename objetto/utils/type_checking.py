@@ -88,8 +88,7 @@ def get_type_names(types):
     :return: Type names.
     """
     return tuple(
-        t.split("|")[-1].split(".")[-1]
-        if isinstance(t, string_types) else t.__name__
+        t.split("|")[-1].split(".")[-1] if isinstance(t, string_types) else t.__name__
         for t in flatten_types(types)
     )
 

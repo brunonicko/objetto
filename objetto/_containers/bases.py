@@ -1,40 +1,52 @@
 # -*- coding: utf-8 -*-
 """Base container classes and metaclasses."""
 
-from inspect import getmro
 from abc import abstractmethod
+from inspect import getmro
 from re import sub as re_sub
-from weakref import WeakKeyDictionary
 from typing import TYPE_CHECKING
+from weakref import WeakKeyDictionary
 
-from six import with_metaclass, iteritems
-from slotted import SlottedHashable, SlottedContainer, SlottedSized, SlottedIterable
+from six import iteritems, with_metaclass
+from slotted import SlottedContainer, SlottedHashable, SlottedIterable, SlottedSized
 
 from .._bases import (
     FINAL_METHOD_TAG,
-    BaseMeta,
     Base,
+    BaseMeta,
     ProtectedBase,
+    abstract_member,
     final,
     make_base_cls,
-    abstract_member,
 )
-from ..utils.type_checking import (
-    get_type_names, format_types, import_types, assert_is_instance
-)
-from ..utils.lazy_import import import_path, get_path
-from ..utils.factoring import format_factory, run_factory, import_factory
 from ..utils.custom_repr import custom_mapping_repr
+from ..utils.factoring import format_factory, import_factory, run_factory
+from ..utils.lazy_import import get_path, import_path
+from ..utils.type_checking import (
+    assert_is_instance,
+    format_types,
+    get_type_names,
+    import_types,
+)
 
 if TYPE_CHECKING:
     from typing import (
-        Any, Tuple, Type, Optional, Union, Dict, List, Hashable, Mapping, MutableMapping
+        Any,
+        Dict,
+        Hashable,
+        List,
+        Mapping,
+        MutableMapping,
+        Optional,
+        Tuple,
+        Type,
+        Union,
     )
 
     from .._bases import AbstractType
-    from ..utils.type_checking import LazyTypes
     from ..utils.factoring import LazyFactory
     from ..utils.immutable import Immutable
+    from ..utils.type_checking import LazyTypes
 
 __all__ = [
     "make_auxiliary_cls",
@@ -263,14 +275,15 @@ class BaseRelationship(ProtectedBase):
         # type: (LazyTypes) -> Optional[Type]
         """
         Get single exact type from available types if possible.
-        
+
         :param types: Base types.
         :return: Single exact type that is a subclass of one of provided base types.
         """
         if not types or self.subtypes:
             return None
         filtered_types = set(
-            typ for typ in import_types(self.types)
+            typ
+            for typ in import_types(self.types)
             if issubclass(typ, import_types(types))
         )
         if len(filtered_types) == 1:
@@ -283,7 +296,7 @@ class BaseRelationship(ProtectedBase):
         # type: (Any, bool, Any) -> Any
         """
         Perform type check and run value through factory.
-        
+
         :param value: Value.
         :param factory: Whether to run value through factory.
         :param kwargs: Keyword arguments to be passed to the factory.
@@ -310,6 +323,7 @@ class UniqueDescriptor(Base):
     identity instead of by values.
     If accessed through an instance, the descriptor will return the object ID.
     """
+
     __slots__ = (FINAL_METHOD_TAG,)
 
     def __init__(self):
@@ -323,7 +337,7 @@ class UniqueDescriptor(Base):
         # type: (...) -> Union[int, UniqueDescriptor]
         """
         Get object hash when accessing from instance or this descriptor otherwise.
-        
+
         :param instance: Instance.
         :param owner: Owner class.
         :return: Object hash or this descriptor.
@@ -431,6 +445,7 @@ class BaseContainer(
     )
 ):
     """Base container class."""
+
     __slots__ = ()
 
     @final
@@ -637,7 +652,7 @@ class BaseContainer(
             if single_container_type is None:
                 return {
                     _SERIALIZED_CLASS_KEY: get_path(type(value)),
-                    _SERIALIZED_VALUE_KEY: serialized_value
+                    _SERIALIZED_VALUE_KEY: serialized_value,
                 }
 
             return serialized_value
@@ -654,7 +669,7 @@ class BaseContainer(
         # type: (Any, Any) -> BaseContainer
         """
         Deserialize.
-        
+
         :param serialized: Serialized.
         :param kwargs: Keyword arguments to be passed to the deserializers.
         :return: Deserialized.
@@ -720,6 +735,7 @@ class BaseAuxiliaryContainerMeta(BaseContainerMeta):
 
 class BaseAuxiliaryContainer(with_metaclass(BaseAuxiliaryContainerMeta, BaseContainer)):
     """Container with a single relationship."""
+
     __slots__ = ()
 
     _relationship = abstract_member()  # type: Union[AbstractType, BaseRelationship]
@@ -731,7 +747,7 @@ class BaseAuxiliaryContainer(with_metaclass(BaseAuxiliaryContainerMeta, BaseCont
         # type: (Optional[Hashable]) -> BaseRelationship
         """
         Get relationship.
-        
+
         :param location: Location.
         :return: Relationship.
         """

@@ -3,27 +3,36 @@
 
 from typing import TYPE_CHECKING
 
-from six import with_metaclass, string_types
+from six import string_types, with_metaclass
 
-from .._bases import init_context, final
+from .._bases import final, init_context
 from .._containers.bases import (
-    BaseRelationship,
-    BaseContainerMeta,
-    BaseSemiInteractiveContainer,
-    BaseInteractiveContainer,
     BaseAuxiliaryContainerMeta,
-    BaseSemiInteractiveAuxiliaryContainer,
+    BaseContainerMeta,
     BaseInteractiveAuxiliaryContainer,
+    BaseInteractiveContainer,
+    BaseRelationship,
+    BaseSemiInteractiveAuxiliaryContainer,
+    BaseSemiInteractiveContainer,
 )
 
 if TYPE_CHECKING:
     from typing import (
-        Any, Callable, Tuple, Type, Optional, Dict, Mapping, Iterable, Hashable, Union
+        Any,
+        Callable,
+        Dict,
+        Hashable,
+        Iterable,
+        Mapping,
+        Optional,
+        Tuple,
+        Type,
+        Union,
     )
 
-    from ..utils.type_checking import LazyTypes
     from ..utils.factoring import LazyFactory
     from ..utils.immutable import Immutable
+    from ..utils.type_checking import LazyTypes
 
 __all__ = [
     "DataRelationship",
@@ -91,9 +100,11 @@ class DataRelationship(BaseRelationship):
         :return: Dictionary.
         """
         dct = super(DataRelationship, self).to_dict()
-        dct.update({
-            "compared": self.compared,
-        })
+        dct.update(
+            {
+                "compared": self.compared,
+            }
+        )
         return dct
 
 
@@ -117,6 +128,7 @@ class BaseDataMeta(BaseContainerMeta):
 
 class BaseData(with_metaclass(BaseDataMeta, BaseSemiInteractiveContainer)):
     """Base data class."""
+
     __slots__ = ("__state",)
 
     @final
@@ -224,6 +236,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseSemiInteractiveContainer)):
 
 class BaseInteractiveData(BaseData, BaseInteractiveContainer):
     """Base interactive data container."""
+
     __slots__ = ()
 
     @final
@@ -251,6 +264,7 @@ class BaseInteractiveData(BaseData, BaseInteractiveContainer):
 
 class BaseAuxiliaryDataMeta(BaseDataMeta, BaseAuxiliaryContainerMeta):
     """Metaclass for :class:`BaseAuxiliaryData`."""
+
     pass
 
 
@@ -260,6 +274,7 @@ class BaseAuxiliaryData(
     )
 ):
     """Base auxiliary data container with a single relationship."""
+
     __slots__ = ("__hash",)
 
     _relationship = DataRelationship()
@@ -297,9 +312,7 @@ class BaseAuxiliaryData(
             return False
         if not isinstance(other, BaseAuxiliaryData):
             return False
-        if isinstance(
-            self, BaseInteractiveAuxiliaryData
-        ) != isinstance(
+        if isinstance(self, BaseInteractiveAuxiliaryData) != isinstance(
             other, BaseInteractiveAuxiliaryData
         ):
             return False

@@ -4,7 +4,7 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Tuple, Union, Optional
+    from typing import Optional, Tuple, Union
 
 __all__ = ["resolve_index", "resolve_continuous_slice", "pre_move"]
 

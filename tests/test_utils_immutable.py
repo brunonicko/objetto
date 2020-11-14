@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-import pytest
 import copy
 
+import pytest
 from six.moves import collections_abc
 
 from objetto.utils.immutable import (

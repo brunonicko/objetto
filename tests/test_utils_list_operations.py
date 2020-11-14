@@ -3,9 +3,9 @@
 import pytest
 
 from objetto.utils.list_operations import (
-    resolve_index,
-    resolve_continuous_slice,
     pre_move,
+    resolve_continuous_slice,
+    resolve_index,
 )
 
 

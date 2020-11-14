@@ -3,21 +3,25 @@
 
 from typing import TYPE_CHECKING, Generic, TypeVar, cast
 
-from six import with_metaclass, iteritems, iterkeys, itervalues
+from six import iteritems, iterkeys, itervalues, with_metaclass
 from six.moves import collections_abc
 
 from .._bases import final
-from .bases import (
-    BaseAuxiliaryDataMeta, BaseAuxiliaryData, BaseInteractiveAuxiliaryData
-)
 from .._containers.dict import (
-    KeyRelationship, DictContainerMeta, SemiInteractiveDictContainer
+    DictContainerMeta,
+    KeyRelationship,
+    SemiInteractiveDictContainer,
 )
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.immutable import ImmutableDict
+from .bases import (
+    BaseAuxiliaryData,
+    BaseAuxiliaryDataMeta,
+    BaseInteractiveAuxiliaryData,
+)
 
 if TYPE_CHECKING:
-    from typing import Any, Tuple, Type, Union, Mapping, Iterable, Dict, Iterator
+    from typing import Any, Dict, Iterable, Iterator, Mapping, Tuple, Type, Union
 
 __all__ = ["DictDataMeta", "DictData", "InteractiveDictData"]
 
@@ -49,6 +53,7 @@ class DictData(
 
     :param initial: Initial values.
     """
+
     __slots__ = ()
     _key_relationship = KeyRelationship()
 
@@ -208,7 +213,8 @@ class DictData(
                     cls._relationship.fabricate_value(v),
                 )
                 for k, v in (
-                    iteritems(update) if isinstance(update, collections_abc.Mapping)
+                    iteritems(update)
+                    if isinstance(update, collections_abc.Mapping)
                     else update
                 )
             )
@@ -264,7 +270,7 @@ class DictData(
         state = ImmutableDict(
             (
                 cls._key_relationship.fabricate_key(k, factory=False),
-                cls.deserialize_value(v, location=None, **kwargs)
+                cls.deserialize_value(v, location=None, **kwargs),
             )
             for k, v in iteritems(serialized)
         )

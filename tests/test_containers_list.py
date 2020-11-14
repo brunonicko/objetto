@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-
 from six import with_metaclass
-from slotted import SlottedSequence, SlottedMutableSequence
+from slotted import SlottedMutableSequence, SlottedSequence
 
 from objetto._containers.bases import (
-    BaseRelationship,
     BaseAuxiliaryContainer,
-    BaseSemiInteractiveAuxiliaryContainer,
     BaseInteractiveAuxiliaryContainer,
     BaseMutableAuxiliaryContainer,
+    BaseRelationship,
+    BaseSemiInteractiveAuxiliaryContainer,
 )
 from objetto._containers.list import (
-    ListContainerMeta,
-    ListContainer,
-    SemiInteractiveListContainer,
     InteractiveListContainer,
+    ListContainer,
+    ListContainerMeta,
     MutableListContainer,
+    SemiInteractiveListContainer,
 )
 from objetto.utils.immutable import ImmutableList
 

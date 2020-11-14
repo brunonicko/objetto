@@ -1,25 +1,24 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-
 from six import with_metaclass
+from slotted import SlottedContainer, SlottedIterable, SlottedSized
 
-from slotted import SlottedContainer, SlottedSized, SlottedIterable
 from objetto._bases import Base
 from objetto._containers.bases import (
-    BaseRelationship,
-    UniqueDescriptor,
-    BaseContainerMeta,
-    BaseContainer,
-    BaseSemiInteractiveContainer,
-    BaseInteractiveContainer,
-    BaseMutableContainer,
-    BaseAuxiliaryContainerMeta,
     BaseAuxiliaryContainer,
-    make_auxiliary_cls,
-    BaseSemiInteractiveAuxiliaryContainer,
+    BaseAuxiliaryContainerMeta,
+    BaseContainer,
+    BaseContainerMeta,
     BaseInteractiveAuxiliaryContainer,
+    BaseInteractiveContainer,
     BaseMutableAuxiliaryContainer,
+    BaseMutableContainer,
+    BaseRelationship,
+    BaseSemiInteractiveAuxiliaryContainer,
+    BaseSemiInteractiveContainer,
+    UniqueDescriptor,
+    make_auxiliary_cls,
 )
 from objetto.utils.immutable import ImmutableDict
 

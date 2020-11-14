@@ -5,16 +5,16 @@ from abc import abstractmethod
 from typing import Generic, TypeVar
 
 from six import with_metaclass
-from slotted import SlottedSet, SlottedMutableSet
+from slotted import SlottedMutableSet, SlottedSet
 
+from ..utils.immutable import ImmutableSet
 from .bases import (
-    BaseAuxiliaryContainerMeta,
     BaseAuxiliaryContainer,
-    BaseSemiInteractiveAuxiliaryContainer,
+    BaseAuxiliaryContainerMeta,
     BaseInteractiveAuxiliaryContainer,
     BaseMutableAuxiliaryContainer,
+    BaseSemiInteractiveAuxiliaryContainer,
 )
-from ..utils.immutable import ImmutableSet
 
 __all__ = [
     "SetContainerMeta",
@@ -40,6 +40,7 @@ class SetContainer(
     )
 ):
     """Set container."""
+
     __slots__ = ()
 
     @property
@@ -50,10 +51,9 @@ class SetContainer(
         raise NotImplementedError()
 
 
-class SemiInteractiveSetContainer(
-    SetContainer, BaseSemiInteractiveAuxiliaryContainer
-):
+class SemiInteractiveSetContainer(SetContainer, BaseSemiInteractiveAuxiliaryContainer):
     """Semi-interactive set container."""
+
     __slots__ = ()
 
 
@@ -61,6 +61,7 @@ class InteractiveSetContainer(
     SemiInteractiveSetContainer, BaseInteractiveAuxiliaryContainer
 ):
     """Interactive set container."""
+
     __slots__ = ()
 
 
@@ -68,4 +69,5 @@ class MutableSetContainer(
     InteractiveSetContainer, BaseMutableAuxiliaryContainer, SlottedMutableSet
 ):
     """Mutable set container."""
+
     __slots__ = ()

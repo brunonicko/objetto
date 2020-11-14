@@ -2,39 +2,39 @@
 """Attribute container."""
 
 from abc import abstractmethod
+from inspect import getmro
 from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
-from inspect import getmro
 
 from six import iteritems, with_metaclass
 
 from .._bases import ABSTRACT_TAG, FINAL_METHOD_TAG, ProtectedBase
 from .._bases import final as final_
+from ..utils.custom_repr import custom_mapping_repr
+from ..utils.factoring import format_factory, import_factory, run_factory
+from ..utils.immutable import ImmutableDict
+from ..utils.type_checking import assert_is_instance
 from .bases import (
-    BaseRelationship,
-    BaseContainerMeta,
     BaseContainer,
-    BaseSemiInteractiveContainer,
+    BaseContainerMeta,
     BaseInteractiveContainer,
     BaseMutableContainer,
+    BaseRelationship,
+    BaseSemiInteractiveContainer,
 )
-from ..utils.factoring import format_factory, run_factory, import_factory
-from ..utils.type_checking import assert_is_instance
-from ..utils.immutable import ImmutableDict
-from ..utils.custom_repr import custom_mapping_repr
 
 if TYPE_CHECKING:
     from typing import (
         Any,
+        Dict,
+        Iterable,
+        Iterator,
+        Mapping,
+        MutableMapping,
         Optional,
+        Tuple,
         Type,
         Union,
-        Dict,
-        MutableMapping,
-        Iterator,
-        Tuple,
-        Mapping,
-        Iterable,
     )
 
     from ..utils.factoring import LazyFactory
@@ -172,7 +172,7 @@ class BaseAttribute(ProtectedBase):
         # type: (...) -> Union[Any, BaseAttribute]
         """
         Get value when accessing from instance or this descriptor otherwise.
-        
+
         :param instance: Instance.
         :param owner: Owner class.
         :return: Value or this descriptor.
@@ -190,7 +190,7 @@ class BaseAttribute(ProtectedBase):
         # type: (Any) -> Any
         """
         Fabricate default value.
-        
+
         :param kwargs: Keyword arguments to be passed to the factories.
         :return: Fabricated value.
         :raises ValueError: Attribute has no default value or default factory.
@@ -244,9 +244,9 @@ class ContainerMeta(BaseContainerMeta):
 
                 # Valid attribute.
                 if (
-                    base_is_container and
-                    isinstance(member, BaseAttribute) and
-                    type(member) is cls._attribute_type
+                    base_is_container
+                    and isinstance(member, BaseAttribute)
+                    and type(member) is cls._attribute_type
                 ):
 
                     # Check relationship type.
@@ -303,6 +303,7 @@ class ContainerMeta(BaseContainerMeta):
 
 class Container(with_metaclass(ContainerMeta, BaseContainer)):
     """Attribute container."""
+
     __slots__ = ()
 
     @abstractmethod
@@ -310,7 +311,7 @@ class Container(with_metaclass(ContainerMeta, BaseContainer)):
         # type: (str) -> Any
         """
         Get attribute value.
-        
+
         :param name: Name.
         :return: Value.
         """

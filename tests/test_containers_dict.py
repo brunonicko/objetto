@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-
 from six import with_metaclass
 from slotted import SlottedMapping, SlottedMutableMapping
 
 from objetto._containers.bases import (
-    BaseRelationship,
     BaseAuxiliaryContainer,
-    BaseSemiInteractiveAuxiliaryContainer,
     BaseInteractiveAuxiliaryContainer,
     BaseMutableAuxiliaryContainer,
+    BaseRelationship,
+    BaseSemiInteractiveAuxiliaryContainer,
 )
 from objetto._containers.dict import (
-    KeyRelationship,
-    DictContainerMeta,
     DictContainer,
-    SemiInteractiveDictContainer,
+    DictContainerMeta,
     InteractiveDictContainer,
+    KeyRelationship,
     MutableDictContainer,
+    SemiInteractiveDictContainer,
 )
 from objetto.utils.immutable import ImmutableDict
 

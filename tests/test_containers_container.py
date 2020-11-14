@@ -1,24 +1,23 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-
 from six import with_metaclass
 
 from objetto._bases import ABSTRACT_TAG, FINAL_METHOD_TAG
 from objetto._containers.bases import (
-    BaseRelationship,
     BaseContainer,
-    BaseSemiInteractiveContainer,
     BaseInteractiveContainer,
     BaseMutableContainer,
+    BaseRelationship,
+    BaseSemiInteractiveContainer,
 )
 from objetto._containers.container import (
     BaseAttribute,
-    ContainerMeta,
     Container,
-    SemiInteractiveContainer,
+    ContainerMeta,
     InteractiveContainer,
     MutableContainer,
+    SemiInteractiveContainer,
 )
 from objetto.utils.immutable import ImmutableDict
 

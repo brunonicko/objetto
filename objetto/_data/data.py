@@ -3,27 +3,27 @@
 
 from typing import TYPE_CHECKING, cast
 
-from six import with_metaclass, iteritems
+from six import iteritems, with_metaclass
 from six.moves import collections_abc
 
-from .._containers.container import NOTHING, BaseAttribute, ContainerMeta, Container
 from .._bases import final as final_
-from .bases import DataRelationship, BaseDataMeta, BaseData, BaseInteractiveData
+from .._containers.container import NOTHING, BaseAttribute, Container, ContainerMeta
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.immutable import ImmutableDict
+from .bases import BaseData, BaseDataMeta, BaseInteractiveData, DataRelationship
 
 if TYPE_CHECKING:
     from typing import (
         Any,
-        Optional,
-        Type,
-        Iterator,
-        Tuple,
-        Mapping,
         Dict,
-        Union,
         Iterable,
+        Iterator,
+        Mapping,
+        Optional,
         Set,
+        Tuple,
+        Type,
+        Union,
     )
 
     from ..utils.factoring import LazyFactory
@@ -84,6 +84,7 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
 
     :param initial: Initial values.
     """
+
     __slots__ = ("__hash",)
 
     @classmethod
@@ -124,7 +125,7 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
             suffix=")",
             key_repr=str,
             sorting=True,
-            sort_key=lambda p: p[0]
+            sort_key=lambda p: p[0],
         )
 
     @final_
@@ -228,7 +229,8 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
         except AttributeError:
             cls = type(self)
             eq_state = dict(
-                (n, v) for n, v in iteritems(self._state)
+                (n, v)
+                for n, v in iteritems(self._state)
                 if cast("DataRelationship", cls._get_relationship(n)).compared
             )
             self.__hash = hash(frozenset(iteritems(eq_state)))
@@ -249,11 +251,13 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
         if cls is not type(other):
             return False
         eq_state = dict(
-            (n, v) for n, v in iteritems(self._state)
+            (n, v)
+            for n, v in iteritems(self._state)
             if cast("DataRelationship", cls._get_relationship(n)).compared
         )
         other_eq_state = dict(
-            (n, v) for n, v in iteritems(other._state)
+            (n, v)
+            for n, v in iteritems(other._state)
             if cast("DataRelationship", cls._get_relationship(n)).compared
         )
         return eq_state == other_eq_state
@@ -307,7 +311,8 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
         update = (
             (n, cls._get_relationship(n).fabricate_value(v))
             for n, v in (
-                iteritems(update) if isinstance(update, collections_abc.Mapping)
+                iteritems(update)
+                if isinstance(update, collections_abc.Mapping)
                 else update
             )
         )
@@ -369,6 +374,7 @@ class Data(with_metaclass(DataMeta, BaseData, Container)):
 
 class InteractiveData(Data, BaseInteractiveData):
     """Interactive data attribute container."""
+
     __slots__ = ()
 
     @final_

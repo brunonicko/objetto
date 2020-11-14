@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
-import pytest
 import copy
 
-from six import string_types, integer_types
+import pytest
+from six import integer_types, string_types
 
 from objetto._data.bases import DataRelationship
 from objetto._data.dict import DictData, InteractiveDictData

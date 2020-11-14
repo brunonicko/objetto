@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 from six import string_types
 
-from .lazy_import import decorate_path, import_path
 from .immutable import ImmutableDict
+from .lazy_import import decorate_path, import_path
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Iterable, Mapping, Optional, Union
@@ -28,7 +28,7 @@ def get_factory_name(factory):
     # type: (LazyFactory) -> str
     """
     Get factory name without importing lazy paths.
-    
+
     .. code:: python
 
         >>> from objetto.utils.factoring import get_factory_name
@@ -53,7 +53,7 @@ def format_factory(factory, module=None):
     # type: (LazyFactory, Optional[str]) -> LazyFactory
     """
     Check and format factory by adding a module path if applicable.
-    
+
     .. code:: python
 
         >>> from objetto.utils.factoring import format_factory
@@ -81,7 +81,7 @@ def import_factory(factory):
     # type: (LazyFactory) -> Optional[Callable]
     """
     Import factory from a path.
-    
+
     .. code:: python
 
         >>> from re import match

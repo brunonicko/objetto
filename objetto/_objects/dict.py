@@ -3,18 +3,16 @@
 
 from typing import TYPE_CHECKING, Generic, TypeVar, cast
 
-from six import with_metaclass, iteritems
+from six import iteritems, with_metaclass
 from six.moves import collections_abc
 
 from .._bases import final, init_context
-from .bases import BaseAuxiliaryObjectMeta, BaseAuxiliaryObject
-from .._containers.dict import DictContainerMeta, DictContainer, MutableDictContainer
+from .._containers.dict import DictContainer, DictContainerMeta, MutableDictContainer
 from ..utils.immutable import ImmutableDict
+from .bases import BaseAuxiliaryObject, BaseAuxiliaryObjectMeta
 
 if TYPE_CHECKING:
-    from typing import (
-        Any, Tuple, Type, Union, Mapping, Iterable, Dict, Iterator
-    )
+    from typing import Any, Dict, Iterable, Iterator, Mapping, Tuple, Type, Union
 
 __all__ = ["DictObjectMeta", "DictObject", "InteractiveDictObject"]
 
@@ -42,6 +40,7 @@ class DictObject(
     )
 ):
     """Dictionary object."""
+
     __slots__ = ("__state",)
 
     @final

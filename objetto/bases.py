@@ -5,30 +5,30 @@ from typing import TYPE_CHECKING
 
 # bases
 from ._bases import (
-    final,
     Base,
+    BaseCollection,
+    BaseContainer,
+    BaseDict,
+    BaseHashable,
+    BaseInteractiveCollection,
+    BaseInteractiveDict,
+    BaseInteractiveList,
+    BaseInteractiveSet,
+    BaseIterable,
+    BaseList,
+    BaseMutableCollection,
+    BaseMutableDict,
+    BaseMutableList,
+    BaseMutableSet,
+    BaseProtectedCollection,
+    BaseProtectedDict,
+    BaseProtectedList,
+    BaseProtectedSet,
+    BaseSet,
+    BaseSized,
     ProtectedBase,
     abstract_member,
-    BaseHashable,
-    BaseSized,
-    BaseIterable,
-    BaseContainer,
-    BaseCollection,
-    BaseProtectedCollection,
-    BaseInteractiveCollection,
-    BaseMutableCollection,
-    BaseDict,
-    BaseProtectedDict,
-    BaseInteractiveDict,
-    BaseMutableDict,
-    BaseList,
-    BaseProtectedList,
-    BaseInteractiveList,
-    BaseMutableList,
-    BaseSet,
-    BaseProtectedSet,
-    BaseInteractiveSet,
-    BaseMutableSet,
+    final,
 )
 
 if TYPE_CHECKING:
@@ -38,7 +38,6 @@ else:
 
 # states
 from ._states import BaseState
-
 
 __all__ = [
     "AbstractType",

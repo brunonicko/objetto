@@ -1,21 +1,23 @@
 # -*- coding: utf-8 -*-
 """List data."""
 
-from typing import TYPE_CHECKING, Generic, TypeVar, overload, cast
+from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
 
 from six import with_metaclass
 
 from .._bases import final
-from .bases import (
-    BaseAuxiliaryDataMeta, BaseAuxiliaryData, BaseInteractiveAuxiliaryData
-)
 from .._containers.list import ListContainerMeta, SemiInteractiveListContainer
 from ..utils.custom_repr import custom_iterable_repr
 from ..utils.immutable import ImmutableList
-from ..utils.list_operations import resolve_index, resolve_continuous_slice
+from ..utils.list_operations import resolve_continuous_slice, resolve_index
+from .bases import (
+    BaseAuxiliaryData,
+    BaseAuxiliaryDataMeta,
+    BaseInteractiveAuxiliaryData,
+)
 
 if TYPE_CHECKING:
-    from typing import Any, Type, Union, Iterable, List, Tuple
+    from typing import Any, Iterable, List, Tuple, Type, Union
 
 __all__ = ["ListDataMeta", "ListData", "InteractiveListData"]
 
@@ -46,6 +48,7 @@ class ListData(
 
     :param initial: Initial values.
     """
+
     __slots__ = ()
 
     @classmethod

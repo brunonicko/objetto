@@ -6,15 +6,17 @@ from typing import TYPE_CHECKING, Generic, TypeVar, cast
 from six import with_metaclass
 
 from .._bases import final
-from .bases import (
-    BaseAuxiliaryDataMeta, BaseAuxiliaryData, BaseInteractiveAuxiliaryData
-)
-from .._containers.set import SetContainerMeta, SemiInteractiveSetContainer
+from .._containers.set import SemiInteractiveSetContainer, SetContainerMeta
 from ..utils.custom_repr import custom_iterable_repr
 from ..utils.immutable import ImmutableSet
+from .bases import (
+    BaseAuxiliaryData,
+    BaseAuxiliaryDataMeta,
+    BaseInteractiveAuxiliaryData,
+)
 
 if TYPE_CHECKING:
-    from typing import Any, Type, Iterator, Iterable, List
+    from typing import Any, Iterable, Iterator, List, Type
 
 __all__ = ["SetDataMeta", "SetData", "InteractiveSetData"]
 
@@ -45,6 +47,7 @@ class SetData(
 
     :param initial: Initial values.
     """
+
     __slots__ = ()
 
     @classmethod
@@ -80,7 +83,7 @@ class SetData(
                 prefix="{}([".format(type(self).__fullname__),
                 suffix="])",
                 sorting=True,
-                sort_key=lambda v: hash(v)
+                sort_key=lambda v: hash(v),
             )
         else:
             return "<{}>".format(type(self).__fullname__)

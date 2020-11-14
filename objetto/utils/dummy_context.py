@@ -17,6 +17,7 @@ class DummyContext(object):
         ...     pass
 
     """
+
     __slots__ = ()
 
     def __enter__(self):
