@@ -29,7 +29,6 @@ class MyRelationShip(BaseRelationship):
 
 
 class MyContainerMeta(BaseContainerMeta):
-
     @property
     def _relationship_type(cls):
         return MyRelationShip
@@ -75,9 +74,7 @@ class MyContainer(with_metaclass(MyContainerMeta, BaseContainer)):
 
     @classmethod
     def deserialize(cls, serialized, **kwargs):
-        return cls(
-            **dict((k, cls.deserialize_value(v)) for k, v in serialized.items())
-        )
+        return cls(**dict((k, cls.deserialize_value(v)) for k, v in serialized.items()))
 
     def serialize(self, **kwargs):
         return dict((k, self.serialize_value(v)) for k, v in self._state.items())
@@ -135,15 +132,22 @@ def test_base_relationship():
     assert relationship.factory == int
     assert relationship.passthrough is False
 
-    assert BaseRelationship(SimpleContainer).get_single_exact_type(
-        (SimpleContainer,)
-    ) is SimpleContainer
-    assert BaseRelationship((SimpleContainer, int)).get_single_exact_type(
-        (SimpleContainer,)
-    ) is SimpleContainer
-    assert BaseRelationship(SimpleContainer, subtypes=True).get_single_exact_type(
-        (SimpleContainer,)
-    ) is None
+    assert (
+        BaseRelationship(SimpleContainer).get_single_exact_type((SimpleContainer,))
+        is SimpleContainer
+    )
+    assert (
+        BaseRelationship((SimpleContainer, int)).get_single_exact_type(
+            (SimpleContainer,)
+        )
+        is SimpleContainer
+    )
+    assert (
+        BaseRelationship(SimpleContainer, subtypes=True).get_single_exact_type(
+            (SimpleContainer,)
+        )
+        is None
+    )
 
     assert hash(BaseRelationship()) == hash(BaseRelationship())
     assert BaseRelationship() == BaseRelationship()
@@ -151,9 +155,7 @@ def test_base_relationship():
     assert BaseRelationship(int) != BaseRelationship(str)
     assert set(
         m for m in BaseRelationship.__members__ if not m.startswith("_")
-    ).issuperset(
-        BaseRelationship().to_dict()
-    )
+    ).issuperset(BaseRelationship().to_dict())
 
 
 def test_inheritance():
@@ -167,7 +169,9 @@ def test_inheritance():
     assert issubclass(BaseMutableContainer, BaseInteractiveContainer)
 
     assert issubclass(BaseSemiInteractiveAuxiliaryContainer, BaseAuxiliaryContainer)
-    assert issubclass(BaseSemiInteractiveAuxiliaryContainer, BaseSemiInteractiveContainer)
+    assert issubclass(
+        BaseSemiInteractiveAuxiliaryContainer, BaseSemiInteractiveContainer
+    )
     assert issubclass(
         BaseInteractiveAuxiliaryContainer, BaseSemiInteractiveAuxiliaryContainer
     )
@@ -195,13 +199,13 @@ def test_value_serialization():
     assert container.serialize_value(ComplexContainer(a=1, b=2, __class__=3)) == (
         {
             "__class__": __name__ + "|ComplexContainer",
-            "value": {"a": 1, "b": 2, "\\__class__": 3}
+            "value": {"a": 1, "b": 2, "\\__class__": 3},
         }
     )
     deserialized = ComplexContainer.deserialize_value(
         {
             "__class__": __name__ + "|ComplexContainer",
-            "value": {"a": 1, "b": 2, "\\__class__": 3}
+            "value": {"a": 1, "b": 2, "\\__class__": 3},
         }
     )
     assert type(deserialized) is ComplexContainer
@@ -229,12 +233,10 @@ def test_unique_descriptor():
 
 
 def test_auxiliary_container():
-
     class MyRelationship(BaseRelationship):
         pass
 
     class MyAuxiliaryContainerMeta(BaseAuxiliaryContainerMeta):
-
         @property
         def _relationship_type(cls):
             return MyRelationship
@@ -251,12 +253,14 @@ def test_auxiliary_container():
     assert MyAuxiliaryContainer
 
     with pytest.raises(TypeError):
+
         class MyBadAuxiliaryContainer(MyAuxiliaryContainer):
             _relationship = 1
 
         raise AssertionError(MyBadAuxiliaryContainer)
 
     with pytest.raises(TypeError):
+
         class MyBadAuxiliaryContainer(
             with_metaclass(MyAuxiliaryContainerMeta, MyAuxiliaryContainer)
         ):

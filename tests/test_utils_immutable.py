@@ -14,7 +14,6 @@ from objetto.utils.immutable import (
 
 
 class HashCollider(object):
-
     def __hash__(self):
         return 1
 
@@ -49,14 +48,10 @@ def test_immutable_dict():
     assert hash(immutable_dict) != hash(ImmutableDict({"x": 1, "y": 2}))
     assert immutable_dict != ImmutableDict({"x": 1, "y": 2})
 
-    assert hash(
-        ImmutableDict({"a": HashCollider(), HashCollider(): "b"})
-    ) == hash(
+    assert hash(ImmutableDict({"a": HashCollider(), HashCollider(): "b"})) == hash(
         ImmutableDict({"a": HashCollider(), HashCollider(): "b"})
     )
-    assert ImmutableDict(
-        {"a": HashCollider(), HashCollider(): "b"}
-    ) != ImmutableDict(
+    assert ImmutableDict({"a": HashCollider(), HashCollider(): "b"}) != ImmutableDict(
         {"a": HashCollider(), HashCollider(): "b"}
     )
 
@@ -105,14 +100,10 @@ def test_immutable_list():
     assert hash(immutable_list) != hash(ImmutableList(["x", "y"]))
     assert immutable_list != ImmutableList(["x", "y"])
 
-    assert hash(
-        ImmutableList([HashCollider(), HashCollider()])
-    ) == hash(
+    assert hash(ImmutableList([HashCollider(), HashCollider()])) == hash(
         ImmutableList([HashCollider(), HashCollider()])
     )
-    assert ImmutableList(
-        [HashCollider(), HashCollider()]
-    ) != ImmutableList(
+    assert ImmutableList([HashCollider(), HashCollider()]) != ImmutableList(
         [HashCollider(), HashCollider()]
     )
 
@@ -148,9 +139,7 @@ def test_immutable_list():
 
     # Transformations.
     assert immutable_list.clear() == ImmutableList()
-    assert immutable_list.change(1, "x", "y") == ImmutableList(
-        ["a", "x", "y", "c"]
-    )
+    assert immutable_list.change(1, "x", "y") == ImmutableList(["a", "x", "y", "c"])
     with pytest.raises(IndexError):
         immutable_list.change(2, "x", "y", "z")
     assert immutable_list.append("d") == ImmutableList(["a", "b", "c", "c", "d"])
@@ -164,23 +153,13 @@ def test_immutable_list():
     with pytest.raises(ValueError):
         immutable_list.remove("x")
     assert immutable_list.reverse() == ImmutableList(["c", "c", "b", "a"])
-    assert immutable_list.move(3, 0) == ImmutableList(
-        ["c", "a", "b", "c"]
-    )
-    assert immutable_list.move(1, 3) == ImmutableList(
-        ["a", "c", "c", "b"]
-    )
-    assert immutable_list.move(slice(1, 3), 0) == ImmutableList(
-        ["b", "c", "a", "c"]
-    )
-    assert immutable_list.move(slice(1, 3), 4) == ImmutableList(
-        ["a", "c", "b", "c"]
-    )
-    assert ImmutableList(
-        ["2", "1", "3"]
-    ).sort(key=lambda v: -int(v), reverse=True) == ImmutableList(
-        ["1", "2", "3"]
-    )
+    assert immutable_list.move(3, 0) == ImmutableList(["c", "a", "b", "c"])
+    assert immutable_list.move(1, 3) == ImmutableList(["a", "c", "c", "b"])
+    assert immutable_list.move(slice(1, 3), 0) == ImmutableList(["b", "c", "a", "c"])
+    assert immutable_list.move(slice(1, 3), 4) == ImmutableList(["a", "c", "b", "c"])
+    assert ImmutableList(["2", "1", "3"]).sort(
+        key=lambda v: -int(v), reverse=True
+    ) == ImmutableList(["1", "2", "3"])
 
 
 def test_immutable_set():
@@ -201,14 +180,10 @@ def test_immutable_set():
     assert hash(immutable_set) != hash(ImmutableSet([8, 9]))
     assert immutable_set != ImmutableSet([8, 9])
 
-    assert hash(
-        ImmutableSet([HashCollider(), HashCollider()])
-    ) == hash(
+    assert hash(ImmutableSet([HashCollider(), HashCollider()])) == hash(
         ImmutableSet([HashCollider(), HashCollider()])
     )
-    assert ImmutableSet(
-        [HashCollider(), HashCollider()]
-    ) != ImmutableSet(
+    assert ImmutableSet([HashCollider(), HashCollider()]) != ImmutableSet(
         [HashCollider(), HashCollider()]
     )
 

@@ -28,13 +28,11 @@ class MyRelationship(BaseRelationship):
 
 
 class MyAttribute(BaseAttribute):
-
     def __init__(self, relationship=MyRelationship(), **kwargs):
         super(MyAttribute, self).__init__(relationship=relationship, **kwargs)
 
 
 class MyContainerMeta(ContainerMeta):
-
     @property
     def _attribute_type(cls):
         return MyAttribute
@@ -91,12 +89,15 @@ class MyContainer(with_metaclass(MyContainerMeta, Container)):
 
 
 def test_base_attribute():
-    assert BaseAttribute(
-        module="mod", default_factory="fac"
-    ).default_factory == "mod|fac"
-    assert BaseAttribute(
-        relationship=BaseRelationship(module="mod"), default_factory="fac"
-    ).default_factory == "mod|fac"
+    assert (
+        BaseAttribute(module="mod", default_factory="fac").default_factory == "mod|fac"
+    )
+    assert (
+        BaseAttribute(
+            relationship=BaseRelationship(module="mod"), default_factory="fac"
+        ).default_factory
+        == "mod|fac"
+    )
 
     with pytest.raises(ValueError):
         BaseAttribute(default=0, default_factory=int)
@@ -111,7 +112,6 @@ def test_base_attribute():
 
 
 def test_stored_attributes():
-
     class BadMixin(object):
         __slots__ = ()
         foo_bar = MyAttribute()
@@ -139,6 +139,7 @@ def test_stored_attributes():
     assert instance.bar_foo is FooBar.bar_foo
 
     with pytest.raises(TypeError):
+
         class Foo(MyContainer):
             bad_foo = MyAttribute(BaseRelationship())
 
@@ -147,12 +148,14 @@ def test_stored_attributes():
 
 def test_reserved_member_names():
     with pytest.raises(TypeError):
+
         class MyBadContainer(Container):
             keys = 1
 
         raise AssertionError(MyBadContainer)
 
     with pytest.raises(TypeError):
+
         class BadBase(object):
             __slots__ = ()
             keys = 1

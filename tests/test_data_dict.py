@@ -10,7 +10,6 @@ from objetto._data.dict import DictData, InteractiveDictData
 
 
 class HashCollider(object):
-
     def __hash__(self):
         return 1
 
@@ -61,14 +60,10 @@ def test_dict_data():
     assert hash(immutable_dict) != hash(MyDictData({"x": 1, "y": 2}))
     assert immutable_dict != MyDictData({"x": 1, "y": 2})
 
-    assert hash(
-        MyDictData({"a": HashCollider(), HashCollider(): "b"})
-    ) == hash(
+    assert hash(MyDictData({"a": HashCollider(), HashCollider(): "b"})) == hash(
         MyDictData({"a": HashCollider(), HashCollider(): "b"})
     )
-    assert MyDictData(
-        {"a": HashCollider(), HashCollider(): "b"}
-    ) != MyDictData(
+    assert MyDictData({"a": HashCollider(), HashCollider(): "b"}) != MyDictData(
         {"a": HashCollider(), HashCollider(): "b"}
     )
 
@@ -94,13 +89,9 @@ def test_interactive_dict_data():
 
     # Transformations.
     assert immutable_dict.clear() == MyInteractiveDictData()
-    assert immutable_dict.discard("a") == MyInteractiveDictData(
-        {"b": 2, "c": 3}
-    )
+    assert immutable_dict.discard("a") == MyInteractiveDictData({"b": 2, "c": 3})
     assert immutable_dict.discard("z") == immutable_dict
-    assert immutable_dict.remove("a") == MyInteractiveDictData(
-        {"b": 2, "c": 3}
-    )
+    assert immutable_dict.remove("a") == MyInteractiveDictData({"b": 2, "c": 3})
     with pytest.raises(KeyError):
         immutable_dict.remove("z")
     assert immutable_dict.set("d", 4) == MyInteractiveDictData(

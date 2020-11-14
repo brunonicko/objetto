@@ -1,6 +1,6 @@
+enum34; python_version < "3.4"
+pyrsistent
+qualname
 six
 slotted
-pyrsistent
-decorator
-qualname
 typing; python_version < "3.5"

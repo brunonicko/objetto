@@ -80,7 +80,6 @@ class MyBaseData(BaseData):
 
 
 class MyInteractiveBaseData(MyBaseData, BaseInteractiveData):
-
     def set(self, location, value):
         return self._set(location, value)
 
@@ -146,40 +145,46 @@ def test_make():
 
 
 def test_transform():
-    my_interactive_base_data = MyInteractiveBaseData({
-        "a": 1,
-        "b": MyInteractiveBaseData({
-            "c": 2,
-            "d": MyInteractiveBaseData({
-                "e": 3
-            }),
-            "f": MyBaseData({"g": 1}),
-        })
-    })
+    my_interactive_base_data = MyInteractiveBaseData(
+        {
+            "a": 1,
+            "b": MyInteractiveBaseData(
+                {
+                    "c": 2,
+                    "d": MyInteractiveBaseData({"e": 3}),
+                    "f": MyBaseData({"g": 1}),
+                }
+            ),
+        }
+    )
     assert my_interactive_base_data.transform(
         ("b", "d"), "set", ("e", 30)
-    ) == MyInteractiveBaseData({
-        "a": 1,
-        "b": MyInteractiveBaseData({
-            "c": 2,
-            "d": MyInteractiveBaseData({
-                "e": 30
-            }),
-            "f": MyBaseData({"g": 1}),
-        })
-    })
+    ) == MyInteractiveBaseData(
+        {
+            "a": 1,
+            "b": MyInteractiveBaseData(
+                {
+                    "c": 2,
+                    "d": MyInteractiveBaseData({"e": 30}),
+                    "f": MyBaseData({"g": 1}),
+                }
+            ),
+        }
+    )
     assert my_interactive_base_data.transform(
-        ("b", "d"), lambda v: v.set("e", v.get("e")*2)
-    ) == MyInteractiveBaseData({
-        "a": 1,
-        "b": MyInteractiveBaseData({
-            "c": 2,
-            "d": MyInteractiveBaseData({
-                "e": 6
-            }),
-            "f": MyBaseData({"g": 1}),
-        })
-    })
+        ("b", "d"), lambda v: v.set("e", v.get("e") * 2)
+    ) == MyInteractiveBaseData(
+        {
+            "a": 1,
+            "b": MyInteractiveBaseData(
+                {
+                    "c": 2,
+                    "d": MyInteractiveBaseData({"e": 6}),
+                    "f": MyBaseData({"g": 1}),
+                }
+            ),
+        }
+    )
 
     with pytest.raises(TypeError):
         my_interactive_base_data.transform(("b", "f"), "set", ("g", 10))
@@ -192,9 +197,7 @@ def test_data_relationship():
     assert DataRelationship(int) != DataRelationship(str)
     assert set(
         m for m in DataRelationship.__members__ if not m.startswith("_")
-    ).issuperset(
-        DataRelationship().to_dict()
-    )
+    ).issuperset(DataRelationship().to_dict())
 
 
 def test_auxiliary_eq():

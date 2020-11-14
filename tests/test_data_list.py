@@ -11,7 +11,6 @@ from objetto.utils.immutable import ImmutableList
 
 
 class HashCollider(object):
-
     def __hash__(self):
         return 1
 
@@ -62,14 +61,10 @@ def test_immutable_list():
     assert hash(immutable_list) != hash(MyListData(["x", "y"]))
     assert immutable_list != MyListData(["x", "y"])
 
-    assert hash(
-        MyListData([HashCollider(), HashCollider()])
-    ) == hash(
+    assert hash(MyListData([HashCollider(), HashCollider()])) == hash(
         MyListData([HashCollider(), HashCollider()])
     )
-    assert MyListData(
-        [HashCollider(), HashCollider()]
-    ) != MyListData(
+    assert MyListData([HashCollider(), HashCollider()]) != MyListData(
         [HashCollider(), HashCollider()]
     )
 
@@ -130,23 +125,17 @@ def test_interactive_list_data():
     with pytest.raises(ValueError):
         immutable_list.remove("x")
     assert immutable_list.reverse() == MyInteractiveListData(["c", "c", "b", "a"])
-    assert immutable_list.move(3, 0) == MyInteractiveListData(
-        ["c", "a", "b", "c"]
-    )
-    assert immutable_list.move(1, 3) == MyInteractiveListData(
-        ["a", "c", "c", "b"]
-    )
+    assert immutable_list.move(3, 0) == MyInteractiveListData(["c", "a", "b", "c"])
+    assert immutable_list.move(1, 3) == MyInteractiveListData(["a", "c", "c", "b"])
     assert immutable_list.move(slice(1, 3), 0) == MyInteractiveListData(
         ["b", "c", "a", "c"]
     )
     assert immutable_list.move(slice(1, 3), 4) == MyInteractiveListData(
         ["a", "c", "b", "c"]
     )
-    assert MyInteractiveListData(
-        ["2", "1", "3"]
-    ).sort(key=lambda v: -int(v), reverse=True) == MyInteractiveListData(
-        ["1", "2", "3"]
-    )
+    assert MyInteractiveListData(["2", "1", "3"]).sort(
+        key=lambda v: -int(v), reverse=True
+    ) == MyInteractiveListData(["1", "2", "3"])
 
 
 if __name__ == "__main__":

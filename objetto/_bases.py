@@ -1,40 +1,54 @@
 # -*- coding: utf-8 -*-
-"""Base class and metaclass."""
+"""Base classes and metaclasses."""
 
+from abc import abstractmethod
 from weakref import WeakKeyDictionary, WeakValueDictionary
 from inspect import getmro
 from contextlib import contextmanager
 from uuid import uuid4
-from typing import TYPE_CHECKING, final, cast
+from typing import TYPE_CHECKING, Callable, Generic, TypeVar, overload, final, cast
 
 from qualname import qualname  # type: ignore
 from decorator import decorator
 from six import with_metaclass, iteritems
-from slotted import SlottedABCMeta, SlottedABC
-
-from .utils.immutable import ImmutableSet
+from slotted import (
+    SlottedABCMeta,
+    SlottedABC,
+    SlottedHashable,
+    SlottedSized,
+    SlottedIterable,
+    SlottedContainer,
+    SlottedMapping,
+    SlottedMutableMapping,
+    SlottedSequence,
+    SlottedMutableSequence,
+    SlottedSet,
+    SlottedMutableSet,
+)
 
 if TYPE_CHECKING:
     from typing import (
         Any,
         Dict,
-        TypeVar,
         Iterator,
         Set,
         Optional,
         Type,
         List,
+        Tuple,
         Iterable,
+        Union,
         Mapping,
+        FrozenSet,
         MutableMapping,
     )
 
-    _T = TypeVar("_T")
     AbstractType = Type["AbstractMember"]
 else:
     AbstractType = None
 
 __all__ = [
+    "AbstractType",
     "ABSTRACT_TAG",
     "FINAL_CLASS_TAG",
     "FINAL_METHOD_TAG",
@@ -48,9 +62,34 @@ __all__ = [
     "Base",
     "ProtectedBase",
     "abstract_member",
-    "AbstractType",
+    "BaseHashable",
+    "BaseSized",
+    "BaseIterable",
+    "BaseContainer",
+    "BaseCollection",
+    "BaseProtectedCollection",
+    "BaseInteractiveCollection",
+    "BaseMutableCollection",
+    "BaseDict",
+    "BaseProtectedDict",
+    "BaseInteractiveDict",
+    "BaseMutableDict",
+    "BaseList",
+    "BaseProtectedList",
+    "BaseInteractiveList",
+    "BaseMutableList",
+    "BaseSet",
+    "BaseProtectedSet",
+    "BaseInteractiveSet",
+    "BaseMutableSet",
 ]
 
+_T = TypeVar("_T")  # Any type.
+_F = TypeVar("_F", bound=Callable)  # Callable type.
+_KT = TypeVar("_KT")  # Key type.
+_VT = TypeVar("_VT")  # Value type.
+_T_co = TypeVar("_T_co", covariant=True)  # Any type covariant containers.
+_VT_co = TypeVar("_VT_co", covariant=True)  # Value type covariant containers.
 
 ABSTRACT_TAG = "__isabstractmethod__"
 FINAL_CLASS_TAG = "__isfinalclass__"
@@ -62,7 +101,7 @@ __base_cls_cache = WeakValueDictionary()  # type: MutableMapping[str, Type[Base]
 
 
 def _final(obj):
-    # type: (_T) -> _T
+    # type: (_F) -> _F
     """
     Final decorator that enables runtime checking for :class:`Base` classes.
 
@@ -125,7 +164,7 @@ def init_context(obj):
 
 @decorator
 def init(func, *args, **kwargs):
-    # type: (_T, Any, Any) -> _T
+    # type: (_F, Any, Any) -> _F
     """
     Method decorator that sets the initializing tag for :class:`Base` objects.
 
@@ -162,7 +201,7 @@ def _make_base_cls(
         base = Base
 
     # Get name.
-    qual_name = qual_name or base.__fullname__
+    qual_name = qual_name or base.__fullname__ or base.__name__ or ""
     name = qual_name.split(".")[-1]
 
     # Get module.
@@ -233,7 +272,7 @@ def _make_base_instance(
 
     # Make new instance and unpickle its state.
     self = cast("Base", cls.__new__(cls))
-    self.__setstate__(state)
+    self.__setstate__(state or {})
 
     return self
 
@@ -270,7 +309,7 @@ class BaseMeta(SlottedABCMeta):
 
     __open_attributes = WeakKeyDictionary(
         {}
-    )  # type: MutableMapping[Type, ImmutableSet[str]]
+    )  # type: MutableMapping[Type, FrozenSet[str]]
 
     @staticmethod
     def __new__(mcs, name, bases, dct):
@@ -343,7 +382,7 @@ class BaseMeta(SlottedABCMeta):
                     final_method_names.add(member_name)
 
         # Store open class attributes.
-        type(cls).__open_attributes[cls] = ImmutableSet(open_attributes)
+        type(cls).__open_attributes[cls] = frozenset(open_attributes)
 
     def __repr__(cls):
         # type: () -> str
@@ -379,6 +418,7 @@ class BaseMeta(SlottedABCMeta):
             member_names.update(simplify_member_names(base.__dict__))
         return sorted(member_names)
 
+    @final
     def __setattr__(cls, name, value):
         # type: (str, Any) -> None
         """
@@ -394,6 +434,7 @@ class BaseMeta(SlottedABCMeta):
             raise AttributeError(error)
         super(BaseMeta, cls).__setattr__(name, value)
 
+    @final
     def __delattr__(cls, name):
         # type: (str) -> None
         """
@@ -452,10 +493,11 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
         error = "'{}' object can't be shallow copied".format(type(self).__fullname__)
         raise RuntimeError(error)
 
+    @final
     def __ne__(self, other):
-        # type: (Any) -> bool
+        # type: (object) -> bool
         """
-        Compare with another object for inequality.
+        Compare for inequality.
 
         :param other: Another object.
         :return: True if not equal.
@@ -488,6 +530,7 @@ class ProtectedBase(Base):
     """
     __slots__ = ()
 
+    @final
     def __setattr__(self, name, value):
         # type: (str, Any) -> None
         """
@@ -502,6 +545,7 @@ class ProtectedBase(Base):
             raise AttributeError(error)
         super(ProtectedBase, self).__setattr__(name, value)
 
+    @final
     def __delattr__(self, name):
         # type: (str) -> None
         """
@@ -586,3 +630,1139 @@ methods some_attribute
     :return: Abstract member.
     """
     return AbstractMember
+
+
+class BaseHashable(Base, SlottedHashable):
+    """
+    Base hashable.
+
+      - Forces implementation of `__hash__` method.
+    """
+    __slots__ = ()
+
+    @abstractmethod
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        raise NotImplementedError()
+
+
+class BaseSized(Base, SlottedSized):
+    """
+    Base sized.
+
+      - Has a length (count).
+    """
+    __slots__ = ()
+
+    @abstractmethod
+    def __len__(self):
+        # type: () -> int
+        """
+        Get count.
+
+        :return: Count.
+        """
+        raise NotImplementedError()
+
+
+class BaseIterable(Base, SlottedIterable, Generic[_T_co]):
+    """
+    Base iterable.
+
+      - Can be iterated over.
+    """
+    __slots__ = ()
+
+    @abstractmethod
+    def __iter__(self):
+        # type: () -> Iterator
+        """
+        Iterate over.
+
+        :return: Iterator.
+        """
+        raise NotImplementedError()
+
+
+class BaseContainer(Base, SlottedContainer, Generic[_T_co]):
+    """
+    Base container.
+
+      - Contains values.
+    """
+    __slots__ = ()
+
+    @abstractmethod
+    def __contains__(self, content):
+        # type: (Any) -> bool
+        """
+        Get whether content is present.
+
+        :param content: Content.
+        :return: True if contains.
+        """
+        raise NotImplementedError()
+
+
+class BaseCollection(BaseSized, BaseIterable[_T_co], BaseContainer[_T_co], Base):
+    """
+    Base collection.
+
+      - Has a length (count).
+      - Can be iterated over.
+      - Contains values.
+    """
+    __slots__ = ()
+
+    @abstractmethod
+    def find_with_attributes(self, **attributes):
+        # type: (Any) -> Any
+        """
+        Find first value that matches unique attribute values.
+
+        :param attributes: Attributes to match.
+        :return: Value.
+        :raises ValueError: No attributes provided or no match found.
+        """
+        raise NotImplementedError()
+
+
+_BPC = TypeVar("_BPC", bound="BaseProtectedCollection")
+
+
+class BaseProtectedCollection(BaseCollection[_T]):
+    """
+    Base protected collection.
+
+      - Has protected transformation methods.
+      - Transformations return a transformed version (immutable) or self (mutable).
+    """
+    __slots__ = ()
+
+    @abstractmethod
+    def _clear(self):
+        # type: (_BPC) -> _BPC
+        """
+        Clear.
+
+        :return: Transformed.
+        """
+        raise NotImplementedError()
+
+
+_BIC = TypeVar("_BIC", bound="BaseInteractiveCollection")
+
+
+class BaseInteractiveCollection(BaseProtectedCollection[_T]):
+    """
+    Base interactive collection.
+
+      - Has public transformation methods.
+      - Transformations return a transformed version (immutable) or self (mutable).
+    """
+    __slots__ = ()
+
+    def clear(self):
+        # type: (_BIC) -> _BIC
+        """
+        Clear.
+
+        :return: Transformed.
+        """
+        return self._clear()
+
+
+class BaseMutableCollection(BaseProtectedCollection[_T]):
+    """
+    Base mutable collection.
+
+      - Has public mutable transformation and magic methods.
+      - Transformations return self (mutable).
+    """
+    __slots__ = ()
+
+    def clear(self):
+        # type: () -> None
+        """Clear."""
+        self._clear()
+
+
+class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
+    """Base dictionary-like collection."""
+    __slots__ = ()
+
+    @abstractmethod
+    def __reversed__(self):
+        # type: () -> Iterator[_KT]
+        """
+        Iterate over reversed keys.
+
+        :return: Reversed keys iterator.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __getitem__(self, key):
+        # type: (_KT) -> _VT_co
+        """
+        Get value for key.
+
+        :param key: Key.
+        :return: Value.
+        :raises KeyError: Key is not present.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def get(self, key, fallback=None):
+        # type: (_KT, Any) -> Union[_VT_co, Any]
+        """
+        Get value for key, return fallback value if key is not present.
+
+        :param key: Key.
+        :param fallback: Fallback value.
+        :return: Value or fallback value.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def iteritems(self):
+        # type: () -> Iterator[Tuple[_KT, _VT_co]]
+        """
+        Iterate over items.
+
+        :return: Items iterator.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def iterkeys(self):
+        # type: () -> Iterator[_KT]
+        """
+        Iterate over keys.
+
+        :return: Keys iterator.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def itervalues(self):
+        # type: () -> Iterator[_VT_co]
+        """
+        Iterate over values.
+
+        :return: Values iterator.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def items(self):  # type: ignore
+        # type: () -> BaseList[Tuple[_KT, _VT_co]]
+        """
+        Get items.
+
+        :return: Items.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def keys(self):  # type: ignore
+        # type: () -> BaseList[_KT]
+        """
+        Get keys.
+
+        :return: Keys.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def values(self):  # type: ignore
+        # type: () -> BaseList[_VT_co]
+        """
+        Get values.
+
+        :return: Values.
+        """
+        raise NotImplementedError()
+
+
+_BPD = TypeVar("_BPD", bound="BaseProtectedDict")
+
+
+class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
+    """Base protected dictionary-like collection."""
+    __slots__ = ()
+
+    @abstractmethod
+    def _discard(self, key):
+        # type: (_BPD, _KT) -> _BPD
+        """
+        Discard key if it exists.
+
+        :param key: Key.
+        :return: New version.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _remove(self, key):
+        # type: (_BPD, _KT) -> _BPD
+        """
+        Delete existing key.
+
+        :param key: Key.
+        :return: New version.
+        :raises KeyError: Key is not present.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _set(self, key, value):
+        # type: (_BPD, _KT, _VT) -> _BPD
+        """
+        Set value for key.
+
+        :param key: Key.
+        :param value: Value.
+        :return: New version.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _update(self, update):
+        # type: (_BPD, Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> _BPD
+        """
+        Update keys and values.
+
+        :param update: Updates.
+        :return: Transformed.
+        """
+        raise NotImplementedError()
+
+
+_BID = TypeVar("_BID", bound="BaseInteractiveDict")
+
+
+class BaseInteractiveDict(
+    BaseProtectedDict[_KT, _VT], BaseInteractiveCollection[_KT]
+):
+    """Base interactive dictionary-like collection."""
+    __slots__ = ()
+
+    def discard(self, key):
+        # type: (_BID, _KT) -> _BID
+        """
+        Discard key if it exists.
+
+        :param key: Key.
+        :return: New version.
+        """
+        return self._discard(key)
+
+    def remove(self, key):
+        # type: (_BID, _KT) -> _BID
+        """
+        Delete existing key.
+
+        :param key: Key.
+        :return: New version.
+        :raises KeyError: Key is not present.
+        """
+        return self._remove(key)
+
+    def set(self, key, value):
+        # type: (_BID, _KT, _VT) -> _BID
+        """
+        Set value for key.
+
+        :param key: Key.
+        :param value: Value.
+        :return: New version.
+        """
+        return self._set(key, value)
+
+    def update(self, update):
+        # type: (_BID, Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> _BID
+        """
+        Update keys and values.
+
+        :param update: Updates.
+        :return: Transformed.
+        """
+        return self._update(update)
+
+
+class BaseMutableDict(BaseProtectedDict[_KT, _VT], SlottedMutableMapping,
+                      BaseMutableCollection[_KT]):
+    """Base mutable dictionary-like collection."""
+    __slots__ = ()
+
+    @abstractmethod
+    def __setitem__(self, key, value):
+        # type: (_KT, _VT) -> None
+        """
+        Set value for key.
+
+        :param key: Key.
+        :param value: Value.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __delitem__(self, key):
+        # type: (_KT) -> None
+        """
+        Delete key.
+
+        :param key: Key.
+        :raises KeyError: Key is not preset.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def pop(self, key, fallback=None):
+        # type: (_KT, Any) -> Union[_VT, Any]
+        """
+        Pop value for key and discard it, return fallback value if key is not present.
+
+        :param key: Key.
+        :param fallback: Fallback value.
+        :return: Value or fallback value.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def popitem(self):
+        # type: () -> Tuple[_KT, _VT]
+        """
+        Get item and discard key.
+
+        :return: Item.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def setdefault(self, key, default=None):
+        # type: (_KT, _VT) -> _VT
+        """
+        Get the value for the specified key, insert key with default if not present.
+
+        :param key: Key.
+        :param default: Default value.
+        :return: Existing or default value.
+        """
+        raise NotImplementedError()
+
+    def discard(self, key):
+        # type: (_KT) -> None
+        """
+        Discard key if it exists.
+
+        :param key: Key.
+        :return: New version.
+        """
+        self._discard(key)
+
+    def remove(self, key):
+        # type: (_KT) -> None
+        """
+        Delete existing key.
+
+        :param key: Key.
+        :return: New version.
+        :raises KeyError: Key is not present.
+        """
+        self._remove(key)
+
+    def set(self, key, value):
+        # type: (_KT, _VT) -> None
+        """
+        Set value for key.
+
+        :param key: Key.
+        :param value: Value.
+        :return: New version.
+        """
+        self._set(key, value)
+
+    def update(self, update):  # type: ignore
+        # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> None
+        """
+        Update keys and values.
+
+        :param update: Updates.
+        """
+        self._update(update)
+
+
+class BaseList(BaseCollection[_T_co], SlottedSequence, Generic[_T_co]):
+    """Base list-like collection."""
+    __slots__ = ()
+
+    @abstractmethod
+    def __reversed__(self):
+        # type: () -> Iterator[_T_co]
+        """
+        Iterate over reversed values.
+
+        :return: Reversed values iterator.
+        """
+        raise NotImplementedError()
+
+    @overload
+    @abstractmethod
+    def __getitem__(self, index):  # type: ignore
+        # type: (int) -> _T_co
+        pass
+
+    @overload
+    @abstractmethod
+    def __getitem__(self, index):  # type: ignore
+        # type: (slice) -> BaseList[_T_co]
+        pass
+
+    @abstractmethod
+    def __getitem__(self, index):  # type: ignore
+        # type: (Union[int, slice]) -> Union[_T_co, BaseList[_T_co]]
+        """
+        Get value/values at index/from slice.
+
+        :param index: Index/slice.
+        :return: Value/values.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def count(self, value):
+        # type: (Any) -> int
+        """
+        Count number of occurrences of a value.
+
+        :return: Number of occurrences.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def index(self, value, start=None, stop=None):
+        # type: (Any, Optional[int], Optional[int]) -> int
+        """
+        Get index of a value.
+
+        :param value: Value.
+        :param start: Start index.
+        :param stop: Stop index.
+        :return: Index of value.
+        :raises ValueError: Provided stop but did not provide start.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def resolve_index(self, index, clamp=False):
+        # type: (int, bool) -> int
+        """
+        Resolve index to a positive number.
+
+        :param index: Input index.
+        :param clamp: Whether to clamp between zero and the length.
+        :return: Resolved index.
+        :raises IndexError: Index out of range.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def resolve_continuous_slice(self, slc):
+        # type: (slice) -> Tuple[int, int]
+        """
+        Resolve continuous slice according to length.
+
+        :param slc: Continuous slice.
+        :return: Index and stop.
+        :raises IndexError: Slice is noncontinuous.
+        """
+        raise NotImplementedError()
+
+
+_BPL = TypeVar("_BPL", bound="BaseProtectedList")
+
+
+class BaseProtectedList(BaseList[_T], BaseProtectedCollection[_T]):
+    """Base protected list-like collection."""
+    __slots__ = ()
+
+    @abstractmethod
+    def _insert(self, index, *values):
+        # type: (_BPL, int, _T) -> _BPL
+        """
+        Insert value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _append(self, value):
+        # type: (_BPL, _T) -> _BPL
+        """
+        Append value at the end.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _extend(self, iterable):
+        # type: (_BPL, Iterable[_T]) -> _BPL
+        """
+        Extend at the end with iterable.
+
+        :param iterable: Iterable.
+        :return: Transformed.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _remove(self, value):
+        # type: (_BPL, _T) -> _BPL
+        """
+        Remove first occurrence of value.
+
+        :param value: Value.
+        :return: Transformed.
+        :raises ValueError: Value is not present.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _reverse(self):
+        # type: (_BPL) -> _BPL
+        """
+        Reverse values.
+
+        :return: Transformed.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _change(self, index, *values):
+        # type: (_BPL, int, _T) -> _BPL
+        """
+        Change value(s) starting at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        raise NotImplementedError()
+
+
+_BIL = TypeVar("_BIL", bound="BaseInteractiveList")
+
+
+class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
+    """Base interactive list-like collection."""
+    __slots__ = ()
+
+    def insert(self, index, *values):
+        # type: (_BIL, int, _T) -> _BIL
+        """
+        Insert value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        return self._insert(index, *values)
+
+    def append(self, value):
+        # type: (_BIL, _T) -> _BIL
+        """
+        Append value at the end.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        return self._append(value)
+
+    def extend(self, iterable):
+        # type: (_BIL, Iterable[_T]) -> _BIL
+        """
+        Extend at the end with iterable.
+
+        :param iterable: Iterable.
+        :return: Transformed.
+        """
+        return self._extend(iterable)
+
+    def remove(self, value):
+        # type: (_BIL, _T) -> _BIL
+        """
+        Remove first occurrence of value.
+
+        :param value: Value.
+        :return: Transformed.
+        :raises ValueError: Value is not present.
+        """
+        return self._remove(value)
+
+    def reverse(self):
+        # type: (_BIL) -> _BIL
+        """
+        Reverse values.
+
+        :return: Transformed.
+        """
+        return self._reverse()
+
+    def change(self, index, *values):
+        # type: (_BIL, int, _T) -> _BIL
+        """
+        Change value(s) starting at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        return self._change(index, *values)
+
+
+class BaseMutableList(BaseProtectedList[_T], SlottedMutableSequence,
+                      BaseMutableCollection[_T]):
+    """Base mutable list-like collection."""
+    __slots__ = ()
+
+    def __getitem__(self, index):  # type: ignore
+        # type: (Union[int, slice]) -> Union[_T_co, BaseList[_T_co]]
+        """
+        Get value/values at index/from slice.
+
+        :param index: Index/slice.
+        :return: Value/values.
+        """
+        return self.__getitem__(index)
+
+    @overload
+    @abstractmethod
+    def __setitem__(self, index, value):
+        # type: (int, _T) -> None
+        pass
+
+    @overload
+    @abstractmethod
+    def __setitem__(self, slc, values):
+        # type: (slice, Iterable[_T]) -> None
+        pass
+
+    @abstractmethod
+    def __setitem__(self, item, value):
+        # type: (Union[int, slice], Union[_T, Iterable[_T]]) -> None
+        """
+        Set value/values at index/slice.
+
+        :param item: Index/slice.
+        :param value: Value/values.
+        :raises IndexError: Slice is noncontinuous.
+        """
+        raise NotImplementedError()
+
+    @overload
+    @abstractmethod
+    def __delitem__(self, index):
+        # type: (int) -> None
+        pass
+
+    @overload
+    @abstractmethod
+    def __delitem__(self, slc):
+        # type: (slice) -> None
+        pass
+
+    @abstractmethod
+    def __delitem__(self, item):
+        # type: (Union[int, slice]) -> None
+        """
+        Delete value/values at index/slice.
+
+        :param item: Index/slice.
+        :raises IndexError: Slice is noncontinuous.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def pop(self, index=-1):
+        # type: (int) -> _T
+        """
+        Pop value from index.
+
+        :param index: Index.
+        :return: Value.
+        """
+        raise NotImplementedError()
+
+    def insert(self, index, *values):
+        # type: (int, _T) -> None
+        """
+        Insert value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :raises ValueError: No values provided.
+        """
+        self._insert(index, *values)
+
+    def append(self, value):
+        # type: (_T) -> None
+        """
+        Append value at the end.
+
+        :param value: Value.
+        """
+        self._append(value)
+
+    def extend(self, iterable):
+        # type: (Iterable[_T]) -> None
+        """
+        Extend at the end with iterable.
+
+        :param iterable: Iterable.
+        """
+        self._extend(iterable)
+
+    def remove(self, value):
+        # type: (_T) -> None
+        """
+        Remove first occurrence of value.
+
+        :param value: Value.
+        :raises ValueError: Value is not present.
+        """
+        self._remove(value)
+
+    def reverse(self):
+        # type: () -> None
+        """Reverse values."""
+        self._reverse()
+
+    def change(self, index, *values):
+        # type: (int, _T) -> None
+        """
+        Change value(s) starting at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :raises ValueError: No values provided.
+        """
+        self._change(index, *values)
+
+
+class BaseSet(BaseCollection[_T_co], SlottedSet, Generic[_T_co]):
+    """Base set-like collection."""
+    __slots__ = ()
+
+    @abstractmethod
+    def isdisjoint(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a disjoint set of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is disjoint.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def issubset(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a subset of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is subset.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def issuperset(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a superset of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is superset.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def intersection(self, iterable):
+        # type: (Iterable) -> BaseSet
+        """
+        Get intersection.
+
+        :param iterable: Iterable.
+        :return: Intersection.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def symmetric_difference(self, iterable):
+        # type: (Iterable) -> BaseSet
+        """
+        Get symmetric difference.
+
+        :param iterable: Iterable.
+        :return: Symmetric difference.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def union(self, iterable):
+        # type: (Iterable) -> BaseSet
+        """
+        Get union.
+
+        :param iterable: Iterable.
+        :return: Union.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def difference(self, iterable):
+        # type: (Iterable) -> BaseSet
+        """
+        Get difference.
+
+        :param iterable: Iterable.
+        :return: Difference.
+        """
+        raise NotImplementedError()
+
+
+_BPS = TypeVar("_BPS", bound="BaseProtectedSet")
+
+
+class BaseProtectedSet(BaseSet[_T], BaseProtectedCollection[_T]):
+    """Base protected set-like collection."""
+    __slots__ = ()
+
+    @abstractmethod
+    def _add(self, value):
+        # type: (_BPS, _T) -> _BPS
+        """
+        Add value.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _discard(self, value):
+        # type: (_BPS, _T) -> _BPS
+        """
+        Discard value if it exists.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _remove(self, value):
+        # type: (_BPS, _T) -> _BPS
+        """
+        Remove existing value.
+
+        :param value: Value.
+        :return: Transformed.
+        :raises KeyError: Value is not present.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _replace(self, value, new_value):
+        # type: (_BPS, _T, _T) -> _BPS
+        """
+        Replace existing value with a new one.
+
+        :param value: Existing value.
+        :param new_value: New value.
+        :return: Transformed.
+        :raises KeyError: Value is not present.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _update(self, iterable):
+        # type: (_BPS, Iterable[_T]) -> _BPS
+        """
+        Update with iterable.
+
+        :param iterable: Iterable.
+        :return: Transformed.
+        """
+        raise NotImplementedError()
+
+
+_BIS = TypeVar("_BIS", bound="BaseInteractiveSet")
+
+
+class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
+    """Base interactive set-like collection."""
+    __slots__ = ()
+
+    def add(self, value):
+        # type: (_BIS, _T) -> _BIS
+        """
+        Add value.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        return self._add(value)
+
+    def discard(self, value):
+        # type: (_BIS, _T) -> _BIS
+        """
+        Discard value if it exists.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        return self._discard(value)
+
+    def remove(self, value):
+        # type: (_BIS, _T) -> _BIS
+        """
+        Remove existing value.
+
+        :param value: Value.
+        :return: Transformed.
+        :raises KeyError: Value is not present.
+        """
+        return self._remove(value)
+
+    def replace(self, value, new_value):
+        # type: (_BIS, _T, _T) -> _BIS
+        """
+        Replace existing value with a new one.
+
+        :param value: Existing value.
+        :param new_value: New value.
+        :return: Transformed.
+        :raises KeyError: Value is not present.
+        """
+        return self._replace(value, new_value)
+
+    def update(self, iterable):
+        # type: (_BIS, Iterable[_T]) -> _BIS
+        """
+        Update with iterable.
+
+        :param iterable: Iterable.
+        :return: Transformed.
+        """
+        return self._update(iterable)
+
+
+class BaseMutableSet(BaseProtectedSet[_T], SlottedMutableSet,
+                     BaseMutableCollection[_T]):
+    """Base mutable set-like collection."""
+    __slots__ = ()
+
+    @abstractmethod
+    def pop(self):
+        # type: () -> _T
+        """
+        Pop value.
+
+        :return: Value.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def intersection_update(self, iterable):
+        # type: (Iterable[_T]) -> None
+        """
+        Intersect.
+
+        :param iterable: Iterable.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def symmetric_difference_update(self, iterable):
+        # type: (Iterable[_T]) -> None
+        """
+        Symmetric difference.
+
+        :param iterable: Iterable.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def difference_update(self, iterable):
+        # type: (Iterable[_T]) -> None
+        """
+        Difference.
+
+        :param iterable: Iterable.
+        """
+        raise NotImplementedError()
+
+    def add(self, value):
+        # type: (_T) -> None
+        """
+        Add value.
+
+        :param value: Value.
+        """
+        self._add(value)
+
+    def discard(self, value):
+        # type: (_T) -> None
+        """
+        Discard value if it exists.
+
+        :param value: Value.
+        """
+        self._discard(value)
+
+    def remove(self, value):
+        # type: (_T) -> None
+        """
+        Remove existing value.
+
+        :param value: Value.
+        :raises KeyError: Value is not present.
+        """
+        self._remove(value)
+
+    def replace(self, value, new_value):
+        # type: (_T, _T) -> None
+        """
+        Replace existing value with a new one.
+
+        :param value: Existing value.
+        :param new_value: New value.
+        """
+        self._replace(value, new_value)
+
+    def update(self, iterable):
+        # type: (Iterable[_T]) -> None
+        """
+        Update with iterable.
+
+        :param iterable: Iterable.
+        """
+        self._update(iterable)

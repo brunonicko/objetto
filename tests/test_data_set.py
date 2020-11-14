@@ -11,7 +11,6 @@ from objetto.utils.immutable import ImmutableSet
 
 
 class HashCollider(object):
-
     def __hash__(self):
         return 1
 
@@ -61,14 +60,10 @@ def test_immutable_set():
     assert hash(immutable_set) != hash(MySetData([8, 9]))
     assert immutable_set != MySetData([8, 9])
 
-    assert hash(
-        MySetData([HashCollider(), HashCollider()])
-    ) == hash(
+    assert hash(MySetData([HashCollider(), HashCollider()])) == hash(
         MySetData([HashCollider(), HashCollider()])
     )
-    assert MySetData(
-        [HashCollider(), HashCollider()]
-    ) != MySetData(
+    assert MySetData([HashCollider(), HashCollider()]) != MySetData(
         [HashCollider(), HashCollider()]
     )
 

@@ -23,7 +23,6 @@ from objetto.utils.immutable import ImmutableList
 
 
 class MyListContainerMeta(ListContainerMeta):
-
     @property
     def _serializable_container_types(cls):
         return (MyListContainer,)

@@ -1,5 +1,9 @@
-pytest
-mypy
+autoflake
 black
-isort
 flake8
+isort
+mypy
+pytest
+sphinx
+sphinx-autodoc-typehints
+sphinx-rtd-theme

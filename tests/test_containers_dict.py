@@ -24,7 +24,6 @@ from objetto.utils.immutable import ImmutableDict
 
 
 class MyDictContainerMeta(DictContainerMeta):
-
     @property
     def _serializable_container_types(cls):
         return (MyDictContainer,)
@@ -108,6 +107,7 @@ def test_key_relationship():
 def test_dict_container():
 
     with pytest.raises(TypeError):
+
         class MyBadDictContainer(DictContainer):
             _key_relationship = 1
 

@@ -10,7 +10,6 @@ from objetto._data.data import DataAttribute, Data, InteractiveData
 
 
 class HashCollider(object):
-
     def __hash__(self):
         return 1
 
@@ -72,9 +71,7 @@ def test_data():
     assert hash(immutable_dict) != hash(MyData(a=10, b=20, c=30))
     assert immutable_dict != MyData(a=10, b=20, c=30)
 
-    assert hash(
-        MyData(a=HashCollider(), b=HashCollider(), c=HashCollider())
-    ) == hash(
+    assert hash(MyData(a=HashCollider(), b=HashCollider(), c=HashCollider())) == hash(
         MyData(a=HashCollider(), b=HashCollider(), c=HashCollider())
     )
 

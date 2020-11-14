@@ -23,7 +23,6 @@ from objetto.utils.immutable import ImmutableSet
 
 
 class MySetContainerMeta(SetContainerMeta):
-
     @property
     def _serializable_container_types(cls):
         return (MySetContainer,)

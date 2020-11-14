@@ -78,7 +78,6 @@ def test_force_hash_declaration():
 
 def test_final_decorator():
     class MyBase(Base):
-
         @final
         def my_final_method(self):
             return
@@ -89,7 +88,6 @@ def test_final_decorator():
 
 def test_final_method():
     class MyBase(Base):
-
         @final
         def my_final_method(self):
             return
@@ -105,7 +103,6 @@ def test_final_method():
 
 def test_final_classmethod():
     class MyBase(Base):
-
         @classmethod
         @final
         def my_final_method(cls):
@@ -123,7 +120,6 @@ def test_final_classmethod():
 
 def test_final_staticmethod():
     class MyBase(Base):
-
         @staticmethod
         @final
         def my_final_method():
@@ -141,7 +137,6 @@ def test_final_staticmethod():
 
 def test_final_property():
     class MyBase(Base):
-
         @property
         @final
         def my_final_property(self):
@@ -319,7 +314,6 @@ def test_dir():
 
 
 def test_protected_base():
-
     class MyProtectedBase(ProtectedBase):
         __slots__ = ("a", "b", "z")
 
