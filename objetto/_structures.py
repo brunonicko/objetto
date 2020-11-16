@@ -37,7 +37,7 @@ from ._bases import (
     abstract_member,
     final,
 )
-from ._states import BaseState, DictState, ListState, SetState
+from ._states import DictState, ListState, SetState
 from .utils.custom_repr import custom_mapping_repr
 from .utils.factoring import format_factory, import_factory, run_factory
 from .utils.lazy_import import get_path, import_path
@@ -90,6 +90,9 @@ _SERIALIZED_VALUE_KEY = "value"
 _T = TypeVar("_T")  # Any type.
 _KT = TypeVar("_KT")  # Key type.
 _VT = TypeVar("_VT")  # Value type.
+
+if TYPE_CHECKING:
+    AnyState = Union[DictState[_KT, _VT], ListState[_T], SetState[_T]]
 
 
 def _escape_serialized_class(dct):
@@ -462,6 +465,9 @@ class BaseStructureMeta(BaseMeta):
         raise NotImplementedError()
 
 
+_BS = TypeVar("_BS", bound="BaseStructure")
+
+
 class BaseStructure(
     with_metaclass(BaseStructureMeta, BaseHashable, BaseCollection[_T], Base)
 ):
@@ -703,7 +709,7 @@ class BaseStructure(
     @classmethod
     @abstractmethod
     def deserialize(cls, serialized, **kwargs):
-        # type: (Any, Any) -> BaseStructure
+        # type: (Type[_BS], Any, Any) -> _BS
         """
         Deserialize.
 
@@ -727,7 +733,7 @@ class BaseStructure(
     @property
     @abstractmethod
     def _state(self):
-        # type: () -> BaseState
+        # type: () -> AnyState
         """State."""
         raise NotImplementedError()
 
@@ -991,7 +997,7 @@ class BaseDictStructureMeta(BaseAuxiliaryStructureMeta):
 class BaseDictStructure(
     with_metaclass(
         BaseDictStructureMeta,
-        BaseAuxiliaryStructure,
+        BaseAuxiliaryStructure[_KT],
         BaseDict[_KT, _VT],
     )
 ):
@@ -1047,7 +1053,7 @@ class BaseListStructureMeta(BaseAuxiliaryStructureMeta):
 class BaseListStructure(
     with_metaclass(
         BaseListStructureMeta,
-        BaseAuxiliaryStructure,
+        BaseAuxiliaryStructure[_T],
         BaseList[_T],
     )
 ):
@@ -1098,7 +1104,7 @@ class BaseSetStructureMeta(BaseAuxiliaryStructureMeta):
 class BaseSetStructure(
     with_metaclass(
         BaseSetStructureMeta,
-        BaseAuxiliaryStructure,
+        BaseAuxiliaryStructure[_T],
         BaseSet[_T],
     )
 ):

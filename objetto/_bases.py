@@ -738,6 +738,7 @@ class BaseInteractiveCollection(BaseProtectedCollection[_T]):
 
     __slots__ = ()
 
+    @final
     def clear(self):
         # type: (_BIC) -> _BIC
         """
@@ -927,6 +928,7 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
 
     __slots__ = ()
 
+    @final
     def discard(self, key):
         # type: (_BID, _KT) -> _BID
         """
@@ -937,6 +939,7 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
         """
         return self._discard(key)
 
+    @final
     def remove(self, key):
         # type: (_BID, _KT) -> _BID
         """
@@ -948,6 +951,7 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
         """
         return self._remove(key)
 
+    @final
     def set(self, key, value):
         # type: (_BID, _KT, _VT) -> _BID
         """
@@ -959,6 +963,7 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
         """
         return self._set(key, value)
 
+    @final
     def update(self, update):
         # type: (_BID, Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> _BID
         """
@@ -999,6 +1004,12 @@ class BaseMutableDict(
         """
         raise NotImplementedError()
 
+    @final
+    def clear(self):
+        # type: () -> None
+        """Clear."""
+        self._clear()
+
     @abstractmethod
     def pop(self, key, fallback=None):
         # type: (_KT, Any) -> Union[_VT, Any]
@@ -1033,6 +1044,7 @@ class BaseMutableDict(
         """
         raise NotImplementedError()
 
+    @final
     def discard(self, key):
         # type: (_KT) -> None
         """
@@ -1043,6 +1055,7 @@ class BaseMutableDict(
         """
         self._discard(key)
 
+    @final
     def remove(self, key):
         # type: (_KT) -> None
         """
@@ -1054,6 +1067,7 @@ class BaseMutableDict(
         """
         self._remove(key)
 
+    @final
     def set(self, key, value):
         # type: (_KT, _VT) -> None
         """
@@ -1065,6 +1079,7 @@ class BaseMutableDict(
         """
         self._set(key, value)
 
+    @final
     def update(self, update):  # type: ignore
         # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> None
         """
@@ -1249,6 +1264,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
 
     __slots__ = ()
 
+    @final
     def insert(self, index, *values):
         # type: (_BIL, int, _T) -> _BIL
         """
@@ -1261,6 +1277,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
         """
         return self._insert(index, *values)
 
+    @final
     def append(self, value):
         # type: (_BIL, _T) -> _BIL
         """
@@ -1271,6 +1288,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
         """
         return self._append(value)
 
+    @final
     def extend(self, iterable):
         # type: (_BIL, Iterable[_T]) -> _BIL
         """
@@ -1281,6 +1299,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
         """
         return self._extend(iterable)
 
+    @final
     def remove(self, value):
         # type: (_BIL, _T) -> _BIL
         """
@@ -1292,6 +1311,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
         """
         return self._remove(value)
 
+    @final
     def reverse(self):
         # type: (_BIL) -> _BIL
         """
@@ -1301,6 +1321,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
         """
         return self._reverse()
 
+    @final
     def change(self, index, *values):
         # type: (_BIL, int, _T) -> _BIL
         """
@@ -1401,6 +1422,13 @@ class BaseMutableList(
         """
         raise NotImplementedError()
 
+    @final
+    def clear(self):
+        # type: () -> None
+        """Clear."""
+        self._clear()
+
+    @final
     def insert(self, index, *values):
         # type: (int, _T) -> None
         """
@@ -1412,6 +1440,7 @@ class BaseMutableList(
         """
         self._insert(index, *values)
 
+    @final
     def append(self, value):
         # type: (_T) -> None
         """
@@ -1421,6 +1450,7 @@ class BaseMutableList(
         """
         self._append(value)
 
+    @final
     def extend(self, iterable):
         # type: (Iterable[_T]) -> None
         """
@@ -1430,6 +1460,7 @@ class BaseMutableList(
         """
         self._extend(iterable)
 
+    @final
     def remove(self, value):
         # type: (_T) -> None
         """
@@ -1440,11 +1471,13 @@ class BaseMutableList(
         """
         self._remove(value)
 
+    @final
     def reverse(self):
         # type: () -> None
         """Reverse values."""
         self._reverse()
 
+    @final
     def change(self, index, *values):
         # type: (int, _T) -> None
         """
@@ -1615,6 +1648,7 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
 
     __slots__ = ()
 
+    @final
     def add(self, value):
         # type: (_BIS, _T) -> _BIS
         """
@@ -1625,6 +1659,7 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
         """
         return self._add(value)
 
+    @final
     def discard(self, value):
         # type: (_BIS, _T) -> _BIS
         """
@@ -1635,6 +1670,7 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
         """
         return self._discard(value)
 
+    @final
     def remove(self, value):
         # type: (_BIS, _T) -> _BIS
         """
@@ -1646,6 +1682,7 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
         """
         return self._remove(value)
 
+    @final
     def replace(self, value, new_value):
         # type: (_BIS, _T, _T) -> _BIS
         """
@@ -1658,6 +1695,7 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
         """
         return self._replace(value, new_value)
 
+    @final
     def update(self, iterable):
         # type: (_BIS, Iterable[_T]) -> _BIS
         """
@@ -1716,6 +1754,13 @@ class BaseMutableSet(
         """
         raise NotImplementedError()
 
+    @final
+    def clear(self):
+        # type: () -> None
+        """Clear."""
+        self._clear()
+
+    @final
     def add(self, value):
         # type: (_T) -> None
         """
@@ -1725,6 +1770,7 @@ class BaseMutableSet(
         """
         self._add(value)
 
+    @final
     def discard(self, value):
         # type: (_T) -> None
         """
@@ -1734,6 +1780,7 @@ class BaseMutableSet(
         """
         self._discard(value)
 
+    @final
     def remove(self, value):
         # type: (_T) -> None
         """
@@ -1744,6 +1791,7 @@ class BaseMutableSet(
         """
         self._remove(value)
 
+    @final
     def replace(self, value, new_value):
         # type: (_T, _T) -> None
         """
@@ -1754,6 +1802,7 @@ class BaseMutableSet(
         """
         self._replace(value, new_value)
 
+    @final
     def update(self, iterable):
         # type: (Iterable[_T]) -> None
         """
