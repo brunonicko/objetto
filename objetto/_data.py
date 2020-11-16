@@ -25,11 +25,11 @@ from ._structures import (
     BaseInteractiveStructure,
     BaseListStructure,
     BaseListStructureMeta,
-    BaseProtectedAuxiliaryStructure,
-    BaseProtectedDictStructure,
-    BaseProtectedListStructure,
-    BaseProtectedSetStructure,
-    BaseProtectedStructure,
+    BaseAuxiliaryStructure,
+    BaseDictStructure,
+    BaseListStructure,
+    BaseSetStructure,
+    BaseStructure,
     BaseRelationship,
     BaseSetStructure,
     BaseSetStructureMeta,
@@ -171,7 +171,7 @@ class BaseDataMeta(BaseStructureMeta):
 _BD = TypeVar("_BD", bound="BaseData")
 
 
-class BaseData(with_metaclass(BaseDataMeta, BaseProtectedStructure[_T])):
+class BaseData(with_metaclass(BaseDataMeta, BaseStructure[_T])):
     """
     Base data.
 
@@ -253,7 +253,7 @@ class BaseAuxiliaryData(
     with_metaclass(
         BaseAuxiliaryDataMeta,
         BaseData[_T],
-        BaseProtectedAuxiliaryStructure[_T],
+        BaseAuxiliaryStructure[_T],
     )
 ):
     """Base auxiliary data."""
@@ -291,11 +291,13 @@ class BaseAuxiliaryData(
         """
         if self is other:
             return True
+        if not isinstance(other, collections_abc.Hashable):
+            return self._state == other
+        if not isinstance(other, BaseAuxiliaryData):
+            return False
         self_compared = type(self)._relationship.compared
         other_compared = type(other)._relationship.compared
         if not self_compared or not other_compared:
-            return False
-        if not isinstance(other, BaseAuxiliaryData):
             return False
         if isinstance(self, BaseInteractiveAuxiliaryData) != isinstance(
             other, BaseInteractiveAuxiliaryData
@@ -336,8 +338,8 @@ _DD = TypeVar("_DD", bound="DictData")
 class DictData(
     with_metaclass(
         DictDataMeta,
+        BaseDictStructure[_KT, _VT],
         BaseAuxiliaryData[_KT],
-        BaseProtectedDictStructure[_KT, _VT],
     )
 ):
     """
@@ -428,6 +430,17 @@ class DictData(
         """
         for key in self._state:
             yield key
+
+    @final
+    def __contains__(self, key):
+        # type: (Any) -> bool
+        """
+        Get whether key is present.
+
+        :param key: Key.
+        :return: True if contains.
+        """
+        return key in self._state
 
     @classmethod
     @final
@@ -678,8 +691,8 @@ class DictData(
 
 class InteractiveDictData(
     DictData[_KT, _VT],
-    BaseInteractiveAuxiliaryData[_KT],
     BaseInteractiveDictStructure[_KT, _VT],
+    BaseInteractiveAuxiliaryData[_KT],
 ):
     """Interactive dictionary data."""
     

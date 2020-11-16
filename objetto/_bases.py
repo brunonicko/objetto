@@ -88,12 +88,14 @@ __all__ = [
     "BaseMutableSet",
 ]
 
-_T = TypeVar("_T")  # Any type.
 _F = TypeVar("_F", bound=Callable)  # Callable type.
-_KT = TypeVar("_KT")  # Key type.
-_VT = TypeVar("_VT")  # Value type.
-_T_co = TypeVar("_T_co", covariant=True)  # Any type covariant containers.
-_VT_co = TypeVar("_VT_co", covariant=True)  # Value type covariant containers.
+_T = TypeVar('_T')  # Any type.
+_KT = TypeVar('_KT')  # Key type.
+_VT = TypeVar('_VT')  # Value type.
+_T_co = TypeVar('_T_co', covariant=True)  # Any type covariant containers.
+_V_co = TypeVar('_V_co', covariant=True)  # Any type covariant containers.
+_VT_co = TypeVar('_VT_co', covariant=True)  # Value type covariant containers.
+_T_contra = TypeVar('_T_contra', contravariant=True)  # Ditto contravariant.
 
 ABSTRACT_TAG = "__isabstractmethod__"
 FINAL_CLASS_TAG = "__isfinalclass__"
@@ -596,7 +598,7 @@ methods some_attribute
     return AbstractMember
 
 
-class BaseHashable(SlottedHashable, Base):
+class BaseHashable(Base, SlottedHashable):
     """
     Base hashable.
 
@@ -616,7 +618,7 @@ class BaseHashable(SlottedHashable, Base):
         raise NotImplementedError()
 
 
-class BaseSized(SlottedSized, Base):
+class BaseSized(Base, SlottedSized):
     """
     Base sized.
 
@@ -636,7 +638,7 @@ class BaseSized(SlottedSized, Base):
         raise NotImplementedError()
 
 
-class BaseIterable(SlottedIterable, Base, Generic[_T_co]):
+class BaseIterable(Base, SlottedIterable, Generic[_T_co]):
     """
     Base iterable.
 
@@ -656,7 +658,7 @@ class BaseIterable(SlottedIterable, Base, Generic[_T_co]):
         raise NotImplementedError()
 
 
-class BaseContainer(SlottedContainer, Base, Generic[_T_co]):
+class BaseContainer(Base, SlottedContainer, Generic[_T_co]):
     """
     Base container.
 
@@ -677,7 +679,7 @@ class BaseContainer(SlottedContainer, Base, Generic[_T_co]):
         raise NotImplementedError()
 
 
-class BaseCollection(BaseSized, BaseIterable[_T_co], BaseContainer[_T_co], Base):
+class BaseCollection(BaseSized, BaseIterable[_T_co], BaseContainer[_T_co]):
     """
     Base collection.
 
@@ -765,7 +767,7 @@ class BaseMutableCollection(BaseProtectedCollection[_T]):
         self._clear()
 
 
-class BaseDict(SlottedMapping, BaseCollection[_KT], Generic[_KT, _VT_co]):
+class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
     """Base dictionary collection."""
 
     __slots__ = ()
@@ -1090,7 +1092,7 @@ class BaseMutableDict(
         self._update(update)
 
 
-class BaseList(SlottedSequence, BaseCollection[_T_co], Generic[_T_co]):
+class BaseList(BaseCollection[_T_co], SlottedSequence):
     """Base list collection."""
 
     __slots__ = ()

@@ -469,13 +469,13 @@ _BS = TypeVar("_BS", bound="BaseStructure")
 
 
 class BaseStructure(
-    with_metaclass(BaseStructureMeta, BaseHashable, BaseCollection[_T], Base)
+    with_metaclass(BaseStructureMeta, BaseHashable, BaseProtectedCollection[_T])
 ):
     """
     Base structure.
 
       - Is hashable.
-      - Is a collection.
+      - Is a protected collection.
       - Has state.
       - Unique hash based on ID if unique descriptor is defined.
       - Holds values at locations.
@@ -738,21 +738,13 @@ class BaseStructure(
         raise NotImplementedError()
 
 
-class BaseProtectedStructure(BaseStructure[_T], BaseProtectedCollection[_T]):
-    """Base protected structure."""
-
-    __slots__ = ()
-
-
-class BaseInteractiveStructure(
-    BaseProtectedStructure[_T], BaseInteractiveCollection[_T]
-):
+class BaseInteractiveStructure(BaseStructure[_T], BaseInteractiveCollection[_T]):
     """Base interactive structure."""
 
     __slots__ = ()
 
 
-class BaseMutableStructure(BaseProtectedStructure[_T], BaseMutableCollection[_T]):
+class BaseMutableStructure(BaseStructure[_T], BaseMutableCollection[_T]):
     """Base mutable structure."""
 
     __slots__ = ()
@@ -801,18 +793,9 @@ class BaseAuxiliaryStructure(
         return cast("BaseRelationship", cls._relationship)
 
 
-class BaseProtectedAuxiliaryStructure(
-    BaseAuxiliaryStructure[_T], BaseProtectedStructure[_T], BaseProtectedCollection[_T]
-):
-    """Base protected auxiliary structure."""
-
-    __slots__ = ()
-
-
 class BaseInteractiveAuxiliaryStructure(
-    BaseProtectedAuxiliaryStructure[_T],
+    BaseAuxiliaryStructure[_T],
     BaseInteractiveStructure[_T],
-    BaseInteractiveCollection[_T],
 ):
     """Base interactive auxiliary structure."""
 
@@ -820,9 +803,8 @@ class BaseInteractiveAuxiliaryStructure(
 
 
 class BaseMutableAuxiliaryStructure(
-    BaseProtectedAuxiliaryStructure[_T],
+    BaseAuxiliaryStructure[_T],
     BaseMutableStructure[_T],
-    BaseMutableCollection[_T],
 ):
     """Base mutable auxiliary structure."""
 
@@ -998,7 +980,7 @@ class BaseDictStructure(
     with_metaclass(
         BaseDictStructureMeta,
         BaseAuxiliaryStructure[_KT],
-        BaseDict[_KT, _VT],
+        BaseProtectedDict[_KT, _VT],
     )
 ):
     """Base dictionary structure."""
@@ -1008,26 +990,9 @@ class BaseDictStructure(
     _key_relationship = abstract_member()  # type: Union[AbstractType, KeyRelationship]
     """Relationship for the keys."""
 
-    @property
-    @abstractmethod
-    def _state(self):
-        # type: () -> DictState[_KT, _VT]
-        """Internal state."""
-        raise NotImplementedError()
-
-
-class BaseProtectedDictStructure(
-    BaseDictStructure[_KT, _VT],
-    BaseProtectedAuxiliaryStructure[_KT],
-    BaseProtectedDict[_KT, _VT],
-):
-    """Base protected dictionary structure."""
-
-    __slots__ = ()
-
 
 class BaseInteractiveDictStructure(
-    BaseProtectedDictStructure[_KT, _VT],
+    BaseDictStructure[_KT, _VT],
     BaseInteractiveAuxiliaryStructure[_KT],
     BaseInteractiveDict[_KT, _VT],
 ):
@@ -1037,7 +1002,7 @@ class BaseInteractiveDictStructure(
 
 
 class BaseMutableDictStructure(
-    BaseProtectedDictStructure[_KT, _VT],
+    BaseDictStructure[_KT, _VT],
     BaseMutableAuxiliaryStructure[_KT],
     BaseMutableDict[_KT, _VT],
 ):
@@ -1054,31 +1019,16 @@ class BaseListStructure(
     with_metaclass(
         BaseListStructureMeta,
         BaseAuxiliaryStructure[_T],
-        BaseList[_T],
+        BaseProtectedList[_T],
     )
 ):
     """Base list structure."""
 
     __slots__ = ()
 
-    @property
-    @abstractmethod
-    def _state(self):
-        # type: () -> ListState[_T]
-        """Internal state."""
-        raise NotImplementedError()
-
-
-class BaseProtectedListStructure(
-    BaseListStructure[_T], BaseProtectedAuxiliaryStructure[_T], BaseProtectedList[_T]
-):
-    """Base protected list structure."""
-
-    __slots__ = ()
-
 
 class BaseInteractiveListStructure(
-    BaseProtectedListStructure[_T],
+    BaseListStructure[_T],
     BaseInteractiveAuxiliaryStructure[_T],
     BaseInteractiveList[_T],
 ):
@@ -1088,7 +1038,7 @@ class BaseInteractiveListStructure(
 
 
 class BaseMutableListStructure(
-    BaseProtectedListStructure[_T],
+    BaseListStructure[_T],
     BaseMutableAuxiliaryStructure[_T],
     BaseMutableList[_T],
 ):
@@ -1105,31 +1055,16 @@ class BaseSetStructure(
     with_metaclass(
         BaseSetStructureMeta,
         BaseAuxiliaryStructure[_T],
-        BaseSet[_T],
+        BaseProtectedSet[_T],
     )
 ):
     """Base set structure."""
 
     __slots__ = ()
 
-    @property
-    @abstractmethod
-    def _state(self):
-        # type: () -> SetState[_T]
-        """Internal state."""
-        raise NotImplementedError()
-
-
-class BaseProtectedSetStructure(
-    BaseSetStructure[_T], BaseProtectedAuxiliaryStructure[_T], BaseProtectedSet[_T]
-):
-    """Base protected set structure."""
-
-    __slots__ = ()
-
 
 class BaseInteractiveSetStructure(
-    BaseProtectedSetStructure[_T],
+    BaseSetStructure[_T],
     BaseInteractiveAuxiliaryStructure[_T],
     BaseInteractiveSet[_T],
 ):
@@ -1139,7 +1074,9 @@ class BaseInteractiveSetStructure(
 
 
 class BaseMutableSetStructure(
-    BaseProtectedSetStructure[_T], BaseMutableAuxiliaryStructure[_T], BaseMutableSet[_T]
+    BaseSetStructure[_T],
+    BaseMutableAuxiliaryStructure[_T],
+    BaseMutableSet[_T],
 ):
     """Base mutable set structure."""
 

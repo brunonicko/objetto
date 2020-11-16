@@ -210,10 +210,10 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         """
         if self is other:
             return True
+        if not isinstance(other, collections_abc.Hashable):
+            return self._internal == other
         if isinstance(other, DictState):
             return self._internal == other._internal
-        if isinstance(other, dict):
-            return self._internal == other
         return False
 
     def __contains__(self, key):
@@ -486,10 +486,10 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         """
         if self is other:
             return True
+        if not isinstance(other, collections_abc.Hashable):
+            return self._internal == other
         if isinstance(other, ListState):
             return self._internal == other._internal
-        if isinstance(other, list):
-            return self._internal == other
         return False
 
     def __contains__(self, value):
@@ -797,10 +797,10 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         """
         if self is other:
             return True
+        if not isinstance(other, collections_abc.Hashable):
+            return self._internal == other
         if isinstance(other, SetState):
             return self._internal == other._internal
-        if isinstance(other, set):
-            return self._internal == other
         return False
 
     def __contains__(self, value):
