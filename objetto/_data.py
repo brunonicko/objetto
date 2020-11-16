@@ -25,11 +25,6 @@ from ._structures import (
     BaseInteractiveStructure,
     BaseListStructure,
     BaseListStructureMeta,
-    BaseAuxiliaryStructure,
-    BaseDictStructure,
-    BaseListStructure,
-    BaseSetStructure,
-    BaseStructure,
     BaseRelationship,
     BaseSetStructure,
     BaseSetStructureMeta,
@@ -45,15 +40,15 @@ if TYPE_CHECKING:
         Callable,
         Dict,
         Hashable,
+        ItemsView,
         Iterable,
         Iterator,
+        KeysView,
         Mapping,
         Optional,
         Tuple,
         Type,
         Union,
-        ItemsView,
-        KeysView,
         ValuesView,
     )
 
@@ -62,6 +57,21 @@ if TYPE_CHECKING:
 
 __all__ = [
     "DataRelationship",
+    "BaseDataMeta",
+    "BaseData",
+    "BaseInteractiveData",
+    "BaseAuxiliaryDataMeta",
+    "BaseAuxiliaryData",
+    "BaseInteractiveAuxiliaryData",
+    "DictDataMeta",
+    "DictData",
+    "InteractiveDictData",
+    "ListDataMeta",
+    "ListData",
+    "InteractiveListData",
+    "SetDataMeta",
+    "SetData",
+    "InteractiveSetData",
 ]
 
 
@@ -305,10 +315,22 @@ class BaseAuxiliaryData(
             return False
         self_auxiliary_type = type(self)._base_auxiliary_type  # type: ignore
         other_auxiliary_type = type(other)._base_auxiliary_type  # type: ignore
-        if self_auxiliary_type is self_auxiliary_type:
+        if self_auxiliary_type is other_auxiliary_type:
             if type(self)._relationship == type(other)._relationship:
                 return self._state == other._state
         return False
+
+    @classmethod
+    @final
+    def _get_relationship(cls, location=None):
+        # type: (Optional[Hashable]) -> BaseRelationship
+        """
+        Get relationship.
+
+        :param location: Location.
+        :return: Relationship.
+        """
+        return cls._relationship
 
 
 class BaseInteractiveAuxiliaryData(
@@ -695,5 +717,85 @@ class InteractiveDictData(
     BaseInteractiveAuxiliaryData[_KT],
 ):
     """Interactive dictionary data."""
-    
+
+    __slots__ = ()
+
+
+class ListDataMeta(BaseAuxiliaryDataMeta, BaseListStructureMeta):
+    """Metaclass for :class:`ListData`."""
+
+    @property  # type: ignore
+    @final
+    def _base_auxiliary_type(cls):
+        # type: () -> Type[ListData]
+        """Base auxiliary container type."""
+        return ListData
+
+
+_LD = TypeVar("_LD", bound="ListData")
+
+
+class ListData(
+    with_metaclass(
+        ListDataMeta,
+        BaseListStructure[_T],
+        BaseAuxiliaryData[_T],
+    )
+):
+    """
+    List data.
+
+    :param initial: Initial values.
+    """
+
+    __slots__ = ()
+
+
+class InteractiveListData(
+    ListData[_T],
+    BaseInteractiveListStructure[_T],
+    BaseInteractiveAuxiliaryData[_T],
+):
+    """Interactive list data."""
+
+    __slots__ = ()
+
+
+class SetDataMeta(BaseAuxiliaryDataMeta, BaseSetStructureMeta):
+    """Metaclass for :class:`SetData`."""
+
+    @property  # type: ignore
+    @final
+    def _base_auxiliary_type(cls):
+        # type: () -> Type[SetData]
+        """Base auxiliary container type."""
+        return SetData
+
+
+_SD = TypeVar("_SD", bound="SetData")
+
+
+class SetData(
+    with_metaclass(
+        SetDataMeta,
+        BaseSetStructure[_T],
+        BaseAuxiliaryData[_T],
+    )
+):
+    """
+    Set data.
+
+    :param initial: Initial values.
+    """
+
+    __slots__ = ()
+
+
+class InteractiveSetData(
+    SetData[_T],
+    BaseInteractiveSetStructure[_T],
+    BaseInteractiveAuxiliaryData[_T],
+):
+    """Interactive set data."""
+
     __slots__ = ()

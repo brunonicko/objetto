@@ -16,14 +16,11 @@ from six import iteritems, with_metaclass
 from ._bases import (
     FINAL_METHOD_TAG,
     Base,
-    BaseCollection,
-    BaseDict,
     BaseHashable,
     BaseInteractiveCollection,
     BaseInteractiveDict,
     BaseInteractiveList,
     BaseInteractiveSet,
-    BaseList,
     BaseMeta,
     BaseMutableCollection,
     BaseMutableDict,
@@ -33,7 +30,6 @@ from ._bases import (
     BaseProtectedDict,
     BaseProtectedList,
     BaseProtectedSet,
-    BaseSet,
     abstract_member,
     final,
 )

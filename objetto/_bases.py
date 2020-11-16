@@ -89,13 +89,13 @@ __all__ = [
 ]
 
 _F = TypeVar("_F", bound=Callable)  # Callable type.
-_T = TypeVar('_T')  # Any type.
-_KT = TypeVar('_KT')  # Key type.
-_VT = TypeVar('_VT')  # Value type.
-_T_co = TypeVar('_T_co', covariant=True)  # Any type covariant containers.
-_V_co = TypeVar('_V_co', covariant=True)  # Any type covariant containers.
-_VT_co = TypeVar('_VT_co', covariant=True)  # Value type covariant containers.
-_T_contra = TypeVar('_T_contra', contravariant=True)  # Ditto contravariant.
+_T = TypeVar("_T")  # Any type.
+_KT = TypeVar("_KT")  # Key type.
+_VT = TypeVar("_VT")  # Value type.
+_T_co = TypeVar("_T_co", covariant=True)  # Any type covariant containers.
+_V_co = TypeVar("_V_co", covariant=True)  # Any type covariant containers.
+_VT_co = TypeVar("_VT_co", covariant=True)  # Value type covariant containers.
+_T_contra = TypeVar("_T_contra", contravariant=True)  # Ditto contravariant.
 
 ABSTRACT_TAG = "__isabstractmethod__"
 FINAL_CLASS_TAG = "__isfinalclass__"
