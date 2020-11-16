@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 
 from six import string_types
 
-from .immutable import ImmutableDict
 from .lazy_import import decorate_path, import_path
 
 if TYPE_CHECKING:
@@ -105,8 +104,12 @@ def import_factory(factory):
         raise TypeError(type(factory).__name__)
 
 
-def run_factory(factory, args=(), kwargs=ImmutableDict()):
-    # type: (LazyFactory, Iterable[Any], Mapping[str, Any]) -> Any
+def run_factory(
+    factory,  # type: LazyFactory
+    args=None,  # type: Optional[Iterable[Any]]
+    kwargs=None,  # type: Optional[Mapping[str, Any]]
+):
+    # type: (...) -> Any
     """
     Import and run factory.
 
@@ -126,4 +129,4 @@ def run_factory(factory, args=(), kwargs=ImmutableDict()):
     if factory is None:
         return None
     else:
-        return factory(*args, **kwargs)
+        return factory(*(args or ()), **(kwargs or {}))

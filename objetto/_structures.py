@@ -2,9 +2,9 @@
 """State-carrying structures."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, TypeVar
-from weakref import WeakKeyDictionary
 from inspect import getmro
+from typing import TYPE_CHECKING, TypeVar, cast
+from weakref import WeakKeyDictionary
 
 try:
     import collections.abc as collections_abc
@@ -13,20 +13,73 @@ except ImportError:
 
 from six import iteritems, with_metaclass
 
-from ._bases import FINAL_METHOD_TAG, BaseMeta, Base, ProtectedBase, BaseHashable, BaseCollection, BaseProtectedCollection, BaseInteractiveCollection, BaseMutableCollection, final
-from ._states import BaseState
-from .utils.type_checking import format_types, import_types, assert_is_instance
-from .utils.factoring import format_factory, import_factory, run_factory
+from ._bases import (
+    FINAL_METHOD_TAG,
+    Base,
+    BaseCollection,
+    BaseDict,
+    BaseHashable,
+    BaseInteractiveCollection,
+    BaseInteractiveDict,
+    BaseInteractiveList,
+    BaseInteractiveSet,
+    BaseList,
+    BaseMeta,
+    BaseMutableCollection,
+    BaseMutableDict,
+    BaseMutableList,
+    BaseMutableSet,
+    BaseProtectedCollection,
+    BaseProtectedDict,
+    BaseProtectedList,
+    BaseProtectedSet,
+    BaseSet,
+    abstract_member,
+    final,
+)
+from ._states import BaseState, DictState, ListState, SetState
 from .utils.custom_repr import custom_mapping_repr
-from .utils.lazy_import import import_path, get_path
+from .utils.factoring import format_factory, import_factory, run_factory
+from .utils.lazy_import import get_path, import_path
+from .utils.type_checking import assert_is_instance, format_types, import_types
 
 if TYPE_CHECKING:
-    from typing import Any, Union, Optional, Type, MutableMapping, Tuple, Dict, List
+    from typing import Any, Dict, List, MutableMapping, Optional, Tuple, Type, Union
 
-    from .utils.type_checking import LazyTypes
+    from ._bases import AbstractType
     from .utils.factoring import LazyFactory
+    from .utils.type_checking import LazyTypes
 
-__all__ = ["BaseRelationship", "UniqueDescriptor", "BaseStructureMeta", "BaseStructure"]
+__all__ = [
+    "BaseRelationship",
+    "UniqueDescriptor",
+    "BaseStructureMeta",
+    "BaseStructure",
+    "BaseProtectedStructure",
+    "BaseInteractiveStructure",
+    "BaseMutableStructure",
+    "BaseAuxiliaryStructureMeta",
+    "BaseAuxiliaryStructure",
+    "BaseProtectedAuxiliaryStructure",
+    "BaseInteractiveAuxiliaryStructure",
+    "BaseMutableAuxiliaryStructure",
+    "KeyRelationship",
+    "BaseDictStructureMeta",
+    "BaseDictStructure",
+    "BaseProtectedDictStructure",
+    "BaseInteractiveDictStructure",
+    "BaseMutableDictStructure",
+    "BaseListStructureMeta",
+    "BaseListStructure",
+    "BaseProtectedListStructure",
+    "BaseInteractiveListStructure",
+    "BaseMutableListStructure",
+    "BaseSetStructureMeta",
+    "BaseSetStructure",
+    "BaseProtectedSetStructure",
+    "BaseInteractiveSetStructure",
+    "BaseMutableSetStructure",
+]
 
 
 _SERIALIZED_CLASS_KEY = "__class__"
@@ -35,6 +88,8 @@ _SERIALIZED_VALUE_KEY = "value"
 
 
 _T = TypeVar("_T")  # Any type.
+_KT = TypeVar("_KT")  # Key type.
+_VT = TypeVar("_VT")  # Value type.
 
 
 def _escape_serialized_class(dct):
@@ -76,7 +131,7 @@ def _capitalize_first(string):
     return string[:1].upper() + string[1:]
 
 
-class BaseRelationship(ProtectedBase):
+class BaseRelationship(Base):
     """
     Relationship between a structure and its values.
 
@@ -93,15 +148,15 @@ class BaseRelationship(ProtectedBase):
 
     __slots__ = (
         "__hash",
-        "types",
-        "subtypes",
-        "checked",
-        "module",
-        "factory",
-        "serialized",
-        "serializer",
-        "deserializer",
-        "represented",
+        "__types",
+        "__subtypes",
+        "__checked",
+        "__module",
+        "__factory",
+        "__serialized",
+        "__serializer",
+        "__deserializer",
+        "__represented",
     )
 
     def __init__(
@@ -118,15 +173,15 @@ class BaseRelationship(ProtectedBase):
     ):
         # type: (...) -> None
         self.__hash = None  # type: Optional[int]
-        self.types = format_types(types, module=module)
-        self.subtypes = bool(subtypes)
-        self.checked = bool(checked)
-        self.module = module
-        self.factory = format_factory(factory, module=module)
-        self.serialized = bool(serialized)
-        self.serializer = format_factory(serializer, module=module)
-        self.deserializer = format_factory(deserializer, module=module)
-        self.represented = bool(represented)
+        self.__types = format_types(types, module=module)
+        self.__subtypes = bool(subtypes)
+        self.__checked = bool(checked)
+        self.__module = module
+        self.__factory = format_factory(factory, module=module)
+        self.__serialized = bool(serialized)
+        self.__serializer = format_factory(serializer, module=module)
+        self.__deserializer = format_factory(deserializer, module=module)
+        self.__represented = bool(represented)
 
     @final
     def __hash__(self):
@@ -226,6 +281,60 @@ class BaseRelationship(ProtectedBase):
         if self.types and self.checked:
             assert_is_instance(value, self.types, subtypes=self.subtypes)
         return value
+
+    @property
+    def types(self):
+        # type: () -> LazyTypes
+        """Types."""
+        return self.__types
+
+    @property
+    def subtypes(self):
+        # type: () -> bool
+        """Whether to accept subtypes."""
+        return self.__subtypes
+
+    @property
+    def checked(self):
+        # type: () -> bool
+        """Whether to perform runtime type check."""
+        return self.__checked
+
+    @property
+    def module(self):
+        # type: () -> Optional[str]
+        """Module path for lazy types/factories."""
+        return self.__module
+
+    @property
+    def factory(self):
+        # type: () -> LazyFactory
+        """Value factory."""
+        return self.__factory
+
+    @property
+    def serialized(self):
+        # type: () -> bool
+        """Whether should be serialized."""
+        return self.__serialized
+
+    @property
+    def serializer(self):
+        # type: () -> LazyFactory
+        """Custom serializer."""
+        return self.__serializer
+
+    @property
+    def deserializer(self):
+        # type: () -> LazyFactory
+        """Custom deserializer."""
+        return self.__deserializer
+
+    @property
+    def represented(self):
+        # type: () -> bool
+        """Whether should be represented."""
+        return self.__represented
 
     @property
     def passthrough(self):
@@ -353,18 +462,22 @@ class BaseStructureMeta(BaseMeta):
         raise NotImplementedError()
 
 
-class BaseStructure(with_metaclass(BaseStructureMeta, BaseHashable, BaseCollection[_T], Base)):
+class BaseStructure(
+    with_metaclass(BaseStructureMeta, BaseHashable, BaseCollection[_T], Base)
+):
     """
     Base structure.
 
       - Is hashable.
       - Is a collection.
       - Has state.
-      - Will have unique hash if unique descriptor is defined.
+      - Unique hash based on ID if unique descriptor is defined.
       - Holds values at locations.
       - Has a relationship for each location.
+      - Serializes/deserializes values and itself.
     """
-    __slots__= ()
+
+    __slots__ = ()
 
     @final
     def __hash__(self):
@@ -619,4 +732,409 @@ class BaseStructure(with_metaclass(BaseStructureMeta, BaseHashable, BaseCollecti
         raise NotImplementedError()
 
 
-# TODO: protected, interactive, and mutable structures
+class BaseProtectedStructure(BaseStructure[_T], BaseProtectedCollection[_T]):
+    """Base protected structure."""
+
+    __slots__ = ()
+
+
+class BaseInteractiveStructure(
+    BaseProtectedStructure[_T], BaseInteractiveCollection[_T]
+):
+    """Base interactive structure."""
+
+    __slots__ = ()
+
+
+class BaseMutableStructure(BaseProtectedStructure[_T], BaseMutableCollection[_T]):
+    """Base mutable structure."""
+
+    __slots__ = ()
+
+
+class BaseAuxiliaryStructureMeta(BaseStructureMeta):
+    """Metaclass for :class:`BaseAuxiliaryStructure`."""
+
+    def __init__(cls, name, bases, dct):
+        super(BaseAuxiliaryStructureMeta, cls).__init__(name, bases, dct)
+
+        # Check relationship type.
+        relationship = getattr(cls, "_relationship")
+        if type(relationship) is not type(abstract_member()):
+            relationship_type = cls._relationship_type
+            assert_is_instance(relationship, relationship_type, subtypes=False)
+
+    @property
+    @abstractmethod
+    def _base_auxiliary_type(cls):
+        # type: () -> Type[BaseAuxiliaryStructure]
+        """Base auxiliary structure type."""
+        raise NotImplementedError()
+
+
+class BaseAuxiliaryStructure(
+    with_metaclass(BaseAuxiliaryStructureMeta, BaseStructure[_T])
+):
+    """Structure with a single relationship for all locations."""
+
+    __slots__ = ()
+
+    _relationship = abstract_member()  # type: Union[AbstractType, BaseRelationship]
+    """Relationship for all locations."""
+
+    @classmethod
+    @final
+    def _get_relationship(cls, location=None):
+        # type: (Any) -> BaseRelationship
+        """
+        Get relationship.
+
+        :param location: Location.
+        :return: Relationship.
+        """
+        return cast("BaseRelationship", cls._relationship)
+
+
+class BaseProtectedAuxiliaryStructure(
+    BaseAuxiliaryStructure[_T], BaseProtectedStructure[_T], BaseProtectedCollection[_T]
+):
+    """Base protected auxiliary structure."""
+
+    __slots__ = ()
+
+
+class BaseInteractiveAuxiliaryStructure(
+    BaseProtectedAuxiliaryStructure[_T],
+    BaseInteractiveStructure[_T],
+    BaseInteractiveCollection[_T],
+):
+    """Base interactive auxiliary structure."""
+
+    __slots__ = ()
+
+
+class BaseMutableAuxiliaryStructure(
+    BaseProtectedAuxiliaryStructure[_T],
+    BaseMutableStructure[_T],
+    BaseMutableCollection[_T],
+):
+    """Base mutable auxiliary structure."""
+
+    __slots__ = ()
+
+
+@final
+class KeyRelationship(Base):
+    """
+    Relationship between a dictionary auxiliary structure and their keys.
+
+    :param types: Types.
+    :param subtypes: Whether to accept subtypes.
+    :param checked: Whether to perform runtime type check.
+    :param module: Module path for lazy types/factories.
+    :param factory: Key factory.
+    """
+
+    __slots__ = (
+        "__hash",
+        "__types",
+        "__subtypes",
+        "__checked",
+        "__module",
+        "__factory",
+    )
+
+    def __init__(
+        self,
+        types=(),  # type: LazyTypes
+        subtypes=False,  # type: bool
+        checked=True,  # type: bool
+        module=None,  # type: Optional[str]
+        factory=None,  # type: LazyFactory
+    ):
+        self.__hash = None  # type: Optional[int]
+        self.__types = format_types(types, module=module)
+        self.__subtypes = bool(subtypes)
+        self.__checked = bool(checked)
+        self.__module = module
+        self.__factory = format_factory(factory, module=module)
+
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        if self.__hash is None:
+            self.__hash = hash(frozenset(iteritems(self.to_dict())))
+        return self.__hash
+
+    def __eq__(self, other):
+        # type: (object) -> bool
+        """
+        Compare with another object for equality.
+
+        :param other: Another object.
+        :return: True if considered equal.
+        """
+        if type(self) is not type(other):
+            return False
+        assert isinstance(other, KeyRelationship)
+        return self.to_dict() == other.to_dict()
+
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        return custom_mapping_repr(
+            self.to_dict(),
+            prefix="{}(".format(type(self).__name__),
+            template="{key}={value}",
+            suffix=")",
+            sorting=True,
+            key_repr=str,
+        )
+
+    def to_dict(self):
+        # type: () -> Dict[str, Any]
+        """
+        Convert to dictionary.
+
+        :return: Dictionary.
+        """
+        return {
+            "types": frozenset(import_types(self.types)),
+            "subtypes": self.subtypes,
+            "checked": self.checked,
+            "module": self.module,
+            "factory": import_factory(self.factory),
+        }
+
+    def fabricate_key(self, key, factory=True, **kwargs):
+        # type: (Any, bool, Any) -> Any
+        """
+        Perform type check and run key through factory.
+
+        :param key: Key.
+        :param factory: Whether to run value through factory.
+        :param kwargs: Keyword arguments to be passed to the factory.
+        :return: Fabricated value.
+        """
+        if factory and self.factory is not None:
+            key = run_factory(self.factory, args=(key,), kwargs=kwargs)
+        if self.types and self.checked:
+            assert_is_instance(key, self.types, subtypes=self.subtypes)
+        return key
+
+    @property
+    def types(self):
+        # type: () -> LazyTypes
+        """Types."""
+        return self.__types
+
+    @property
+    def subtypes(self):
+        # type: () -> bool
+        """Whether to accept subtypes."""
+        return self.__subtypes
+
+    @property
+    def checked(self):
+        # type: () -> bool
+        """Whether to perform runtime type check."""
+        return self.__checked
+
+    @property
+    def module(self):
+        # type: () -> Optional[str]
+        """Module path for lazy types/factories."""
+        return self.__module
+
+    @property
+    def factory(self):
+        # type: () -> LazyFactory
+        """Key factory."""
+        return self.__factory
+
+    @property
+    def passthrough(self):
+        # type: () -> bool
+        """Whether does not perform type checks and has no factory."""
+        return (not self.types or not self.checked) and self.factory is None
+
+
+class BaseDictStructureMeta(BaseAuxiliaryStructureMeta):
+    """Metaclass for :class:`DictStructure`."""
+
+    def __init__(cls, name, bases, dct):
+        super(BaseDictStructureMeta, cls).__init__(name, bases, dct)
+
+        # Check key relationship type.
+        assert_is_instance(
+            getattr(cls, "_key_relationship"),
+            (cls._key_relationship_type, type(abstract_member())),
+            subtypes=False,
+        )
+
+    @property
+    @final
+    def _key_relationship_type(cls):
+        # type: () -> Type[KeyRelationship]
+        """Relationship type."""
+        return KeyRelationship
+
+
+class BaseDictStructure(
+    with_metaclass(
+        BaseDictStructureMeta,
+        BaseAuxiliaryStructure,
+        BaseDict[_KT, _VT],
+    )
+):
+    """Base dictionary structure."""
+
+    __slots__ = ()
+
+    _key_relationship = abstract_member()  # type: Union[AbstractType, KeyRelationship]
+    """Relationship for the keys."""
+
+    @property
+    @abstractmethod
+    def _state(self):
+        # type: () -> DictState[_KT, _VT]
+        """Internal state."""
+        raise NotImplementedError()
+
+
+class BaseProtectedDictStructure(
+    BaseDictStructure[_KT, _VT],
+    BaseProtectedAuxiliaryStructure[_KT],
+    BaseProtectedDict[_KT, _VT],
+):
+    """Base protected dictionary structure."""
+
+    __slots__ = ()
+
+
+class BaseInteractiveDictStructure(
+    BaseProtectedDictStructure[_KT, _VT],
+    BaseInteractiveAuxiliaryStructure[_KT],
+    BaseInteractiveDict[_KT, _VT],
+):
+    """Base interactive dictionary structure."""
+
+    __slots__ = ()
+
+
+class BaseMutableDictStructure(
+    BaseProtectedDictStructure[_KT, _VT],
+    BaseMutableAuxiliaryStructure[_KT],
+    BaseMutableDict[_KT, _VT],
+):
+    """Base mutable dictionary structure."""
+
+    __slots__ = ()
+
+
+class BaseListStructureMeta(BaseAuxiliaryStructureMeta):
+    """Metaclass for :class:`ListStructure`."""
+
+
+class BaseListStructure(
+    with_metaclass(
+        BaseListStructureMeta,
+        BaseAuxiliaryStructure,
+        BaseList[_T],
+    )
+):
+    """Base list structure."""
+
+    __slots__ = ()
+
+    @property
+    @abstractmethod
+    def _state(self):
+        # type: () -> ListState[_T]
+        """Internal state."""
+        raise NotImplementedError()
+
+
+class BaseProtectedListStructure(
+    BaseListStructure[_T], BaseProtectedAuxiliaryStructure[_T], BaseProtectedList[_T]
+):
+    """Base protected list structure."""
+
+    __slots__ = ()
+
+
+class BaseInteractiveListStructure(
+    BaseProtectedListStructure[_T],
+    BaseInteractiveAuxiliaryStructure[_T],
+    BaseInteractiveList[_T],
+):
+    """Base interactive list structure."""
+
+    __slots__ = ()
+
+
+class BaseMutableListStructure(
+    BaseProtectedListStructure[_T],
+    BaseMutableAuxiliaryStructure[_T],
+    BaseMutableList[_T],
+):
+    """Base mutable list structure."""
+
+    __slots__ = ()
+
+
+class BaseSetStructureMeta(BaseAuxiliaryStructureMeta):
+    """Metaclass for :class:`SetStructure`."""
+
+
+class BaseSetStructure(
+    with_metaclass(
+        BaseSetStructureMeta,
+        BaseAuxiliaryStructure,
+        BaseSet[_T],
+    )
+):
+    """Base set structure."""
+
+    __slots__ = ()
+
+    @property
+    @abstractmethod
+    def _state(self):
+        # type: () -> SetState[_T]
+        """Internal state."""
+        raise NotImplementedError()
+
+
+class BaseProtectedSetStructure(
+    BaseSetStructure[_T], BaseProtectedAuxiliaryStructure[_T], BaseProtectedSet[_T]
+):
+    """Base protected set structure."""
+
+    __slots__ = ()
+
+
+class BaseInteractiveSetStructure(
+    BaseProtectedSetStructure[_T],
+    BaseInteractiveAuxiliaryStructure[_T],
+    BaseInteractiveSet[_T],
+):
+    """Base interactive set structure."""
+
+    __slots__ = ()
+
+
+class BaseMutableSetStructure(
+    BaseProtectedSetStructure[_T], BaseMutableAuxiliaryStructure[_T], BaseMutableSet[_T]
+):
+    """Base mutable set structure."""
+
+    __slots__ = ()

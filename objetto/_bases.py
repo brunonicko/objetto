@@ -31,16 +31,21 @@ if TYPE_CHECKING:
         Any,
         Dict,
         FrozenSet,
+        ItemsView,
         Iterable,
         Iterator,
+        KeysView,
         List,
         Mapping,
         MutableMapping,
+        MutableSequence,
         Optional,
+        Sequence,
         Set,
         Tuple,
         Type,
         Union,
+        ValuesView,
     )
 
     AbstractType = Type["AbstractMember"]
@@ -60,7 +65,6 @@ __all__ = [
     "make_base_cls",
     "BaseMeta",
     "Base",
-    "ProtectedBase",
     "abstract_member",
     "BaseHashable",
     "BaseSized",
@@ -520,45 +524,6 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
         return sorted(member_names)
 
 
-class ProtectedBase(Base):
-    """
-    Protected base class.
-
-      - Prevents setting public instance attributes when not initializing.
-    """
-
-    __slots__ = ()
-
-    @final
-    def __setattr__(self, name, value):
-        # type: (str, Any) -> None
-        """
-        Set attribute.
-
-        :param name: Name.
-        :param value: Value.
-        :raises AttributeError: Read-only attribute.
-        """
-        if not getattr(self, INITIALIZING_TAG, False) and not name.startswith("_"):
-            error = "attribute '{}' is read-only".format(name)
-            raise AttributeError(error)
-        super(ProtectedBase, self).__setattr__(name, value)
-
-    @final
-    def __delattr__(self, name):
-        # type: (str) -> None
-        """
-        Set attribute.
-
-        :param name: Name.
-        :raises AttributeError: Read-only attribute.
-        """
-        if not getattr(self, INITIALIZING_TAG, False) and not name.startswith("_"):
-            error = "attribute '{}' is read-only".format(name)
-            raise AttributeError(error)
-        super(ProtectedBase, self).__delattr__(name)
-
-
 @final
 class AbstractMemberMeta(BaseMeta):
     """Metaclass for :class:`AbstractMember`."""
@@ -631,7 +596,7 @@ methods some_attribute
     return AbstractMember
 
 
-class BaseHashable(Base, SlottedHashable):
+class BaseHashable(SlottedHashable, Base):
     """
     Base hashable.
 
@@ -651,7 +616,7 @@ class BaseHashable(Base, SlottedHashable):
         raise NotImplementedError()
 
 
-class BaseSized(Base, SlottedSized):
+class BaseSized(SlottedSized, Base):
     """
     Base sized.
 
@@ -671,7 +636,7 @@ class BaseSized(Base, SlottedSized):
         raise NotImplementedError()
 
 
-class BaseIterable(Base, SlottedIterable, Generic[_T_co]):
+class BaseIterable(SlottedIterable, Base, Generic[_T_co]):
     """
     Base iterable.
 
@@ -691,7 +656,7 @@ class BaseIterable(Base, SlottedIterable, Generic[_T_co]):
         raise NotImplementedError()
 
 
-class BaseContainer(Base, SlottedContainer, Generic[_T_co]):
+class BaseContainer(SlottedContainer, Base, Generic[_T_co]):
     """
     Base container.
 
@@ -799,8 +764,8 @@ class BaseMutableCollection(BaseProtectedCollection[_T]):
         self._clear()
 
 
-class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
-    """Base dictionary-like collection."""
+class BaseDict(SlottedMapping, BaseCollection[_KT], Generic[_KT, _VT_co]):
+    """Base dictionary collection."""
 
     __slots__ = ()
 
@@ -869,8 +834,8 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
         raise NotImplementedError()
 
     @abstractmethod
-    def items(self):  # type: ignore
-        # type: () -> BaseList[Tuple[_KT, _VT_co]]
+    def items(self):
+        # type: () -> ItemsView[_KT, _VT_co]
         """
         Get items.
 
@@ -879,8 +844,8 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
         raise NotImplementedError()
 
     @abstractmethod
-    def keys(self):  # type: ignore
-        # type: () -> BaseList[_KT]
+    def keys(self):
+        # type: () -> KeysView[_KT]
         """
         Get keys.
 
@@ -889,8 +854,8 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
         raise NotImplementedError()
 
     @abstractmethod
-    def values(self):  # type: ignore
-        # type: () -> BaseList[_VT_co]
+    def values(self):
+        # type: () -> ValuesView[_VT_co]
         """
         Get values.
 
@@ -903,7 +868,7 @@ _BPD = TypeVar("_BPD", bound="BaseProtectedDict")
 
 
 class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
-    """Base protected dictionary-like collection."""
+    """Base protected dictionary collection."""
 
     __slots__ = ()
 
@@ -958,7 +923,7 @@ _BID = TypeVar("_BID", bound="BaseInteractiveDict")
 
 
 class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection[_KT]):
-    """Base interactive dictionary-like collection."""
+    """Base interactive dictionary collection."""
 
     __slots__ = ()
 
@@ -1006,9 +971,9 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
 
 
 class BaseMutableDict(
-    BaseProtectedDict[_KT, _VT], SlottedMutableMapping, BaseMutableCollection[_KT]
+    SlottedMutableMapping, BaseProtectedDict[_KT, _VT], BaseMutableCollection[_KT]
 ):
-    """Base mutable dictionary-like collection."""
+    """Base mutable dictionary collection."""
 
     __slots__ = ()
 
@@ -1110,8 +1075,8 @@ class BaseMutableDict(
         self._update(update)
 
 
-class BaseList(BaseCollection[_T_co], SlottedSequence, Generic[_T_co]):
-    """Base list-like collection."""
+class BaseList(SlottedSequence, BaseCollection[_T_co], Generic[_T_co]):
+    """Base list collection."""
 
     __slots__ = ()
 
@@ -1127,19 +1092,18 @@ class BaseList(BaseCollection[_T_co], SlottedSequence, Generic[_T_co]):
 
     @overload
     @abstractmethod
-    def __getitem__(self, index):  # type: ignore
+    def __getitem__(self, index):
         # type: (int) -> _T_co
         pass
 
     @overload
     @abstractmethod
-    def __getitem__(self, index):  # type: ignore
-        # type: (slice) -> BaseList[_T_co]
+    def __getitem__(self, index):
+        # type: (slice) -> Sequence[_T_co]
         pass
 
     @abstractmethod
-    def __getitem__(self, index):  # type: ignore
-        # type: (Union[int, slice]) -> Union[_T_co, BaseList[_T_co]]
+    def __getitem__(self, index):
         """
         Get value/values at index/from slice.
 
@@ -1202,7 +1166,7 @@ _BPL = TypeVar("_BPL", bound="BaseProtectedList")
 
 
 class BaseProtectedList(BaseList[_T], BaseProtectedCollection[_T]):
-    """Base protected list-like collection."""
+    """Base protected list collection."""
 
     __slots__ = ()
 
@@ -1281,7 +1245,7 @@ _BIL = TypeVar("_BIL", bound="BaseInteractiveList")
 
 
 class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
-    """Base interactive list-like collection."""
+    """Base interactive list collection."""
 
     __slots__ = ()
 
@@ -1351,21 +1315,33 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
 
 
 class BaseMutableList(
-    BaseProtectedList[_T], SlottedMutableSequence, BaseMutableCollection[_T]
+    SlottedMutableSequence, BaseProtectedList[_T], BaseMutableCollection[_T]
 ):
-    """Base mutable list-like collection."""
+    """Base mutable list collection."""
 
     __slots__ = ()
 
-    def __getitem__(self, index):  # type: ignore
-        # type: (Union[int, slice]) -> Union[_T_co, BaseList[_T_co]]
+    @overload
+    @abstractmethod
+    def __getitem__(self, index):
+        # type: (int) -> _T_co
+        pass
+
+    @overload
+    @abstractmethod
+    def __getitem__(self, index):
+        # type: (slice) -> MutableSequence[_T_co]
+        pass
+
+    @abstractmethod
+    def __getitem__(self, index):
         """
         Get value/values at index/from slice.
 
         :param index: Index/slice.
         :return: Value/values.
         """
-        return self.__getitem__(index)
+        raise NotImplementedError()
 
     @overload
     @abstractmethod
@@ -1481,8 +1457,8 @@ class BaseMutableList(
         self._change(index, *values)
 
 
-class BaseSet(BaseCollection[_T_co], SlottedSet, Generic[_T_co]):
-    """Base set-like collection."""
+class BaseSet(SlottedSet, BaseCollection[_T_co], Generic[_T_co]):
+    """Base set collection."""
 
     __slots__ = ()
 
@@ -1568,7 +1544,7 @@ _BPS = TypeVar("_BPS", bound="BaseProtectedSet")
 
 
 class BaseProtectedSet(BaseSet[_T], BaseProtectedCollection[_T]):
-    """Base protected set-like collection."""
+    """Base protected set collection."""
 
     __slots__ = ()
 
@@ -1635,7 +1611,7 @@ _BIS = TypeVar("_BIS", bound="BaseInteractiveSet")
 
 
 class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
-    """Base interactive set-like collection."""
+    """Base interactive set collection."""
 
     __slots__ = ()
 
@@ -1694,9 +1670,9 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
 
 
 class BaseMutableSet(
-    BaseProtectedSet[_T], SlottedMutableSet, BaseMutableCollection[_T]
+    SlottedMutableSet, BaseProtectedSet[_T], BaseMutableCollection[_T]
 ):
-    """Base mutable set-like collection."""
+    """Base mutable set collection."""
 
     __slots__ = ()
 

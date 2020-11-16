@@ -5,6 +5,11 @@ from abc import abstractmethod
 from itertools import chain
 from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
 
+try:
+    import collections.abc as collections_abc
+except ImportError:
+    import collections as collections_abc  # type: ignore
+
 from pyrsistent import pmap, pset, pvector
 from six import iteritems, iterkeys, itervalues, raise_from
 
@@ -20,7 +25,19 @@ from .utils.custom_repr import custom_iterable_repr, custom_mapping_repr
 from .utils.list_operations import pre_move, resolve_continuous_slice, resolve_index
 
 if TYPE_CHECKING:
-    from typing import Any, Iterable, Iterator, Mapping, Optional, Tuple, Type, Union
+    from typing import (
+        Any,
+        ItemsView,
+        Iterable,
+        Iterator,
+        KeysView,
+        Mapping,
+        Optional,
+        Tuple,
+        Type,
+        Union,
+        ValuesView,
+    )
 
     from pyrsistent.typing import PMap, PSet, PVector
 
@@ -355,32 +372,32 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         for value in itervalues(self._internal):
             yield value
 
-    def items(self):  # type: ignore
-        # type: () -> ListState[Tuple[_KT, _VT]]
+    def items(self):
+        # type: () -> ItemsView[_KT, _VT]
         """
         Get items.
 
         :return: Items.
         """
-        return ListState(self.iteritems())
+        return collections_abc.ItemsView(self)
 
-    def keys(self):  # type: ignore
-        # type: () -> ListState[_KT]
+    def keys(self):
+        # type: () -> KeysView[_KT]
         """
         Get keys.
 
         :return: Keys.
         """
-        return ListState(self.iterkeys())
+        return collections_abc.KeysView(self)
 
-    def values(self):  # type: ignore
-        # type: () -> ListState[_VT]
+    def values(self):
+        # type: () -> ValuesView[_VT]
         """
         Get values.
 
         :return: Values.
         """
-        return ListState(self.itervalues())
+        return collections_abc.ValuesView(self)
 
     def find_with_attributes(self, **attributes):
         # type: (Any) -> _VT
@@ -527,16 +544,16 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         return reversed(self._internal)
 
     @overload
-    def __getitem__(self, index):  # type: ignore
+    def __getitem__(self, index):
         # type: (int) -> _T
         pass
 
     @overload
-    def __getitem__(self, index):  # type: ignore
+    def __getitem__(self, index):
         # type: (slice) -> ListState[_T]
         pass
 
-    def __getitem__(self, index):  # type: ignore
+    def __getitem__(self, index):
         # type: (Union[int, slice]) -> Union[_T, ListState[_T]]
         """
         Get value/values at index/from slice.
@@ -545,7 +562,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         :return: Value/values.
         """
         if isinstance(index, slice):
-            return ListState(self._internal[index])
+            return self._make(self._internal[index])
         else:
             return self._internal[index]
 

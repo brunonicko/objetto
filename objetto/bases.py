@@ -26,9 +26,10 @@ from ._bases import (
     BaseProtectedSet,
     BaseSet,
     BaseSized,
-    ProtectedBase,
     abstract_member,
     final,
+    make_base_cls,
+    simplify_member_names,
 )
 
 if TYPE_CHECKING:
@@ -43,7 +44,6 @@ __all__ = [
     "AbstractType",
     "final",
     "Base",
-    "ProtectedBase",
     "abstract_member",
     "BaseHashable",
     "BaseSized",
