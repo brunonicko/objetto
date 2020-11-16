@@ -2,14 +2,14 @@
 """Immutable structures."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast, overload
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, string_types, with_metaclass
+from six import iteritems, iterkeys, itervalues, with_metaclass
 
 from ._bases import final, init_context
 from ._states import DictState, ListState, SetState
@@ -37,13 +37,13 @@ from .utils.custom_repr import custom_iterable_repr, custom_mapping_repr
 if TYPE_CHECKING:
     from typing import (
         Any,
-        Callable,
         Dict,
         Hashable,
         ItemsView,
         Iterable,
         Iterator,
         KeysView,
+        List,
         Mapping,
         Optional,
         Tuple,
@@ -52,8 +52,8 @@ if TYPE_CHECKING:
         ValuesView,
     )
 
-    from ..utils.factoring import LazyFactory
-    from ..utils.type_checking import LazyTypes
+    from .utils.factoring import LazyFactory
+    from .utils.type_checking import LazyTypes
 
 __all__ = [
     "DataRelationship",
@@ -178,9 +178,11 @@ class BaseDataMeta(BaseStructureMeta):
         return DataRelationship
 
 
+# noinspection PyTypeChecker
 _BD = TypeVar("_BD", bound="BaseData")
 
 
+# noinspection PyAbstractClass
 class BaseData(with_metaclass(BaseDataMeta, BaseStructure[_T])):
     """
     Base data.
@@ -209,7 +211,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[_T])):
         :param state: Internal state.
         :return: New data.
         """
-        self = cls.__new__(cls)
+        self = cast("_BD", cls.__new__(cls))
         self._init_state(state)
         return self
 
@@ -238,6 +240,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[_T])):
         return self.__state
 
 
+# noinspection PyAbstractClass
 class BaseInteractiveData(BaseData[_T], BaseInteractiveStructure[_T]):
     """
     Base interactive data.
@@ -259,11 +262,12 @@ class BaseAuxiliaryDataMeta(BaseDataMeta, BaseAuxiliaryStructureMeta):
         raise NotImplementedError()
 
 
+# noinspection PyAbstractClass
 class BaseAuxiliaryData(
     with_metaclass(
         BaseAuxiliaryDataMeta,
-        BaseData[_T],
         BaseAuxiliaryStructure[_T],
+        BaseData[_T],
     )
 ):
     """Base auxiliary data."""
@@ -320,19 +324,8 @@ class BaseAuxiliaryData(
                 return self._state == other._state
         return False
 
-    @classmethod
-    @final
-    def _get_relationship(cls, location=None):
-        # type: (Optional[Hashable]) -> BaseRelationship
-        """
-        Get relationship.
 
-        :param location: Location.
-        :return: Relationship.
-        """
-        return cls._relationship
-
-
+# noinspection PyAbstractClass
 class BaseInteractiveAuxiliaryData(
     BaseAuxiliaryData[_T],
     BaseInteractiveData[_T],
@@ -354,6 +347,7 @@ class DictDataMeta(BaseAuxiliaryDataMeta, BaseDictStructureMeta):
         return DictData
 
 
+# noinspection PyTypeChecker
 _DD = TypeVar("_DD", bound="DictData")
 
 
@@ -467,7 +461,7 @@ class DictData(
     @classmethod
     @final
     def __get_initial_state(cls, input_values, factory=True):
-        # type: (Mapping, bool) -> DictState
+        # type: (Mapping[_KT, _VT], bool) -> DictState[_KT, _VT]
         """
         Get initial state.
 
@@ -493,7 +487,7 @@ class DictData(
         """
         Clear all keys and values.
 
-        :return: New version.
+        :return: Transformed.
         """
         return type(self).__make__()
 
@@ -505,7 +499,7 @@ class DictData(
 
         :param key: Key.
         :param value: Value.
-        :return: New version.
+        :return: Transformed.
         """
         cls = type(self)
         key = cls._key_relationship.fabricate_key(key)
@@ -519,7 +513,7 @@ class DictData(
         Discard key if it exists.
 
         :param key: Key.
-        :return: New version.
+        :return: Transformed.
         """
         return type(self).__make__(self._state.discard(key))
 
@@ -530,33 +524,44 @@ class DictData(
         Delete existing key.
 
         :param key: Key.
-        :return: New version.
+        :return: Transformed.
         """
         return type(self).__make__(self._state.remove(key))
 
+    @overload
+    def _update(self, __m, **kwargs):
+        # type: (_DD, Mapping[_KT, _VT], _VT) -> _DD
+        pass
+
+    @overload
+    def _update(self, __m, **kwargs):
+        # type: (_DD, Iterable[Tuple[_KT, _VT]], _VT) -> _DD
+        pass
+
+    @overload
+    def _update(self, **kwargs):
+        # type: (_DD, _VT) -> _DD
+        pass
+
     @final
-    def _update(self, update):
-        # type: (_DD, Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> _DD
+    def _update(self, *args, **kwargs):
         """
         Update keys and values.
-
-        :param update: Updates.
-        :return: New version.
+        Same parameters as :meth:`dict.update`.
         """
+        update = dict(*args, **kwargs)
         cls = type(self)
         if not cls._key_relationship.passthrough or not cls._relationship.passthrough:
-            update = (
+            fabricated_update = (
                 (
                     cls._key_relationship.fabricate_key(k),
                     cls._relationship.fabricate_value(v),
                 )
-                for k, v in (
-                    iteritems(update)
-                    if isinstance(update, collections_abc.Mapping)
-                    else update
-                )
+                for k, v in iteritems(update)
             )
-        return cls.__make__(self._state.update(update))
+            return cls.__make__(self._state.update(fabricated_update))
+        else:
+            return cls.__make__(self._state.update(update))
 
     @final
     def get(self, key, fallback=None):
@@ -578,7 +583,7 @@ class DictData(
 
         :return: Key iterator.
         """
-        for key, value in self._state.iteritems():
+        for key, value in iteritems(self._state):
             yield key, value
 
     @final
@@ -589,7 +594,7 @@ class DictData(
 
         :return: Keys iterator.
         """
-        for key in self._state.iterkeys():
+        for key in iterkeys(self._state):
             yield key
 
     @final
@@ -600,7 +605,7 @@ class DictData(
 
         :return: Values iterator.
         """
-        for value in self._state.itervalues():
+        for value in itervalues(self._state):
             yield value
 
     @final
@@ -643,25 +648,7 @@ class DictData(
         :return: Value.
         :raises ValueError: No attributes provided or no match found.
         """
-        if not attributes:
-            error = "no attributes provided"
-            raise ValueError(error)
-        for value in self.itervalues():
-            for a_name, a_value in iteritems(attributes):
-                if not hasattr(value, a_name) or getattr(value, a_name) != a_value:
-                    break
-            else:
-                return value
-        error = "could not find a match for {}".format(
-            custom_mapping_repr(
-                attributes,
-                prefix="(",
-                template="{key}={value}",
-                suffix=")",
-                key_repr=str,
-            ),
-        )
-        raise ValueError(error)
+        return self._state.find_with_attributes(**attributes)
 
     @classmethod
     @final
@@ -673,6 +660,7 @@ class DictData(
         :param serialized: Serialized.
         :param kwargs: Keyword arguments to be passed to the deserializers.
         :return: Deserialized.
+        :raises RuntimeError: Not deserializable.
         """
         if not cls._relationship.serialized:
             error = "'{}' is not deserializable".format(cls.__name__)
@@ -694,6 +682,7 @@ class DictData(
 
         :param kwargs: Keyword arguments to be passed to the serializers.
         :return: Serialized.
+        :raises RuntimeError: Not serializable.
         """
         if not type(self)._relationship.serialized:
             error = "'{}' is not serializable".format(type(self).__fullname__)
@@ -732,6 +721,7 @@ class ListDataMeta(BaseAuxiliaryDataMeta, BaseListStructureMeta):
         return ListData
 
 
+# noinspection PyTypeChecker
 _LD = TypeVar("_LD", bound="ListData")
 
 
@@ -749,6 +739,340 @@ class ListData(
     """
 
     __slots__ = ()
+
+    @classmethod
+    @final
+    def __make__(cls, state=ListState()):
+        # type: (Type[_LD], AnyState) -> _LD
+        """
+        Make a new list data.
+
+        :param state: Internal state.
+        :return: New dictionary data.
+        """
+        return super(ListData, cls).__make__(state)
+
+    @final
+    def __init__(self, initial=()):
+        # type: (Iterable[_T]) -> None
+        if type(initial) is type(self):
+            self._init_state(getattr(initial, "_state"))
+        else:
+            self._init_state(self.__get_initial_state(initial))
+
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        if type(self)._relationship.represented:
+            return custom_iterable_repr(
+                self._state,
+                prefix="{}([".format(type(self).__fullname__),
+                suffix="])",
+            )
+        else:
+            return "<{}>".format(type(self).__fullname__)
+
+    @final
+    def __reversed__(self):
+        # type: () -> Iterator[_T]
+        """
+        Iterate over reversed values.
+
+        :return: Reversed values iterator.
+        """
+        return reversed(self._state)
+
+    @overload
+    def __getitem__(self, index):
+        # type: (int) -> _T
+        pass
+
+    @overload
+    def __getitem__(self, index):
+        # type: (slice) -> ListState[_T]
+        pass
+
+    @final
+    def __getitem__(self, index):
+        """
+        Get value/values at index/from slice.
+
+        :param index: Index/slice.
+        :return: Value/values.
+        """
+        return self._state[index]
+
+    @final
+    def __len__(self):
+        # type: () -> int
+        """
+        Get value count.
+
+        :return: Value count.
+        """
+        return len(self._state)
+
+    @final
+    def __iter__(self):
+        # type: () -> Iterator[_T]
+        """
+        Iterate over values.
+
+        :return: Values iterator.
+        """
+        for value in self._state:
+            yield value
+
+    @final
+    def __contains__(self, value):
+        # type: (Any) -> bool
+        """
+        Get whether value is present.
+
+        :param value: Value.
+        :return: True if contains.
+        """
+        return value in self._state
+
+    @classmethod
+    @final
+    def __get_initial_state(cls, input_values, factory=True):
+        # type: (Iterable[_T], bool) -> ListState[_T]
+        """
+        Get initial state.
+
+        :param input_values: Input values.
+        :param factory: Whether to run values through factory.
+        :return: Initial state.
+        """
+        if not cls._relationship.passthrough:
+            state = ListState(
+                cls._relationship.fabricate_value(v, factory=factory)
+                for v in input_values
+            )
+        else:
+            state = ListState(input_values)
+        return state
+
+    @final
+    def _clear(self):
+        # type: (_LD) -> _LD
+        """
+        Clear all values.
+
+        :return: Transformed.
+        """
+        return type(self).__make__()
+
+    @final
+    def _insert(self, index, *values):
+        # type: (_LD, int, _T) -> _LD
+        """
+        Insert value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        cls = type(self)
+        if not cls._relationship.passthrough:
+            fabricated_values = (cls._relationship.fabricate_value(v) for v in values)
+            return type(self).__make__(self._state.insert(index, *fabricated_values))
+        else:
+            return type(self).__make__(self._state.insert(index, *values))
+
+    @final
+    def _append(self, value):
+        # type: (_LD, _T) -> _LD
+        """
+        Append value at the end.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        cls = type(self)
+        fabricated_value = cls._relationship.fabricate_value(value)
+        return type(self).__make__(self._state.append(fabricated_value))
+
+    @final
+    def _extend(self, iterable):
+        # type: (_LD, Iterable[_T]) -> _LD
+        """
+        Extend at the end with iterable.
+
+        :param iterable: Iterable.
+        :return: Transformed.
+        """
+        cls = type(self)
+        if not cls._relationship.passthrough:
+            fabricated_iterable = (
+                cls._relationship.fabricate_value(v) for v in iterable
+            )
+            return type(self).__make__(self._state.extend(fabricated_iterable))
+        else:
+            return type(self).__make__(self._state.extend(iterable))
+
+    @final
+    def _remove(self, value):
+        # type: (_LD, _T) -> _LD
+        """
+        Remove first occurrence of value.
+
+        :param value: Value.
+        :return: Transformed.
+        :raises ValueError: Value is not present.
+        """
+        return type(self).__make__(self._state.remove(value))
+
+    @final
+    def _reverse(self):
+        # type: (_LD) -> _LD
+        """
+        Reverse values.
+
+        :return: Transformed.
+        """
+        return type(self).__make__(self._state.reverse())
+
+    @final
+    def _move(self, item, target_index):
+        # type: (_LD, Union[slice, int], int) -> _LD
+        """
+        Move values internally.
+
+        :param item: Index/slice.
+        :param target_index: Target index.
+        :return: Transformed.
+        """
+        return type(self).__make__(self._state.move(item, target_index))
+
+    @final
+    def _change(self, index, *values):
+        # type: (_LD, int, _T) -> _LD
+        """
+        Change value(s) starting at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        cls = type(self)
+        if not cls._relationship.passthrough:
+            fabricated_values = (cls._relationship.fabricate_value(v) for v in values)
+            return type(self).__make__(self._state.change(index, *fabricated_values))
+        else:
+            return type(self).__make__(self._state.change(index, *values))
+
+    @final
+    def count(self, value):
+        # type: (Any) -> int
+        """
+        Count number of occurrences of a value.
+
+        :return: Number of occurrences.
+        """
+        return self._state.count(value)
+
+    @final
+    def index(self, value, start=None, stop=None):
+        # type: (Any, Optional[int], Optional[int]) -> int
+        """
+        Get index of a value.
+
+        :param value: Value.
+        :param start: Start index.
+        :param stop: Stop index.
+        :return: Index of value.
+        :raises ValueError: Provided stop but did not provide start.
+        """
+        return self._state.index(value, start=start, stop=stop)
+
+    @final
+    def resolve_index(self, index, clamp=False):
+        # type: (int, bool) -> int
+        """
+        Resolve index to a positive number.
+
+        :param index: Input index.
+        :param clamp: Whether to clamp between zero and the length.
+        :return: Resolved index.
+        :raises IndexError: Index out of range.
+        """
+        return self._state.resolve_index(index, clamp=clamp)
+
+    @final
+    def resolve_continuous_slice(self, slc):
+        # type: (slice) -> Tuple[int, int]
+        """
+        Resolve continuous slice according to length.
+
+        :param slc: Continuous slice.
+        :return: Index and stop.
+        :raises IndexError: Slice is noncontinuous.
+        """
+        return self._state.resolve_continuous_slice(slc)
+
+    @final
+    def find_with_attributes(self, **attributes):
+        # type: (Any) -> _T
+        """
+        Find first value that matches unique attribute values.
+
+        :param attributes: Attributes to match.
+        :return: Value.
+        :raises ValueError: No attributes provided or no match found.
+        """
+        return self._state.find_with_attributes(**attributes)
+
+    @classmethod
+    @final
+    def deserialize(cls, serialized, **kwargs):
+        # type: (Type[_LD], List, Any) -> _LD
+        """
+        Deserialize.
+
+        :param serialized: Serialized.
+        :param kwargs: Keyword arguments to be passed to the deserializers.
+        :return: Deserialized.
+        :raises RuntimeError: Not deserializable.
+        """
+        if not cls._relationship.serialized:
+            error = "'{}' is not deserializable".format(cls.__name__)
+            raise RuntimeError(error)
+        state = ListState(
+            cls.deserialize_value(v, location=None, **kwargs) for v in serialized
+        )
+        return cls.__make__(state)
+
+    @final
+    def serialize(self, **kwargs):
+        # type: (Any) -> List
+        """
+        Serialize.
+
+        :param kwargs: Keyword arguments to be passed to the serializers.
+        :return: Serialized.
+        :raises RuntimeError: Not serializable.
+        """
+        if not type(self)._relationship.serialized:
+            error = "'{}' is not serializable".format(type(self).__fullname__)
+            raise RuntimeError(error)
+        return list(
+            self.serialize_value(v, location=None, **kwargs) for v in self._state
+        )
+
+    @property  # type: ignore
+    @final
+    def _state(self):
+        # type: () -> ListState[_T]
+        """Internal state."""
+        return cast("ListState", super(ListData, self)._state)
 
 
 class InteractiveListData(
@@ -772,6 +1096,7 @@ class SetDataMeta(BaseAuxiliaryDataMeta, BaseSetStructureMeta):
         return SetData
 
 
+# noinspection PyTypeChecker
 _SD = TypeVar("_SD", bound="SetData")
 
 
@@ -789,6 +1114,313 @@ class SetData(
     """
 
     __slots__ = ()
+
+    @classmethod
+    @final
+    def __make__(cls, state=SetState()):
+        # type: (Type[_SD], AnyState) -> _SD
+        """
+        Make a new set data.
+
+        :param state: Internal state.
+        :return: New dictionary data.
+        """
+        return super(SetData, cls).__make__(state)
+
+    @final
+    def __init__(self, initial=()):
+        # type: (Iterable[_T]) -> None
+        if type(initial) is type(self):
+            self._init_state(getattr(initial, "_state"))
+        else:
+            self._init_state(self.__get_initial_state(initial))
+
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        if type(self)._relationship.represented:
+            return custom_iterable_repr(
+                self._state,
+                prefix="{}([".format(type(self).__fullname__),
+                suffix="])",
+                sorting=True,
+                sort_key=lambda v: hash(v),
+            )
+        else:
+            return "<{}>".format(type(self).__fullname__)
+
+    @final
+    def __reversed__(self):
+        # type: () -> Iterator[_T]
+        """
+        Iterate over reversed values.
+
+        :return: Reversed values iterator.
+        """
+        return reversed(list(self._state))
+
+    @final
+    def __len__(self):
+        # type: () -> int
+        """
+        Get value count.
+
+        :return: Value count.
+        """
+        return len(self._state)
+
+    @final
+    def __iter__(self):
+        # type: () -> Iterator[_T]
+        """
+        Iterate over values.
+
+        :return: Values iterator.
+        """
+        for value in self._state:
+            yield value
+
+    @final
+    def __contains__(self, value):
+        # type: (Any) -> bool
+        """
+        Get whether value is present.
+
+        :param value: Value.
+        :return: True if contains.
+        """
+        return value in self._state
+
+    @classmethod
+    @final
+    def __get_initial_state(cls, input_values, factory=True):
+        # type: (Iterable[_T], bool) -> SetState[_T]
+        """
+        Get initial state.
+
+        :param input_values: Input values.
+        :param factory: Whether to run values through factory.
+        :return: Initial state.
+        """
+        if not cls._relationship.passthrough:
+            state = SetState(
+                cls._relationship.fabricate_value(v, factory=factory)
+                for v in input_values
+            )
+        else:
+            state = SetState(input_values)
+        return state
+
+    @final
+    def _clear(self):
+        # type: (_SD) -> _SD
+        """
+        Clear all values.
+
+        :return: Transformed.
+        """
+        return type(self).__make__()
+
+    @final
+    def _add(self, value):
+        # type: (_SD, _T) -> _SD
+        """
+        Add value.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        cls = type(self)
+        fabricated_value = cls._relationship.fabricate_value(value)
+        return type(self).__make__(self._state.add(fabricated_value))
+
+    @final
+    def _discard(self, value):
+        # type: (_SD, _T) -> _SD
+        """
+        Discard value if it exists.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        return type(self).__make__(self._state.discard(value))
+
+    @final
+    def _remove(self, *values):
+        # type: (_SD, _T) -> _SD
+        """
+        Remove existing value(s).
+
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        :raises KeyError: Value is not present.
+        """
+        return type(self).__make__(self._state.remove(*values))
+
+    @final
+    def _replace(self, value, new_value):
+        # type: (_SD, _T, _T) -> _SD
+        """
+        Replace existing value with a new one.
+
+        :param value: Existing value.
+        :param new_value: New value.
+        :return: Transformed.
+        :raises KeyError: Value is not present.
+        """
+        cls = type(self)
+        fabricated_new_value = cls._relationship.fabricate_value(new_value)
+        return type(self).__make__(self._state.remove(value).add(fabricated_new_value))
+
+    @final
+    def _update(self, iterable):
+        # type: (_SD, Iterable[_T]) -> _SD
+        """
+        Update with iterable.
+
+        :param iterable: Iterable.
+        :return: Transformed.
+        """
+        cls = type(self)
+        if not cls._relationship.passthrough:
+            fabricated_iterable = (
+                cls._relationship.fabricate_value(v) for v in iterable
+            )
+            return type(self).__make__(self._state.update(fabricated_iterable))
+        else:
+            return type(self).__make__(self._state.update(iterable))
+
+    def isdisjoint(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a disjoint set of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is disjoint.
+        """
+        return self._state.isdisjoint(iterable)
+
+    def issubset(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a subset of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is subset.
+        """
+        return self._state.issubset(iterable)
+
+    def issuperset(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a superset of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is superset.
+        """
+        return self._state.issuperset(iterable)
+
+    def intersection(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get intersection.
+
+        :param iterable: Iterable.
+        :return: Intersection.
+        """
+        return self._state.intersection(iterable)
+
+    def difference(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get difference.
+
+        :param iterable: Iterable.
+        :return: Difference.
+        """
+        return self._state.difference(iterable)
+
+    def symmetric_difference(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get symmetric difference.
+
+        :param iterable: Iterable.
+        :return: Symmetric difference.
+        """
+        return self._state.symmetric_difference(iterable)
+
+    def union(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get union.
+
+        :param iterable: Iterable.
+        :return: Union.
+        """
+        return self._state.union(iterable)
+
+    @final
+    def find_with_attributes(self, **attributes):
+        # type: (Any) -> _T
+        """
+        Find first value that matches unique attribute values.
+
+        :param attributes: Attributes to match.
+        :return: Value.
+        :raises ValueError: No attributes provided or no match found.
+        """
+        return self._state.find_with_attributes(**attributes)
+
+    @classmethod
+    @final
+    def deserialize(cls, serialized, **kwargs):
+        # type: (Type[_SD], List, Any) -> _SD
+        """
+        Deserialize.
+
+        :param serialized: Serialized.
+        :param kwargs: Keyword arguments to be passed to the deserializers.
+        :return: Deserialized.
+        :raises RuntimeError: Not deserializable.
+        """
+        if not cls._relationship.serialized:
+            error = "'{}' is not deserializable".format(cls.__name__)
+            raise RuntimeError(error)
+        state = SetState(
+            cls.deserialize_value(v, location=None, **kwargs) for v in serialized
+        )
+        return cls.__make__(state)
+
+    @final
+    def serialize(self, **kwargs):
+        # type: (Any) -> List
+        """
+        Serialize.
+
+        :param kwargs: Keyword arguments to be passed to the serializers.
+        :return: Serialized.
+        :raises RuntimeError: Not serializable.
+        """
+        if not type(self)._relationship.serialized:
+            error = "'{}' is not serializable".format(type(self).__fullname__)
+            raise RuntimeError(error)
+        return sorted(
+            (self.serialize_value(v, location=None, **kwargs) for v in self._state),
+            key=lambda v: hash(v),
+        )
+
+    @property  # type: ignore
+    @final
+    def _state(self):
+        # type: () -> SetState[_T]
+        """Internal state."""
+        return cast("SetState", super(SetData, self)._state)
 
 
 class InteractiveSetData(

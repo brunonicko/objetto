@@ -55,6 +55,7 @@ if TYPE_CHECKING:
     AnyInternal = Union[DictInternal, ListInternal, SetInternal]
 
 
+# noinspection PyTypeChecker
 _BS = TypeVar("_BS", bound="BaseState")
 
 
@@ -77,7 +78,7 @@ class BaseState(BaseHashable, BaseInteractiveCollection[_T]):
         :param internal: Internal state.
         :return: State.
         """
-        self = cls.__new__(cls)
+        self = cast("_BS", cls.__new__(cls))
         self.__internal = internal
         self.__hash = None
         return self
@@ -159,6 +160,7 @@ class BaseState(BaseHashable, BaseInteractiveCollection[_T]):
         return self.__internal
 
 
+# noinspection PyTypeChecker
 _DS = TypeVar("_DS", bound="DictState")
 
 
@@ -295,7 +297,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         Discard key if it exists.
 
         :param key: Key.
-        :return: New version.
+        :return: Transformed.
         """
         return self._make(self._internal.discard(key))
 
@@ -305,7 +307,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         Delete existing key.
 
         :param key: Key.
-        :return: New version.
+        :return: Transformed.
         :raises KeyError: Key is not present.
         """
         return self._make(self._internal.remove(key))
@@ -317,19 +319,31 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
 
         :param key: Key.
         :param value: Value.
-        :return: New version.
+        :return: Transformed.
         """
         return self._make(self._internal.set(key, value))
 
-    def _update(self, update):
-        # type: (_DS, Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> _DS
+    @overload
+    def _update(self, __m, **kwargs):
+        # type: (_DS, Mapping[_KT, _VT], _VT) -> _DS
+        pass
+
+    @overload
+    def _update(self, __m, **kwargs):
+        # type: (_DS, Iterable[Tuple[_KT, _VT]], _VT) -> _DS
+        pass
+
+    @overload
+    def _update(self, **kwargs):
+        # type: (_DS, _VT) -> _DS
+        pass
+
+    def _update(self, *args, **kwargs):
         """
         Update keys and values.
-
-        :param update: Updates.
-        :return: Transformed.
+        Same parameters as :meth:`dict.update`.
         """
-        return self._make(self._internal.update(dict(update)))
+        return self._make(self._internal.update(dict(*args, **kwargs)))
 
     def get(self, key, fallback=None):
         # type: (_KT, Any) -> Union[_VT, Any]
@@ -435,6 +449,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return cast("DictInternal", super(DictState, self)._internal)
 
 
+# noinspection PyTypeChecker
 _LS = TypeVar("_LS", bound="ListState")
 
 
@@ -554,7 +569,6 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         pass
 
     def __getitem__(self, index):
-        # type: (Union[int, slice]) -> Union[_T, ListState[_T]]
         """
         Get value/values at index/from slice.
 
@@ -586,7 +600,8 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         :raises ValueError: No values provided.
         """
         if not values:
-            return self
+            error = "no values provided"
+            raise ValueError(error)
         index = self.resolve_index(index, clamp=True)
         if index == len(self._internal):
             return self.extend(values)
@@ -636,6 +651,32 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         :return: Transformed.
         """
         return self._make(pvector(reversed(self._internal)))
+
+    def _move(self, item, target_index):
+        # type: (_LS, Union[slice, int], int) -> _LS
+        """
+        Move values internally.
+
+        :param item: Index/slice.
+        :param target_index: Target index.
+        :return: Transformed.
+        """
+        result = pre_move(len(self._internal), item, target_index)
+        if result is None:
+            return self
+        index, stop, target_index, post_index = result
+
+        values = self._internal[index:stop]
+        internal = self._internal.delete(index, stop)
+
+        if post_index == len(internal):
+            return self._make(internal.extend(values))
+        elif post_index == 0:
+            return self._make(pvector(values) + internal)
+        else:
+            return self._make(
+                internal[:post_index] + pvector(values) + internal[post_index:]
+            )
 
     def _change(self, index, *values):
         # type: (_LS, int, _T) -> _LS
@@ -746,6 +787,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         return cast("ListInternal", super(ListState, self)._internal)
 
 
+# noinspection PyTypeChecker
 _SS = TypeVar("_SS", bound="SetState")
 
 
@@ -876,16 +918,17 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         """
         return self._make(self._internal.discard(value))
 
-    def _remove(self, value):
+    def _remove(self, *values):
         # type: (_SS, _T) -> _SS
         """
-        Remove existing value.
+        Remove existing value(s).
 
-        :param value: Value.
+        :param values: Value(s).
         :return: Transformed.
+        :raises ValueError: No values provided.
         :raises KeyError: Value is not present.
         """
-        return self._make(self._internal.remove(value))
+        return self._make(self._internal.difference(values))
 
     def _replace(self, value, new_value):
         # type: (_SS, _T, _T) -> _SS

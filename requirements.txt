@@ -1,4 +1,5 @@
 enum34; python_version < "3.4"
+decorator
 pyrsistent
 qualname
 six

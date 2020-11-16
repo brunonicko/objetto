@@ -15,6 +15,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     install_requires=[
         "enum34; python_version < '3.4'",
+        "decorator",
         "pyrsistent",
         "qualname",
         "six",

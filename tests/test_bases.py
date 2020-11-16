@@ -12,7 +12,6 @@ from objetto._bases import (
     INITIALIZING_TAG,
     Base,
     BaseMeta,
-    ProtectedBase,
     abstract_member,
     final,
     init,
@@ -311,35 +310,6 @@ def test_dir():
         assert dir(obj) == list(simplify_member_names(dir(obj)))
         for member_name in dir(obj):
             getattr(obj, member_name)
-
-
-def test_protected_base():
-    class MyProtectedBase(ProtectedBase):
-        __slots__ = ("a", "b", "z")
-
-        def __init__(self, z):
-            self.z = z
-
-    protected = MyProtectedBase(0)
-    assert protected.z == 0
-    with pytest.raises(AttributeError):
-        protected.z = 100
-
-    with init_context(protected):
-        protected.a = 1
-        protected.b = 2
-
-    assert protected.a == 1
-    assert protected.b == 2
-
-    with pytest.raises(AttributeError):
-        protected.a = 10
-
-    with pytest.raises(AttributeError):
-        del protected.b
-
-    with pytest.raises(AttributeError):
-        protected.c = 3
 
 
 def test_abstract_member():

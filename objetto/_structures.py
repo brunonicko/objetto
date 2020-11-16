@@ -51,28 +51,23 @@ __all__ = [
     "UniqueDescriptor",
     "BaseStructureMeta",
     "BaseStructure",
-    "BaseProtectedStructure",
     "BaseInteractiveStructure",
     "BaseMutableStructure",
     "BaseAuxiliaryStructureMeta",
     "BaseAuxiliaryStructure",
-    "BaseProtectedAuxiliaryStructure",
     "BaseInteractiveAuxiliaryStructure",
     "BaseMutableAuxiliaryStructure",
     "KeyRelationship",
     "BaseDictStructureMeta",
     "BaseDictStructure",
-    "BaseProtectedDictStructure",
     "BaseInteractiveDictStructure",
     "BaseMutableDictStructure",
     "BaseListStructureMeta",
     "BaseListStructure",
-    "BaseProtectedListStructure",
     "BaseInteractiveListStructure",
     "BaseMutableListStructure",
     "BaseSetStructureMeta",
     "BaseSetStructure",
-    "BaseProtectedSetStructure",
     "BaseInteractiveSetStructure",
     "BaseMutableSetStructure",
 ]
@@ -461,6 +456,7 @@ class BaseStructureMeta(BaseMeta):
         raise NotImplementedError()
 
 
+# noinspection PyTypeChecker
 _BS = TypeVar("_BS", bound="BaseStructure")
 
 
@@ -734,12 +730,14 @@ class BaseStructure(
         raise NotImplementedError()
 
 
+# noinspection PyAbstractClass
 class BaseInteractiveStructure(BaseStructure[_T], BaseInteractiveCollection[_T]):
     """Base interactive structure."""
 
     __slots__ = ()
 
 
+# noinspection PyAbstractClass
 class BaseMutableStructure(BaseStructure[_T], BaseMutableCollection[_T]):
     """Base mutable structure."""
 
@@ -766,6 +764,7 @@ class BaseAuxiliaryStructureMeta(BaseStructureMeta):
         raise NotImplementedError()
 
 
+# noinspection PyAbstractClass
 class BaseAuxiliaryStructure(
     with_metaclass(BaseAuxiliaryStructureMeta, BaseStructure[_T])
 ):
@@ -789,6 +788,7 @@ class BaseAuxiliaryStructure(
         return cast("BaseRelationship", cls._relationship)
 
 
+# noinspection PyAbstractClass
 class BaseInteractiveAuxiliaryStructure(
     BaseAuxiliaryStructure[_T],
     BaseInteractiveStructure[_T],
@@ -798,6 +798,7 @@ class BaseInteractiveAuxiliaryStructure(
     __slots__ = ()
 
 
+# noinspection PyAbstractClass
 class BaseMutableAuxiliaryStructure(
     BaseAuxiliaryStructure[_T],
     BaseMutableStructure[_T],
@@ -951,6 +952,7 @@ class KeyRelationship(Base):
         return (not self.types or not self.checked) and self.factory is None
 
 
+# noinspection PyAbstractClass
 class BaseDictStructureMeta(BaseAuxiliaryStructureMeta):
     """Metaclass for :class:`DictStructure`."""
 
@@ -1007,6 +1009,7 @@ class BaseMutableDictStructure(
     __slots__ = ()
 
 
+# noinspection PyAbstractClass
 class BaseListStructureMeta(BaseAuxiliaryStructureMeta):
     """Metaclass for :class:`ListStructure`."""
 
@@ -1043,6 +1046,7 @@ class BaseMutableListStructure(
     __slots__ = ()
 
 
+# noinspection PyAbstractClass
 class BaseSetStructureMeta(BaseAuxiliaryStructureMeta):
     """Metaclass for :class:`SetStructure`."""
 

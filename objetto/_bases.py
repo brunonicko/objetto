@@ -703,6 +703,7 @@ class BaseCollection(BaseSized, BaseIterable[_T_co], BaseContainer[_T_co]):
         raise NotImplementedError()
 
 
+# noinspection PyTypeChecker
 _BPC = TypeVar("_BPC", bound="BaseProtectedCollection")
 
 
@@ -727,9 +728,11 @@ class BaseProtectedCollection(BaseCollection[_T]):
         raise NotImplementedError()
 
 
+# noinspection PyTypeChecker
 _BIC = TypeVar("_BIC", bound="BaseInteractiveCollection")
 
 
+# noinspection PyAbstractClass
 class BaseInteractiveCollection(BaseProtectedCollection[_T]):
     """
     Base interactive collection.
@@ -751,6 +754,7 @@ class BaseInteractiveCollection(BaseProtectedCollection[_T]):
         return self._clear()
 
 
+# noinspection PyAbstractClass
 class BaseMutableCollection(BaseProtectedCollection[_T]):
     """
     Base mutable collection.
@@ -867,6 +871,7 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
         raise NotImplementedError()
 
 
+# noinspection PyTypeChecker
 _BPD = TypeVar("_BPD", bound="BaseProtectedDict")
 
 
@@ -882,7 +887,7 @@ class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
         Discard key if it exists.
 
         :param key: Key.
-        :return: New version.
+        :return: Transformed.
         """
         raise NotImplementedError()
 
@@ -893,7 +898,7 @@ class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
         Delete existing key.
 
         :param key: Key.
-        :return: New version.
+        :return: Transformed.
         :raises KeyError: Key is not present.
         """
         raise NotImplementedError()
@@ -906,25 +911,42 @@ class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
 
         :param key: Key.
         :param value: Value.
-        :return: New version.
-        """
-        raise NotImplementedError()
-
-    @abstractmethod
-    def _update(self, update):
-        # type: (_BPD, Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> _BPD
-        """
-        Update keys and values.
-
-        :param update: Updates.
         :return: Transformed.
         """
         raise NotImplementedError()
 
+    @overload
+    @abstractmethod
+    def _update(self, __m, **kwargs):
+        # type: (_BPD, Mapping[_KT, _VT], _VT) -> _BPD
+        pass
 
+    @overload
+    @abstractmethod
+    def _update(self, __m, **kwargs):
+        # type: (_BPD, Iterable[Tuple[_KT, _VT]], _VT) -> _BPD
+        pass
+
+    @overload
+    @abstractmethod
+    def _update(self, **kwargs):
+        # type: (_BPD, _VT) -> _BPD
+        pass
+
+    @abstractmethod
+    def _update(self, *args, **kwargs):
+        """
+        Update keys and values.
+        Same parameters as :meth:`dict.update`.
+        """
+        raise NotImplementedError()
+
+
+# noinspection PyTypeChecker
 _BID = TypeVar("_BID", bound="BaseInteractiveDict")
 
 
+# noinspection PyAbstractClass
 class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection[_KT]):
     """Base interactive dictionary collection."""
 
@@ -937,7 +959,7 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
         Discard key if it exists.
 
         :param key: Key.
-        :return: New version.
+        :return: Transformed.
         """
         return self._discard(key)
 
@@ -948,7 +970,7 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
         Delete existing key.
 
         :param key: Key.
-        :return: New version.
+        :return: Transformed.
         :raises KeyError: Key is not present.
         """
         return self._remove(key)
@@ -961,20 +983,34 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
 
         :param key: Key.
         :param value: Value.
-        :return: New version.
+        :return: Transformed.
         """
         return self._set(key, value)
 
+    @overload
+    def update(self, __m, **kwargs):
+        # type: (_BID, Mapping[_KT, _VT], _VT) -> _BID
+        pass
+
+    @overload
+    def update(self, __m, **kwargs):
+        # type: (_BID, Iterable[Tuple[_KT, _VT]], _VT) -> _BID
+        pass
+
+    @overload
+    def update(self, **kwargs):
+        # type: (_BID, _VT) -> _BID
+        pass
+
     @final
-    def update(self, update):
-        # type: (_BID, Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> _BID
+    def update(self, *args, **kwargs):
         """
         Update keys and values.
+        Same parameters as :meth:`dict.update`.
 
-        :param update: Updates.
         :return: Transformed.
         """
-        return self._update(update)
+        return self._update(*args, **kwargs)
 
 
 class BaseMutableDict(
@@ -1053,7 +1089,7 @@ class BaseMutableDict(
         Discard key if it exists.
 
         :param key: Key.
-        :return: New version.
+        :return: Transformed.
         """
         self._discard(key)
 
@@ -1064,7 +1100,7 @@ class BaseMutableDict(
         Delete existing key.
 
         :param key: Key.
-        :return: New version.
+        :return: Transformed.
         :raises KeyError: Key is not present.
         """
         self._remove(key)
@@ -1077,19 +1113,32 @@ class BaseMutableDict(
 
         :param key: Key.
         :param value: Value.
-        :return: New version.
+        :return: Transformed.
         """
         self._set(key, value)
 
+    @overload
+    def update(self, __m, **kwargs):
+        # type: (Mapping[_KT, _VT], _VT) -> None
+        pass
+
+    @overload
+    def update(self, __m, **kwargs):
+        # type: (Iterable[Tuple[_KT, _VT]], _VT) -> None
+        pass
+
+    @overload
+    def update(self, **kwargs):
+        # type: (_VT) -> None
+        pass
+
     @final
-    def update(self, update):  # type: ignore
-        # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> None
+    def update(self, *args, **kwargs):
         """
         Update keys and values.
-
-        :param update: Updates.
+        Same parameters as :meth:`dict.update`.
         """
-        self._update(update)
+        self._update(*args, **kwargs)
 
 
 class BaseList(BaseCollection[_T_co], SlottedSequence):
@@ -1179,6 +1228,7 @@ class BaseList(BaseCollection[_T_co], SlottedSequence):
         raise NotImplementedError()
 
 
+# noinspection PyTypeChecker
 _BPL = TypeVar("_BPL", bound="BaseProtectedList")
 
 
@@ -1245,6 +1295,18 @@ class BaseProtectedList(BaseList[_T], BaseProtectedCollection[_T]):
         raise NotImplementedError()
 
     @abstractmethod
+    def _move(self, item, target_index):
+        # type: (_BPL, Union[slice, int], int) -> _BPL
+        """
+        Move values internally.
+
+        :param item: Index/slice.
+        :param target_index: Target index.
+        :return: Transformed.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def _change(self, index, *values):
         # type: (_BPL, int, _T) -> _BPL
         """
@@ -1258,9 +1320,11 @@ class BaseProtectedList(BaseList[_T], BaseProtectedCollection[_T]):
         raise NotImplementedError()
 
 
+# noinspection PyTypeChecker
 _BIL = TypeVar("_BIL", bound="BaseInteractiveList")
 
 
+# noinspection PyAbstractClass
 class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
     """Base interactive list collection."""
 
@@ -1322,6 +1386,18 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
         :return: Transformed.
         """
         return self._reverse()
+
+    @final
+    def move(self, item, target_index):
+        # type: (_BPL, Union[slice, int], int) -> _BPL
+        """
+        Move values internally.
+
+        :param item: Index/slice.
+        :param target_index: Target index.
+        :return: Transformed.
+        """
+        return self._move(item, target_index)
 
     @final
     def change(self, index, *values):
@@ -1480,6 +1556,17 @@ class BaseMutableList(
         self._reverse()
 
     @final
+    def move(self, item, target_index):
+        # type: (Union[slice, int], int) -> None
+        """
+        Move values internally.
+
+        :param item: Index/slice.
+        :param target_index: Target index.
+        """
+        self._move(item, target_index)
+
+    @final
     def change(self, index, *values):
         # type: (int, _T) -> None
         """
@@ -1575,6 +1662,7 @@ class BaseSet(SlottedSet, BaseCollection[_T_co], Generic[_T_co]):
         raise NotImplementedError()
 
 
+# noinspection PyTypeChecker
 _BPS = TypeVar("_BPS", bound="BaseProtectedSet")
 
 
@@ -1606,13 +1694,14 @@ class BaseProtectedSet(BaseSet[_T], BaseProtectedCollection[_T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def _remove(self, value):
+    def _remove(self, *values):
         # type: (_BPS, _T) -> _BPS
         """
-        Remove existing value.
+        Remove existing value(s).
 
-        :param value: Value.
+        :param values: Value(s).
         :return: Transformed.
+        :raises ValueError: No values provided.
         :raises KeyError: Value is not present.
         """
         raise NotImplementedError()
@@ -1642,9 +1731,11 @@ class BaseProtectedSet(BaseSet[_T], BaseProtectedCollection[_T]):
         raise NotImplementedError()
 
 
+# noinspection PyTypeChecker
 _BIS = TypeVar("_BIS", bound="BaseInteractiveSet")
 
 
+# noinspection PyAbstractClass
 class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
     """Base interactive set collection."""
 
@@ -1673,16 +1764,17 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
         return self._discard(value)
 
     @final
-    def remove(self, value):
+    def remove(self, *values):
         # type: (_BIS, _T) -> _BIS
         """
-        Remove existing value.
+        Remove existing value(s).
 
-        :param value: Value.
+        :param values: Value(s).
         :return: Transformed.
+        :raises ValueError: No values provided.
         :raises KeyError: Value is not present.
         """
-        return self._remove(value)
+        return self._remove(*values)
 
     @final
     def replace(self, value, new_value):
@@ -1783,15 +1875,16 @@ class BaseMutableSet(
         self._discard(value)
 
     @final
-    def remove(self, value):
+    def remove(self, *values):
         # type: (_T) -> None
         """
-        Remove existing value.
+        Remove existing value(s).
 
-        :param value: Value.
+        :param values: Value(s).
+        :raises ValueError: No values provided.
         :raises KeyError: Value is not present.
         """
-        self._remove(value)
+        self._remove(*values)
 
     @final
     def replace(self, value, new_value):
