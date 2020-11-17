@@ -4,7 +4,7 @@
 from abc import abstractmethod
 from re import sub as re_sub
 from inspect import getmro
-from typing import TYPE_CHECKING, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
 
 try:
@@ -443,12 +443,17 @@ class UniqueDescriptor(Base):
     def __init__(self):
         setattr(self, FINAL_METHOD_TAG, True)
 
-    def __get__(
-        self,
-        instance,  # type: Optional[BaseStructure]
-        owner,  # type: Optional[Type[BaseStructure]]
-    ):
-        # type: (...) -> Union[int, UniqueDescriptor]
+    @overload
+    def __get__(self, instance, owner):
+        # type: (None, Type[BaseStructure]) -> UniqueDescriptor
+        pass
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (BaseStructure, Type[BaseStructure]) -> int
+        pass
+
+    def __get__(self, instance, owner):
         """
         Get object hash when accessing from instance or this descriptor otherwise.
 
@@ -848,7 +853,7 @@ class BaseAttributeMeta(BaseMeta):
         return BaseRelationship
 
 
-class BaseAttribute(with_metaclass(BaseAttributeMeta, Base)):
+class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[_T])):
     """
     Base attribute descriptor.
 
@@ -936,12 +941,17 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base)):
         if abstracted:
             setattr(self, ABSTRACT_TAG, True)
 
-    def __get__(
-        self,
-        instance,  # type: Optional[BaseAttributeStructure]
-        owner,  # type: Optional[Type[BaseAttributeStructure]]
-    ):
-        # type: (...) -> Union[Any, BaseAttribute]
+    @overload
+    def __get__(self, instance, owner):
+        # type: (None, Type[BaseAttributeStructure]) -> BaseAttribute[_T]
+        pass
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (BaseAttributeStructure, Type[BaseAttributeStructure]) -> _T
+        pass
+
+    def __get__(self, instance, owner):
         """
         Get attribute value when accessing from valid instance or this descriptor
         otherwise.

@@ -275,7 +275,7 @@ class DataAttributeMeta(BaseAttributeMeta):
 
 
 @final
-class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute)):
+class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[_T])):
     """
     Data attribute descriptor.
 
