@@ -2,6 +2,7 @@
 """State-carrying structures."""
 
 from abc import abstractmethod
+from re import sub as re_sub
 from inspect import getmro
 from typing import TYPE_CHECKING, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
@@ -17,6 +18,7 @@ from ._bases import (
     FINAL_METHOD_TAG,
     ABSTRACT_TAG,
     INITIALIZING_TAG,
+    make_base_cls,
     Base,
     BaseHashable,
     BaseInteractiveCollection,
@@ -39,7 +41,9 @@ from ._states import DictState, ListState, SetState
 from .utils.custom_repr import custom_mapping_repr
 from .utils.factoring import format_factory, import_factory, run_factory
 from .utils.lazy_import import get_path, import_path
-from .utils.type_checking import assert_is_instance, format_types, import_types
+from .utils.type_checking import (
+    assert_is_instance, format_types, import_types, get_type_names
+)
 
 if TYPE_CHECKING:
     from typing import (
@@ -62,6 +66,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "MISSING",
+    "make_auxiliary_cls",
     "BaseRelationship",
     "UniqueDescriptor",
     "BaseStructureMeta",
@@ -150,6 +155,66 @@ def _capitalize_first(string):
     :return: Capitalized string.
     """
     return string[:1].upper() + string[1:]
+
+
+# noinspection PyTypeChecker
+_A = TypeVar("_A", bound="Type[BaseAuxiliaryStructure]")
+
+
+def make_auxiliary_cls(
+    base,  # type: _A
+    relationship,  # type: BaseRelationship
+    qual_name=None,  # type: Optional[str]
+    module=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    dct=None,  # type: Optional[Mapping[str, Any]]
+):
+    # type: (...) -> _A
+    """
+    Make an auxiliary container subclass on the fly.
+    :param base: Base auxiliary container class.
+    :param relationship: Relationship.
+    :param qual_name: Qualified name.
+    :param module: Module.
+    :param unique: Whether generated class should have a unique descriptor.
+    :param dct: Members dictionary.
+    :return: Generated auxiliary container subclass.
+    """
+
+    # Generate default name based on relationship types.
+    if qual_name is None:
+        type_names = get_type_names(
+            tuple(t for t in relationship.types if type(None) is not t)
+        )
+        if not type_names:
+            qual_name = base.__name__
+        else:
+            base_name = base.__name__
+            prefix = "".join(
+                _capitalize_first(re_sub(r"[^A-Za-z]+", "", tn)) for tn in type_names
+            )
+            qual_name = "{}{}".format(
+                prefix if prefix != base_name else "",
+                base_name,
+            )
+
+    # Copy dct and add relationship to it.
+    dct_copy = dict(dct or {})
+    dct_copy["_relationship"] = relationship
+
+    # Add unique descriptor.
+    if unique:
+        dct_copy["_unique_hash"] = UniqueDescriptor()
+
+    return cast(
+        "_A",
+        make_base_cls(
+            base=base,
+            qual_name=qual_name,
+            module=module,
+            dct=dct_copy,
+        )
+    )
 
 
 class BaseRelationship(Base):
