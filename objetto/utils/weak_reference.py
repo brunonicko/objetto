@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from weakref import ref as _ref
 
 if TYPE_CHECKING:
-    from typing import Any, Tuple, Type
+    from typing import Any, Tuple, Type, Optional
 
 _T = TypeVar("_T")
 
@@ -110,7 +110,7 @@ class WeakReference(Generic[_T], object):
         return self.__repr__()
 
     def __call__(self):
-        # type: () -> _T
+        # type: () -> Optional[_T]
         """
         Get strong reference to the object or None if no longer alive.
 
@@ -119,7 +119,7 @@ class WeakReference(Generic[_T], object):
         return self.__ref()
 
     def __reduce__(self):
-        # type: () -> Tuple[Type[WeakReference], _T]
+        # type: () -> Tuple[Type[WeakReference], Tuple[Optional[_T]]]
         """
         Reduce for pickling.
 

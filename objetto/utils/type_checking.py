@@ -4,8 +4,12 @@
 from itertools import chain
 from typing import TYPE_CHECKING, cast
 
+try:
+    import collections.abc as collections_abc
+except ImportError:
+    import collections as collections_abc  # type: ignore
+
 from six import string_types
-from six.moves import collections_abc
 
 from ..utils.lazy_import import decorate_path, import_path
 
@@ -13,12 +17,9 @@ if TYPE_CHECKING:
     from typing import Any, Iterable, Optional, Tuple, Type, Union
 
     _LazyType = Union[Type, str]
-    _FlattenedLazyTypes = Tuple[_LazyType, ...]
     LazyTypes = Union[_LazyType, Iterable[_LazyType]]
     LazyTypesTuple = Tuple[_LazyType, ...]
 else:
-    _LazyType = None
-    _FlattenedLazyTypes = None
     LazyTypes = None
     LazyTypesTuple = None
 
