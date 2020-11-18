@@ -37,7 +37,7 @@ from ._bases import (
     final,
     make_base_cls,
 )
-from ._states import DictState, ListState, SetState
+from ._states import BaseState, DictState, SetState
 from .utils.custom_repr import custom_mapping_repr
 from .utils.factoring import format_factory, import_factory, run_factory
 from .utils.lazy_import import get_path, import_path
@@ -108,17 +108,10 @@ _SERIALIZED_VALUE_KEY = "value"
 
 MISSING = object()
 
+
 T = TypeVar("T")  # Any type.
 KT = TypeVar("KT")  # Key type.
 VT = TypeVar("VT")  # Value type.
-T_co = TypeVar("T_co", covariant=True)  # Any type covariant containers.
-V_co = TypeVar("V_co", covariant=True)  # Any type covariant containers.
-KT_co = TypeVar("KT_co", covariant=True)  # Key type covariant containers.
-VT_co = TypeVar("VT_co", covariant=True)  # Value type covariant containers.
-T_contra = TypeVar("T_contra", contravariant=True)  # Ditto contravariant.
-
-if TYPE_CHECKING:
-    AnyState = Union[DictState[KT, VT], ListState[T], SetState[T]]
 
 
 def _escape_serialized_class(dct):
@@ -826,7 +819,7 @@ class BaseStructure(
     @property
     @abstractmethod
     def _state(self):
-        # type: () -> AnyState
+        # type: () -> BaseState
         """State."""
         raise NotImplementedError()
 

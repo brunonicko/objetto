@@ -12,7 +12,7 @@ except ImportError:
 from six import iteritems, iterkeys, itervalues, string_types, with_metaclass
 
 from ._bases import final, init_context
-from ._states import DictState, ListState, SetState
+from ._states import BaseState, DictState, ListState, SetState
 from ._structures import (
     MISSING,
     BaseAttribute,
@@ -90,9 +90,6 @@ __all__ = [
 T = TypeVar("T")  # Any type.
 KT = TypeVar("KT")  # Key type.
 VT = TypeVar("VT")  # Value type.
-
-if TYPE_CHECKING:
-    AnyState = Union[DictState[KT, VT], ListState[T], SetState[T]]
 
 
 @final
@@ -212,7 +209,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
 
     @classmethod
     def __make__(cls, state):
-        # type: (Type[_BD], AnyState) -> _BD
+        # type: (Type[_BD], BaseState) -> _BD
         """
         Make a new data.
 
@@ -225,7 +222,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
 
     @final
     def _init_state(self, state):
-        # type: (AnyState) -> None
+        # type: (BaseState) -> None
         """
         Initialize internal state.
 
@@ -248,7 +245,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
     @property
     @abstractmethod
     def _state(self):
-        # type: () -> AnyState
+        # type: () -> BaseState
         """State."""
         return self.__state
 
@@ -371,7 +368,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
     @classmethod
     @final
     def __make__(cls, state=DictState()):
-        # type: (Type[_D], AnyState) -> _D
+        # type: (Type[_D], BaseState) -> _D
         """
         Make a new data.
 
@@ -872,7 +869,7 @@ class DictData(
     @classmethod
     @final
     def __make__(cls, state=DictState()):
-        # type: (Type[_DD], AnyState) -> _DD
+        # type: (Type[_DD], BaseState) -> _DD
         """
         Make a new dictionary data.
 
@@ -1244,7 +1241,7 @@ class ListData(
     @classmethod
     @final
     def __make__(cls, state=ListState()):
-        # type: (Type[_LD], AnyState) -> _LD
+        # type: (Type[_LD], BaseState) -> _LD
         """
         Make a new list data.
 
@@ -1619,7 +1616,7 @@ class SetData(
     @classmethod
     @final
     def __make__(cls, state=SetState()):
-        # type: (Type[_SD], AnyState) -> _SD
+        # type: (Type[_SD], BaseState) -> _SD
         """
         Make a new set data.
 
