@@ -88,15 +88,12 @@ __all__ = [
     "BaseMutableSet",
 ]
 
-_F = TypeVar("_F", bound=Callable)  # Callable type.
-_T = TypeVar("_T")  # Any type.
-_KT = TypeVar("_KT")  # Key type.
-_VT = TypeVar("_VT")  # Value type.
-_T_co = TypeVar("_T_co", covariant=True)  # Any type covariant containers.
-_V_co = TypeVar("_V_co", covariant=True)  # Any type covariant containers.
-_KT_co = TypeVar("_KT_co", covariant=True)  # Key type covariant containers.
-_VT_co = TypeVar("_VT_co", covariant=True)  # Value type covariant containers.
-_T_contra = TypeVar("_T_contra", contravariant=True)  # Ditto contravariant.
+F = TypeVar("F", bound=Callable)  # Callable type.
+T = TypeVar("T")  # Any type.
+KT = TypeVar("KT")  # Key type.
+VT = TypeVar("VT")  # Value type.
+T_co = TypeVar("T_co", covariant=True)  # Any type covariant containers.
+VT_co = TypeVar("VT_co", covariant=True)  # Value type covariant containers.
 
 ABSTRACT_TAG = "__isabstractmethod__"
 FINAL_CLASS_TAG = "__isfinalclass__"
@@ -108,7 +105,7 @@ __base_cls_cache = WeakValueDictionary()  # type: MutableMapping[str, Type[Base]
 
 
 def _final(obj):
-    # type: (_F) -> _F
+    # type: (F) -> F
     """
     Final decorator that enables runtime checking for :class:`Base` classes.
 
@@ -171,7 +168,7 @@ def init_context(obj):
 
 @decorator
 def init(func, *args, **kwargs):
-    # type: (_F, Any, Any) -> _F
+    # type: (F, Any, Any) -> F
     """
     Method decorator that sets the initializing tag for :class:`Base` objects.
 
@@ -639,7 +636,7 @@ class BaseSized(Base, SlottedSized):
         raise NotImplementedError()
 
 
-class BaseIterable(Base, SlottedIterable, Generic[_T_co]):
+class BaseIterable(Base, SlottedIterable, Generic[T_co]):
     """
     Base iterable.
 
@@ -659,7 +656,7 @@ class BaseIterable(Base, SlottedIterable, Generic[_T_co]):
         raise NotImplementedError()
 
 
-class BaseContainer(Base, SlottedContainer, Generic[_T_co]):
+class BaseContainer(Base, SlottedContainer, Generic[T_co]):
     """
     Base container.
 
@@ -680,7 +677,7 @@ class BaseContainer(Base, SlottedContainer, Generic[_T_co]):
         raise NotImplementedError()
 
 
-class BaseCollection(BaseSized, BaseIterable[_T_co], BaseContainer[_T_co]):
+class BaseCollection(BaseSized, BaseIterable[T_co], BaseContainer[T_co]):
     """
     Base collection.
 
@@ -708,7 +705,7 @@ class BaseCollection(BaseSized, BaseIterable[_T_co], BaseContainer[_T_co]):
 _BPC = TypeVar("_BPC", bound="BaseProtectedCollection")
 
 
-class BaseProtectedCollection(BaseCollection[_T]):
+class BaseProtectedCollection(BaseCollection[T]):
     """
     Base protected collection.
 
@@ -734,7 +731,7 @@ _BIC = TypeVar("_BIC", bound="BaseInteractiveCollection")
 
 
 # noinspection PyAbstractClass
-class BaseInteractiveCollection(BaseProtectedCollection[_T]):
+class BaseInteractiveCollection(BaseProtectedCollection[T]):
     """
     Base interactive collection.
 
@@ -756,7 +753,7 @@ class BaseInteractiveCollection(BaseProtectedCollection[_T]):
 
 
 # noinspection PyAbstractClass
-class BaseMutableCollection(BaseProtectedCollection[_T]):
+class BaseMutableCollection(BaseProtectedCollection[T]):
     """
     Base mutable collection.
 
@@ -772,14 +769,14 @@ class BaseMutableCollection(BaseProtectedCollection[_T]):
         self._clear()
 
 
-class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
+class BaseDict(BaseCollection[KT], SlottedMapping, Generic[KT, VT_co]):
     """Base dictionary collection."""
 
     __slots__ = ()
 
     @abstractmethod
     def __reversed__(self):
-        # type: () -> Iterator[_KT]
+        # type: () -> Iterator[KT]
         """
         Iterate over reversed keys.
 
@@ -789,7 +786,7 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
 
     @abstractmethod
     def __getitem__(self, key):
-        # type: (_KT) -> _VT_co
+        # type: (KT) -> VT_co
         """
         Get value for key.
 
@@ -801,7 +798,7 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
 
     @abstractmethod
     def get(self, key, fallback=None):
-        # type: (_KT, Any) -> Union[_VT_co, Any]
+        # type: (KT, Any) -> Union[VT_co, Any]
         """
         Get value for key, return fallback value if key is not present.
 
@@ -813,7 +810,7 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
 
     @abstractmethod
     def iteritems(self):
-        # type: () -> Iterator[Tuple[_KT, _VT_co]]
+        # type: () -> Iterator[Tuple[KT, VT_co]]
         """
         Iterate over items.
 
@@ -823,7 +820,7 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
 
     @abstractmethod
     def iterkeys(self):
-        # type: () -> Iterator[_KT]
+        # type: () -> Iterator[KT]
         """
         Iterate over keys.
 
@@ -833,7 +830,7 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
 
     @abstractmethod
     def itervalues(self):
-        # type: () -> Iterator[_VT_co]
+        # type: () -> Iterator[VT_co]
         """
         Iterate over values.
 
@@ -843,7 +840,7 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
 
     @abstractmethod
     def items(self):
-        # type: () -> ItemsView[_KT, _VT_co]
+        # type: () -> ItemsView[KT, VT_co]
         """
         Get items.
 
@@ -853,7 +850,7 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
 
     @abstractmethod
     def keys(self):
-        # type: () -> KeysView[_KT]
+        # type: () -> KeysView[KT]
         """
         Get keys.
 
@@ -863,7 +860,7 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
 
     @abstractmethod
     def values(self):
-        # type: () -> ValuesView[_VT_co]
+        # type: () -> ValuesView[VT_co]
         """
         Get values.
 
@@ -876,14 +873,14 @@ class BaseDict(BaseCollection[_KT], SlottedMapping, Generic[_KT, _VT_co]):
 _BPD = TypeVar("_BPD", bound="BaseProtectedDict")
 
 
-class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
+class BaseProtectedDict(BaseDict[KT, VT], BaseProtectedCollection[KT]):
     """Base protected dictionary collection."""
 
     __slots__ = ()
 
     @abstractmethod
     def _discard(self, key):
-        # type: (_BPD, _KT) -> _BPD
+        # type: (_BPD, KT) -> _BPD
         """
         Discard key if it exists.
 
@@ -894,7 +891,7 @@ class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
 
     @abstractmethod
     def _remove(self, key):
-        # type: (_BPD, _KT) -> _BPD
+        # type: (_BPD, KT) -> _BPD
         """
         Delete existing key.
 
@@ -906,7 +903,7 @@ class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
 
     @abstractmethod
     def _set(self, key, value):
-        # type: (_BPD, _KT, _VT) -> _BPD
+        # type: (_BPD, KT, VT) -> _BPD
         """
         Set value for key.
 
@@ -919,19 +916,19 @@ class BaseProtectedDict(BaseDict[_KT, _VT], BaseProtectedCollection[_KT]):
     @overload
     @abstractmethod
     def _update(self, __m, **kwargs):
-        # type: (_BPD, Mapping[_KT, _VT], _VT) -> _BPD
+        # type: (_BPD, Mapping[KT, VT], VT) -> _BPD
         pass
 
     @overload
     @abstractmethod
     def _update(self, __m, **kwargs):
-        # type: (_BPD, Iterable[Tuple[_KT, _VT]], _VT) -> _BPD
+        # type: (_BPD, Iterable[Tuple[KT, VT]], VT) -> _BPD
         pass
 
     @overload
     @abstractmethod
     def _update(self, **kwargs):
-        # type: (_BPD, _VT) -> _BPD
+        # type: (_BPD, VT) -> _BPD
         pass
 
     @abstractmethod
@@ -950,14 +947,14 @@ _BID = TypeVar("_BID", bound="BaseInteractiveDict")
 
 
 # noinspection PyAbstractClass
-class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection[_KT]):
+class BaseInteractiveDict(BaseProtectedDict[KT, VT], BaseInteractiveCollection[KT]):
     """Base interactive dictionary collection."""
 
     __slots__ = ()
 
     @final
     def discard(self, key):
-        # type: (_BID, _KT) -> _BID
+        # type: (_BID, KT) -> _BID
         """
         Discard key if it exists.
 
@@ -968,7 +965,7 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
 
     @final
     def remove(self, key):
-        # type: (_BID, _KT) -> _BID
+        # type: (_BID, KT) -> _BID
         """
         Delete existing key.
 
@@ -980,7 +977,7 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
 
     @final
     def set(self, key, value):
-        # type: (_BID, _KT, _VT) -> _BID
+        # type: (_BID, KT, VT) -> _BID
         """
         Set value for key.
 
@@ -992,17 +989,17 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
 
     @overload
     def update(self, __m, **kwargs):
-        # type: (_BID, Mapping[_KT, _VT], _VT) -> _BID
+        # type: (_BID, Mapping[KT, VT], VT) -> _BID
         pass
 
     @overload
     def update(self, __m, **kwargs):
-        # type: (_BID, Iterable[Tuple[_KT, _VT]], _VT) -> _BID
+        # type: (_BID, Iterable[Tuple[KT, VT]], VT) -> _BID
         pass
 
     @overload
     def update(self, **kwargs):
-        # type: (_BID, _VT) -> _BID
+        # type: (_BID, VT) -> _BID
         pass
 
     @final
@@ -1017,7 +1014,7 @@ class BaseInteractiveDict(BaseProtectedDict[_KT, _VT], BaseInteractiveCollection
 
 
 class BaseMutableDict(
-    SlottedMutableMapping, BaseProtectedDict[_KT, _VT], BaseMutableCollection[_KT]
+    SlottedMutableMapping, BaseProtectedDict[KT, VT], BaseMutableCollection[KT]
 ):
     """Base mutable dictionary collection."""
 
@@ -1025,7 +1022,7 @@ class BaseMutableDict(
 
     @abstractmethod
     def __setitem__(self, key, value):
-        # type: (_KT, _VT) -> None
+        # type: (KT, VT) -> None
         """
         Set value for key.
 
@@ -1036,7 +1033,7 @@ class BaseMutableDict(
 
     @abstractmethod
     def __delitem__(self, key):
-        # type: (_KT) -> None
+        # type: (KT) -> None
         """
         Delete key.
 
@@ -1053,7 +1050,7 @@ class BaseMutableDict(
 
     @abstractmethod
     def pop(self, key, fallback=None):
-        # type: (_KT, Any) -> Union[_VT, Any]
+        # type: (KT, Any) -> Union[VT, Any]
         """
         Pop value for key and discard it, return fallback value if key is not present.
 
@@ -1065,7 +1062,7 @@ class BaseMutableDict(
 
     @abstractmethod
     def popitem(self):
-        # type: () -> Tuple[_KT, _VT]
+        # type: () -> Tuple[KT, VT]
         """
         Get item and discard key.
 
@@ -1075,7 +1072,7 @@ class BaseMutableDict(
 
     @abstractmethod
     def setdefault(self, key, default=None):
-        # type: (_KT, _VT) -> _VT
+        # type: (KT, VT) -> VT
         """
         Get the value for the specified key, insert key with default if not present.
 
@@ -1087,7 +1084,7 @@ class BaseMutableDict(
 
     @final
     def discard(self, key):
-        # type: (_KT) -> None
+        # type: (KT) -> None
         """
         Discard key if it exists.
 
@@ -1098,7 +1095,7 @@ class BaseMutableDict(
 
     @final
     def remove(self, key):
-        # type: (_KT) -> None
+        # type: (KT) -> None
         """
         Delete existing key.
 
@@ -1110,7 +1107,7 @@ class BaseMutableDict(
 
     @final
     def set(self, key, value):
-        # type: (_KT, _VT) -> None
+        # type: (KT, VT) -> None
         """
         Set value for key.
 
@@ -1122,17 +1119,17 @@ class BaseMutableDict(
 
     @overload
     def update(self, __m, **kwargs):
-        # type: (Mapping[_KT, _VT], _VT) -> None
+        # type: (Mapping[KT, VT], VT) -> None
         pass
 
     @overload
     def update(self, __m, **kwargs):
-        # type: (Iterable[Tuple[_KT, _VT]], _VT) -> None
+        # type: (Iterable[Tuple[KT, VT]], VT) -> None
         pass
 
     @overload
     def update(self, **kwargs):
-        # type: (_VT) -> None
+        # type: (VT) -> None
         pass
 
     @final
@@ -1144,14 +1141,14 @@ class BaseMutableDict(
         self._update(*args, **kwargs)
 
 
-class BaseList(BaseCollection[_T_co], SlottedSequence):
+class BaseList(BaseCollection[T_co], SlottedSequence):
     """Base list collection."""
 
     __slots__ = ()
 
     @abstractmethod
     def __reversed__(self):
-        # type: () -> Iterator[_T_co]
+        # type: () -> Iterator[T_co]
         """
         Iterate over reversed values.
 
@@ -1162,13 +1159,13 @@ class BaseList(BaseCollection[_T_co], SlottedSequence):
     @overload
     @abstractmethod
     def __getitem__(self, index):
-        # type: (int) -> _T_co
+        # type: (int) -> T_co
         pass
 
     @overload
     @abstractmethod
     def __getitem__(self, index):
-        # type: (slice) -> Sequence[_T_co]
+        # type: (slice) -> Sequence[T_co]
         pass
 
     @abstractmethod
@@ -1235,14 +1232,14 @@ class BaseList(BaseCollection[_T_co], SlottedSequence):
 _BPL = TypeVar("_BPL", bound="BaseProtectedList")
 
 
-class BaseProtectedList(BaseList[_T], BaseProtectedCollection[_T]):
+class BaseProtectedList(BaseList[T], BaseProtectedCollection[T]):
     """Base protected list collection."""
 
     __slots__ = ()
 
     @abstractmethod
     def _insert(self, index, *values):
-        # type: (_BPL, int, _T) -> _BPL
+        # type: (_BPL, int, T) -> _BPL
         """
         Insert value(s) at index.
 
@@ -1255,7 +1252,7 @@ class BaseProtectedList(BaseList[_T], BaseProtectedCollection[_T]):
 
     @abstractmethod
     def _append(self, value):
-        # type: (_BPL, _T) -> _BPL
+        # type: (_BPL, T) -> _BPL
         """
         Append value at the end.
 
@@ -1266,7 +1263,7 @@ class BaseProtectedList(BaseList[_T], BaseProtectedCollection[_T]):
 
     @abstractmethod
     def _extend(self, iterable):
-        # type: (_BPL, Iterable[_T]) -> _BPL
+        # type: (_BPL, Iterable[T]) -> _BPL
         """
         Extend at the end with iterable.
 
@@ -1277,7 +1274,7 @@ class BaseProtectedList(BaseList[_T], BaseProtectedCollection[_T]):
 
     @abstractmethod
     def _remove(self, value):
-        # type: (_BPL, _T) -> _BPL
+        # type: (_BPL, T) -> _BPL
         """
         Remove first occurrence of value.
 
@@ -1311,7 +1308,7 @@ class BaseProtectedList(BaseList[_T], BaseProtectedCollection[_T]):
 
     @abstractmethod
     def _change(self, index, *values):
-        # type: (_BPL, int, _T) -> _BPL
+        # type: (_BPL, int, T) -> _BPL
         """
         Change value(s) starting at index.
 
@@ -1328,14 +1325,14 @@ _BIL = TypeVar("_BIL", bound="BaseInteractiveList")
 
 
 # noinspection PyAbstractClass
-class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
+class BaseInteractiveList(BaseProtectedList[T], BaseInteractiveCollection[T]):
     """Base interactive list collection."""
 
     __slots__ = ()
 
     @final
     def insert(self, index, *values):
-        # type: (_BIL, int, _T) -> _BIL
+        # type: (_BIL, int, T) -> _BIL
         """
         Insert value(s) at index.
 
@@ -1348,7 +1345,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
 
     @final
     def append(self, value):
-        # type: (_BIL, _T) -> _BIL
+        # type: (_BIL, T) -> _BIL
         """
         Append value at the end.
 
@@ -1359,7 +1356,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
 
     @final
     def extend(self, iterable):
-        # type: (_BIL, Iterable[_T]) -> _BIL
+        # type: (_BIL, Iterable[T]) -> _BIL
         """
         Extend at the end with iterable.
 
@@ -1370,7 +1367,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
 
     @final
     def remove(self, value):
-        # type: (_BIL, _T) -> _BIL
+        # type: (_BIL, T) -> _BIL
         """
         Remove first occurrence of value.
 
@@ -1404,7 +1401,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
 
     @final
     def change(self, index, *values):
-        # type: (_BIL, int, _T) -> _BIL
+        # type: (_BIL, int, T) -> _BIL
         """
         Change value(s) starting at index.
 
@@ -1417,7 +1414,7 @@ class BaseInteractiveList(BaseProtectedList[_T], BaseInteractiveCollection[_T]):
 
 
 class BaseMutableList(
-    SlottedMutableSequence, BaseProtectedList[_T], BaseMutableCollection[_T]
+    SlottedMutableSequence, BaseProtectedList[T], BaseMutableCollection[T]
 ):
     """Base mutable list collection."""
 
@@ -1426,13 +1423,13 @@ class BaseMutableList(
     @overload
     @abstractmethod
     def __getitem__(self, index):
-        # type: (int) -> _T_co
+        # type: (int) -> T_co
         pass
 
     @overload
     @abstractmethod
     def __getitem__(self, index):
-        # type: (slice) -> MutableSequence[_T_co]
+        # type: (slice) -> MutableSequence[T_co]
         pass
 
     @abstractmethod
@@ -1448,18 +1445,18 @@ class BaseMutableList(
     @overload
     @abstractmethod
     def __setitem__(self, index, value):
-        # type: (int, _T) -> None
+        # type: (int, T) -> None
         pass
 
     @overload
     @abstractmethod
     def __setitem__(self, slc, values):
-        # type: (slice, Iterable[_T]) -> None
+        # type: (slice, Iterable[T]) -> None
         pass
 
     @abstractmethod
     def __setitem__(self, item, value):
-        # type: (Union[int, slice], Union[_T, Iterable[_T]]) -> None
+        # type: (Union[int, slice], Union[T, Iterable[T]]) -> None
         """
         Set value/values at index/slice.
 
@@ -1494,7 +1491,7 @@ class BaseMutableList(
 
     @abstractmethod
     def pop(self, index=-1):
-        # type: (int) -> _T
+        # type: (int) -> T
         """
         Pop value from index.
 
@@ -1511,7 +1508,7 @@ class BaseMutableList(
 
     @final
     def insert(self, index, *values):
-        # type: (int, _T) -> None
+        # type: (int, T) -> None
         """
         Insert value(s) at index.
 
@@ -1523,7 +1520,7 @@ class BaseMutableList(
 
     @final
     def append(self, value):
-        # type: (_T) -> None
+        # type: (T) -> None
         """
         Append value at the end.
 
@@ -1533,7 +1530,7 @@ class BaseMutableList(
 
     @final
     def extend(self, iterable):
-        # type: (Iterable[_T]) -> None
+        # type: (Iterable[T]) -> None
         """
         Extend at the end with iterable.
 
@@ -1543,7 +1540,7 @@ class BaseMutableList(
 
     @final
     def remove(self, value):
-        # type: (_T) -> None
+        # type: (T) -> None
         """
         Remove first occurrence of value.
 
@@ -1571,7 +1568,7 @@ class BaseMutableList(
 
     @final
     def change(self, index, *values):
-        # type: (int, _T) -> None
+        # type: (int, T) -> None
         """
         Change value(s) starting at index.
 
@@ -1582,7 +1579,7 @@ class BaseMutableList(
         self._change(index, *values)
 
 
-class BaseSet(SlottedSet, BaseCollection[_T_co], Generic[_T_co]):
+class BaseSet(SlottedSet, BaseCollection[T_co], Generic[T_co]):
     """Base set collection."""
 
     __slots__ = ()
@@ -1669,14 +1666,14 @@ class BaseSet(SlottedSet, BaseCollection[_T_co], Generic[_T_co]):
 _BPS = TypeVar("_BPS", bound="BaseProtectedSet")
 
 
-class BaseProtectedSet(BaseSet[_T], BaseProtectedCollection[_T]):
+class BaseProtectedSet(BaseSet[T], BaseProtectedCollection[T]):
     """Base protected set collection."""
 
     __slots__ = ()
 
     @abstractmethod
     def _add(self, value):
-        # type: (_BPS, _T) -> _BPS
+        # type: (_BPS, T) -> _BPS
         """
         Add value.
 
@@ -1687,7 +1684,7 @@ class BaseProtectedSet(BaseSet[_T], BaseProtectedCollection[_T]):
 
     @abstractmethod
     def _discard(self, value):
-        # type: (_BPS, _T) -> _BPS
+        # type: (_BPS, T) -> _BPS
         """
         Discard value if it exists.
 
@@ -1698,7 +1695,7 @@ class BaseProtectedSet(BaseSet[_T], BaseProtectedCollection[_T]):
 
     @abstractmethod
     def _remove(self, *values):
-        # type: (_BPS, _T) -> _BPS
+        # type: (_BPS, T) -> _BPS
         """
         Remove existing value(s).
 
@@ -1711,7 +1708,7 @@ class BaseProtectedSet(BaseSet[_T], BaseProtectedCollection[_T]):
 
     @abstractmethod
     def _replace(self, value, new_value):
-        # type: (_BPS, _T, _T) -> _BPS
+        # type: (_BPS, T, T) -> _BPS
         """
         Replace existing value with a new one.
 
@@ -1724,7 +1721,7 @@ class BaseProtectedSet(BaseSet[_T], BaseProtectedCollection[_T]):
 
     @abstractmethod
     def _update(self, iterable):
-        # type: (_BPS, Iterable[_T]) -> _BPS
+        # type: (_BPS, Iterable[T]) -> _BPS
         """
         Update with iterable.
 
@@ -1739,14 +1736,14 @@ _BIS = TypeVar("_BIS", bound="BaseInteractiveSet")
 
 
 # noinspection PyAbstractClass
-class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
+class BaseInteractiveSet(BaseProtectedSet[T], BaseInteractiveCollection[T]):
     """Base interactive set collection."""
 
     __slots__ = ()
 
     @final
     def add(self, value):
-        # type: (_BIS, _T) -> _BIS
+        # type: (_BIS, T) -> _BIS
         """
         Add value.
 
@@ -1757,7 +1754,7 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
 
     @final
     def discard(self, value):
-        # type: (_BIS, _T) -> _BIS
+        # type: (_BIS, T) -> _BIS
         """
         Discard value if it exists.
 
@@ -1768,7 +1765,7 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
 
     @final
     def remove(self, *values):
-        # type: (_BIS, _T) -> _BIS
+        # type: (_BIS, T) -> _BIS
         """
         Remove existing value(s).
 
@@ -1781,7 +1778,7 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
 
     @final
     def replace(self, value, new_value):
-        # type: (_BIS, _T, _T) -> _BIS
+        # type: (_BIS, T, T) -> _BIS
         """
         Replace existing value with a new one.
 
@@ -1794,7 +1791,7 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
 
     @final
     def update(self, iterable):
-        # type: (_BIS, Iterable[_T]) -> _BIS
+        # type: (_BIS, Iterable[T]) -> _BIS
         """
         Update with iterable.
 
@@ -1805,7 +1802,7 @@ class BaseInteractiveSet(BaseProtectedSet[_T], BaseInteractiveCollection[_T]):
 
 
 class BaseMutableSet(
-    SlottedMutableSet, BaseProtectedSet[_T], BaseMutableCollection[_T]
+    SlottedMutableSet, BaseProtectedSet[T], BaseMutableCollection[T]
 ):
     """Base mutable set collection."""
 
@@ -1813,7 +1810,7 @@ class BaseMutableSet(
 
     @abstractmethod
     def pop(self):
-        # type: () -> _T
+        # type: () -> T
         """
         Pop value.
 
@@ -1823,7 +1820,7 @@ class BaseMutableSet(
 
     @abstractmethod
     def intersection_update(self, iterable):
-        # type: (Iterable[_T]) -> None
+        # type: (Iterable[T]) -> None
         """
         Intersect.
 
@@ -1833,7 +1830,7 @@ class BaseMutableSet(
 
     @abstractmethod
     def symmetric_difference_update(self, iterable):
-        # type: (Iterable[_T]) -> None
+        # type: (Iterable[T]) -> None
         """
         Symmetric difference.
 
@@ -1843,7 +1840,7 @@ class BaseMutableSet(
 
     @abstractmethod
     def difference_update(self, iterable):
-        # type: (Iterable[_T]) -> None
+        # type: (Iterable[T]) -> None
         """
         Difference.
 
@@ -1859,7 +1856,7 @@ class BaseMutableSet(
 
     @final
     def add(self, value):
-        # type: (_T) -> None
+        # type: (T) -> None
         """
         Add value.
 
@@ -1869,7 +1866,7 @@ class BaseMutableSet(
 
     @final
     def discard(self, value):
-        # type: (_T) -> None
+        # type: (T) -> None
         """
         Discard value if it exists.
 
@@ -1879,7 +1876,7 @@ class BaseMutableSet(
 
     @final
     def remove(self, *values):
-        # type: (_T) -> None
+        # type: (T) -> None
         """
         Remove existing value(s).
 
@@ -1891,7 +1888,7 @@ class BaseMutableSet(
 
     @final
     def replace(self, value, new_value):
-        # type: (_T, _T) -> None
+        # type: (T, T) -> None
         """
         Replace existing value with a new one.
 
@@ -1902,7 +1899,7 @@ class BaseMutableSet(
 
     @final
     def update(self, iterable):
-        # type: (Iterable[_T]) -> None
+        # type: (Iterable[T]) -> None
         """
         Update with iterable.
 

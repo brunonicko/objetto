@@ -108,17 +108,17 @@ _SERIALIZED_VALUE_KEY = "value"
 
 MISSING = object()
 
-_T = TypeVar("_T")  # Any type.
-_KT = TypeVar("_KT")  # Key type.
-_VT = TypeVar("_VT")  # Value type.
-_T_co = TypeVar("_T_co", covariant=True)  # Any type covariant containers.
-_V_co = TypeVar("_V_co", covariant=True)  # Any type covariant containers.
-_KT_co = TypeVar("_KT_co", covariant=True)  # Key type covariant containers.
-_VT_co = TypeVar("_VT_co", covariant=True)  # Value type covariant containers.
-_T_contra = TypeVar("_T_contra", contravariant=True)  # Ditto contravariant.
+T = TypeVar("T")  # Any type.
+KT = TypeVar("KT")  # Key type.
+VT = TypeVar("VT")  # Value type.
+T_co = TypeVar("T_co", covariant=True)  # Any type covariant containers.
+V_co = TypeVar("V_co", covariant=True)  # Any type covariant containers.
+KT_co = TypeVar("KT_co", covariant=True)  # Key type covariant containers.
+VT_co = TypeVar("VT_co", covariant=True)  # Value type covariant containers.
+T_contra = TypeVar("T_contra", contravariant=True)  # Ditto contravariant.
 
 if TYPE_CHECKING:
-    AnyState = Union[DictState[_KT, _VT], ListState[_T], SetState[_T]]
+    AnyState = Union[DictState[KT, VT], ListState[T], SetState[T]]
 
 
 def _escape_serialized_class(dct):
@@ -561,7 +561,7 @@ _BS = TypeVar("_BS", bound="BaseStructure")
 
 
 class BaseStructure(
-    with_metaclass(BaseStructureMeta, BaseHashable, BaseProtectedCollection[_T])
+    with_metaclass(BaseStructureMeta, BaseHashable, BaseProtectedCollection[T])
 ):
     """
     Base structure.
@@ -832,14 +832,14 @@ class BaseStructure(
 
 
 # noinspection PyAbstractClass
-class BaseInteractiveStructure(BaseStructure[_T], BaseInteractiveCollection[_T]):
+class BaseInteractiveStructure(BaseStructure[T], BaseInteractiveCollection[T]):
     """Base interactive structure."""
 
     __slots__ = ()
 
 
 # noinspection PyAbstractClass
-class BaseMutableStructure(BaseStructure[_T], BaseMutableCollection[_T]):
+class BaseMutableStructure(BaseStructure[T], BaseMutableCollection[T]):
     """Base mutable structure."""
 
     __slots__ = ()
@@ -856,7 +856,7 @@ class BaseAttributeMeta(BaseMeta):
         return BaseRelationship
 
 
-class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[_T])):
+class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
     """
     Base attribute descriptor.
 
@@ -946,12 +946,12 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[_T])):
 
     @overload
     def __get__(self, instance, owner):
-        # type: (None, Type[BaseAttributeStructure]) -> BaseAttribute[_T]
+        # type: (None, Type[BaseAttributeStructure]) -> BaseAttribute[T]
         pass
 
     @overload
     def __get__(self, instance, owner):
-        # type: (BaseAttributeStructure, Type[BaseAttributeStructure]) -> _T
+        # type: (BaseAttributeStructure, Type[BaseAttributeStructure]) -> T
         pass
 
     def __get__(self, instance, owner):
@@ -1487,7 +1487,7 @@ class BaseAuxiliaryStructureMeta(BaseStructureMeta):
 
 # noinspection PyAbstractClass
 class BaseAuxiliaryStructure(
-    with_metaclass(BaseAuxiliaryStructureMeta, BaseStructure[_T])
+    with_metaclass(BaseAuxiliaryStructureMeta, BaseStructure[T])
 ):
     """Structure with a single relationship for all locations."""
 
@@ -1511,8 +1511,8 @@ class BaseAuxiliaryStructure(
 
 # noinspection PyAbstractClass
 class BaseInteractiveAuxiliaryStructure(
-    BaseAuxiliaryStructure[_T],
-    BaseInteractiveStructure[_T],
+    BaseAuxiliaryStructure[T],
+    BaseInteractiveStructure[T],
 ):
     """Base interactive auxiliary structure."""
 
@@ -1521,8 +1521,8 @@ class BaseInteractiveAuxiliaryStructure(
 
 # noinspection PyAbstractClass
 class BaseMutableAuxiliaryStructure(
-    BaseAuxiliaryStructure[_T],
-    BaseMutableStructure[_T],
+    BaseAuxiliaryStructure[T],
+    BaseMutableStructure[T],
 ):
     """Base mutable auxiliary structure."""
 
@@ -1698,8 +1698,8 @@ class BaseDictStructureMeta(BaseAuxiliaryStructureMeta):
 class BaseDictStructure(
     with_metaclass(
         BaseDictStructureMeta,
-        BaseAuxiliaryStructure[_KT],
-        BaseProtectedDict[_KT, _VT],
+        BaseAuxiliaryStructure[KT],
+        BaseProtectedDict[KT, VT],
     )
 ):
     """Base dictionary structure."""
@@ -1711,9 +1711,9 @@ class BaseDictStructure(
 
 
 class BaseInteractiveDictStructure(
-    BaseDictStructure[_KT, _VT],
-    BaseInteractiveAuxiliaryStructure[_KT],
-    BaseInteractiveDict[_KT, _VT],
+    BaseDictStructure[KT, VT],
+    BaseInteractiveAuxiliaryStructure[KT],
+    BaseInteractiveDict[KT, VT],
 ):
     """Base interactive dictionary structure."""
 
@@ -1721,9 +1721,9 @@ class BaseInteractiveDictStructure(
 
 
 class BaseMutableDictStructure(
-    BaseDictStructure[_KT, _VT],
-    BaseMutableAuxiliaryStructure[_KT],
-    BaseMutableDict[_KT, _VT],
+    BaseDictStructure[KT, VT],
+    BaseMutableAuxiliaryStructure[KT],
+    BaseMutableDict[KT, VT],
 ):
     """Base mutable dictionary structure."""
 
@@ -1738,8 +1738,8 @@ class BaseListStructureMeta(BaseAuxiliaryStructureMeta):
 class BaseListStructure(
     with_metaclass(
         BaseListStructureMeta,
-        BaseAuxiliaryStructure[_T],
-        BaseProtectedList[_T],
+        BaseAuxiliaryStructure[T],
+        BaseProtectedList[T],
     )
 ):
     """Base list structure."""
@@ -1748,9 +1748,9 @@ class BaseListStructure(
 
 
 class BaseInteractiveListStructure(
-    BaseListStructure[_T],
-    BaseInteractiveAuxiliaryStructure[_T],
-    BaseInteractiveList[_T],
+    BaseListStructure[T],
+    BaseInteractiveAuxiliaryStructure[T],
+    BaseInteractiveList[T],
 ):
     """Base interactive list structure."""
 
@@ -1758,9 +1758,9 @@ class BaseInteractiveListStructure(
 
 
 class BaseMutableListStructure(
-    BaseListStructure[_T],
-    BaseMutableAuxiliaryStructure[_T],
-    BaseMutableList[_T],
+    BaseListStructure[T],
+    BaseMutableAuxiliaryStructure[T],
+    BaseMutableList[T],
 ):
     """Base mutable list structure."""
 
@@ -1775,8 +1775,8 @@ class BaseSetStructureMeta(BaseAuxiliaryStructureMeta):
 class BaseSetStructure(
     with_metaclass(
         BaseSetStructureMeta,
-        BaseAuxiliaryStructure[_T],
-        BaseProtectedSet[_T],
+        BaseAuxiliaryStructure[T],
+        BaseProtectedSet[T],
     )
 ):
     """Base set structure."""
@@ -1785,9 +1785,9 @@ class BaseSetStructure(
 
 
 class BaseInteractiveSetStructure(
-    BaseSetStructure[_T],
-    BaseInteractiveAuxiliaryStructure[_T],
-    BaseInteractiveSet[_T],
+    BaseSetStructure[T],
+    BaseInteractiveAuxiliaryStructure[T],
+    BaseInteractiveSet[T],
 ):
     """Base interactive set structure."""
 
@@ -1795,9 +1795,9 @@ class BaseInteractiveSetStructure(
 
 
 class BaseMutableSetStructure(
-    BaseSetStructure[_T],
-    BaseMutableAuxiliaryStructure[_T],
-    BaseMutableSet[_T],
+    BaseSetStructure[T],
+    BaseMutableAuxiliaryStructure[T],
+    BaseMutableSet[T],
 ):
     """Base mutable set structure."""
 

@@ -28,13 +28,13 @@ __all__ = [
 ]
 
 
-_T = TypeVar("_T")  # Any type.
-_KT = TypeVar("_KT")  # Any type.
-_VT = TypeVar("_VT")  # Any type.
+T = TypeVar("T")  # Any type.
+KT = TypeVar("KT")  # Any key type.
+VT = TypeVar("VT")  # Any value type.
 
 
 def data_attribute(
-    types=(),  # type: Union[Type[_T], str, Iterable[Union[Type[_T], str]]]
+    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
     subtypes=False,  # type: bool
     checked=True,  # type: bool
     module=None,  # type: Optional[str]
@@ -52,7 +52,7 @@ def data_attribute(
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
 ):
-    # type: (...) -> DataAttribute[_T]
+    # type: (...) -> DataAttribute[T]
     """
     Make data attribute.
 
@@ -107,13 +107,13 @@ def data_attribute(
         deletable=deletable,
         finalized=finalized,
         abstracted=abstracted,
-    )  # type: DataAttribute[_T]
+    )  # type: DataAttribute[T]
 
     return attribute
 
 
 def data_dict_attribute(
-    types=(),  # type: Union[Type[_VT], str, Iterable[Union[Type[_VT], str]]]
+    types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
     subtypes=False,  # type: bool
     checked=True,  # type: bool
     module=None,  # type: Optional[str]
@@ -123,7 +123,7 @@ def data_dict_attribute(
     deserializer=None,  # type: LazyFactory
     represented=True,  # type: bool
     compared=True,  # type: bool
-    key_types=(),  # type: Union[Type[_KT], str, Iterable[Union[Type[_KT], str]]]
+    key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
     key_subtypes=False,  # type: bool
     key_checked=True,  # type: bool
     key_factory=None,  # type: LazyFactory
@@ -137,7 +137,7 @@ def data_dict_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> DataAttribute[DictData[_KT, _VT]]
+    # type: (...) -> DataAttribute[DictData[KT, VT]]
     """
     Make auxiliary dictionary data class.
 
@@ -230,7 +230,7 @@ def data_dict_attribute(
 
 
 def data_list_attribute(
-    types=(),  # type: Union[Type[_T], str, Iterable[Union[Type[_T], str]]]
+    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
     subtypes=False,  # type: bool
     checked=True,  # type: bool
     module=None,  # type: Optional[str]
@@ -250,7 +250,7 @@ def data_list_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> DataAttribute[ListData[_T]]
+    # type: (...) -> DataAttribute[ListData[T]]
     """
     Make auxiliary list data class.
 
@@ -335,7 +335,7 @@ def data_list_attribute(
 
 
 def data_set_attribute(
-    types=(),  # type: Union[Type[_T], str, Iterable[Union[Type[_T], str]]]
+    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
     subtypes=False,  # type: bool
     checked=True,  # type: bool
     module=None,  # type: Optional[str]
@@ -355,7 +355,7 @@ def data_set_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> DataAttribute[SetData[_T]]
+    # type: (...) -> DataAttribute[SetData[T]]
     """
     Make auxiliary set data class.
 
@@ -440,7 +440,7 @@ def data_set_attribute(
 
 
 def data_dict_cls(
-    types=(),  # type: Union[Type[_VT], str, Iterable[Union[Type[_VT], str]]]
+    types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
     subtypes=False,  # type: bool
     checked=True,  # type: bool
     module=None,  # type: Optional[str]
@@ -450,14 +450,14 @@ def data_dict_cls(
     deserializer=None,  # type: LazyFactory
     represented=True,  # type: bool
     compared=True,  # type: bool
-    key_types=(),  # type: Union[Type[_KT], str, Iterable[Union[Type[_KT], str]]]
+    key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
     key_subtypes=False,  # type: bool
     key_checked=True,  # type: bool
     key_factory=None,  # type: LazyFactory
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> Type[DictData[_KT, _VT]]
+    # type: (...) -> Type[DictData[KT, VT]]
     """
     Make auxiliary dictionary data class.
 
@@ -508,7 +508,7 @@ def data_dict_cls(
     dct = {"_key_relationship": key_relationship}
 
     # Make class.
-    base = DictData  # type: Type[DictData[_KT, _VT]]
+    base = DictData  # type: Type[DictData[KT, VT]]
     cls = make_auxiliary_cls(
         base,
         relationship,
@@ -522,7 +522,7 @@ def data_dict_cls(
 
 
 def data_list_cls(
-    types=(),  # type: Union[Type[_T], str, Iterable[Union[Type[_T], str]]]
+    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
     subtypes=False,  # type: bool
     checked=True,  # type: bool
     module=None,  # type: Optional[str]
@@ -535,7 +535,7 @@ def data_list_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> Type[ListData[_T]]
+    # type: (...) -> Type[ListData[T]]
     """
     Make auxiliary list data class.
 
@@ -572,7 +572,7 @@ def data_list_cls(
     )
 
     # Make class.
-    base = ListData  # type: Type[ListData[_T]]
+    base = ListData  # type: Type[ListData[T]]
     cls = make_auxiliary_cls(
         base,
         relationship,
@@ -585,7 +585,7 @@ def data_list_cls(
 
 
 def data_set_cls(
-    types=(),  # type: Union[Type[_T], str, Iterable[Union[Type[_T], str]]]
+    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
     subtypes=False,  # type: bool
     checked=True,  # type: bool
     module=None,  # type: Optional[str]
@@ -598,7 +598,7 @@ def data_set_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> Type[SetData[_T]]
+    # type: (...) -> Type[SetData[T]]
     """
     Make auxiliary set data class.
 
@@ -635,7 +635,7 @@ def data_set_cls(
     )
 
     # Make class.
-    base = SetData  # type: Type[SetData[_T]]
+    base = SetData  # type: Type[SetData[T]]
     cls = make_auxiliary_cls(
         base,
         relationship,

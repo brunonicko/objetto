@@ -44,14 +44,14 @@ if TYPE_CHECKING:
 __all__ = ["BaseState", "DictState", "ListState", "SetState"]
 
 
-_T = TypeVar("_T")  # Any type.
-_KT = TypeVar("_KT")  # Key type.
-_VT = TypeVar("_VT")  # Value type.
+T = TypeVar("T")  # Any type.
+KT = TypeVar("KT")  # Key type.
+VT = TypeVar("VT")  # Value type.
 
 if TYPE_CHECKING:
-    DictInternal = PMap[_KT, _VT]
-    ListInternal = PVector[_T]
-    SetInternal = PSet[_T]
+    DictInternal = PMap[KT, VT]
+    ListInternal = PVector[T]
+    SetInternal = PSet[T]
     AnyInternal = Union[DictInternal, ListInternal, SetInternal]
 
 
@@ -59,7 +59,7 @@ if TYPE_CHECKING:
 _BS = TypeVar("_BS", bound="BaseState")
 
 
-class BaseState(BaseHashable, BaseInteractiveCollection[_T]):
+class BaseState(BaseHashable, BaseInteractiveCollection[T]):
     """
     Base immutable state.
 
@@ -165,7 +165,7 @@ _DS = TypeVar("_DS", bound="DictState")
 
 
 @final
-class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
+class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
     __slots__ = ()
 
     @classmethod
@@ -181,7 +181,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
 
     @staticmethod
     def _make_internal(initial):
-        # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> DictInternal
+        # type: (Union[Mapping[KT, VT], Iterable[Tuple[KT, VT]]]) -> DictInternal
         """
         Initialize internal state.
 
@@ -190,7 +190,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return pmap(initial)
 
     def __init__(self, initial=()):
-        # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> None
+        # type: (Union[Mapping[KT, VT], Iterable[Tuple[KT, VT]]]) -> None
         super(DictState, self).__init__(initial=initial)
 
     def __hash__(self):
@@ -229,7 +229,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return key in self._internal
 
     def __iter__(self):
-        # type: () -> Iterator[_KT]
+        # type: () -> Iterator[KT]
         """
         Iterate over keys.
 
@@ -263,7 +263,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         )
 
     def __reversed__(self):
-        # type: () -> Iterator[_KT]
+        # type: () -> Iterator[KT]
         """
         Iterate over reversed keys.
 
@@ -272,7 +272,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return reversed(list(self.__iter__()))
 
     def __getitem__(self, key):
-        # type: (_KT) -> _VT
+        # type: (KT) -> VT
         """
         Get value for key.
 
@@ -292,7 +292,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return self._make()
 
     def _discard(self, key):
-        # type: (_DS, _KT) -> _DS
+        # type: (_DS, KT) -> _DS
         """
         Discard key if it exists.
 
@@ -302,7 +302,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return self._make(self._internal.discard(key))
 
     def _remove(self, key):
-        # type: (_DS, _KT) -> _DS
+        # type: (_DS, KT) -> _DS
         """
         Delete existing key.
 
@@ -313,7 +313,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return self._make(self._internal.remove(key))
 
     def _set(self, key, value):
-        # type: (_DS, _KT, _VT) -> _DS
+        # type: (_DS, KT, VT) -> _DS
         """
         Set value for key.
 
@@ -325,17 +325,17 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
 
     @overload
     def _update(self, __m, **kwargs):
-        # type: (_DS, Mapping[_KT, _VT], _VT) -> _DS
+        # type: (_DS, Mapping[KT, VT], VT) -> _DS
         pass
 
     @overload
     def _update(self, __m, **kwargs):
-        # type: (_DS, Iterable[Tuple[_KT, _VT]], _VT) -> _DS
+        # type: (_DS, Iterable[Tuple[KT, VT]], VT) -> _DS
         pass
 
     @overload
     def _update(self, **kwargs):
-        # type: (_DS, _VT) -> _DS
+        # type: (_DS, VT) -> _DS
         pass
 
     def _update(self, *args, **kwargs):
@@ -346,7 +346,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return self._make(self._internal.update(dict(*args, **kwargs)))
 
     def get(self, key, fallback=None):
-        # type: (_KT, Any) -> Union[_VT, Any]
+        # type: (KT, Any) -> Union[VT, Any]
         """
         Get value for key, return fallback value if key is not present.
 
@@ -357,7 +357,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return self._internal.get(key, fallback)
 
     def iteritems(self):
-        # type: () -> Iterator[Tuple[_KT, _VT]]
+        # type: () -> Iterator[Tuple[KT, VT]]
         """
         Iterate over items.
 
@@ -367,7 +367,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
             yield key, value
 
     def iterkeys(self):
-        # type: () -> Iterator[_KT]
+        # type: () -> Iterator[KT]
         """
         Iterate over keys.
 
@@ -377,7 +377,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
             yield key
 
     def itervalues(self):
-        # type: () -> Iterator[_VT]
+        # type: () -> Iterator[VT]
         """
         Iterate over values.
 
@@ -387,7 +387,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
             yield value
 
     def items(self):
-        # type: () -> ItemsView[_KT, _VT]
+        # type: () -> ItemsView[KT, VT]
         """
         Get items.
 
@@ -396,7 +396,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return collections_abc.ItemsView(self)
 
     def keys(self):
-        # type: () -> KeysView[_KT]
+        # type: () -> KeysView[KT]
         """
         Get keys.
 
@@ -405,7 +405,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return collections_abc.KeysView(self)
 
     def values(self):
-        # type: () -> ValuesView[_VT]
+        # type: () -> ValuesView[VT]
         """
         Get values.
 
@@ -414,7 +414,7 @@ class DictState(BaseState[_KT], BaseInteractiveDict[_KT, _VT]):
         return collections_abc.ValuesView(self)
 
     def find_with_attributes(self, **attributes):
-        # type: (Any) -> _VT
+        # type: (Any) -> VT
         """
         Find first value that matches unique attribute values.
 
@@ -454,7 +454,7 @@ _LS = TypeVar("_LS", bound="ListState")
 
 
 @final
-class ListState(BaseState[_T], BaseInteractiveList[_T]):
+class ListState(BaseState[T], BaseInteractiveList[T]):
     __slots__ = ()
 
     @classmethod
@@ -470,7 +470,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
 
     @staticmethod
     def _make_internal(initial):
-        # type: (Iterable[_T]) -> ListInternal
+        # type: (Iterable[T]) -> ListInternal
         """
         Initialize internal state.
 
@@ -479,7 +479,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         return pvector(initial)
 
     def __init__(self, initial=()):
-        # type: (Iterable[_T]) -> None
+        # type: (Iterable[T]) -> None
         super(ListState, self).__init__(initial=initial)
 
     def __hash__(self):
@@ -518,7 +518,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         return value in self._internal
 
     def __iter__(self):
-        # type: () -> Iterator[_T]
+        # type: () -> Iterator[T]
         """
         Iterate over values.
 
@@ -550,7 +550,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         )
 
     def __reversed__(self):
-        # type: () -> Iterator[_T]
+        # type: () -> Iterator[T]
         """
         Iterate over reversed values.
 
@@ -560,12 +560,12 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
 
     @overload
     def __getitem__(self, index):
-        # type: (int) -> _T
+        # type: (int) -> T
         pass
 
     @overload
     def __getitem__(self, index):
-        # type: (slice) -> ListState[_T]
+        # type: (slice) -> ListState[T]
         pass
 
     def __getitem__(self, index):
@@ -590,7 +590,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         return self._make()
 
     def _insert(self, index, *values):
-        # type: (_LS, int, _T) -> _LS
+        # type: (_LS, int, T) -> _LS
         """
         Insert value(s) at index.
 
@@ -613,7 +613,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
             )
 
     def _append(self, value):
-        # type: (_LS, _T) -> _LS
+        # type: (_LS, T) -> _LS
         """
         Append value at the end.
 
@@ -623,7 +623,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         return self._make(self._internal.append(value))
 
     def _extend(self, iterable):
-        # type: (_LS, Iterable[_T]) -> _LS
+        # type: (_LS, Iterable[T]) -> _LS
         """
         Extend at the end with iterable.
 
@@ -633,7 +633,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         return self._make(self._internal.extend(iterable))
 
     def _remove(self, value):
-        # type: (_LS, _T) -> _LS
+        # type: (_LS, T) -> _LS
         """
         Remove first occurrence of value.
 
@@ -679,7 +679,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
             )
 
     def _change(self, index, *values):
-        # type: (_LS, int, _T) -> _LS
+        # type: (_LS, int, T) -> _LS
         """
         Change value(s) starting at index.
 
@@ -752,7 +752,7 @@ class ListState(BaseState[_T], BaseInteractiveList[_T]):
         return resolve_continuous_slice(len(self._internal), slc)
 
     def find_with_attributes(self, **attributes):
-        # type: (Any) -> _T
+        # type: (Any) -> T
         """
         Find first value that matches unique attribute values.
 
@@ -792,7 +792,7 @@ _SS = TypeVar("_SS", bound="SetState")
 
 
 @final
-class SetState(BaseState[_T], BaseInteractiveSet[_T]):
+class SetState(BaseState[T], BaseInteractiveSet[T]):
     __slots__ = ()
 
     @classmethod
@@ -808,7 +808,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
 
     @staticmethod
     def _make_internal(initial):
-        # type: (Iterable[_T]) -> SetInternal
+        # type: (Iterable[T]) -> SetInternal
         """
         Initialize internal state.
 
@@ -817,7 +817,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         return pset(initial)
 
     def __init__(self, initial=()):
-        # type: (Iterable[_T]) -> None
+        # type: (Iterable[T]) -> None
         super(SetState, self).__init__(initial=initial)
 
     def __hash__(self):
@@ -856,7 +856,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         return value in self._internal
 
     def __iter__(self):
-        # type: () -> Iterator[_T]
+        # type: () -> Iterator[T]
         """
         Iterate over values.
 
@@ -899,7 +899,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         return self._make()
 
     def _add(self, value):
-        # type: (_SS, _T) -> _SS
+        # type: (_SS, T) -> _SS
         """
         Add value.
 
@@ -909,7 +909,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         return self._make(self._internal.add(value))
 
     def _discard(self, value):
-        # type: (_SS, _T) -> _SS
+        # type: (_SS, T) -> _SS
         """
         Discard value if it exists.
 
@@ -919,7 +919,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         return self._make(self._internal.discard(value))
 
     def _remove(self, *values):
-        # type: (_SS, _T) -> _SS
+        # type: (_SS, T) -> _SS
         """
         Remove existing value(s).
 
@@ -931,7 +931,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         return self._make(self._internal.difference(values))
 
     def _replace(self, value, new_value):
-        # type: (_SS, _T, _T) -> _SS
+        # type: (_SS, T, T) -> _SS
         """
         Replace existing value with a new one.
 
@@ -943,7 +943,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         return self._make(self._internal.remove(value).add(new_value))
 
     def _update(self, iterable):
-        # type: (_SS, Iterable[_T]) -> _SS
+        # type: (_SS, Iterable[T]) -> _SS
         """
         Update with iterable.
 
@@ -1023,7 +1023,7 @@ class SetState(BaseState[_T], BaseInteractiveSet[_T]):
         return SetState._make(self._internal.union(iterable))
 
     def find_with_attributes(self, **attributes):
-        # type: (Any) -> _T
+        # type: (Any) -> T
         """
         Find first value that matches unique attribute values.
 

@@ -87,12 +87,12 @@ __all__ = [
 ]
 
 
-_T = TypeVar("_T")  # Any type.
-_KT = TypeVar("_KT")  # Key type.
-_VT = TypeVar("_VT")  # Value type.
+T = TypeVar("T")  # Any type.
+KT = TypeVar("KT")  # Key type.
+VT = TypeVar("VT")  # Value type.
 
 if TYPE_CHECKING:
-    AnyState = Union[DictState[_KT, _VT], ListState[_T], SetState[_T]]
+    AnyState = Union[DictState[KT, VT], ListState[T], SetState[T]]
 
 
 @final
@@ -191,7 +191,7 @@ class BaseDataMeta(BaseStructureMeta):
 _BD = TypeVar("_BD", bound="BaseData")
 
 
-class BaseData(with_metaclass(BaseDataMeta, BaseStructure[_T])):
+class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
     """
     Base data.
 
@@ -254,7 +254,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[_T])):
 
 
 # noinspection PyAbstractClass
-class BaseInteractiveData(BaseData[_T], BaseInteractiveStructure[_T]):
+class BaseInteractiveData(BaseData[T], BaseInteractiveStructure[T]):
     """
     Base interactive data.
 
@@ -276,7 +276,7 @@ class DataAttributeMeta(BaseAttributeMeta):
 
 
 @final
-class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[_T])):
+class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
     """
     Data attribute descriptor.
 
@@ -765,8 +765,8 @@ class BaseAuxiliaryDataMeta(BaseDataMeta, BaseAuxiliaryStructureMeta):
 class BaseAuxiliaryData(
     with_metaclass(
         BaseAuxiliaryDataMeta,
-        BaseAuxiliaryStructure[_T],
-        BaseData[_T],
+        BaseAuxiliaryStructure[T],
+        BaseData[T],
     )
 ):
     """Base auxiliary data."""
@@ -828,9 +828,9 @@ class BaseAuxiliaryData(
 
 # noinspection PyAbstractClass
 class BaseInteractiveAuxiliaryData(
-    BaseAuxiliaryData[_T],
-    BaseInteractiveData[_T],
-    BaseInteractiveAuxiliaryStructure[_T],
+    BaseAuxiliaryData[T],
+    BaseInteractiveData[T],
+    BaseInteractiveAuxiliaryStructure[T],
 ):
     """Base interactive auxiliary data."""
 
@@ -855,8 +855,8 @@ _DD = TypeVar("_DD", bound="DictData")
 class DictData(
     with_metaclass(
         DictDataMeta,
-        BaseDictStructure[_KT, _VT],
-        BaseAuxiliaryData[_KT],
+        BaseDictStructure[KT, VT],
+        BaseAuxiliaryData[KT],
     )
 ):
     """
@@ -883,7 +883,7 @@ class DictData(
 
     @final
     def __init__(self, initial=()):
-        # type: (Union[Mapping[_KT, _VT], Iterable[Tuple[_KT, _VT]]]) -> None
+        # type: (Union[Mapping[KT, VT], Iterable[Tuple[KT, VT]]]) -> None
         if type(initial) is type(self):
             self._init_state(getattr(initial, "_state"))
         else:
@@ -907,7 +907,7 @@ class DictData(
 
     @final
     def __reversed__(self):
-        # type: () -> Iterator[_KT]
+        # type: () -> Iterator[KT]
         """
         Iterate over reversed keys.
 
@@ -917,7 +917,7 @@ class DictData(
 
     @final
     def __getitem__(self, key):
-        # type: (_KT) -> _VT
+        # type: (KT) -> VT
         """
         Get value for key.
 
@@ -939,7 +939,7 @@ class DictData(
 
     @final
     def __iter__(self):
-        # type: () -> Iterator[_KT]
+        # type: () -> Iterator[KT]
         """
         Iterate over keys.
 
@@ -962,7 +962,7 @@ class DictData(
     @classmethod
     @final
     def __get_initial_state(cls, input_values, factory=True):
-        # type: (Mapping[_KT, _VT], bool) -> DictState[_KT, _VT]
+        # type: (Mapping[KT, VT], bool) -> DictState[KT, VT]
         """
         Get initial state.
 
@@ -994,7 +994,7 @@ class DictData(
 
     @final
     def _set(self, key, value):
-        # type: (_DD, _KT, _VT) -> _DD
+        # type: (_DD, KT, VT) -> _DD
         """
         Set value for key.
 
@@ -1009,7 +1009,7 @@ class DictData(
 
     @final
     def _discard(self, key):
-        # type: (_DD, _KT) -> _DD
+        # type: (_DD, KT) -> _DD
         """
         Discard key if it exists.
 
@@ -1020,7 +1020,7 @@ class DictData(
 
     @final
     def _remove(self, key):
-        # type: (_DD, _KT) -> _DD
+        # type: (_DD, KT) -> _DD
         """
         Delete existing key.
 
@@ -1031,17 +1031,17 @@ class DictData(
 
     @overload
     def _update(self, __m, **kwargs):
-        # type: (_DD, Mapping[_KT, _VT], _VT) -> _DD
+        # type: (_DD, Mapping[KT, VT], VT) -> _DD
         pass
 
     @overload
     def _update(self, __m, **kwargs):
-        # type: (_DD, Iterable[Tuple[_KT, _VT]], _VT) -> _DD
+        # type: (_DD, Iterable[Tuple[KT, VT]], VT) -> _DD
         pass
 
     @overload
     def _update(self, **kwargs):
-        # type: (_DD, _VT) -> _DD
+        # type: (_DD, VT) -> _DD
         pass
 
     @final
@@ -1066,7 +1066,7 @@ class DictData(
 
     @final
     def get(self, key, fallback=None):
-        # type: (_KT, Any) -> Union[_VT, Any]
+        # type: (KT, Any) -> Union[VT, Any]
         """
         Get value for key, return fallback value if key is not present.
 
@@ -1078,7 +1078,7 @@ class DictData(
 
     @final
     def iteritems(self):
-        # type: () -> Iterator[Tuple[_KT, _VT]]
+        # type: () -> Iterator[Tuple[KT, VT]]
         """
         Iterate over keys.
 
@@ -1089,7 +1089,7 @@ class DictData(
 
     @final
     def iterkeys(self):
-        # type: () -> Iterator[_KT]
+        # type: () -> Iterator[KT]
         """
         Iterate over keys.
 
@@ -1100,7 +1100,7 @@ class DictData(
 
     @final
     def itervalues(self):
-        # type: () -> Iterator[_VT]
+        # type: () -> Iterator[VT]
         """
         Iterate over values.
 
@@ -1111,7 +1111,7 @@ class DictData(
 
     @final
     def items(self):
-        # type: () -> ItemsView[_KT, _VT]
+        # type: () -> ItemsView[KT, VT]
         """
         Get items.
 
@@ -1121,7 +1121,7 @@ class DictData(
 
     @final
     def keys(self):
-        # type: () -> KeysView[_KT]
+        # type: () -> KeysView[KT]
         """
         Get keys.
 
@@ -1131,7 +1131,7 @@ class DictData(
 
     @final
     def values(self):
-        # type: () -> ValuesView[_VT]
+        # type: () -> ValuesView[VT]
         """
         Get values.
 
@@ -1141,7 +1141,7 @@ class DictData(
 
     @final
     def find_with_attributes(self, **attributes):
-        # type: (Any) -> _VT
+        # type: (Any) -> VT
         """
         Find first value that matches unique attribute values.
 
@@ -1196,15 +1196,15 @@ class DictData(
     @property
     @final
     def _state(self):
-        # type: () -> DictState[_KT, _VT]
+        # type: () -> DictState[KT, VT]
         """Internal state."""
         return cast("DictState", super(DictData, self)._state)
 
 
 class InteractiveDictData(
-    DictData[_KT, _VT],
-    BaseInteractiveDictStructure[_KT, _VT],
-    BaseInteractiveAuxiliaryData[_KT],
+    DictData[KT, VT],
+    BaseInteractiveDictStructure[KT, VT],
+    BaseInteractiveAuxiliaryData[KT],
 ):
     """Interactive dictionary data."""
 
@@ -1229,8 +1229,8 @@ _LD = TypeVar("_LD", bound="ListData")
 class ListData(
     with_metaclass(
         ListDataMeta,
-        BaseListStructure[_T],
-        BaseAuxiliaryData[_T],
+        BaseListStructure[T],
+        BaseAuxiliaryData[T],
     )
 ):
     """
@@ -1255,7 +1255,7 @@ class ListData(
 
     @final
     def __init__(self, initial=()):
-        # type: (Iterable[_T]) -> None
+        # type: (Iterable[T]) -> None
         if type(initial) is type(self):
             self._init_state(getattr(initial, "_state"))
         else:
@@ -1279,7 +1279,7 @@ class ListData(
 
     @final
     def __reversed__(self):
-        # type: () -> Iterator[_T]
+        # type: () -> Iterator[T]
         """
         Iterate over reversed values.
 
@@ -1289,12 +1289,12 @@ class ListData(
 
     @overload
     def __getitem__(self, index):
-        # type: (int) -> _T
+        # type: (int) -> T
         pass
 
     @overload
     def __getitem__(self, index):
-        # type: (slice) -> ListState[_T]
+        # type: (slice) -> ListState[T]
         pass
 
     @final
@@ -1319,7 +1319,7 @@ class ListData(
 
     @final
     def __iter__(self):
-        # type: () -> Iterator[_T]
+        # type: () -> Iterator[T]
         """
         Iterate over values.
 
@@ -1342,7 +1342,7 @@ class ListData(
     @classmethod
     @final
     def __get_initial_state(cls, input_values, factory=True):
-        # type: (Iterable[_T], bool) -> ListState[_T]
+        # type: (Iterable[T], bool) -> ListState[T]
         """
         Get initial state.
 
@@ -1371,7 +1371,7 @@ class ListData(
 
     @final
     def _insert(self, index, *values):
-        # type: (_LD, int, _T) -> _LD
+        # type: (_LD, int, T) -> _LD
         """
         Insert value(s) at index.
 
@@ -1389,7 +1389,7 @@ class ListData(
 
     @final
     def _append(self, value):
-        # type: (_LD, _T) -> _LD
+        # type: (_LD, T) -> _LD
         """
         Append value at the end.
 
@@ -1402,7 +1402,7 @@ class ListData(
 
     @final
     def _extend(self, iterable):
-        # type: (_LD, Iterable[_T]) -> _LD
+        # type: (_LD, Iterable[T]) -> _LD
         """
         Extend at the end with iterable.
 
@@ -1420,7 +1420,7 @@ class ListData(
 
     @final
     def _remove(self, value):
-        # type: (_LD, _T) -> _LD
+        # type: (_LD, T) -> _LD
         """
         Remove first occurrence of value.
 
@@ -1454,7 +1454,7 @@ class ListData(
 
     @final
     def _change(self, index, *values):
-        # type: (_LD, int, _T) -> _LD
+        # type: (_LD, int, T) -> _LD
         """
         Change value(s) starting at index.
 
@@ -1521,7 +1521,7 @@ class ListData(
 
     @final
     def find_with_attributes(self, **attributes):
-        # type: (Any) -> _T
+        # type: (Any) -> T
         """
         Find first value that matches unique attribute values.
 
@@ -1571,15 +1571,15 @@ class ListData(
     @property
     @final
     def _state(self):
-        # type: () -> ListState[_T]
+        # type: () -> ListState[T]
         """Internal state."""
         return cast("ListState", super(ListData, self)._state)
 
 
 class InteractiveListData(
-    ListData[_T],
-    BaseInteractiveListStructure[_T],
-    BaseInteractiveAuxiliaryData[_T],
+    ListData[T],
+    BaseInteractiveListStructure[T],
+    BaseInteractiveAuxiliaryData[T],
 ):
     """Interactive list data."""
 
@@ -1604,8 +1604,8 @@ _SD = TypeVar("_SD", bound="SetData")
 class SetData(
     with_metaclass(
         SetDataMeta,
-        BaseSetStructure[_T],
-        BaseAuxiliaryData[_T],
+        BaseSetStructure[T],
+        BaseAuxiliaryData[T],
     )
 ):
     """
@@ -1630,7 +1630,7 @@ class SetData(
 
     @final
     def __init__(self, initial=()):
-        # type: (Iterable[_T]) -> None
+        # type: (Iterable[T]) -> None
         if type(initial) is type(self):
             self._init_state(getattr(initial, "_state"))
         else:
@@ -1656,7 +1656,7 @@ class SetData(
 
     @final
     def __reversed__(self):
-        # type: () -> Iterator[_T]
+        # type: () -> Iterator[T]
         """
         Iterate over reversed values.
 
@@ -1676,7 +1676,7 @@ class SetData(
 
     @final
     def __iter__(self):
-        # type: () -> Iterator[_T]
+        # type: () -> Iterator[T]
         """
         Iterate over values.
 
@@ -1699,7 +1699,7 @@ class SetData(
     @classmethod
     @final
     def __get_initial_state(cls, input_values, factory=True):
-        # type: (Iterable[_T], bool) -> SetState[_T]
+        # type: (Iterable[T], bool) -> SetState[T]
         """
         Get initial state.
 
@@ -1728,7 +1728,7 @@ class SetData(
 
     @final
     def _add(self, value):
-        # type: (_SD, _T) -> _SD
+        # type: (_SD, T) -> _SD
         """
         Add value.
 
@@ -1741,7 +1741,7 @@ class SetData(
 
     @final
     def _discard(self, value):
-        # type: (_SD, _T) -> _SD
+        # type: (_SD, T) -> _SD
         """
         Discard value if it exists.
 
@@ -1752,7 +1752,7 @@ class SetData(
 
     @final
     def _remove(self, *values):
-        # type: (_SD, _T) -> _SD
+        # type: (_SD, T) -> _SD
         """
         Remove existing value(s).
 
@@ -1765,7 +1765,7 @@ class SetData(
 
     @final
     def _replace(self, value, new_value):
-        # type: (_SD, _T, _T) -> _SD
+        # type: (_SD, T, T) -> _SD
         """
         Replace existing value with a new one.
 
@@ -1780,7 +1780,7 @@ class SetData(
 
     @final
     def _update(self, iterable):
-        # type: (_SD, Iterable[_T]) -> _SD
+        # type: (_SD, Iterable[T]) -> _SD
         """
         Update with iterable.
 
@@ -1868,7 +1868,7 @@ class SetData(
 
     @final
     def find_with_attributes(self, **attributes):
-        # type: (Any) -> _T
+        # type: (Any) -> T
         """
         Find first value that matches unique attribute values.
 
@@ -1919,15 +1919,15 @@ class SetData(
     @property
     @final
     def _state(self):
-        # type: () -> SetState[_T]
+        # type: () -> SetState[T]
         """Internal state."""
         return cast("SetState", super(SetData, self)._state)
 
 
 class InteractiveSetData(
-    SetData[_T],
-    BaseInteractiveSetStructure[_T],
-    BaseInteractiveAuxiliaryData[_T],
+    SetData[T],
+    BaseInteractiveSetStructure[T],
+    BaseInteractiveAuxiliaryData[T],
 ):
     """Interactive set data."""
 

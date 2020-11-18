@@ -7,13 +7,13 @@ from weakref import ref as _ref
 if TYPE_CHECKING:
     from typing import Any, Optional, Tuple, Type
 
-_T = TypeVar("_T")
-
-
 __all__ = ["WeakReference"]
 
 
-class WeakReference(Generic[_T], object):
+T = TypeVar("T")  # Any type.
+
+
+class WeakReference(Generic[T], object):
     """
     Weak reference object that supports pickling.
 
@@ -38,7 +38,7 @@ class WeakReference(Generic[_T], object):
     __slots__ = ("__weakref__", "__ref")
 
     def __init__(self, obj=None):
-        # type: (_T) -> None
+        # type: (T) -> None
         if obj is None:
             self.__ref = _ref(
                 type("Dead", (object,), {"__slots__": ("__weakref__",)})()
@@ -110,7 +110,7 @@ class WeakReference(Generic[_T], object):
         return self.__repr__()
 
     def __call__(self):
-        # type: () -> Optional[_T]
+        # type: () -> Optional[T]
         """
         Get strong reference to the object or None if no longer alive.
 
@@ -119,7 +119,7 @@ class WeakReference(Generic[_T], object):
         return self.__ref()
 
     def __reduce__(self):
-        # type: () -> Tuple[Type[WeakReference], Tuple[Optional[_T]]]
+        # type: () -> Tuple[Type[WeakReference], Tuple[Optional[T]]]
         """
         Reduce for pickling.
 
