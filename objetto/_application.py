@@ -12,7 +12,11 @@ except ImportError:
     import collections as collections_abc  # type: ignore
 
 from ._bases import Base
+from ._states import BaseState
+from ._data import BaseData, DataAttribute
+from .data import Data, data_attribute, data_set_attribute, data_dict_attribute
 from .utils.weak_reference import WeakReference
+from .utils.subject_observer import Subject
 
 if TYPE_CHECKING:
     from typing import Any, Counter, Dict, List, Optional, Set, Tuple, Type
@@ -103,6 +107,27 @@ class ApplicationStorage(WeakKeyDictionary):
         return type(self), (dict(self),)
 
 
+class Store(Data):
+    """Holds an object's state, data, metadata, hierarchy, and history information."""
+
+    state = data_attribute(BaseState, subtypes=True, checked=False)
+    data = data_attribute((BaseData, type(None)), subtypes=True, checked=False)
+    metadata = data_dict_attribute(key_types=str, key_checked=False, checked=False)
+
+    parent_ref = data_attribute(
+        WeakReference, checked=False, default=WeakReference()
+    )  # type: DataAttribute[WeakReference[BaseObject]]
+    history_provider_ref = data_attribute(
+        WeakReference, checked=False, default=WeakReference()
+    )  # type: DataAttribute[WeakReference[BaseObject]]
+    last_parent_history_ref = data_attribute(
+        WeakReference, checked=False, default=WeakReference()
+    )  # type: DataAttribute[WeakReference[History]]
+
+    history = data_attribute((History, type(None)), checked=False, default=None)
+    children = data_set_attribute(BaseObject, subtypes=True, checked=False)
+
+
 class ApplicationInternals(Base):
     """Internals for :class:`Application`."""
 
@@ -124,10 +149,10 @@ class ApplicationInternals(Base):
         self.__app_ref = WeakReference(app)
         self.__history_cls = None  # type: Optional[History]
         self.__lock = ApplicationLock()
-        self.__storage = _Storage()
+        self.__storage = ApplicationStorage()
         self.__busy_writing = set()  # type: Set[BaseObject]
         self.__busy_hierarchy = collections_abc.Counter()  # type: Counter[BaseObject]
-        self.__commits = []  # type: List[_Commit]
+        self.__commits = []  # type: List[Commit]
         self.__reading = []  # type: List[Optional[BaseObject]]
         self.__writing = []  # type: List[Optional[BaseObject]]
         self.__subject = Subject()
