@@ -812,7 +812,7 @@ class BaseAuxiliaryData(
         if not isinstance(other, BaseAuxiliaryData):
             return False
         other_compared = type(other)._relationship.compared
-        if not self_compared or not other_compared:
+        if not other_compared:
             return False
         if isinstance(self, BaseInteractiveAuxiliaryData) != isinstance(
             other, BaseInteractiveAuxiliaryData
