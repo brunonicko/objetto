@@ -1,31 +1,23 @@
 # -*- coding: utf-8 -*-
 """Data."""
 
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar
 
-from ._structures import MISSING, make_auxiliary_cls, KeyRelationship
-from ._data import (
-    Data,
-    InteractiveData,
-    DataAttribute,
-    DataRelationship,
-    DictData,
-    InteractiveDictData,
-    ListData,
-    InteractiveListData,
-    SetData,
-    InteractiveSetData,
-)
+from ._data import DataAttribute, DataRelationship
+from ._data import InteractiveData as Data
+from ._data import InteractiveDictData as DictData
+from ._data import InteractiveListData as ListData
+from ._data import InteractiveSetData as SetData
+from ._structures import MISSING, KeyRelationship, make_auxiliary_cls
 from .utils.caller_module import get_caller_module
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, Type, Union, Iterable
+    from typing import Any, Iterable, Optional, Type, Union
 
     from .utils.factoring import LazyFactory
 
 __all__ = [
     "Data",
-    "InteractiveData",
     "data_attribute",
     "data_dict_attribute",
     "data_list_attribute",
@@ -144,9 +136,8 @@ def data_dict_attribute(
     abstracted=False,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
-    interactive=True,  # type: bool
 ):
-    # type: (...) -> DataAttribute[InteractiveDictData[_KT, _VT]]
+    # type: (...) -> DataAttribute[DictData[_KT, _VT]]
     """
     Make auxiliary dictionary data class.
 
@@ -173,7 +164,6 @@ def data_dict_attribute(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
-    :param interactive: Whether generated class should be interactive.
     :return: Dictionary data class.
     """
 
@@ -198,7 +188,6 @@ def data_dict_attribute(
         key_factory=key_factory,
         qual_name=qual_name,
         unique=unique,
-        interactive=interactive,
     )
 
     # Factory that forces the dictionary type.
@@ -260,9 +249,8 @@ def data_list_attribute(
     abstracted=False,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
-    interactive=True,  # type: bool
 ):
-    # type: (...) -> DataAttribute[InteractiveListData[_T]]
+    # type: (...) -> DataAttribute[ListData[_T]]
     """
     Make auxiliary list data class.
 
@@ -285,7 +273,6 @@ def data_list_attribute(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
-    :param interactive: Whether generated class should be interactive.
     :return: Dictionary data class.
     """
 
@@ -306,7 +293,6 @@ def data_list_attribute(
         compared=compared,
         qual_name=qual_name,
         unique=unique,
-        interactive=interactive,
     )
 
     # Factory that forces the list type.
@@ -368,9 +354,8 @@ def data_set_attribute(
     abstracted=False,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
-    interactive=True,  # type: bool
 ):
-    # type: (...) -> DataAttribute[InteractiveSetData[_T]]
+    # type: (...) -> DataAttribute[SetData[_T]]
     """
     Make auxiliary set data class.
 
@@ -393,7 +378,6 @@ def data_set_attribute(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
-    :param interactive: Whether generated class should be interactive.
     :return: Dictionary data class.
     """
 
@@ -414,7 +398,6 @@ def data_set_attribute(
         compared=compared,
         qual_name=qual_name,
         unique=unique,
-        interactive=interactive,
     )
 
     # Factory that forces the set type.
@@ -473,9 +456,8 @@ def data_dict_cls(
     key_factory=None,  # type: LazyFactory
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
-    interactive=True,  # type: bool
 ):
-    # type: (...) -> Union[Type[InteractiveDictData[_KT, _VT]], Type[DictData[_KT, _VT]]]
+    # type: (...) -> Type[DictData[_KT, _VT]]
     """
     Make auxiliary dictionary data class.
 
@@ -495,7 +477,6 @@ def data_dict_cls(
     :param key_factory: Key factory.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
-    :param interactive: Whether generated class should be interactive.
     :return: Dictionary data class.
     """
 
@@ -527,11 +508,7 @@ def data_dict_cls(
     dct = {"_key_relationship": key_relationship}
 
     # Make class.
-    base = (
-        cast("Type[InteractiveDictData[_KT, _VT]]", InteractiveDictData)
-        if interactive else
-        cast("Type[DictData[_KT, _VT]]", DictData)
-    )
+    base = DictData  # type: Type[DictData[_KT, _VT]]
     cls = make_auxiliary_cls(
         base,
         relationship,
@@ -557,9 +534,8 @@ def data_list_cls(
     compared=True,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
-    interactive=True,  # type: bool
 ):
-    # type: (...) -> Union[Type[InteractiveListData[_T]], Type[ListData[_T]]]
+    # type: (...) -> Type[ListData[_T]]
     """
     Make auxiliary list data class.
 
@@ -575,7 +551,6 @@ def data_list_cls(
     :param compared: Whether the value should be leverage when comparing for equality.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
-    :param interactive: Whether generated class should be interactive.
     :return: List data class.
     """
 
@@ -597,11 +572,7 @@ def data_list_cls(
     )
 
     # Make class.
-    base = (
-        cast("Type[InteractiveListData[_T]]", InteractiveListData)
-        if interactive else
-        cast("Type[ListData[_T]]", ListData)
-    )
+    base = ListData  # type: Type[ListData[_T]]
     cls = make_auxiliary_cls(
         base,
         relationship,
@@ -626,9 +597,8 @@ def data_set_cls(
     compared=True,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
-    interactive=True,  # type: bool
 ):
-    # type: (...) -> Union[Type[InteractiveSetData[_T]], Type[SetData[_T]]]
+    # type: (...) -> Type[SetData[_T]]
     """
     Make auxiliary set data class.
 
@@ -644,7 +614,6 @@ def data_set_cls(
     :param compared: Whether the value should be leverage when comparing for equality.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
-    :param interactive: Whether generated class should be interactive.
     :return: Set data class.
     """
 
@@ -666,11 +635,7 @@ def data_set_cls(
     )
 
     # Make class.
-    base = (
-        cast("Type[InteractiveSetData[_T]]", InteractiveSetData)
-        if interactive else
-        cast("Type[SetData[_T]]", SetData)
-    )
+    base = SetData  # type: Type[SetData[_T]]
     cls = make_auxiliary_cls(
         base,
         relationship,

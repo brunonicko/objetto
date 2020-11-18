@@ -9,22 +9,20 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import (
-    iteritems, iterkeys, itervalues, with_metaclass, string_types
-)
+from six import iteritems, iterkeys, itervalues, string_types, with_metaclass
 
 from ._bases import final, init_context
 from ._states import DictState, ListState, SetState
 from ._structures import (
     MISSING,
+    BaseAttribute,
+    BaseAttributeMeta,
+    BaseAttributeStructure,
+    BaseAttributeStructureMeta,
     BaseAuxiliaryStructure,
     BaseAuxiliaryStructureMeta,
     BaseDictStructure,
     BaseDictStructureMeta,
-    BaseAttributeMeta,
-    BaseAttribute,
-    BaseAttributeStructureMeta,
-    BaseAttributeStructure,
     BaseInteractiveAttributeStructure,
     BaseInteractiveAuxiliaryStructure,
     BaseInteractiveDictStructure,
@@ -47,7 +45,6 @@ if TYPE_CHECKING:
     from typing import (
         Any,
         Dict,
-        Hashable,
         ItemsView,
         Iterable,
         Iterator,
@@ -55,9 +52,9 @@ if TYPE_CHECKING:
         List,
         Mapping,
         Optional,
+        Set,
         Tuple,
         Type,
-        Set,
         Union,
         ValuesView,
     )
@@ -368,6 +365,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
 
     :param initial: Initial values.
     """
+
     __slots__ = ("__hash",)
 
     @classmethod
@@ -562,8 +560,6 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         """
         if self is other:
             return True
-        if type(self) is not type(other):
-            return False
         cls = type(self)
         comparable_attributes = set(
             n for n, a in iteritems(cls._attributes) if a.relationship.compared
@@ -571,11 +567,19 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         if not comparable_attributes:
             return False
         comparable_state = dict(
-            (n, v) for n, v in iteritems(self._state)
+            (n, v)
+            for n, v in iteritems(self._state)
             if cls._get_relationship(n).compared
         )
+        if not isinstance(other, collections_abc.Hashable):
+            return comparable_state == other
+        if not isinstance(other, Data):
+            return False
+        if type(self) is not type(other):
+            return False
         other_comparable_state = dict(
-            (n, v) for n, v in iteritems(other._state)
+            (n, v)
+            for n, v in iteritems(other._state)
             if cls._get_relationship(n).compared
         )
         return comparable_state == other_comparable_state
@@ -742,6 +746,7 @@ class InteractiveData(
     Data, BaseInteractiveAttributeStructure, BaseInteractiveData[str]
 ):
     """Interactive data."""
+
     __slots__ = ()
 
 
@@ -799,11 +804,13 @@ class BaseAuxiliaryData(
         """
         if self is other:
             return True
+        self_compared = type(self)._relationship.compared
+        if not self_compared:
+            return False
         if not isinstance(other, collections_abc.Hashable):
             return self._state == other
         if not isinstance(other, BaseAuxiliaryData):
             return False
-        self_compared = type(self)._relationship.compared
         other_compared = type(other)._relationship.compared
         if not self_compared or not other_compared:
             return False

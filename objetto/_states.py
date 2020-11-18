@@ -3,7 +3,7 @@
 
 from abc import abstractmethod
 from itertools import chain
-from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
+from typing import TYPE_CHECKING, TypeVar, cast, overload
 
 try:
     import collections.abc as collections_abc
@@ -11,7 +11,7 @@ except ImportError:
     import collections as collections_abc  # type: ignore
 
 from pyrsistent import pmap, pset, pvector
-from six import iteritems, iterkeys, itervalues, raise_from
+from six import iteritems, iterkeys, itervalues
 
 from ._bases import (
     BaseHashable,

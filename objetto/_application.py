@@ -3,8 +3,8 @@
 
 from copy import deepcopy
 from threading import RLock
+from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
-from typing import TYPE_CHECKING, Generic
 
 try:
     import collections.abc as collections_abc
@@ -15,22 +15,7 @@ from ._bases import Base
 from .utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
-    from typing import (
-        Any,
-        Callable,
-        Counter,
-        Dict,
-        Hashable,
-        Iterator,
-        List,
-        Mapping,
-        Optional,
-        Sequence,
-        Set,
-        Tuple,
-        Type,
-        Union,
-    )
+    from typing import Any, Counter, Dict, List, Optional, Set, Tuple, Type
 
 __all__ = ["Application"]
 
@@ -41,6 +26,7 @@ class ApplicationLock(Base):
 
       - Can be deep copied and pickled.
     """
+
     __slots__ = ("__lock",)
 
     def __init__(self):
@@ -119,6 +105,7 @@ class ApplicationStorage(WeakKeyDictionary):
 
 class ApplicationInternals(Base):
     """Internals for :class:`Application`."""
+
     __slots__ = (
         "__app_ref",
         "__history_cls",

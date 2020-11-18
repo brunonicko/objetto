@@ -2,8 +2,8 @@
 """State-carrying structures."""
 
 from abc import abstractmethod
-from re import sub as re_sub
 from inspect import getmro
+from re import sub as re_sub
 from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
 
@@ -12,13 +12,12 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, with_metaclass, string_types, raise_from
+from six import iteritems, raise_from, string_types, with_metaclass
 
 from ._bases import (
-    FINAL_METHOD_TAG,
     ABSTRACT_TAG,
+    FINAL_METHOD_TAG,
     INITIALIZING_TAG,
-    make_base_cls,
     Base,
     BaseHashable,
     BaseInteractiveCollection,
@@ -36,28 +35,32 @@ from ._bases import (
     BaseProtectedSet,
     abstract_member,
     final,
+    make_base_cls,
 )
 from ._states import DictState, ListState, SetState
 from .utils.custom_repr import custom_mapping_repr
 from .utils.factoring import format_factory, import_factory, run_factory
 from .utils.lazy_import import get_path, import_path
 from .utils.type_checking import (
-    assert_is_instance, format_types, import_types, get_type_names
+    assert_is_instance,
+    format_types,
+    get_type_names,
+    import_types,
 )
 
 if TYPE_CHECKING:
     from typing import (
         Any,
         Dict,
+        Iterable,
+        Iterator,
         List,
+        Mapping,
         MutableMapping,
         Optional,
         Tuple,
         Type,
         Union,
-        Mapping,
-        Iterator,
-        Iterable,
     )
 
     from ._bases import AbstractType
@@ -213,7 +216,7 @@ def make_auxiliary_cls(
             qual_name=qual_name,
             module=module,
             dct=dct_copy,
-        )
+        ),
     )
 
 
@@ -1329,6 +1332,7 @@ class BaseInteractiveAttributeStructure(
     BaseAttributeStructure, BaseInteractiveStructure[str]
 ):
     """Base interactive attribute structure."""
+
     __slots__ = ()
 
     @final
@@ -1386,6 +1390,7 @@ class BaseInteractiveAttributeStructure(
 # noinspection PyAbstractClass
 class BaseMutableAttributeStructure(BaseAttributeStructure, BaseMutableStructure[str]):
     """Base mutable attribute structure."""
+
     __slots__ = ()
 
     @final

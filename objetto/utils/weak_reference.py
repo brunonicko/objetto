@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from weakref import ref as _ref
 
 if TYPE_CHECKING:
-    from typing import Any, Tuple, Type, Optional
+    from typing import Any, Optional, Tuple, Type
 
 _T = TypeVar("_T")
 
