@@ -244,6 +244,10 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[_T])):
             error = "state already initialized"
             raise RuntimeError(error)
 
+    @final
+    def _transform(self):
+        pass  # TODO
+
     @property
     @abstractmethod
     def _state(self):

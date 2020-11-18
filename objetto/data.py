@@ -146,7 +146,7 @@ def data_dict_attribute(
     unique=False,  # type: bool
     interactive=True,  # type: bool
 ):
-    # type: (...) -> DataAttribute[Union[DictData[_KT, _VT], InteractiveDictData[_KT, _VT]]]
+    # type: (...) -> DataAttribute[InteractiveDictData[_KT, _VT]]
     """
     Make auxiliary dictionary data class.
 
@@ -262,7 +262,7 @@ def data_list_attribute(
     unique=False,  # type: bool
     interactive=True,  # type: bool
 ):
-    # type: (...) -> DataAttribute[Union[ListData[_T], InteractiveListData[_T]]]
+    # type: (...) -> DataAttribute[InteractiveListData[_T]]
     """
     Make auxiliary list data class.
 
@@ -370,7 +370,7 @@ def data_set_attribute(
     unique=False,  # type: bool
     interactive=True,  # type: bool
 ):
-    # type: (...) -> DataAttribute[Union[SetData[_T], InteractiveSetData[_T]]]
+    # type: (...) -> DataAttribute[InteractiveSetData[_T]]
     """
     Make auxiliary set data class.
 
