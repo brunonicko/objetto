@@ -12,11 +12,11 @@ except ImportError:
     import collections as collections_abc  # type: ignore
 
 from ._bases import Base
-from ._states import BaseState
 from ._data import BaseData, DataAttribute
-from .data import Data, data_attribute, data_set_attribute, data_dict_attribute
-from .utils.weak_reference import WeakReference
+from ._states import BaseState
+from .data import Data, data_attribute, data_dict_attribute, data_set_attribute
 from .utils.subject_observer import Subject
+from .utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
     from typing import Any, Counter, Dict, List, Optional, Set, Tuple, Type
@@ -112,7 +112,7 @@ class Store(Data):
 
     state = data_attribute(BaseState, subtypes=True, checked=False)
     data = data_attribute((BaseData, type(None)), subtypes=True, checked=False)
-    metadata = data_dict_attribute(key_types=str, key_checked=False, checked=False)
+    metadata = data_dict_attribute(key_types=string_types, key_checked=False, checked=False)
 
     parent_ref = data_attribute(
         WeakReference, checked=False, default=WeakReference()

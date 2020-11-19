@@ -95,7 +95,7 @@ VT = TypeVar("VT")  # Value type.
 @final
 class DataRelationship(BaseRelationship):
     """
-    Relationship between a data container and its values.
+    Relationship between a data structure and its values.
 
     :param types: Types.
     :param subtypes: Whether to accept subtypes.
@@ -106,7 +106,7 @@ class DataRelationship(BaseRelationship):
     :param serializer: Custom serializer.
     :param deserializer: Custom deserializer.
     :param represented: Whether should be represented.
-    :param compared: Whether the value should be leverage when comparing for equality.
+    :param compared: Whether the value should be leverage when comparing.
     """
 
     __slots__ = ("__compared",)
@@ -115,7 +115,7 @@ class DataRelationship(BaseRelationship):
         self,
         types=(),  # type: LazyTypes
         subtypes=False,  # type: bool
-        checked=True,  # type: bool
+        checked=None,  # type: Optional[bool]
         module=None,  # type: Optional[str]
         factory=None,  # type: LazyFactory
         serialized=True,  # type: bool
@@ -124,6 +124,7 @@ class DataRelationship(BaseRelationship):
         represented=True,  # type: bool
         compared=True,  # type: bool
     ):
+        # type: (...) -> None
         super(DataRelationship, self).__init__(
             types=types,
             subtypes=subtypes,
@@ -136,12 +137,6 @@ class DataRelationship(BaseRelationship):
             represented=represented,
         )
         self.__compared = bool(compared)
-
-    @property
-    def compared(self):
-        # type: () -> bool
-        """Whether the value should be leverage when comparing for equality."""
-        return self.__compared
 
     def to_dict(self):
         # type: () -> Dict[str, Any]
@@ -157,6 +152,12 @@ class DataRelationship(BaseRelationship):
             }
         )
         return dct
+
+    @property
+    def compared(self):
+        # type: () -> bool
+        """Whether the value should be leverage when comparing."""
+        return self.__compared
 
 
 class BaseDataMeta(BaseStructureMeta):
@@ -255,7 +256,7 @@ class BaseInteractiveData(BaseData[T], BaseInteractiveStructure[T]):
     """
     Base interactive data.
 
-      - Is an immutable interactive structure.
+      - Is an immutable interactive data structure.
     """
 
     __slots__ = ()
@@ -286,16 +287,13 @@ class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
     :param deletable: Whether attribute value can be deleted.
     :param finalized: If True, attribute can't be overridden by subclasses.
     :param abstracted: If True, attribute needs to be overridden by subclasses.
-    :raises ValueError: Specified both `default` and `default_factory`.
-    :raises ValueError: Both `required` and `deletable` are True.
-    :raises ValueError: Both `finalized` and `abstracted` are True.
     """
 
     __slots__ = ()
 
     def __init__(
         self,
-        relationship=DataRelationship(),  # type: DataRelationship
+        relationship=BaseRelationship(),  # type: BaseRelationship
         default=MISSING,  # type: Any
         default_factory=None,  # type: LazyFactory
         module=None,  # type: Optional[str]
@@ -322,7 +320,7 @@ class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
     def relationship(self):
         # type: () -> DataRelationship
         """Relationship."""
-        return cast(DataRelationship, super(DataAttribute, self).relationship)
+        return cast("DataRelationship", super(DataAttribute, self).relationship)
 
 
 class DataMeta(BaseAttributeStructureMeta, BaseDataMeta):

@@ -18,6 +18,7 @@ from ._bases import (
     ABSTRACT_TAG,
     FINAL_METHOD_TAG,
     INITIALIZING_TAG,
+    AbstractMember,
     Base,
     BaseHashable,
     BaseInteractiveCollection,
@@ -41,6 +42,7 @@ from ._states import BaseState, DictState, SetState
 from .utils.custom_repr import custom_mapping_repr
 from .utils.factoring import format_factory, import_factory, run_factory
 from .utils.lazy_import import get_path, import_path
+from .utils.reraise_context import ReraiseContext
 from .utils.type_checking import (
     assert_is_instance,
     format_types,
@@ -63,7 +65,6 @@ if TYPE_CHECKING:
         Union,
     )
 
-    from ._bases import AbstractType
     from .utils.factoring import LazyFactory
     from .utils.type_checking import LazyTypes
 
@@ -175,7 +176,18 @@ def make_auxiliary_cls(
     :param unique: Whether generated class should have a unique descriptor.
     :param dct: Members dictionary.
     :return: Generated auxiliary container subclass.
+    :raises TypeError: Invalid 'qual_name' parameter type.
+    :raises TypeError: Invalid 'module' parameter type.
     """
+
+    # 'qual_name'
+    with ReraiseContext(TypeError, "'qual_name' parameter"):
+        assert_is_instance(qual_name, string_types + (type(None),))
+
+    # 'module'
+    with ReraiseContext(TypeError, "'module' parameter"):
+        assert_is_instance(module, string_types + (type(None),))
+    module = module or None
 
     # Generate default name based on relationship types.
     if qual_name is None:
@@ -226,6 +238,18 @@ class BaseRelationship(Base):
     :param serializer: Custom serializer.
     :param deserializer: Custom deserializer.
     :param represented: Whether should be represented.
+    :raises TypeError: Invalid 'module' parameter type.
+    :raises ValueError: Invalid 'types' parameter value.
+    :raises TypeError: Invalid 'types' parameter type.
+    :raises ValueError: Did not provide any 'types' but 'checked' is True.
+    :raises ValueError: Invalid 'factory' parameter value.
+    :raises TypeError: Invalid 'factory' parameter type.
+    :raises ValueError: Provided 'serializer' but 'serialized' is False.
+    :raises ValueError: Provided 'deserializer' but 'serialized' is False.
+    :raises ValueError: Invalid 'serializer' parameter value.
+    :raises TypeError: Invalid 'serializer' parameter type.
+    :raises ValueError: Invalid 'deserializer' parameter value.
+    :raises TypeError: Invalid 'deserializer' parameter type.
     """
 
     __slots__ = (
@@ -245,7 +269,7 @@ class BaseRelationship(Base):
         self,
         types=(),  # type: LazyTypes
         subtypes=False,  # type: bool
-        checked=True,  # type: bool
+        checked=None,  # type: Optional[bool]
         module=None,  # type: Optional[str]
         factory=None,  # type: LazyFactory
         serialized=True,  # type: bool
@@ -254,15 +278,57 @@ class BaseRelationship(Base):
         represented=True,  # type: bool
     ):
         # type: (...) -> None
+
+        # 'module'
+        with ReraiseContext(TypeError, "'module' parameter"):
+            assert_is_instance(module, string_types + (type(None),))
+        module = module or None
+
+        # 'types' and 'checked'
+        with ReraiseContext((ValueError, TypeError), "'types' parameter"):
+            types = format_types(types, module=module)
+        if not types:
+            if checked:
+                error = "did not provide any 'types' but 'checked' is True"
+                raise ValueError(error)
+            if checked is None:
+                checked = False
+        else:
+            if checked is None:
+                checked = True
+        checked = bool(checked)
+
+        # 'factory'
+        with ReraiseContext((ValueError, TypeError), "'factory' parameter"):
+            factory = format_factory(factory, module=module)
+
+        # 'serialized', 'serializer', and 'deserializer'
+        if not serialized:
+            if serializer is not None:
+                error = "provided 'serializer' but 'serialized' is False"
+                raise ValueError(error)
+            if deserializer is not None:
+                error = "provided 'deserializer' but 'serialized' is False"
+                raise ValueError(error)
+        else:
+            if serializer is not None:
+                with ReraiseContext((ValueError, TypeError), "'serializer' parameter"):
+                    serializer = format_factory(serializer, module=module)
+            if deserializer is not None:
+                with ReraiseContext(
+                    (ValueError, TypeError), "'deserializer' parameter"
+                ):
+                    deserializer = format_factory(deserializer, module=module)
+
         self.__hash = None  # type: Optional[int]
-        self.__types = format_types(types, module=module)
+        self.__types = types
         self.__subtypes = bool(subtypes)
         self.__checked = bool(checked)
         self.__module = module
-        self.__factory = format_factory(factory, module=module)
+        self.__factory = factory
         self.__serialized = bool(serialized)
-        self.__serializer = format_factory(serializer, module=module)
-        self.__deserializer = format_factory(deserializer, module=module)
+        self.__serializer = serializer
+        self.__deserializer = deserializer
         self.__represented = bool(represented)
 
     @final
@@ -605,6 +671,118 @@ class BaseStructure(
         else:
             return self._eq(other)
 
+    @staticmethod
+    @final
+    def __deserialize_value(
+        serialized,  # type: Any
+        location,  # type: Any
+        relationship,  # type: BaseRelationship
+        serializable_structure_types,  # type: Tuple[Type[BaseStructure], ...]
+        class_name,  # type: str
+        **kwargs  # type: Any
+    ):
+        # type: (...) -> Any
+        """
+        Deserialize value for location with built-in serializer.
+
+        :param serialized: Serialized value.
+        :param location: Location.
+        :param relationship: Relationship.
+        :param serializable_structure_types: Serializable structure types.
+        :param kwargs: Keyword arguments to be passed to the deserializers.
+        :return: Deserialized value.
+        :raises TypeError: Can't deserialize value due to ambiguous types.
+        """
+
+        # Possible serialized structure.
+        if type(serialized) in (dict, list):
+
+            # Serialized in a dictionary.
+            if type(serialized) is dict:
+
+                # Serialized structure with path to its class.
+                if _SERIALIZED_CLASS_KEY in serialized:
+                    serialized_class = import_path(
+                        serialized[_SERIALIZED_CLASS_KEY]
+                    )  # type: Type[BaseStructure]
+                    serialized_value = serialized[_SERIALIZED_VALUE_KEY]
+                    if type(serialized_value) is dict:
+                        serialized_value = _unescape_serialized_class(serialized_value)
+                    return serialized_class.deserialize(serialized_value, **kwargs)
+
+                # Unescape keys.
+                serialized = _unescape_serialized_class(serialized)
+
+            # Single, non-ambiguous structure type.
+            single_structure_type = relationship.get_single_exact_type(
+                serializable_structure_types
+            )  # type: Optional[Type[BaseStructure]]
+            if single_structure_type is not None:
+                return single_structure_type.deserialize(serialized, **kwargs)
+
+            # Complex type (dict or list).
+            single_complex_type = relationship.get_single_exact_type(
+                (dict, list)
+            )  # type: Optional[Union[Type[Dict], Type[List]]]
+            if single_complex_type is None:
+                error = (
+                    "can't deserialize '{}' object as a value of '{}' since "
+                    "relationship{} defines none or ambiguous types"
+                ).format(
+                    type(serialized).__name__,
+                    class_name,
+                    " at location {}".format(location) if location is not None else "",
+                )
+                raise TypeError(error)
+
+        # Return type-check deserialized value.
+        return relationship.fabricate_value(serialized, factory=False)
+
+    @staticmethod
+    @final
+    def __serialize_value(
+        value,  # type: Any
+        relationship,  # type: BaseRelationship
+        serializable_structure_types,  # type: Tuple[Type[BaseStructure], ...]
+        **kwargs  # type: Any
+    ):
+        # type: (...) -> Any
+        """
+        Serialize value for location with built-in serializer.
+
+        :param value: Value.
+        :param relationship: Relationship.
+        :param serializable_structure_types: Serializable structure types.
+        :param kwargs: Keyword arguments to be passed to the serializers.
+        :return: Serialized value.
+        """
+
+        # Structure type.
+        if isinstance(value, serializable_structure_types):
+            serialized_value = value.serialize(**kwargs)
+
+            # Escape keys.
+            if type(serialized_value) is dict:
+                serialized_value = _escape_serialized_class(serialized_value)
+
+            # Ambiguous type, serialize with class path.
+            single_structure_type = relationship.get_single_exact_type(
+                serializable_structure_types
+            )  # type: Optional[Type[BaseStructure]]
+            if single_structure_type is None:
+                return {
+                    _SERIALIZED_CLASS_KEY: get_path(type(value)),
+                    _SERIALIZED_VALUE_KEY: serialized_value,
+                }
+
+            return serialized_value
+
+        # Escape keys.
+        if type(value) is dict:
+            value = _escape_serialized_class(value)
+
+        return value
+
     @abstractmethod
     def _hash(self):
         # type: () -> int
@@ -650,10 +828,9 @@ class BaseStructure(
         :param location: Location.
         :param kwargs: Keyword arguments to be passed to the deserializers.
         :return: Deserialized value.
+        :raises ValueError: Keyword arguments contain reserved keys.
         :raises ValueError: Can't deserialize value.
         """
-
-        # TODO: add "super" to kwargs so custom deserializers can call it.
 
         # Get relationship.
         relationship = cls._get_relationship(location)
@@ -668,62 +845,31 @@ class BaseStructure(
             )
             raise ValueError(error)
 
+        # Built-in deserializer.
+        deserializer = lambda: cls.__deserialize_value(
+            serialized,
+            location,
+            relationship,
+            cls._serializable_structure_types,
+            cls.__fullname__,
+        )
+        if relationship.deserializer is None:
+            return deserializer()
+
+        # Check kwargs for reserved keys.
+        if "super" in kwargs:
+            error = "can't pass reserved keyword argument 'super' to deserializers"
+            raise ValueError(error)
+
         # Custom deserializer.
-        if relationship.deserializer is not None:
-
-            # Unescape keys.
-            if type(serialized) is dict:
-                serialized = _unescape_serialized_class(serialized)
-
-            # Run deserializer and return type-check deserialized value.
-            value = run_factory(
-                relationship.deserializer, args=(serialized,), kwargs=kwargs
-            )
-            return relationship.fabricate_value(value, factory=False)
-
-        # Possible serialized structure.
-        if type(serialized) in (dict, list):
-
-            # Serialized in a dictionary.
-            if type(serialized) is dict:
-
-                # Serialized structure with path to its class.
-                if _SERIALIZED_CLASS_KEY in serialized:
-                    serialized_class = import_path(
-                        serialized[_SERIALIZED_CLASS_KEY]
-                    )  # type: Type[BaseStructure]
-                    serialized_value = serialized[_SERIALIZED_VALUE_KEY]
-                    if type(serialized_value) is dict:
-                        serialized_value = _unescape_serialized_class(serialized_value)
-                    return serialized_class.deserialize(serialized_value, **kwargs)
-
-                # Unescape keys.
-                serialized = _unescape_serialized_class(serialized)
-
-            # Single, non-ambiguous structure type.
-            single_structure_type = relationship.get_single_exact_type(
-                cls._serializable_structure_types
-            )  # type: Optional[Type[BaseStructure]]
-            if single_structure_type is not None:
-                return single_structure_type.deserialize(serialized, **kwargs)
-
-            # Complex type (dict or list).
-            single_complex_type = relationship.get_single_exact_type(
-                (dict, list)
-            )  # type: Optional[Union[Type[Dict], Type[List]]]
-            if single_complex_type is None:
-                error = (
-                    "can't deserialize '{}' object as a value of '{}' without a custom "
-                    "deserializer, since relationship{} defines none or ambiguous types"
-                ).format(
-                    type(serialized).__name__,
-                    cls.__fullname__,
-                    " at location {}".format(location) if location is not None else "",
-                )
-                raise TypeError(error)
-
-        # Return type-check deserialized value.
-        return relationship.fabricate_value(serialized, factory=False)
+        kwargs = dict(kwargs)
+        kwargs["super"] = deserializer
+        if type(serialized) is dict:
+            serialized = _unescape_serialized_class(serialized)
+        value = run_factory(
+            relationship.deserializer, args=(serialized,), kwargs=kwargs
+        )
+        return relationship.fabricate_value(value, factory=False)
 
     @final
     def serialize_value(self, value, location=None, **kwargs):
@@ -735,10 +881,9 @@ class BaseStructure(
         :param location: Location.
         :param kwargs: Keyword arguments to be passed to the serializers.
         :return: Serialized value.
+        :raises ValueError: Keyword arguments contain reserved keys.
         :raises ValueError: Can't serialize value.
         """
-
-        # TODO: add "super" to kwargs so custom serializers can call it.
 
         # Get relationship.
         cls = type(self)
@@ -754,43 +899,27 @@ class BaseStructure(
             )
             raise ValueError(error)
 
+        # Built-in serializer
+        serializer = lambda: self.__serialize_value(
+            value, relationship, cls._serializable_structure_types, **kwargs
+        )
+        if relationship.serializer is None:
+            return serializer()
+
+        # Check kwargs for reserved keys.
+        if "super" in kwargs:
+            error = "can't pass reserved keyword argument 'super' to serializers"
+            raise ValueError(error)
+
         # Custom serializer.
-        if relationship.serializer is not None:
-            serialized_value = run_factory(
-                relationship.serializer, args=(value,), kwargs=kwargs
-            )
-
-            # Escape keys.
-            if type(serialized_value) is dict:
-                serialized_value = _escape_serialized_class(serialized_value)
-
-            return serialized_value
-
-        # Structure type.
-        if isinstance(value, cls._serializable_structure_types):
-            serialized_value = value.serialize(**kwargs)
-
-            # Escape keys.
-            if type(serialized_value) is dict:
-                serialized_value = _escape_serialized_class(serialized_value)
-
-            # Ambiguous type, serialize with class path.
-            single_structure_type = relationship.get_single_exact_type(
-                cls._serializable_structure_types
-            )  # type: Optional[Type[BaseStructure]]
-            if single_structure_type is None:
-                return {
-                    _SERIALIZED_CLASS_KEY: get_path(type(value)),
-                    _SERIALIZED_VALUE_KEY: serialized_value,
-                }
-
-            return serialized_value
-
-        # Escape keys.
-        if type(value) is dict:
-            value = _escape_serialized_class(value)
-
-        return value
+        kwargs = dict(kwargs)
+        kwargs["super"] = serializer
+        serialized_value = run_factory(
+            relationship.serializer, args=(value,), kwargs=kwargs
+        )
+        if type(serialized_value) is dict:
+            serialized_value = _escape_serialized_class(serialized_value)
+        return serialized_value
 
     @classmethod
     @abstractmethod
@@ -862,9 +991,13 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
     :param deletable: Whether attribute value can be deleted.
     :param finalized: If True, attribute can't be overridden by subclasses.
     :param abstracted: If True, attribute needs to be overridden by subclasses.
-    :raises ValueError: Specified both `default` and `default_factory`.
-    :raises ValueError: Both `required` and `deletable` are True.
-    :raises ValueError: Both `finalized` and `abstracted` are True.
+    :raises TypeError: Invalid 'relationship' parameter type.
+    :raises TypeError: Invalid 'module' parameter type.
+    :raises ValueError: Can't specify both 'default' and 'default_factory' arguments.
+    :raises TypeError: Invalid 'default_factory' parameter type.
+    :raises TypeError: Invalid 'default_factory' parameter value.
+    :raises ValueError: Can't be 'required' and 'deletable' at the same time.
+    :raises ValueError: Can't be 'finalized' and 'abstracted' at the same time.
     """
 
     __slots__ = (
@@ -873,8 +1006,8 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
         "__default_factory",
         "__module",
         "__required",
-        "__changeable",
-        "__deletable",
+        "_changeable",
+        "_deletable",
         "__finalized",
         "__abstracted",
         ABSTRACT_TAG,
@@ -895,42 +1028,45 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
     ):
         # type: (...) -> None
         cls = type(self)
-        assert_is_instance(relationship, cls._relationship_type, subtypes=False)
 
+        # 'relationship'
+        with ReraiseContext(TypeError, "'relationship' parameter"):
+            assert_is_instance(relationship, cls._relationship_type, subtypes=False)
+
+        # 'module'
         if module is None:
             module = relationship.module
+        else:
+            with ReraiseContext(TypeError, "'module' parameter"):
+                assert_is_instance(module, string_types + (type(None),))
+            module = module or None
 
-        assert_is_instance(module, string_types + (type(None),))
-
+        # 'default' and 'default_factory'
         if default is not MISSING and default_factory is not None:
             error = "can't specify both 'default' and 'default_factory' arguments"
             raise ValueError(error)
-        default_factory = format_factory(default_factory, module=module)
+        with ReraiseContext((ValueError, TypeError), "'default_factory' parameter"):
+            default_factory = format_factory(default_factory, module=module)
 
+        # 'deletable' and 'required'
         if deletable and required:
             error = "can't be 'required' and 'deletable' at the same time"
             raise ValueError(error)
 
-        required = bool(required)
-        changeable = bool(changeable)
-        deletable = bool(deletable)
-
+        # 'finalized' and 'abstracted'
         if finalized and abstracted:
-            error = "attribute can't be 'finalized' and 'abstracted' at the same time"
+            error = "can't be 'finalized' and 'abstracted' at the same time"
             raise ValueError(error)
-
-        finalized = bool(finalized)
-        abstracted = bool(abstracted)
 
         self.__relationship = relationship
         self.__default = default
         self.__default_factory = default_factory
         self.__module = module
-        self.__required = required
-        self.__changeable = changeable
-        self.__deletable = deletable
-        self.__finalized = finalized
-        self.__abstracted = abstracted
+        self.__required = bool(required)
+        self._changeable = bool(changeable)
+        self._deletable = bool(deletable)
+        self.__finalized = bool(finalized)
+        self.__abstracted = bool(abstracted)
 
         if finalized:
             setattr(self, FINAL_METHOD_TAG, True)
@@ -1030,7 +1166,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
         return cls._attribute_names[self]
 
     def get_value(self, instance):
-        # type: (BaseAttributeStructure) -> Any
+        # type: (BaseAttributeStructure) -> T
         """
         Get attribute value.
 
@@ -1105,13 +1241,13 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
     def changeable(self):
         # type: () -> bool
         """Whether attribute value can be changed."""
-        return self.__changeable
+        return self._changeable
 
     @property
     def deletable(self):
         # type: () -> bool
         """Whether attribute value can be deleted."""
-        return self.__deletable
+        return self._deletable
 
     @property
     def finalized(self):
@@ -1486,7 +1622,9 @@ class BaseAuxiliaryStructure(
 
     __slots__ = ()
 
-    _relationship = abstract_member()  # type: Union[AbstractType, BaseRelationship]
+    _relationship = (
+        abstract_member()
+    )  # type: Union[Type[AbstractMember], BaseRelationship]
     """Relationship for all locations."""
 
     @classmethod
@@ -1699,7 +1837,9 @@ class BaseDictStructure(
 
     __slots__ = ()
 
-    _key_relationship = abstract_member()  # type: Union[AbstractType, KeyRelationship]
+    _key_relationship = (
+        abstract_member()
+    )  # type: Union[Type[AbstractMember], KeyRelationship]
     """Relationship for the keys."""
 
 

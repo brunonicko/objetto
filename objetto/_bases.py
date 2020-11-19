@@ -48,12 +48,7 @@ if TYPE_CHECKING:
         ValuesView,
     )
 
-    AbstractType = Type["AbstractMember"]
-else:
-    AbstractType = None
-
 __all__ = [
-    "AbstractType",
     "ABSTRACT_TAG",
     "FINAL_CLASS_TAG",
     "FINAL_METHOD_TAG",
@@ -182,13 +177,13 @@ def init(func, *args, **kwargs):
 
 
 def _make_base_cls(
-    base=None,  # type: Optional[Type[Base]]
+    base=None,  # type: Optional[Type[T]]
     qual_name=None,  # type: Optional[str]
     module=None,  # type: Optional[str]
     dct=None,  # type: Optional[Mapping[str, Any]]
     uuid=None,  # type: Optional[str]
 ):
-    # type: (...) -> Type[Base]
+    # type: (...) -> Type[T]
     """
     Make a subclass of :class:`Base` on the fly.
 
@@ -282,12 +277,12 @@ def _make_base_instance(
 
 
 def make_base_cls(
-    base=None,  # type: Optional[Type[Base]]
+    base=None,  # type: Optional[Type[T]]
     qual_name=None,  # type: Optional[str]
     module=None,  # type: Optional[str]
     dct=None,  # type: Optional[Mapping[str, Any]]
 ):
-    # type: (...) -> Type[Base]
+    # type: (...) -> Type[T]
     """
     Make a subclass of :class:`Base` on the fly.
 
@@ -571,7 +566,7 @@ class AbstractMember(with_metaclass(AbstractMemberMeta, Base)):
 
 
 def abstract_member():
-    # type: () -> AbstractType
+    # type: () -> Type[AbstractMember]
     """
     Used to indicate an abstract attribute member in a class.
 
@@ -1801,9 +1796,7 @@ class BaseInteractiveSet(BaseProtectedSet[T], BaseInteractiveCollection[T]):
         return self._update(iterable)
 
 
-class BaseMutableSet(
-    SlottedMutableSet, BaseProtectedSet[T], BaseMutableCollection[T]
-):
+class BaseMutableSet(SlottedMutableSet, BaseProtectedSet[T], BaseMutableCollection[T]):
     """Base mutable set collection."""
 
     __slots__ = ()

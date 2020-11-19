@@ -8,14 +8,12 @@ class DummyContext(object):
     """
     Dummy context manager.
 
-
     .. code:: python
 
         >>> from objetto.utils.dummy_context import DummyContext
 
         >>> with DummyContext():
         ...     pass
-
     """
 
     __slots__ = ()

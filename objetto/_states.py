@@ -235,7 +235,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
 
         :return: Keys iterator.
         """
-        for key in self.iterkeys():
+        for key in iterkeys(self):
             yield key
 
     def __len__(self):
@@ -425,7 +425,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         if not attributes:
             error = "no attributes provided"
             raise ValueError(error)
-        for value in self.itervalues():
+        for value in itervalues(self):
             for a_name, a_value in iteritems(attributes):
                 if not hasattr(value, a_name) or getattr(value, a_name) != a_value:
                     break

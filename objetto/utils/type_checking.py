@@ -67,9 +67,7 @@ def format_types(types, module=None):
     elif isinstance(types, collections_abc.Iterable):
         return tuple(chain.from_iterable(format_types(t, module=module) for t in types))
     else:
-        error = "'{}' object is not a valid type".format(
-            type(types).__name__,
-        )
+        error = "'{}' instance is not a valid type".format(type(types).__name__)
         raise TypeError(error)
 
 

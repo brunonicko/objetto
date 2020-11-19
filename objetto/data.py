@@ -10,6 +10,7 @@ from ._data import InteractiveListData as ListData
 from ._data import InteractiveSetData as SetData
 from ._structures import MISSING, KeyRelationship, make_auxiliary_cls
 from .utils.caller_module import get_caller_module
+from .utils.reraise_context import ReraiseContext
 
 if TYPE_CHECKING:
     from typing import Any, Iterable, Optional, Type, Union
@@ -36,7 +37,7 @@ VT = TypeVar("VT")  # Any value type.
 def data_attribute(
     types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
     subtypes=False,  # type: bool
-    checked=True,  # type: bool
+    checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
     factory=None,  # type: LazyFactory
     serialized=True,  # type: bool
@@ -65,7 +66,7 @@ def data_attribute(
     :param serializer: Custom serializer.
     :param deserializer: Custom deserializer.
     :param represented: Whether should be represented.
-    :param compared: Whether the value should be leverage when comparing for equality.
+    :param compared: Whether the value should be leverage when comparing.
     :param default: Default value.
     :param default_factory: Default value factory.
     :param required: Whether attribute is required to have a value or not.
@@ -74,40 +75,41 @@ def data_attribute(
     :param finalized: If True, attribute can't be overridden by subclasses.
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :return: Data attribute.
-    :raises ValueError: Specified both `default` and `default_factory`.
-    :raises ValueError: Both `required` and `deletable` are True.
-    :raises ValueError: Both `finalized` and `abstracted` are True.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     # Get module from caller if not provided.
     module = get_caller_module() if module is None else module
 
     # Relationship.
-    relationship = DataRelationship(
-        types=types,
-        subtypes=subtypes,
-        checked=checked,
-        module=module,
-        factory=factory,
-        serialized=serialized,
-        serializer=serializer,
-        deserializer=deserializer,
-        represented=represented,
-        compared=compared,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_attribute'"):
+        relationship = DataRelationship(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            compared=compared,
+        )
 
     # Make attribute.
-    attribute = DataAttribute(
-        relationship=relationship,
-        default=default,
-        default_factory=default_factory,
-        module=module,
-        required=required,
-        changeable=changeable,
-        deletable=deletable,
-        finalized=finalized,
-        abstracted=abstracted,
-    )  # type: DataAttribute[T]
+    with ReraiseContext((TypeError, ValueError), "defining 'data_attribute'"):
+        attribute = DataAttribute(
+            relationship=relationship,
+            default=default,
+            default_factory=default_factory,
+            module=module,
+            required=required,
+            changeable=changeable,
+            deletable=deletable,
+            finalized=finalized,
+            abstracted=abstracted,
+        )  # type: DataAttribute[T]
 
     return attribute
 
@@ -115,7 +117,7 @@ def data_attribute(
 def data_dict_attribute(
     types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
     subtypes=False,  # type: bool
-    checked=True,  # type: bool
+    checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
     factory=None,  # type: LazyFactory
     serialized=True,  # type: bool
@@ -139,7 +141,7 @@ def data_dict_attribute(
 ):
     # type: (...) -> DataAttribute[DictData[KT, VT]]
     """
-    Make auxiliary dictionary data class.
+    Make dictionary data attribute.
 
     :param types: Types.
     :param subtypes: Whether to accept subtypes.
@@ -150,7 +152,7 @@ def data_dict_attribute(
     :param serializer: Custom serializer.
     :param deserializer: Custom deserializer.
     :param represented: Whether should be represented.
-    :param compared: Whether the value should be leverage when comparing for equality.
+    :param compared: Whether the value should be leverage when comparing.
     :param key_types: Key types.
     :param key_subtypes: Whether to accept subtypes for the keys.
     :param key_checked: Whether to perform runtime type check for the keys.
@@ -164,31 +166,34 @@ def data_dict_attribute(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
-    :return: Dictionary data class.
+    :return: Dictionary data attribute.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     # Get module from caller if not provided.
     module = get_caller_module() if module is None else module
 
     # Make dictionary class.
-    dict_type = data_dict_cls(
-        types=types,
-        subtypes=subtypes,
-        checked=checked,
-        module=module,
-        factory=factory,
-        serialized=serialized,
-        serializer=None,
-        deserializer=None,
-        represented=represented,
-        compared=compared,
-        key_types=key_types,
-        key_subtypes=key_subtypes,
-        key_checked=key_checked,
-        key_factory=key_factory,
-        qual_name=qual_name,
-        unique=unique,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_dict_attribute'"):
+        dict_type = data_dict_cls(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=None,
+            deserializer=None,
+            represented=represented,
+            compared=compared,
+            key_types=key_types,
+            key_subtypes=key_subtypes,
+            key_checked=key_checked,
+            key_factory=key_factory,
+            qual_name=qual_name,
+            unique=unique,
+        )
 
     # Factory that forces the dictionary type.
     def dict_factory(initial=()):
@@ -202,37 +207,39 @@ def data_dict_attribute(
         default = {}
 
     # Relationship.
-    relationship = DataRelationship(
-        types=dict_type,
-        subtypes=False,
-        checked=checked,
-        module=module,
-        factory=dict_factory,
-        serialized=serialized,
-        serializer=serializer,
-        deserializer=deserializer,
-        represented=represented,
-        compared=compared,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_dict_attribute'"):
+        relationship = DataRelationship(
+            types=dict_type,
+            subtypes=False,
+            checked=checked,
+            module=module,
+            factory=dict_factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            compared=compared,
+        )
 
     # Attribute.
-    return DataAttribute(
-        relationship=relationship,
-        default=default,
-        default_factory=default_factory,
-        module=module,
-        required=required,
-        changeable=changeable,
-        deletable=deletable,
-        finalized=finalized,
-        abstracted=abstracted,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_dict_attribute'"):
+        return DataAttribute(
+            relationship=relationship,
+            default=default,
+            default_factory=default_factory,
+            module=module,
+            required=required,
+            changeable=changeable,
+            deletable=deletable,
+            finalized=finalized,
+            abstracted=abstracted,
+        )
 
 
 def data_list_attribute(
     types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
     subtypes=False,  # type: bool
-    checked=True,  # type: bool
+    checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
     factory=None,  # type: LazyFactory
     serialized=True,  # type: bool
@@ -252,7 +259,7 @@ def data_list_attribute(
 ):
     # type: (...) -> DataAttribute[ListData[T]]
     """
-    Make auxiliary list data class.
+    Make dictionary list attribute.
 
     :param types: Types.
     :param subtypes: Whether to accept subtypes.
@@ -263,7 +270,7 @@ def data_list_attribute(
     :param serializer: Custom serializer.
     :param deserializer: Custom deserializer.
     :param represented: Whether should be represented.
-    :param compared: Whether the value should be leverage when comparing for equality.
+    :param compared: Whether the value should be leverage when comparing.
     :param default: Default value.
     :param default_factory: Default value factory.
     :param required: Whether attribute is required to have a value or not.
@@ -273,27 +280,30 @@ def data_list_attribute(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
-    :return: Dictionary data class.
+    :return: List data attribute.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     # Get module from caller if not provided.
     module = get_caller_module() if module is None else module
 
     # Make list class.
-    list_type = data_list_cls(
-        types=types,
-        subtypes=subtypes,
-        checked=checked,
-        module=module,
-        factory=factory,
-        serialized=serialized,
-        serializer=None,
-        deserializer=None,
-        represented=represented,
-        compared=compared,
-        qual_name=qual_name,
-        unique=unique,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_list_attribute'"):
+        list_type = data_list_cls(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=None,
+            deserializer=None,
+            represented=represented,
+            compared=compared,
+            qual_name=qual_name,
+            unique=unique,
+        )
 
     # Factory that forces the list type.
     def list_factory(initial=()):
@@ -307,37 +317,39 @@ def data_list_attribute(
         default = {}
 
     # Relationship.
-    relationship = DataRelationship(
-        types=list_type,
-        subtypes=False,
-        checked=checked,
-        module=module,
-        factory=list_factory,
-        serialized=serialized,
-        serializer=serializer,
-        deserializer=deserializer,
-        represented=represented,
-        compared=compared,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_list_attribute'"):
+        relationship = DataRelationship(
+            types=list_type,
+            subtypes=False,
+            checked=checked,
+            module=module,
+            factory=list_factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            compared=compared,
+        )
 
     # Attribute.
-    return DataAttribute(
-        relationship=relationship,
-        default=default,
-        default_factory=default_factory,
-        module=module,
-        required=required,
-        changeable=changeable,
-        deletable=deletable,
-        finalized=finalized,
-        abstracted=abstracted,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_list_attribute'"):
+        return DataAttribute(
+            relationship=relationship,
+            default=default,
+            default_factory=default_factory,
+            module=module,
+            required=required,
+            changeable=changeable,
+            deletable=deletable,
+            finalized=finalized,
+            abstracted=abstracted,
+        )
 
 
 def data_set_attribute(
     types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
     subtypes=False,  # type: bool
-    checked=True,  # type: bool
+    checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
     factory=None,  # type: LazyFactory
     serialized=True,  # type: bool
@@ -357,7 +369,7 @@ def data_set_attribute(
 ):
     # type: (...) -> DataAttribute[SetData[T]]
     """
-    Make auxiliary set data class.
+    Make dictionary set attribute.
 
     :param types: Types.
     :param subtypes: Whether to accept subtypes.
@@ -368,7 +380,7 @@ def data_set_attribute(
     :param serializer: Custom serializer.
     :param deserializer: Custom deserializer.
     :param represented: Whether should be represented.
-    :param compared: Whether the value should be leverage when comparing for equality.
+    :param compared: Whether the value should be leverage when comparing.
     :param default: Default value.
     :param default_factory: Default value factory.
     :param required: Whether attribute is required to have a value or not.
@@ -378,27 +390,30 @@ def data_set_attribute(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
-    :return: Dictionary data class.
+    :return: Set data attribute.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     # Get module from caller if not provided.
     module = get_caller_module() if module is None else module
 
     # Make set class.
-    set_type = data_set_cls(
-        types=types,
-        subtypes=subtypes,
-        checked=checked,
-        module=module,
-        factory=factory,
-        serialized=serialized,
-        serializer=None,
-        deserializer=None,
-        represented=represented,
-        compared=compared,
-        qual_name=qual_name,
-        unique=unique,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_set_attribute'"):
+        set_type = data_set_cls(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=None,
+            deserializer=None,
+            represented=represented,
+            compared=compared,
+            qual_name=qual_name,
+            unique=unique,
+        )
 
     # Factory that forces the set type.
     def set_factory(initial=()):
@@ -412,37 +427,39 @@ def data_set_attribute(
         default = {}
 
     # Relationship.
-    relationship = DataRelationship(
-        types=set_type,
-        subtypes=False,
-        checked=checked,
-        module=module,
-        factory=set_factory,
-        serialized=serialized,
-        serializer=serializer,
-        deserializer=deserializer,
-        represented=represented,
-        compared=compared,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_set_attribute'"):
+        relationship = DataRelationship(
+            types=set_type,
+            subtypes=False,
+            checked=checked,
+            module=module,
+            factory=set_factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            compared=compared,
+        )
 
     # Attribute.
-    return DataAttribute(
-        relationship=relationship,
-        default=default,
-        default_factory=default_factory,
-        module=module,
-        required=required,
-        changeable=changeable,
-        deletable=deletable,
-        finalized=finalized,
-        abstracted=abstracted,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_set_attribute'"):
+        return DataAttribute(
+            relationship=relationship,
+            default=default,
+            default_factory=default_factory,
+            module=module,
+            required=required,
+            changeable=changeable,
+            deletable=deletable,
+            finalized=finalized,
+            abstracted=abstracted,
+        )
 
 
 def data_dict_cls(
     types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
     subtypes=False,  # type: bool
-    checked=True,  # type: bool
+    checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
     factory=None,  # type: LazyFactory
     serialized=True,  # type: bool
@@ -470,7 +487,7 @@ def data_dict_cls(
     :param serializer: Custom serializer.
     :param deserializer: Custom deserializer.
     :param represented: Whether should be represented.
-    :param compared: Whether the value should be leverage when comparing for equality.
+    :param compared: Whether the value should be leverage when comparing.
     :param key_types: Key types.
     :param key_subtypes: Whether to accept subtypes for the keys.
     :param key_checked: Whether to perform runtime type check for the keys.
@@ -478,45 +495,50 @@ def data_dict_cls(
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
     :return: Dictionary data class.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     # Get module from caller if not provided.
     module = get_caller_module() if module is None else module
 
     # Relationship.
-    relationship = DataRelationship(
-        types=types,
-        subtypes=subtypes,
-        checked=checked,
-        module=module,
-        factory=factory,
-        serialized=serialized,
-        serializer=serializer,
-        deserializer=deserializer,
-        represented=represented,
-        compared=compared,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_dict_cls'"):
+        relationship = DataRelationship(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            compared=compared,
+        )
 
     # Key relationship.
-    key_relationship = KeyRelationship(
-        types=key_types,
-        subtypes=key_subtypes,
-        checked=key_checked,
-        module=module,
-        factory=key_factory,
-    )
-    dct = {"_key_relationship": key_relationship}
+    with ReraiseContext((TypeError, ValueError), "defining 'data_dict_cls'"):
+        key_relationship = KeyRelationship(
+            types=key_types,
+            subtypes=key_subtypes,
+            checked=key_checked,
+            module=module,
+            factory=key_factory,
+        )
+        dct = {"_key_relationship": key_relationship}
 
     # Make class.
     base = DictData  # type: Type[DictData[KT, VT]]
-    cls = make_auxiliary_cls(
-        base,
-        relationship,
-        qual_name=qual_name,
-        module=module,
-        unique=unique,
-        dct=dct,
-    )
+    with ReraiseContext(TypeError, "defining 'data_dict_cls'"):
+        cls = make_auxiliary_cls(
+            base,
+            relationship,
+            qual_name=qual_name,
+            module=module,
+            unique=unique,
+            dct=dct,
+        )
 
     return cls
 
@@ -524,7 +546,7 @@ def data_dict_cls(
 def data_list_cls(
     types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
     subtypes=False,  # type: bool
-    checked=True,  # type: bool
+    checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
     factory=None,  # type: LazyFactory
     serialized=True,  # type: bool
@@ -548,38 +570,42 @@ def data_list_cls(
     :param serializer: Custom serializer.
     :param deserializer: Custom deserializer.
     :param represented: Whether should be represented.
-    :param compared: Whether the value should be leverage when comparing for equality.
+    :param compared: Whether the value should be leverage when comparing.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
     :return: List data class.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     # Get module from caller if not provided.
     module = get_caller_module() if module is None else module
 
     # Relationship.
-    relationship = DataRelationship(
-        types=types,
-        subtypes=subtypes,
-        checked=checked,
-        module=module,
-        factory=factory,
-        serialized=serialized,
-        serializer=serializer,
-        deserializer=deserializer,
-        represented=represented,
-        compared=compared,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_list_cls'"):
+        relationship = DataRelationship(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            compared=compared,
+        )
 
     # Make class.
     base = ListData  # type: Type[ListData[T]]
-    cls = make_auxiliary_cls(
-        base,
-        relationship,
-        qual_name=qual_name,
-        module=module,
-        unique=unique,
-    )
+    with ReraiseContext(TypeError, "defining 'data_list_cls'"):
+        cls = make_auxiliary_cls(
+            base,
+            relationship,
+            qual_name=qual_name,
+            module=module,
+            unique=unique,
+        )
 
     return cls
 
@@ -587,7 +613,7 @@ def data_list_cls(
 def data_set_cls(
     types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
     subtypes=False,  # type: bool
-    checked=True,  # type: bool
+    checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
     factory=None,  # type: LazyFactory
     serialized=True,  # type: bool
@@ -611,37 +637,41 @@ def data_set_cls(
     :param serializer: Custom serializer.
     :param deserializer: Custom deserializer.
     :param represented: Whether should be represented.
-    :param compared: Whether the value should be leverage when comparing for equality.
+    :param compared: Whether the value should be leverage when comparing.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
     :return: Set data class.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     # Get module from caller if not provided.
     module = get_caller_module() if module is None else module
 
     # Relationship.
-    relationship = DataRelationship(
-        types=types,
-        subtypes=subtypes,
-        checked=checked,
-        module=module,
-        factory=factory,
-        serialized=serialized,
-        serializer=serializer,
-        deserializer=deserializer,
-        represented=represented,
-        compared=compared,
-    )
+    with ReraiseContext((TypeError, ValueError), "defining 'data_set_cls'"):
+        relationship = DataRelationship(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            compared=compared,
+        )
 
     # Make class.
     base = SetData  # type: Type[SetData[T]]
-    cls = make_auxiliary_cls(
-        base,
-        relationship,
-        qual_name=qual_name,
-        module=module,
-        unique=unique,
-    )
+    with ReraiseContext(TypeError, "defining 'data_set_cls'"):
+        cls = make_auxiliary_cls(
+            base,
+            relationship,
+            qual_name=qual_name,
+            module=module,
+            unique=unique,
+        )
 
     return cls

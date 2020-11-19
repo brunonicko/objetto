@@ -52,7 +52,10 @@ def import_path(path):
         if not path:
             error = "can't import from empty path"
         else:
-            error = "import path '{}' does not specify a module name".format(path)
+            error = (
+                "import path '{}' does not specify a module name (missing '|' "
+                "separator between module path and qualified name)"
+            ).format(path)
         raise ValueError(error)
     elif path.startswith("."):
         error = "import path '{}' is not absolute".format(path)

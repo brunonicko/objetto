@@ -93,7 +93,7 @@ class Subject(object):
                 self.__receiving.add(observer)
                 try:
                     observer.__receive__(*self.__payload)
-                except BaseException:
+                except Exception:
                     exception_type, exception, traceback = exc_info()
                     exception_info = ObserverExceptionInfo(
                         observer=observer,
@@ -128,7 +128,7 @@ class Subject(object):
             self.__receiving.add(observer)
             try:
                 observer.__receive__(*self.__payload)
-            except BaseException:
+            except Exception:
                 exception_type, exception, traceback = exc_info()
                 exception_info = ObserverExceptionInfo(
                     observer=observer,
@@ -331,8 +331,8 @@ class ObserverExceptionInfo(
         "ObserverExceptionInfo",
         (
             ("observer", Observer),
-            ("exception_type", Optional[Type[BaseException]]),
-            ("exception", Optional[BaseException]),
+            ("exception_type", Optional[Type[Exception]]),
+            ("exception", Optional[Exception]),
             ("traceback", Optional[TracebackType]),
         ),
     )
