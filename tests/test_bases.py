@@ -2,7 +2,6 @@
 
 import copy
 import pickle
-import inspect
 
 import pytest
 import six
@@ -13,33 +12,33 @@ from objetto._bases import (
     FINAL_METHOD_TAG,
     INITIALIZING_TAG,
     Base,
+    BaseCollection,
+    BaseContainer,
+    BaseDict,
+    BaseHashable,
+    BaseInteractiveCollection,
+    BaseInteractiveDict,
+    BaseInteractiveList,
+    BaseInteractiveSet,
+    BaseIterable,
+    BaseList,
     BaseMeta,
+    BaseMutableCollection,
+    BaseMutableDict,
+    BaseMutableList,
+    BaseMutableSet,
+    BaseProtectedCollection,
+    BaseProtectedDict,
+    BaseProtectedList,
+    BaseProtectedSet,
+    BaseSet,
+    BaseSized,
     abstract_member,
     final,
     init,
     init_context,
     make_base_cls,
     simplify_member_names,
-    BaseHashable,
-    BaseSized,
-    BaseIterable,
-    BaseContainer,
-    BaseCollection,
-    BaseProtectedCollection,
-    BaseInteractiveCollection,
-    BaseMutableCollection,
-    BaseDict,
-    BaseProtectedDict,
-    BaseInteractiveDict,
-    BaseMutableDict,
-    BaseList,
-    BaseProtectedList,
-    BaseInteractiveList,
-    BaseMutableList,
-    BaseSet,
-    BaseProtectedSet,
-    BaseInteractiveSet,
-    BaseMutableSet,
 )
 
 
@@ -88,6 +87,7 @@ def test_initializing():
 
 def test_force_hash_declaration():
     with pytest.raises(TypeError):
+
         class MyBase(Base):
             def __eq__(self, other):
                 return False
@@ -307,14 +307,14 @@ def test_dir():
         ) = (get_var(),) * 4
         method, _method, __method, __method__ = (get_method(),) * 4
         class_method, _class_method, __class_method, __class_method__ = (
-                                                                            get_class_method(),
-                                                                        ) * 4
+            get_class_method(),
+        ) * 4
         static_method, _static_method, __static_method, __static_method__ = (
-                                                                                get_static_method(),
-                                                                            ) * 4
+            get_static_method(),
+        ) * 4
         property_method, _property_method, __property_method, __property_method__ = (
-                                                                                        get_property_method(),
-                                                                                    ) * 4
+            get_property_method(),
+        ) * 4
 
         def __init__(self):
             self.var = None
@@ -349,7 +349,10 @@ def test_required_overrides():
     def check_base(base, slotted_base):
         assert issubclass(slotted_base, slotted.SlottedABC)
         exclude = {
-            "__setstate__", "__getstate__", "__slots__", "_MutableMapping__marker"
+            "__setstate__",
+            "__getstate__",
+            "__slots__",
+            "_MutableMapping__marker",
         }
         assert issubclass(base, Base)
         assert issubclass(base, slotted_base)

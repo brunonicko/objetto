@@ -33,6 +33,7 @@ from slotted import (
 
 if TYPE_CHECKING:
     from typing import (
+        AbstractSet,
         Any,
         Dict,
         FrozenSet,
@@ -47,7 +48,6 @@ if TYPE_CHECKING:
         Optional,
         Sequence,
         Set,
-        AbstractSet,
         Tuple,
         Type,
         Union,

@@ -114,7 +114,9 @@ class Store(Data):
 
     state = data_attribute(BaseState, subtypes=True, checked=False)
     data = data_attribute((BaseData, type(None)), subtypes=True, checked=False)
-    metadata = data_dict_attribute(key_types=string_types, key_checked=False, checked=False)
+    metadata = data_dict_attribute(
+        key_types=string_types, key_checked=False, checked=False
+    )
 
     parent_ref = data_attribute(
         WeakReference, checked=False, default=WeakReference()

@@ -2,54 +2,54 @@
 """Mutable structures coordinated by an application."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, TypeVar, Generic, cast, overload
-from weakref import WeakKeyDictionary
+from contextlib import contextmanager
 from inspect import getmro
 from itertools import chain
-from contextlib import contextmanager
+from typing import TYPE_CHECKING, TypeVar, cast, overload
+from weakref import WeakKeyDictionary
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import string_types, with_metaclass, iteritems, integer_types, raise_from
+from six import integer_types, iteritems, raise_from, string_types, with_metaclass
 
 from ._application import Application
-from ._changes import BaseChange, Batch, BaseAtomicChange, ObjectUpdate
-from ._bases import MISSING, FINAL_METHOD_TAG, init_context, final, Base, make_base_cls
-from ._states import BaseState, DictState, ListState, SetState
-from ._data import DataRelationship, DataAttribute, BaseData, Data, InteractiveDictData
+from ._bases import FINAL_METHOD_TAG, MISSING, Base, final, init_context, make_base_cls
+from ._changes import Batch, ObjectUpdate
+from ._data import BaseData, Data, DataAttribute, DataRelationship, InteractiveDictData
+from ._states import BaseState, DictState, SetState
 from ._structures import (
-    BaseRelationship,
     BaseAttribute,
-    BaseStructureMeta,
-    BaseStructure,
-    BaseMutableStructure,
-    BaseAttributeStructureMeta,
     BaseAttributeStructure,
+    BaseAttributeStructureMeta,
+    BaseMutableStructure,
+    BaseRelationship,
+    BaseStructure,
+    BaseStructureMeta,
 )
-from .utils.type_checking import import_types, assert_is_instance, assert_is_callable
-from .utils.reraise_context import ReraiseContext
 from .utils.custom_repr import custom_mapping_repr
+from .utils.reraise_context import ReraiseContext
+from .utils.type_checking import assert_is_callable, assert_is_instance, import_types
 from .utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
     from typing import (
         Any,
+        Callable,
         Counter,
         Dict,
+        Iterable,
+        Iterator,
+        List,
+        Mapping,
+        MutableMapping,
         Optional,
         Set,
+        Tuple,
         Type,
         Union,
-        Tuple,
-        Iterator,
-        Iterable,
-        Callable,
-        Mapping,
-        List,
-        MutableMapping,
     )
 
     from .utils.factoring import LazyFactory
@@ -221,7 +221,9 @@ class ObjectRelationship(BaseRelationship):
                     if isinstance(lazy, string_types):
                         types.add(lazy + ".Data")
                     else:
-                        types.add(typ.Data)  # TODO: what if .Data is None (for auxiliary objs)?
+                        types.add(
+                            typ.Data
+                        )  # TODO: what if .Data is None (for auxiliary objs)?
                 else:
                     types.add(typ)
             self.__data_relationship = DataRelationship(
@@ -251,6 +253,7 @@ class HistoryDescriptor(Base):
     :param size: How many changes to remember.
     :raises TypeError: Invalid 'size' parameter type.
     """
+
     __slots__ = ("__size",)
 
     def __init__(self, size=None):
@@ -349,6 +352,7 @@ class HistoryDescriptor(Base):
 
 class BaseObjectFunctions(Base):
     """Base static functions for :class:`BaseObject`."""
+
     __slots__ = ()
 
 
@@ -779,14 +783,16 @@ class ObjectAttribute(BaseAttribute[T]):
         :return: Dictionary.
         """
         dct = super(ObjectAttribute, self).to_dict()
-        dct.update({
-            "delegated": self.delegated,
-            "dependencies": self.dependencies,
-            "deserialize_to": self.deserialize_to,
-            "fget": self.fget,
-            "fset": self.fset,
-            "fdel": self.fdel,
-        })
+        dct.update(
+            {
+                "delegated": self.delegated,
+                "dependencies": self.dependencies,
+                "deserialize_to": self.deserialize_to,
+                "fget": self.fget,
+                "fset": self.fset,
+                "fdel": self.fdel,
+            }
+        )
         return dct
 
     def set_value(self, instance, value):
@@ -949,6 +955,7 @@ class ObjectAttribute(BaseAttribute[T]):
 
 class ObjectFunctions(BaseObjectFunctions):
     """Base static functions for :class:`Object`."""
+
     __slots__ = ()
 
     @staticmethod
@@ -979,9 +986,7 @@ class ObjectFunctions(BaseObjectFunctions):
                 raise_from(exc, None)
                 raise exc
             initial[name] = attribute.relationship.fabricate_value(
-                value,
-                factory=factory,
-                **kwargs
+                value, factory=factory, **kwargs
             )
 
         for name, attribute in iteritems(cls._attributes):
@@ -1047,9 +1052,7 @@ class ObjectFunctions(BaseObjectFunctions):
                     else:
                         if factory:
                             value = attribute.relationship.fabricate_value(
-                                value,
-                                factory=True,
-                                **{"app": obj.app}
+                                value, factory=True, **{"app": obj.app}
                             )
                     intermediary_object.__.set_value(name, value, factory=False)
 
@@ -1198,6 +1201,7 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
     :raises TypeError: Attribute is delegated but no delegates were defined.
     :raises TypeError: Attribute declares a dependency which is not available.
     """
+
     __data_type = WeakKeyDictionary({})  # type: MutableMapping[ObjectMeta, Type[Data]]
     __attribute_dependencies = WeakKeyDictionary(
         {}
@@ -1258,7 +1262,8 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
 
         def _resolve(nm, deps):
             return deps[nm].update(
-                chain.from_iterable(_resolve(n, deps) for n in deps[nm]))
+                chain.from_iterable(_resolve(n, deps) for n in deps[nm])
+            )
 
         def _flatten(deps):
             flattened = {}
@@ -1517,9 +1522,7 @@ class IntermediaryObjectInternals(Base):
                 with self.__getter_context(attribute):
                     value = attribute.fget(self.iobj)
                 value = attribute.relationship.fabricate_value(
-                    value,
-                    factory=True,
-                    **{"app": self.app}
+                    value, factory=True, **{"app": self.app}
                 )
                 self.__set_new_value(name, value)
                 return value
@@ -1551,9 +1554,7 @@ class IntermediaryObjectInternals(Base):
 
         if factory:
             value = attribute.relationship.fabricate_value(
-                value,
-                factory=True,
-                **{"app": self.app}
+                value, factory=True, **{"app": self.app}
             )
         if attribute.delegated:
             attribute.fset(self.iobj, value)

@@ -15,10 +15,10 @@ except ImportError:
 from six import iteritems, raise_from, string_types, with_metaclass
 
 from ._bases import (
-    MISSING,
     ABSTRACT_TAG,
     FINAL_METHOD_TAG,
     INITIALIZING_TAG,
+    MISSING,
     AbstractMember,
     Base,
     BaseHashable,

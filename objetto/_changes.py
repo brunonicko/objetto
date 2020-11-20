@@ -22,6 +22,7 @@ class BaseChange(Data):
     name = data_attribute(
         string_types, checked=False, abstracted=True
     )  # type: DataAttribute[str]
+
     obj = data_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False, finalized=True
     )  # type: Final[DataAttribute[BaseObject]]
@@ -32,6 +33,7 @@ class Batch(BaseChange):
     name = data_attribute(
         string_types, checked=False, abstracted=True
     )  # type: DataAttribute[str]
+
     metadata = data_dict_attribute(
         key_types=string_types, key_checked=False
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
