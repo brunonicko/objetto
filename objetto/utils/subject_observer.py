@@ -345,3 +345,4 @@ class ObserverExceptionInfo(
     :param exception: Exception.
     :param traceback: Traceback.
     """
+    __slots__ = ()
