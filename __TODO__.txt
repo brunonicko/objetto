@@ -1,0 +1,11 @@
+# TODO: changes
+# TODO: objects and application
+# TODO: application root descriptors
+# TODO: history object
+# TODO: history reaction conflict validation
+# TODO: Single subject (per application) with filtering by object
+# TODO: tests
+# TODO: documentation
+# TODO: squash commits, merge branch
+# TODO: github actions
+# TODO: release to pypi!
