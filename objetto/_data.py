@@ -11,10 +11,9 @@ except ImportError:
 
 from six import iteritems, iterkeys, itervalues, string_types, with_metaclass
 
-from ._bases import final, init_context
+from ._bases import MISSING, final, init_context
 from ._states import BaseState, DictState, ListState, SetState
 from ._structures import (
-    MISSING,
     BaseAttribute,
     BaseAttributeMeta,
     BaseAttributeStructure,
@@ -1623,6 +1622,18 @@ class SetData(
         """
         return super(SetData, cls).__make__(state)
 
+    @classmethod
+    @final
+    def _from_iterable(cls, iterable):
+        # type: (Type[_SD], Iterable) -> _SD
+        """
+        Make set from iterable.
+
+        :param iterable: Iterable.
+        :return: Set data.
+        """
+        return cls(iterable)
+
     @final
     def __init__(self, initial=()):
         # type: (Iterable[T]) -> None
@@ -1735,15 +1746,16 @@ class SetData(
         return type(self).__make__(self._state.add(fabricated_value))
 
     @final
-    def _discard(self, value):
+    def _discard(self, *values):
         # type: (_SD, T) -> _SD
         """
-        Discard value if it exists.
+        Discard value(s).
 
-        :param value: Value.
+        :param values: Value(s).
         :return: Transformed.
+        :raises ValueError: No values provided.
         """
-        return type(self).__make__(self._state.discard(value))
+        return type(self).__make__(self._state.discard(*values))
 
     @final
     def _remove(self, *values):
@@ -1840,6 +1852,16 @@ class SetData(
         :return: Difference.
         """
         return self._state.difference(iterable)
+
+    def inverse_difference(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get an iterable's difference to this.
+
+        :param iterable: Iterable.
+        :return: Inverse Difference.
+        """
+        return self._state.inverse_difference(iterable)
 
     def symmetric_difference(self, iterable):
         # type: (Iterable) -> SetState

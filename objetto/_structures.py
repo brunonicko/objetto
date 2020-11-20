@@ -15,6 +15,7 @@ except ImportError:
 from six import iteritems, raise_from, string_types, with_metaclass
 
 from ._bases import (
+    MISSING,
     ABSTRACT_TAG,
     FINAL_METHOD_TAG,
     INITIALIZING_TAG,
@@ -69,7 +70,6 @@ if TYPE_CHECKING:
     from .utils.type_checking import LazyTypes
 
 __all__ = [
-    "MISSING",
     "make_auxiliary_cls",
     "BaseRelationship",
     "UniqueDescriptor",
@@ -106,8 +106,6 @@ __all__ = [
 _SERIALIZED_CLASS_KEY = "__class__"
 _ESCAPED_SERIALIZED_CLASS_KEY = "\\__class__"
 _SERIALIZED_VALUE_KEY = "value"
-
-MISSING = object()
 
 
 T = TypeVar("T")  # Any type.

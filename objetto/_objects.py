@@ -17,11 +17,10 @@ from six import string_types, with_metaclass, iteritems, integer_types, raise_fr
 
 from ._application import Application
 from ._changes import BaseChange, Batch, BaseAtomicChange, ObjectUpdate
-from ._bases import FINAL_METHOD_TAG, init_context, final, Base, make_base_cls
+from ._bases import MISSING, FINAL_METHOD_TAG, init_context, final, Base, make_base_cls
 from ._states import BaseState, DictState, ListState, SetState
 from ._data import DataRelationship, DataAttribute, BaseData, Data, InteractiveDictData
 from ._structures import (
-    MISSING,
     BaseRelationship,
     BaseAttribute,
     BaseStructureMeta,

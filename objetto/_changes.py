@@ -12,7 +12,7 @@ from .data import Data, SetData, data_attribute, data_dict_attribute, data_set_a
 if TYPE_CHECKING:
     from typing import Any, Callable, Final
 
-    from ._data import DataAttribute, DictData
+    from ._data import DataAttribute, InteractiveDictData
     from ._objects import BaseObject
 
 __all__ = ["BaseChange", "Batch", "BaseAtomicChange", "ObjectUpdate"]
@@ -34,7 +34,7 @@ class Batch(BaseChange):
     )  # type: DataAttribute[str]
     metadata = data_dict_attribute(
         key_types=string_types, key_checked=False
-    )  # type: DataAttribute[DictData[str, Any]]
+    )  # type: DataAttribute[InteractiveDictData[str, Any]]
 
 
 class BaseAtomicChange(BaseChange):
@@ -75,8 +75,8 @@ class ObjectUpdate(BaseAtomicChange):
 
     old_values = data_dict_attribute(
         checked=False
-    )  # type: DataAttribute[DictData[str, Any]]
+    )  # type: DataAttribute[InteractiveDictData[str, Any]]
 
     new_values = data_dict_attribute(
         checked=False
-    )  # type: DataAttribute[DictData[str, Any]]
+    )  # type: DataAttribute[InteractiveDictData[str, Any]]

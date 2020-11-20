@@ -11,6 +11,8 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
+from six import string_types
+
 from ._bases import Base
 from ._data import BaseData, DataAttribute
 from ._states import BaseState

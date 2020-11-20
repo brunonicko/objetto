@@ -2,9 +2,11 @@
 
 import copy
 import pickle
+import inspect
 
 import pytest
 import six
+import slotted
 
 from objetto._bases import (
     FINAL_CLASS_TAG,
@@ -18,6 +20,26 @@ from objetto._bases import (
     init_context,
     make_base_cls,
     simplify_member_names,
+    BaseHashable,
+    BaseSized,
+    BaseIterable,
+    BaseContainer,
+    BaseCollection,
+    BaseProtectedCollection,
+    BaseInteractiveCollection,
+    BaseMutableCollection,
+    BaseDict,
+    BaseProtectedDict,
+    BaseInteractiveDict,
+    BaseMutableDict,
+    BaseList,
+    BaseProtectedList,
+    BaseInteractiveList,
+    BaseMutableList,
+    BaseSet,
+    BaseProtectedSet,
+    BaseInteractiveSet,
+    BaseMutableSet,
 )
 
 
@@ -65,9 +87,7 @@ def test_initializing():
 
 
 def test_force_hash_declaration():
-
     with pytest.raises(TypeError):
-
         class MyBase(Base):
             def __eq__(self, other):
                 return False
@@ -185,7 +205,6 @@ def test_ne():
     assert MyBase(True) != MyBase(False)
 
     class MyOtherBase(MyBase):
-
         __hash__ = None
 
         def __eq__(self, other):
@@ -288,14 +307,14 @@ def test_dir():
         ) = (get_var(),) * 4
         method, _method, __method, __method__ = (get_method(),) * 4
         class_method, _class_method, __class_method, __class_method__ = (
-            get_class_method(),
-        ) * 4
+                                                                            get_class_method(),
+                                                                        ) * 4
         static_method, _static_method, __static_method, __static_method__ = (
-            get_static_method(),
-        ) * 4
+                                                                                get_static_method(),
+                                                                            ) * 4
         property_method, _property_method, __property_method, __property_method__ = (
-            get_property_method(),
-        ) * 4
+                                                                                        get_property_method(),
+                                                                                    ) * 4
 
         def __init__(self):
             self.var = None
@@ -324,6 +343,117 @@ def test_abstract_member():
 
     obj = ConcreteClass()
     assert obj
+
+
+def test_required_overrides():
+    def check_base(base, slotted_base):
+        assert issubclass(slotted_base, slotted.SlottedABC)
+        exclude = {
+            "__setstate__", "__getstate__", "__slots__", "_MutableMapping__marker"
+        }
+        assert issubclass(base, Base)
+        assert issubclass(base, slotted_base)
+        for open_attribute in getattr(base, "_BaseMeta__open_attributes")[base]:
+            if open_attribute in exclude:
+                continue
+            member = getattr(base, open_attribute)
+            try:
+                original = getattr(slotted_base, open_attribute)
+            except AttributeError:
+                continue
+            object_original = getattr(object, open_attribute, None)
+            if member is None and original is None:
+                continue
+            if member is original and member is not object_original:
+                raise AssertionError(
+                    "'{}' does not override '{}.{}'".format(
+                        base.__name__, slotted_base.__name__, open_attribute
+                    )
+                )
+
+    bases = (
+        (BaseHashable, slotted.SlottedHashable),
+        (BaseSized, slotted.SlottedSized),
+        (BaseIterable, slotted.SlottedIterable),
+        (BaseContainer, slotted.SlottedContainer),
+        (BaseDict, slotted.SlottedMapping),
+        (BaseMutableDict, slotted.SlottedMutableMapping),
+        (BaseList, slotted.SlottedSequence),
+        (BaseMutableList, slotted.SlottedMutableSequence),
+        (BaseSet, slotted.SlottedSet),
+        (BaseMutableSet, slotted.SlottedMutableSet),
+    )
+
+    for b, s in bases:
+        check_base(b, s)
+
+
+def test_inheritance():
+
+    assert issubclass(BaseMeta, slotted.SlottedABCMeta)
+    assert issubclass(Base, slotted.SlottedABC)
+    assert isinstance(Base, BaseMeta)
+
+    assert issubclass(BaseHashable, Base)
+    assert issubclass(BaseHashable, slotted.SlottedHashable)
+
+    assert issubclass(BaseSized, Base)
+    assert issubclass(BaseSized, slotted.SlottedSized)
+
+    assert issubclass(BaseIterable, Base)
+    assert issubclass(BaseIterable, slotted.SlottedIterable)
+
+    assert issubclass(BaseContainer, Base)
+    assert issubclass(BaseContainer, slotted.SlottedContainer)
+
+    assert issubclass(BaseCollection, BaseContainer)
+    assert issubclass(BaseCollection, BaseSized)
+    assert issubclass(BaseCollection, BaseIterable)
+
+    assert issubclass(BaseProtectedCollection, BaseCollection)
+    assert issubclass(BaseInteractiveCollection, BaseProtectedCollection)
+    assert issubclass(BaseMutableCollection, BaseProtectedCollection)
+    assert not issubclass(BaseMutableCollection, BaseInteractiveCollection)
+    assert not issubclass(BaseInteractiveCollection, BaseMutableCollection)
+
+    assert issubclass(BaseDict, BaseCollection)
+    assert issubclass(BaseDict, slotted.SlottedMapping)
+    assert issubclass(BaseProtectedDict, BaseProtectedCollection)
+    assert issubclass(BaseInteractiveDict, BaseInteractiveCollection)
+    assert issubclass(BaseMutableDict, BaseMutableCollection)
+    assert issubclass(BaseMutableDict, slotted.SlottedMutableMapping)
+
+    assert issubclass(BaseProtectedDict, BaseDict)
+    assert issubclass(BaseInteractiveDict, BaseProtectedDict)
+    assert issubclass(BaseMutableDict, BaseProtectedDict)
+    assert not issubclass(BaseMutableDict, BaseInteractiveDict)
+    assert not issubclass(BaseInteractiveDict, BaseMutableDict)
+
+    assert issubclass(BaseList, BaseCollection)
+    assert issubclass(BaseList, slotted.SlottedSequence)
+    assert issubclass(BaseProtectedList, BaseProtectedCollection)
+    assert issubclass(BaseInteractiveList, BaseInteractiveCollection)
+    assert issubclass(BaseMutableList, BaseMutableCollection)
+    assert issubclass(BaseMutableList, slotted.SlottedMutableSequence)
+
+    assert issubclass(BaseProtectedList, BaseList)
+    assert issubclass(BaseInteractiveList, BaseProtectedList)
+    assert issubclass(BaseMutableList, BaseProtectedList)
+    assert not issubclass(BaseMutableList, BaseInteractiveList)
+    assert not issubclass(BaseInteractiveList, BaseMutableList)
+
+    assert issubclass(BaseSet, BaseCollection)
+    assert issubclass(BaseSet, slotted.SlottedSet)
+    assert issubclass(BaseProtectedSet, BaseProtectedCollection)
+    assert issubclass(BaseInteractiveSet, BaseInteractiveCollection)
+    assert issubclass(BaseMutableSet, BaseMutableCollection)
+    assert issubclass(BaseMutableSet, slotted.SlottedMutableSet)
+
+    assert issubclass(BaseProtectedSet, BaseSet)
+    assert issubclass(BaseInteractiveSet, BaseProtectedSet)
+    assert issubclass(BaseMutableSet, BaseProtectedSet)
+    assert not issubclass(BaseMutableSet, BaseInteractiveSet)
+    assert not issubclass(BaseInteractiveSet, BaseMutableSet)
 
 
 if __name__ == "__main__":

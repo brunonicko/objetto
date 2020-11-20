@@ -8,6 +8,11 @@ from typing import TYPE_CHECKING, Callable, Generic, TypeVar, cast, final, overl
 from uuid import uuid4
 from weakref import WeakKeyDictionary, WeakValueDictionary
 
+try:
+    import collections.abc as collections_abc
+except ImportError:
+    import collections as collections_abc  # type: ignore
+
 from decorator import decorator
 from qualname import qualname  # type: ignore
 from six import iteritems, with_metaclass
@@ -42,6 +47,7 @@ if TYPE_CHECKING:
         Optional,
         Sequence,
         Set,
+        AbstractSet,
         Tuple,
         Type,
         Union,
@@ -49,6 +55,7 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "MISSING",
     "ABSTRACT_TAG",
     "FINAL_CLASS_TAG",
     "FINAL_METHOD_TAG",
@@ -90,6 +97,7 @@ VT = TypeVar("VT")  # Value type.
 T_co = TypeVar("T_co", covariant=True)  # Any type covariant containers.
 VT_co = TypeVar("VT_co", covariant=True)  # Value type covariant containers.
 
+MISSING = object()
 ABSTRACT_TAG = "__isabstractmethod__"
 FINAL_CLASS_TAG = "__isfinalclass__"
 FINAL_METHOD_TAG = "__isfinalmethod__"
@@ -102,7 +110,8 @@ __base_cls_cache = WeakValueDictionary()  # type: MutableMapping[str, Type[Base]
 def _final(obj):
     # type: (F) -> F
     """
-    Final decorator that enables runtime checking for :class:`Base` classes.
+    Decorator based on :func:`typing.final` that enables runtime checking for
+    :class:`Base` classes.
 
     .. code:: python
 
@@ -112,7 +121,6 @@ def _final(obj):
         ... class FinalClass(Base):  # final class
         ...     pass
         ...
-
         >>> class Class(Base):
         ...     @final
         ...     def final_method(self):  # final method
@@ -176,14 +184,18 @@ def init(func, *args, **kwargs):
     return result
 
 
+# noinspection PyTypeChecker
+_B = TypeVar("_B", bound="Base")
+
+
 def _make_base_cls(
-    base=None,  # type: Optional[Type[T]]
+    base=None,  # type: Optional[Type[_B]]
     qual_name=None,  # type: Optional[str]
     module=None,  # type: Optional[str]
     dct=None,  # type: Optional[Mapping[str, Any]]
     uuid=None,  # type: Optional[str]
 ):
-    # type: (...) -> Type[T]
+    # type: (...) -> Type[_B]
     """
     Make a subclass of :class:`Base` on the fly.
 
@@ -197,17 +209,19 @@ def _make_base_cls(
 
     # Get base.
     if base is None:
-        base = Base
+        _base = Base
+    else:
+        _base = cast("Type[_B]", base)
 
     # Get name.
-    qual_name = qual_name or base.__fullname__ or base.__name__ or ""
+    qual_name = qual_name or _base.__fullname__ or _base.__name__ or ""
     name = qual_name.split(".")[-1]
 
     # Get module.
-    module = module or base.__module__
+    module = module or _base.__module__
 
     # Get metaclass and uuid.
-    mcs = type(base)
+    mcs = type(_base)
     uuid = str(uuid4()) if uuid is None else uuid
 
     # Copy dct.
@@ -216,7 +230,7 @@ def _make_base_cls(
     # Define reduce method for pickling instances of the subclass.
     def __reduce__(self):
         state = self.__getstate__()
-        return _make_base_instance, (base, qual_name, module, state, dct_copy, uuid)
+        return _make_base_instance, (_base, qual_name, module, state, dct_copy, uuid)
 
     # Assemble class dict by copying dct once again.
     cls_dct = dct_copy.copy()  # type: Dict[str, Any]
@@ -228,19 +242,19 @@ def _make_base_cls(
     cls_dct.update(cls_dct_update)
 
     # Make new subclass and cache it by UUID.
-    cls = __base_cls_cache[uuid] = cast("BaseMeta", mcs)(name, (base,), cls_dct)
+    cls = __base_cls_cache[uuid] = cast("BaseMeta", mcs)(name, (_base,), cls_dct)
     return cls
 
 
 def _make_base_instance(
-    base=None,  # type: Optional[Type[Base]]
+    base=None,  # type: Optional[Type[_B]]
     qual_name=None,  # type: Optional[str]
     module=None,  # type: Optional[str]
     state=None,  # type: Optional[Dict[str, Any]]
     dct=None,  # type: Optional[Mapping[str, Any]]
     uuid=None,  # type: Optional[str]
 ):
-    # type: (...) -> Base
+    # type: (...) -> _B
     """
     Make an instance of a subclass of :class:`Base` on the fly.
 
@@ -270,19 +284,19 @@ def _make_base_instance(
         )
 
     # Make new instance and unpickle its state.
-    self = cast("Base", cls.__new__(cls))
+    self = cast("_B", cls.__new__(cls))
     self.__setstate__(state or {})
 
     return self
 
 
 def make_base_cls(
-    base=None,  # type: Optional[Type[T]]
+    base=None,  # type: Optional[Type[_B]]
     qual_name=None,  # type: Optional[str]
     module=None,  # type: Optional[str]
     dct=None,  # type: Optional[Mapping[str, Any]]
 ):
-    # type: (...) -> Type[T]
+    # type: (...) -> Type[_B]
     """
     Make a subclass of :class:`Base` on the fly.
 
@@ -312,6 +326,7 @@ class BaseMeta(SlottedABCMeta):
 
     @staticmethod
     def __new__(mcs, name, bases, dct):
+        """Make :class:`BaseMeta` class."""
         dct = dict(dct)
 
         # Force '__hash__' to be declared if '__eq__' is declared.
@@ -449,7 +464,7 @@ class BaseMeta(SlottedABCMeta):
     @property
     @final
     def __fullname__(cls):
-        # type: () -> Optional[str]
+        # type: () -> str
         """
         Get qualified class name if possible, fall back to class name otherwise.
 
@@ -770,6 +785,27 @@ class BaseDict(BaseCollection[KT], SlottedMapping, Generic[KT, VT_co]):
     __slots__ = ()
 
     @abstractmethod
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __eq__(self, other):
+        # type: (object) -> bool
+        """
+        Compare for equality.
+
+        :param other: Another object.
+        :return: True if equal.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def __reversed__(self):
         # type: () -> Iterator[KT]
         """
@@ -1044,14 +1080,15 @@ class BaseMutableDict(
         self._clear()
 
     @abstractmethod
-    def pop(self, key, fallback=None):
+    def pop(self, key, fallback=MISSING):
         # type: (KT, Any) -> Union[VT, Any]
         """
-        Pop value for key and discard it, return fallback value if key is not present.
+        Get value for key and remove it, return fallback value if key is not present.
 
         :param key: Key.
         :param fallback: Fallback value.
         :return: Value or fallback value.
+        :raises KeyError: Key is not present and fallback value not provided.
         """
         raise NotImplementedError()
 
@@ -1140,6 +1177,27 @@ class BaseList(BaseCollection[T_co], SlottedSequence):
     """Base list collection."""
 
     __slots__ = ()
+
+    @abstractmethod
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def __eq__(self, other):
+        # type: (object) -> bool
+        """
+        Compare for equality.
+
+        :param other: Another object.
+        :return: True if equal.
+        """
+        raise NotImplementedError()
 
     @abstractmethod
     def __reversed__(self):
@@ -1415,6 +1473,17 @@ class BaseMutableList(
 
     __slots__ = ()
 
+    @abstractmethod
+    def __iadd__(self, iterable):
+        # type: (Iterable[T_co]) -> MutableSequence[T_co]
+        """
+        In place addition.
+
+        :param iterable: Another iterable.
+        :return: Added list.
+        """
+        raise NotImplementedError()
+
     @overload
     @abstractmethod
     def __getitem__(self, index):
@@ -1580,6 +1649,199 @@ class BaseSet(SlottedSet, BaseCollection[T_co], Generic[T_co]):
     __slots__ = ()
 
     @abstractmethod
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        raise NotImplementedError()
+
+    @final
+    def __le__(self, other):
+        # type: (AbstractSet) -> bool
+        """
+        Less equal operator (self <= other).
+
+        :param other: Another set or any object.
+        :return: True if considered less equal.
+        """
+        if not isinstance(other, collections_abc.Set):
+            return NotImplemented
+        if type(other) not in (set, frozenset):
+            other = set(other)
+        return set(self).__le__(other)
+
+    @final
+    def __lt__(self, other):
+        # type: (AbstractSet) -> bool
+        """
+        Less than operator: `self < other`.
+
+        :param other: Another set or any object.
+        :return: True if considered less than.
+        """
+        if not isinstance(other, collections_abc.Set):
+            return NotImplemented
+        if type(other) not in (set, frozenset):
+            other = set(other)
+        return set(self).__lt__(other)
+
+    @final
+    def __gt__(self, other):
+        # type: (AbstractSet) -> bool
+        """
+        Greater than operator: `self > other`.
+
+        :param other: Another set or any object.
+        :return: True if considered greater than.
+        """
+        if not isinstance(other, collections_abc.Set):
+            return NotImplemented
+        if type(other) not in (set, frozenset):
+            other = set(other)
+        return set(self).__gt__(other)
+
+    @final
+    def __ge__(self, other):
+        # type: (AbstractSet) -> bool
+        """
+        Greater equal operator: `self >= other`.
+
+        :param other: Another set or any object.
+        :return: True if considered greater equal.
+        """
+        if not isinstance(other, collections_abc.Set):
+            return NotImplemented
+        if type(other) not in (set, frozenset):
+            other = set(other)
+        return set(self).__ge__(other)
+
+    @final
+    def __and__(self, other):
+        """
+        Get intersection: `self & other`.
+
+        :param other: Iterable or any other object.
+        :return: Intersection or `NotImplemented` if not an iterable.
+        """
+        if not isinstance(other, collections_abc.Iterable):
+            return NotImplemented
+        return self.intersection(other)
+
+    @final
+    def __rand__(self, other):
+        """
+        Get intersection: `other & self`.
+
+        :param other: Iterable or any other object.
+        :return: Intersection or `NotImplemented` if not an iterable.
+        """
+        return self.__and__(other)
+
+    @final
+    def __sub__(self, other):
+        """
+        Get difference: `self - other`.
+
+        :param other: Iterable or any other object.
+        :return: Difference or `NotImplemented` if not an iterable.
+        """
+        if not isinstance(other, collections_abc.Iterable):
+            return NotImplemented
+        return self.difference(other)
+
+    @final
+    def __rsub__(self, other):
+        """
+        Get inverse difference: `other - self`.
+
+        :param other: Iterable or any other object.
+        :return: Inverse difference or `NotImplemented` if not an iterable.
+        """
+        if not isinstance(other, collections_abc.Iterable):
+            return NotImplemented
+        return self.inverse_difference(other)
+
+    @final
+    def __or__(self, other):
+        """
+        Get union: `self | other`.
+
+        :param other: Iterable or any other object.
+        :return: Union or `NotImplemented` if not an iterable.
+        """
+        if not isinstance(other, collections_abc.Iterable):
+            return NotImplemented
+        return self.union(other)
+
+    @final
+    def __ror__(self, other):
+        """
+        Get union: `other | self`.
+
+        :param other: Iterable or any other object.
+        :return: Union or `NotImplemented` if not an iterable.
+        """
+        return self.__or__(other)
+
+    @final
+    def __xor__(self, other):
+        """
+        Get symmetric difference: `self ^ other`.
+
+        :param other: Iterable or any other object.
+        :return: Symmetric difference or `NotImplemented` if not an iterable.
+        """
+        if not isinstance(other, collections_abc.Iterable):
+            return NotImplemented
+        return self.symmetric_difference(other)
+
+    @final
+    def __rxor__(self, other):
+        """
+        Get symmetric difference: `other ^ self`.
+
+        :param other: Iterable or any other object.
+        :return: Symmetric difference or `NotImplemented` if not an iterable.
+        """
+        return self.__xor__(other)
+
+    @abstractmethod
+    def __eq__(self, other):
+        # type: (object) -> bool
+        """
+        Compare for equality.
+
+        :param other: Another object.
+        :return: True if equal.
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    @abstractmethod
+    def _from_iterable(cls, iterable):
+        # type: (Iterable) -> BaseSet
+        """
+        Make set from iterable.
+
+        :param iterable: Iterable.
+        :return: Set.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _hash(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
     def isdisjoint(self, iterable):
         # type: (Iterable) -> bool
         """
@@ -1656,6 +1918,17 @@ class BaseSet(SlottedSet, BaseCollection[T_co], Generic[T_co]):
         """
         raise NotImplementedError()
 
+    @abstractmethod
+    def inverse_difference(self, iterable):
+        # type: (Iterable) -> BaseSet
+        """
+        Get an iterable's difference to this.
+
+        :param iterable: Iterable.
+        :return: Inverse Difference.
+        """
+        raise NotImplementedError()
+
 
 # noinspection PyTypeChecker
 _BPS = TypeVar("_BPS", bound="BaseProtectedSet")
@@ -1678,13 +1951,14 @@ class BaseProtectedSet(BaseSet[T], BaseProtectedCollection[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def _discard(self, value):
+    def _discard(self, *values):
         # type: (_BPS, T) -> _BPS
         """
-        Discard value if it exists.
+        Discard value(s).
 
-        :param value: Value.
+        :param value: Value(s).
         :return: Transformed.
+        :raises ValueError: No values provided.
         """
         raise NotImplementedError()
 
@@ -1748,15 +2022,16 @@ class BaseInteractiveSet(BaseProtectedSet[T], BaseInteractiveCollection[T]):
         return self._add(value)
 
     @final
-    def discard(self, value):
+    def discard(self, *values):
         # type: (_BIS, T) -> _BIS
         """
-        Discard value if it exists.
+        Discard value(s).
 
-        :param value: Value.
+        :param values: Value(s).
         :return: Transformed.
+        :raises ValueError: No values provided.
         """
-        return self._discard(value)
+        return self._discard(*values)
 
     @final
     def remove(self, *values):
@@ -1800,6 +2075,53 @@ class BaseMutableSet(SlottedMutableSet, BaseProtectedSet[T], BaseMutableCollecti
     """Base mutable set collection."""
 
     __slots__ = ()
+
+    @final
+    def __iand__(self, iterable):
+        """
+        Intersect in place: `self &= iterable`.
+
+        :param iterable: Iterable.
+        :return: This mutable set.
+        """
+        self.intersection_update(iterable)
+        return self
+
+    @final
+    def __isub__(self, iterable):
+        """
+        Difference in place: `self -= iterable`.
+
+        :param iterable: Iterable.
+        :return: This mutable set.
+        """
+        self.difference(iterable)
+        return self
+
+    @final
+    def __ior__(self, iterable):
+        """
+        Update in place: `self |= iterable`.
+
+        :param iterable: Iterable.
+        :return: This mutable set.
+        """
+        self.update(iterable)
+        return self
+
+    @final
+    def __ixor__(self, iterable):
+        """
+        Symmetric difference in place: `self ^= iterable`.
+
+        :param iterable: Iterable.
+        :return: This mutable set.
+        """
+        if iterable is self:
+            self.clear()
+        else:
+            self.symmetric_difference_update(iterable)
+        return self
 
     @abstractmethod
     def pop(self):
@@ -1858,14 +2180,15 @@ class BaseMutableSet(SlottedMutableSet, BaseProtectedSet[T], BaseMutableCollecti
         self._add(value)
 
     @final
-    def discard(self, value):
+    def discard(self, *values):
         # type: (T) -> None
         """
-        Discard value if it exists.
+        Discard value(s).
 
-        :param value: Value.
+        :param values: Value(s).
+        :raises ValueError: No values provided.
         """
-        self._discard(value)
+        self._discard(*values)
 
     @final
     def remove(self, *values):

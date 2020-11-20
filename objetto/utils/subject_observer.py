@@ -331,8 +331,8 @@ class ObserverExceptionInfo(
         "ObserverExceptionInfo",
         (
             ("observer", Observer),
-            ("exception_type", Optional[Type[Exception]]),
-            ("exception", Optional[Exception]),
+            ("exception_type", Optional[Type[BaseException]]),
+            ("exception", Optional[BaseException]),
             ("traceback", Optional[TracebackType]),
         ),
     )

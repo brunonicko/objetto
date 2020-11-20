@@ -816,6 +816,20 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         """
         return pset(initial)
 
+    @classmethod
+    def _from_iterable(cls, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Make set from iterable.
+
+        :param iterable: Iterable.
+        :return: Set.
+        """
+        if isinstance(iterable, type(pset())):
+            return SetState._make(iterable)
+        else:
+            return SetState(iterable)
+
     def __init__(self, initial=()):
         # type: (Iterable[T]) -> None
         super(SetState, self).__init__(initial=initial)
@@ -889,6 +903,15 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
             sort_key=lambda v: hash(v),
         )
 
+    def _hash(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        return hash(self)
+
     def _clear(self):
         # type: (_SS) -> _SS
         """
@@ -908,15 +931,19 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         """
         return self._make(self._internal.add(value))
 
-    def _discard(self, value):
+    def _discard(self, *values):
         # type: (_SS, T) -> _SS
         """
-        Discard value if it exists.
+        Discard value(s).
 
-        :param value: Value.
+        :param values: Value(s).
         :return: Transformed.
+        :raises ValueError: No values provided.
         """
-        return self._make(self._internal.discard(value))
+        if not values:
+            error = "no values provided"
+            raise ValueError(error)
+        return self._make(self._internal.discard(*values))
 
     def _remove(self, *values):
         # type: (_SS, T) -> _SS
@@ -928,6 +955,9 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         :raises ValueError: No values provided.
         :raises KeyError: Value is not present.
         """
+        if not values:
+            error = "no values provided"
+            raise ValueError(error)
         return self._make(self._internal.difference(values))
 
     def _replace(self, value, new_value):
@@ -1001,6 +1031,16 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         :return: Difference.
         """
         return SetState._make(self._internal.difference(iterable))
+
+    def inverse_difference(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get an iterable's difference to this.
+
+        :param iterable: Iterable.
+        :return: Inverse Difference.
+        """
+        return SetState._make(pset(iterable).difference(self._internal))
 
     def symmetric_difference(self, iterable):
         # type: (Iterable) -> SetState
