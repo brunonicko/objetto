@@ -1,4 +1,4 @@
-# TODO: changes
+# TODO: changes (DONE)
 # TODO: objects and application
 # TODO: application root descriptors
 # TODO: history object
