@@ -678,10 +678,25 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
                 internal[:post_index] + pvector(values) + internal[post_index:]
             )
 
-    def _change(self, index, *values):
+    def _delete(self, item):
+        # type: (_LS, Union[slice, int]) -> _LS
+        """
+        Delete values at index/slice.
+
+        :param item: Index/slice.
+        :return: Transformed.
+        """
+        if isinstance(item, slice):
+            index, stop = self.resolve_continuous_slice(item)
+            return self._make(self._internal.delete(index, stop))
+        else:
+            index = self.resolve_index(item)
+            return self._make(self._internal.delete(index))
+
+    def _update(self, index, *values):
         # type: (_LS, int, T) -> _LS
         """
-        Change value(s) starting at index.
+        Update value(s) starting at index.
 
         :param index: Index.
         :param values: Value(s).

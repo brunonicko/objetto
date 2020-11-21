@@ -1447,10 +1447,21 @@ class ListData(
         return type(self).__make__(self._state.move(item, target_index))
 
     @final
-    def _change(self, index, *values):
+    def _delete(self, item):
+        # type: (_LD, Union[slice, int]) -> _LD
+        """
+        Delete values at index/slice.
+
+        :param item: Index/slice.
+        :return: Transformed.
+        """
+        return type(self).__make__(self._state.delete(item))
+
+    @final
+    def _update(self, index, *values):
         # type: (_LD, int, T) -> _LD
         """
-        Change value(s) starting at index.
+        Update value(s) starting at index.
 
         :param index: Index.
         :param values: Value(s).
@@ -1460,9 +1471,9 @@ class ListData(
         cls = type(self)
         if not cls._relationship.passthrough:
             fabricated_values = (cls._relationship.fabricate_value(v) for v in values)
-            return type(self).__make__(self._state.change(index, *fabricated_values))
+            return type(self).__make__(self._state.update(index, *fabricated_values))
         else:
-            return type(self).__make__(self._state.change(index, *values))
+            return type(self).__make__(self._state.update(index, *values))
 
     @final
     def count(self, value):

@@ -1739,6 +1739,7 @@ class Object(
         """
         return self._locate(child)
 
+    @final
     def keys(self):
         # type: () -> SetState[str]
         """
@@ -2835,6 +2836,9 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         factory=True,  # type: bool
     ):
         # type: (...) -> None
+        if not input_values:
+            error = "no values provided"
+            raise ValueError(error)
         cls = type(obj)
         relationship = cls._relationship
         with obj.app.__.write_context(obj) as (read, write):
@@ -2974,7 +2978,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
             # Prepare change information.
             child_counter = collections_abc.Counter()  # type: Counter[BaseObject]
             old_children = set()  # type: Set[BaseObject]
-            old_values = state[index : last_index + 1]  # type: Sequence[Any]
+            old_values = state[index : last_index + 1]  # type: ListState
 
             # For every value being removed.
             for value in old_values:
@@ -3039,6 +3043,9 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         factory=True,  # type: bool
     ):
         # type: (...) -> None
+        if not input_values:
+            error = "no values provided"
+            raise ValueError(error)
         cls = type(obj)
         relationship = cls._relationship
         with obj.app.__.write_context(obj) as (read, write):
@@ -3365,8 +3372,198 @@ class ListObject(
         with self.app.write_context():
             state_length = len(self._state)
             if state_length:
-                self._delete_slice(slice(0, state_length))
+                self._delete(slice(0, state_length))
         return self
+
+    @final
+    def _insert(self, index, *values):
+        # type: (_LO, int, T) -> _LO
+        """
+        Insert value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        self.__functions__.insert(self, index, values)
+        return self
+
+    @final
+    def _append(self, value):
+        # type: (_LO, T) -> _LO
+        """
+        Append value at the end.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        self.__functions__.insert(self, len(self._state), (value,))
+        return self
+
+    @final
+    def _extend(self, iterable):
+        # type: (_LO, Iterable[T]) -> _LO
+        """
+        Extend at the end with iterable.
+
+        :param iterable: Iterable.
+        :return: Transformed.
+        """
+        self.__functions__.insert(self, len(self._state), iterable)
+        return self
+
+    @final
+    def _remove(self, value):
+        # type: (_LO, T) -> _LO
+        """
+        Remove first occurrence of value.
+
+        :param value: Value.
+        :return: Transformed.
+        :raises ValueError: Value is not present.
+        """
+        with self.app.write_context():
+            index = self.index(value)
+            self.__functions__.delete(self, index)
+            return self
+
+    @final
+    def _reverse(self):
+        # type: (_LO) -> _LO
+        """
+        Reverse values.
+
+        :return: Transformed.
+        """
+        with self.app.write_context():
+            if self._state:
+                reversed_values = self._state.reverse()
+                self.__functions__.update(
+                    self, slice(0, len(self._state)), reversed_values
+                )
+        return self
+
+    @final
+    def _move(self, item, target_index):
+        # type: (_LO, Union[slice, int], int) -> _LO
+        """
+        Move values internally.
+
+        :param item: Index/slice.
+        :param target_index: Target index.
+        :return: Transformed.
+        """
+        self.__functions__.move(self, item, target_index)
+        return self
+
+    @final
+    def _delete(self, item):
+        # type: (_LO, Union[slice, int]) -> _LO
+        """
+        Delete values at index/slice.
+
+        :param item: Index/slice.
+        :return: Transformed.
+        """
+        self.__functions__.delete(self, item)
+        return self
+
+    @final
+    def _update(self, index, *values):
+        # type: (_LO, int, T) -> _LO
+        """
+        Update value(s) starting at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        self.__functions__.update(self, index, values)
+        return self
+
+    @final
+    def _locate(self, child):
+        # type: (BaseObject) -> int
+        """
+        Locate child object.
+
+        :param child: Child object.
+        :return: Location.
+        :raises ValueError: Could not locate child.
+        """
+        with self.app.__.read_context(self) as read:
+            metadata = read().metadata
+            try:
+                return metadata["locations"][child]
+            except KeyError:
+                if child in self._children:
+                    location = metadata["locations"][child] = self.index(child)
+                    return location
+                error = "could not locate child {} in {}".format(child, self)
+                exc = ValueError(error)
+                raise_from(exc, None)
+                raise exc
+
+    @final
+    def _locate_data(self, child):
+        # type: (BaseObject) -> int
+        """
+        Locate child object's data.
+
+        :param child: Child object.
+        :return: Data location.
+        :raises ValueError: Could not locate child's data.
+        """
+        return self._locate(child)
+
+    @classmethod
+    @final
+    def deserialize(cls, serialized, app=None, **kwargs):
+        # type: (Type[_LO], Dict[str, Any], Application, Any) -> _LO
+        """
+        Deserialize.
+
+        :param serialized: Serialized.
+        :param app: Application (required).
+        :param kwargs: Keyword arguments to be passed to the deserializers.
+        :return: Deserialized.
+        """
+        app = kwargs.get("app")  # type: Optional[Application]
+        if app is None:
+            error = (
+                "missing required 'app' keyword argument for '{}.deserialize()' method"
+            ).format(cls.__name__)
+            raise ValueError(error)
+
+        with app.write_context():
+            self = cast("ListObject", cls.__new__(cls))
+            with init_context(self):
+                super(ListObject, self).__init__(app)
+                initial = (
+                    cls.deserialize_value(v, None, **kwargs)
+                    for v in serialized
+                    if cls._relationship.serialized
+                )
+                self.__functions__.insert(self, 0, initial)
+            return self
+
+    @final
+    def serialize(self, **kwargs):
+        # type: (Any) -> List
+        """
+        Serialize.
+
+        :param kwargs: Keyword arguments to be passed to the serializers.
+        :return: Serialized.
+        """
+        with self.app.read_context():
+            return list(
+                self.serialize_value(v, None, **kwargs)
+                for v in self._state
+                if type(self)._relationship.serialized
+            )
 
     @property
     @final

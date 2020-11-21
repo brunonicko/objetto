@@ -1360,10 +1360,21 @@ class BaseProtectedList(BaseList[T], BaseProtectedCollection[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def _change(self, index, *values):
+    def _delete(self, item):
+        # type: (_BPL, Union[slice, int]) -> _BPL
+        """
+        Delete values at index/slice.
+
+        :param item: Index/slice.
+        :return: Transformed.
+        """
+        raise NotImplementedError()
+
+    @abstractmethod
+    def _update(self, index, *values):
         # type: (_BPL, int, T) -> _BPL
         """
-        Change value(s) starting at index.
+        Update value(s) starting at index.
 
         :param index: Index.
         :param values: Value(s).
@@ -1453,17 +1464,28 @@ class BaseInteractiveList(BaseProtectedList[T], BaseInteractiveCollection[T]):
         return self._move(item, target_index)
 
     @final
-    def change(self, index, *values):
+    def delete(self, item):
+        # type: (_BPL, Union[slice, int]) -> _BPL
+        """
+        Delete values at index/slice.
+
+        :param item: Index/slice.
+        :return: Transformed.
+        """
+        return self._delete(item)
+
+    @final
+    def update(self, index, *values):
         # type: (_BIL, int, T) -> _BIL
         """
-        Change value(s) starting at index.
+        Update value(s) starting at index.
 
         :param index: Index.
         :param values: Value(s).
         :return: Transformed.
         :raises ValueError: No values provided.
         """
-        return self._change(index, *values)
+        return self._update(index, *values)
 
 
 class BaseMutableList(
@@ -1631,16 +1653,27 @@ class BaseMutableList(
         self._move(item, target_index)
 
     @final
-    def change(self, index, *values):
+    def delete(self, item):
+        # type: (_BPL, Union[slice, int]) -> None
+        """
+        Delete values at index/slice.
+
+        :param item: Index/slice.
+        :return: Transformed.
+        """
+        self._delete(item)
+
+    @final
+    def update(self, index, *values):
         # type: (int, T) -> None
         """
-        Change value(s) starting at index.
+        Update value(s) starting at index.
 
         :param index: Index.
         :param values: Value(s).
         :raises ValueError: No values provided.
         """
-        self._change(index, *values)
+        self._update(index, *values)
 
 
 class BaseSet(SlottedSet, BaseCollection[T_co], Generic[T_co]):
