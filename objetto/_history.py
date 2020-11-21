@@ -1,0 +1,2 @@
+class HistoryObject:
+    pass

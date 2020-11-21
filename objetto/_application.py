@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Manages multiple objects under different contexts."""
 
+from contextlib import contextmanager
 from copy import deepcopy
 from threading import RLock
 from typing import TYPE_CHECKING
@@ -13,7 +14,7 @@ except ImportError:
 
 from six import string_types
 
-from ._bases import Base
+from ._bases import Base, final
 from ._data import BaseData, DataAttribute
 from ._states import BaseState
 from .data import Data, data_attribute, data_dict_attribute, data_set_attribute
@@ -21,7 +22,7 @@ from .utils.subject_observer import Subject
 from .utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
-    from typing import Any, Counter, Dict, List, Optional, Set, Tuple, Type
+    from typing import Any, Counter, Dict, List, Optional, Set, Tuple, Type, Iterator
 
 __all__ = ["Application"]
 
@@ -173,3 +174,19 @@ class Application(Base):
     """
 
     __slots__ = ("__weakref__", "__")
+
+    @final
+    @contextmanager
+    def read_context(self):
+        # type: () -> Iterator
+        """Read context."""
+        with self.__.read_context():
+            yield
+
+    @final
+    @contextmanager
+    def write_context(self):
+        # type: () -> Iterator
+        """Write context."""
+        with self.__.write_context():
+            yield

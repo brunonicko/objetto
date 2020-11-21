@@ -537,7 +537,7 @@ def data_dict_cls(
             relationship,
             qual_name=qual_name,
             module=module,
-            unique=unique,
+            unique_descriptor_name="unique_hash" if unique else None,
             dct=dct,
         )
 
@@ -605,7 +605,7 @@ def data_list_cls(
             relationship,
             qual_name=qual_name,
             module=module,
-            unique=unique,
+            unique_descriptor_name="unique_hash" if unique else None,
         )
 
     return cls
@@ -672,7 +672,7 @@ def data_set_cls(
             relationship,
             qual_name=qual_name,
             module=module,
-            unique=unique,
+            unique_descriptor_name="unique_hash" if unique else None,
         )
 
     return cls

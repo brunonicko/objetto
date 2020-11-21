@@ -1,4 +1,6 @@
 # TODO: changes (DONE)
+# TODO: base protected list _delete and _delete_slice methods
+# TODO: move some methods up to base structure classes
 # TODO: objects and application
 # TODO: application root descriptors
 # TODO: history object

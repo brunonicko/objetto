@@ -161,7 +161,7 @@ def make_auxiliary_cls(
     relationship,  # type: BaseRelationship
     qual_name=None,  # type: Optional[str]
     module=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    unique_descriptor_name=None,  # type: Optional[str]
     dct=None,  # type: Optional[Mapping[str, Any]]
 ):
     # type: (...) -> _A
@@ -171,7 +171,7 @@ def make_auxiliary_cls(
     :param relationship: Relationship.
     :param qual_name: Qualified name.
     :param module: Module.
-    :param unique: Whether generated class should have a unique descriptor.
+    :param unique_descriptor_name: Attribute name for unique descriptor.
     :param dct: Members dictionary.
     :return: Generated auxiliary container subclass.
     :raises TypeError: Invalid 'qual_name' parameter type.
@@ -209,8 +209,8 @@ def make_auxiliary_cls(
     dct_copy["_relationship"] = relationship
 
     # Add unique descriptor.
-    if unique:
-        dct_copy["_unique_hash"] = UniqueDescriptor()
+    if unique_descriptor_name:
+        dct_copy[unique_descriptor_name] = UniqueDescriptor()
 
     return cast(
         "_A",
