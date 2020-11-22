@@ -1,7 +1,7 @@
-# TODO: changes (DONE)
-# TODO: base protected list _delete methods (DONE)
-# TODO: move some methods up to base structure classes
-# TODO: objects and application
+# TODO: move methods up to base structure classes
+# TODO: break up structures/data/objects into separate modules
+# TODO: objects
+# TODO: application
 # TODO: application root descriptors
 # TODO: history object
 # TODO: history reaction conflict validation
@@ -11,3 +11,7 @@
 # TODO: squash commits, merge branch
 # TODO: github actions
 # TODO: release to pypi!
+
+# DONE
+# changes
+# base protected list _delete methods
