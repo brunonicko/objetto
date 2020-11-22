@@ -835,7 +835,7 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
     def _from_iterable(cls, iterable):
         # type: (Iterable) -> SetState
         """
-        Make set from iterable.
+        Make set state from iterable.
 
         :param iterable: Iterable.
         :return: Set.
@@ -975,17 +975,17 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
             raise ValueError(error)
         return self._make(self._internal.difference(values))
 
-    def _replace(self, value, new_value):
+    def _replace(self, old_value, new_value):
         # type: (_SS, T, T) -> _SS
         """
         Replace existing value with a new one.
 
-        :param value: Existing value.
+        :param old_value: Existing value.
         :param new_value: New value.
         :return: Transformed.
         :raises KeyError: Value is not present.
         """
-        return self._make(self._internal.remove(value).add(new_value))
+        return self._make(self._internal.remove(old_value).add(new_value))
 
     def _update(self, iterable):
         # type: (_SS, Iterable[T]) -> _SS

@@ -15,7 +15,7 @@ except ImportError:
 from six import string_types
 
 from ._bases import Base, final
-from ._data import BaseData, DataAttribute
+from ._data import BaseData, DataAttribute, InteractiveSetData
 from ._states import BaseState
 from .data import Data, data_attribute, data_dict_attribute, data_set_attribute
 from .utils.subject_observer import Subject
@@ -23,6 +23,9 @@ from .utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
     from typing import Any, Counter, Dict, List, Optional, Set, Tuple, Type, Iterator
+
+    from ._history import HistoryObject
+    from ._objects import BaseObject
 
 __all__ = ["Application"]
 
@@ -114,7 +117,9 @@ class Store(Data):
     """Holds an object's state, data, metadata, hierarchy, and history information."""
 
     state = data_attribute(BaseState, subtypes=True, checked=False)
+
     data = data_attribute((BaseData, type(None)), subtypes=True, checked=False)
+
     metadata = data_dict_attribute(
         key_types=string_types, key_checked=False, checked=False
     )
@@ -122,15 +127,22 @@ class Store(Data):
     parent_ref = data_attribute(
         WeakReference, checked=False, default=WeakReference()
     )  # type: DataAttribute[WeakReference[BaseObject]]
+
     history_provider_ref = data_attribute(
         WeakReference, checked=False, default=WeakReference()
     )  # type: DataAttribute[WeakReference[BaseObject]]
+
     last_parent_history_ref = data_attribute(
         WeakReference, checked=False, default=WeakReference()
-    )  # type: DataAttribute[WeakReference[History]]
+    )  # type: DataAttribute[WeakReference[HistoryObject]]
 
-    history = data_attribute((History, type(None)), checked=False, default=None)
-    children = data_set_attribute(BaseObject, subtypes=True, checked=False)
+    history = data_attribute(
+        (".._history|HistoryObject", type(None)), checked=False, default=None
+    )  # type: DataAttribute[HistoryObject]
+
+    children = data_set_attribute(
+        ".._objects|BaseObject", subtypes=True, checked=False
+    )  # type: DataAttribute[InteractiveSetData[HistoryObject]]
 
 
 class ApplicationInternals(Base):
@@ -152,7 +164,7 @@ class ApplicationInternals(Base):
     def __init__(self, app):
         # type: (Application) -> None
         self.__app_ref = WeakReference(app)
-        self.__history_cls = None  # type: Optional[History]
+        self.__history_cls = None  # type: Optional[HistoryObject]
         self.__lock = ApplicationLock()
         self.__storage = ApplicationStorage()
         self.__busy_writing = set()  # type: Set[BaseObject]

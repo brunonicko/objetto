@@ -1636,14 +1636,14 @@ class SetData(
     @classmethod
     @final
     def _from_iterable(cls, iterable):
-        # type: (Type[_SD], Iterable) -> _SD
+        # type: (Iterable) -> SetState
         """
-        Make set from iterable.
+        Make set state from iterable.
 
         :param iterable: Iterable.
         :return: Set data.
         """
-        return cls(iterable)
+        return SetState(iterable)
 
     @final
     def __init__(self, initial=()):

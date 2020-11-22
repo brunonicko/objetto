@@ -2009,12 +2009,12 @@ class BaseProtectedSet(BaseSet[T], BaseProtectedCollection[T]):
         raise NotImplementedError()
 
     @abstractmethod
-    def _replace(self, value, new_value):
+    def _replace(self, old_value, new_value):
         # type: (_BPS, T, T) -> _BPS
         """
         Replace existing value with a new one.
 
-        :param value: Existing value.
+        :param old_value: Existing value.
         :param new_value: New value.
         :return: Transformed.
         :raises KeyError: Value is not present.
@@ -2080,17 +2080,17 @@ class BaseInteractiveSet(BaseProtectedSet[T], BaseInteractiveCollection[T]):
         return self._remove(*values)
 
     @final
-    def replace(self, value, new_value):
+    def replace(self, old_value, new_value):
         # type: (_BIS, T, T) -> _BIS
         """
         Replace existing value with a new one.
 
-        :param value: Existing value.
+        :param old_value: Existing value.
         :param new_value: New value.
         :return: Transformed.
         :raises KeyError: Value is not present.
         """
-        return self._replace(value, new_value)
+        return self._replace(old_value, new_value)
 
     @final
     def update(self, iterable):
@@ -2236,15 +2236,15 @@ class BaseMutableSet(SlottedMutableSet, BaseProtectedSet[T], BaseMutableCollecti
         self._remove(*values)
 
     @final
-    def replace(self, value, new_value):
+    def replace(self, old_value, new_value):
         # type: (T, T) -> None
         """
         Replace existing value with a new one.
 
-        :param value: Existing value.
+        :param old_value: Existing value.
         :param new_value: New value.
         """
-        self._replace(value, new_value)
+        self._replace(old_value, new_value)
 
     @final
     def update(self, iterable):
