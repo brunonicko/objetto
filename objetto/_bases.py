@@ -869,17 +869,17 @@ class BaseDict(BaseCollection[KT], SlottedMapping, Generic[KT, VT_co]):
         """
         raise NotImplementedError()
 
-    @abstractmethod
+    @final
     def items(self):
-        # type: () -> ItemsView[KT, VT_co]
+        # type: () -> ItemsView[KT, VT]
         """
         Get items.
 
         :return: Items.
         """
-        raise NotImplementedError()
+        return collections_abc.ItemsView(self)
 
-    @abstractmethod
+    @final
     def keys(self):
         # type: () -> KeysView[KT]
         """
@@ -887,17 +887,17 @@ class BaseDict(BaseCollection[KT], SlottedMapping, Generic[KT, VT_co]):
 
         :return: Keys.
         """
-        raise NotImplementedError()
+        return collections_abc.KeysView(self)
 
-    @abstractmethod
+    @final
     def values(self):
-        # type: () -> ValuesView[VT_co]
+        # type: () -> ValuesView[VT]
         """
         Get values.
 
         :return: Values.
         """
-        raise NotImplementedError()
+        return collections_abc.ValuesView(self)
 
 
 # noinspection PyTypeChecker

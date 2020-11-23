@@ -1,6 +1,10 @@
-# TODO: move methods up to base structure classes
 # TODO: break up structures/data/objects into separate modules
+# TODO: application-level subject/observer system
 # TODO: objects
+# TODO: action
+# TODO: reactions
+# TODO: factories
+# TODO: exceptions?
 # TODO: application
 # TODO: application root descriptors
 # TODO: history object
@@ -13,5 +17,6 @@
 # TODO: release to pypi!
 
 # DONE
+# move methods up to base structure classes
 # changes
 # base protected list _delete methods

@@ -3,6 +3,7 @@
 
 from abc import abstractmethod
 from contextlib import contextmanager
+from collections import Counter as ValueCounter
 from inspect import getmro
 from itertools import chain
 from typing import TYPE_CHECKING, TypeVar, cast, overload
@@ -19,7 +20,6 @@ from six import (
     raise_from,
     string_types,
     with_metaclass,
-    iterkeys,
 )
 
 from ._application import Application
@@ -56,6 +56,7 @@ from ._data import (
 from ._states import BaseState, DictState, ListState, SetState
 from ._structures import (
     make_auxiliary_cls,
+    BaseAttributeMeta,
     BaseAttribute,
     BaseMutableAttributeStructure,
     BaseAttributeStructureMeta,
@@ -103,7 +104,25 @@ if TYPE_CHECKING:
     from .utils.factoring import LazyFactory
     from .utils.type_checking import LazyTypes
 
-__all__ = []
+__all__ = [
+    "Relationship",
+    "HistoryDescriptor",
+    "BaseObjectMeta",
+    "BaseObject",
+    "BaseMutableObject",
+    "AttributeMeta",
+    "Attribute",
+    "ObjectMeta",
+    "Object",
+    "BaseAuxiliaryObjectMeta",
+    "BaseAuxiliaryObject",
+    "DictObjectMeta",
+    "DictObject",
+    "ListObjectMeta",
+    "ListObject",
+    "SetObjectMeta",
+    "SetObject",
+]
 
 
 T = TypeVar("T")  # Any type.
@@ -117,7 +136,7 @@ DATA_METHOD_TAG = "__isdatamethod__"
 
 
 @final
-class ObjectRelationship(BaseRelationship):
+class Relationship(BaseRelationship):
     """
     Relationship between an object structure and its values.
 
@@ -206,7 +225,7 @@ class ObjectRelationship(BaseRelationship):
                 error = "provided 'data_relationship' but 'data' is False"
                 raise ValueError(error)
 
-        super(ObjectRelationship, self).__init__(
+        super(Relationship, self).__init__(
             types=types,
             subtypes=subtypes,
             checked=checked,
@@ -230,7 +249,7 @@ class ObjectRelationship(BaseRelationship):
 
         :return: Dictionary.
         """
-        dct = super(ObjectRelationship, self).to_dict()
+        dct = super(Relationship, self).to_dict()
         dct.update(
             {
                 "child": self.child,
@@ -504,7 +523,7 @@ class BaseObjectMeta(BaseStructureMeta):
     def _relationship_type(cls):
         # type: () -> Type[BaseRelationship]
         """Relationship type."""
-        return ObjectRelationship
+        return Relationship
 
     @property
     @final
@@ -555,7 +574,7 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     :param app: Application.
     """
 
-    __slots__ = ("__app",)
+    __slots__ = ("__weakref__", "__app")
     __functions__ = BaseObjectFunctions
 
     def __init__(self, app):
@@ -563,6 +582,7 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         with ReraiseContext(TypeError, "'app' parameter"):
             assert_is_instance(app, Application)
         self.__app = app
+        app.__.init_object(self)
 
     @final
     def __copy__(self):
@@ -701,7 +721,7 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     def app(self):
         # type: () -> Application
         """Application."""
-        return self.__.app
+        return self.__app
 
     @property
     def data(self):
@@ -723,11 +743,22 @@ class BaseMutableObject(BaseObject[T], BaseMutableStructure[T]):
 
 
 # noinspection PyTypeChecker
-_OA = TypeVar("_OA", bound="ObjectAttribute")
+_A = TypeVar("_A", bound="Attribute")
+
+
+class AttributeMeta(BaseAttributeMeta):
+    """Metaclass for :class:`Attribute`."""
+
+    @property
+    @final
+    def _relationship_type(cls):
+        # type: () -> Type[Relationship]
+        """Relationship type."""
+        return Relationship
 
 
 @final
-class ObjectAttribute(BaseAttribute[T]):
+class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
     """
     Object attribute.
 
@@ -765,7 +796,7 @@ class ObjectAttribute(BaseAttribute[T]):
 
     def __init__(
         self,
-        relationship=ObjectRelationship(),  # type: ObjectRelationship
+        relationship=Relationship(),  # type: Relationship
         default=MISSING,  # type: Any
         default_factory=None,  # type: LazyFactory
         module=None,  # type: Optional[str]
@@ -775,8 +806,8 @@ class ObjectAttribute(BaseAttribute[T]):
         finalized=False,  # type: bool
         abstracted=False,  # type: bool
         delegated=False,  # type: bool
-        dependencies=None,  # type: Optional[Iterable[ObjectAttribute]]
-        deserialize_to=None,  # type: Optional[ObjectAttribute]
+        dependencies=None,  # type: Optional[Iterable[Attribute]]
+        deserialize_to=None,  # type: Optional[Attribute]
     ):
         # type: (...) -> None
 
@@ -792,7 +823,7 @@ class ObjectAttribute(BaseAttribute[T]):
                         visited_dependencies = set()
                         for dependency in dependencies:
                             assert_is_instance(
-                                dependency, ObjectAttribute, subtypes=False
+                                dependency, Attribute, subtypes=False
                             )
                             if dependency in visited_dependencies:
                                 error = "can't declare same dependency more than once"
@@ -801,7 +832,7 @@ class ObjectAttribute(BaseAttribute[T]):
                         dependencies = tuple(dependencies)
                     else:
                         assert_is_instance(
-                            dependencies, ObjectAttribute, subtypes=False
+                            dependencies, Attribute, subtypes=False
                         )
                         dependencies = (dependencies,)
             if changeable is not None:
@@ -836,12 +867,12 @@ class ObjectAttribute(BaseAttribute[T]):
                 raise ValueError(error)
             else:
                 with ReraiseContext(TypeError, "'deserialize_to' parameter"):
-                    assert_is_instance(deserialize_to, ObjectAttribute)
+                    assert_is_instance(deserialize_to, Attribute)
                 if deserialize_to.relationship.serialized:
                     error = "can't provide a serialized attribute to 'deserialize_to'"
                     raise ValueError(error)
 
-        super(ObjectAttribute, self).__init__(
+        super(Attribute, self).__init__(
             relationship=relationship,
             default=default,
             default_factory=default_factory,
@@ -887,7 +918,7 @@ class ObjectAttribute(BaseAttribute[T]):
 
         :return: Dictionary.
         """
-        dct = super(ObjectAttribute, self).to_dict()
+        dct = super(Attribute, self).to_dict()
         dct.update(
             {
                 "delegated": self.delegated,
@@ -920,7 +951,7 @@ class ObjectAttribute(BaseAttribute[T]):
         del instance[self.get_name(instance)]
 
     def getter(self, func):
-        # type: (_OA, Callable) -> _OA
+        # type: (_A, Callable) -> _A
         """
         Define a getter delegate method.
 
@@ -942,7 +973,7 @@ class ObjectAttribute(BaseAttribute[T]):
         return self
 
     def setter(self, func):
-        # type: (_OA, Callable) -> _OA
+        # type: (_A, Callable) -> _A
         """
         Define a setter delegate method.
 
@@ -969,7 +1000,7 @@ class ObjectAttribute(BaseAttribute[T]):
         return self
 
     def deleter(self, func):
-        # type: (_OA, Callable) -> _OA
+        # type: (_A, Callable) -> _A
         """
         Define a deleter delegate method.
 
@@ -997,9 +1028,9 @@ class ObjectAttribute(BaseAttribute[T]):
 
     @property
     def relationship(self):
-        # type: () -> ObjectRelationship
+        # type: () -> Relationship
         """Relationship."""
-        return cast("ObjectRelationship", super(ObjectAttribute, self).relationship)
+        return cast("Relationship", super(Attribute, self).relationship)
 
     @property
     def delegated(self):
@@ -1009,13 +1040,13 @@ class ObjectAttribute(BaseAttribute[T]):
 
     @property
     def dependencies(self):
-        # type: () -> Tuple[ObjectAttribute, ...]
+        # type: () -> Tuple[Attribute, ...]
         """Attributes needed by the getter delegate."""
         return self.__dependencies
 
     @property
     def deserialize_to(self):
-        # type: () -> Optional[ObjectAttribute]
+        # type: () -> Optional[Attribute]
         """Non-serialized attribute to deserialize this into."""
         return self.__deserialize_to
 
@@ -1050,8 +1081,8 @@ class ObjectAttribute(BaseAttribute[T]):
                     default_factory=None,
                     module=self.module,
                     required=self.required,
-                    changeable=False,
-                    deletable=False,
+                    changeable=self.changeable,
+                    deletable=self.deletable,
                     finalized=self.finalized,
                     abstracted=self.abstracted,
                 )
@@ -1059,7 +1090,7 @@ class ObjectAttribute(BaseAttribute[T]):
 
 
 @final
-class ObjectFunctions(BaseObjectFunctions):
+class Functions(BaseObjectFunctions):
     """Static functions for :class:`Object`."""
 
     __slots__ = ()
@@ -1181,7 +1212,7 @@ class ObjectFunctions(BaseObjectFunctions):
             new_values, old_values = intermediary_object.__.get_results()
 
             # Process raw updates.
-            ObjectFunctions.raw_update(obj, new_values, old_values)
+            Functions.raw_update(obj, new_values, old_values)
 
     @staticmethod
     def raw_update(
@@ -1212,7 +1243,7 @@ class ObjectFunctions(BaseObjectFunctions):
             )  # type: DictState[BaseObject, str]
 
             # Prepare change information.
-            child_counter = collections_abc.Counter()  # type: Counter[BaseObject]
+            child_counter = ValueCounter()  # type: Counter[BaseObject]
             old_children = set()  # type: Set[BaseObject]
             new_children = set()  # type: Set[BaseObject]
             history_adopters = set()  # type: Set[BaseObject]
@@ -1226,7 +1257,7 @@ class ObjectFunctions(BaseObjectFunctions):
 
                 # Are we deleting it?
                 delete_item = value is DELETED
-                if not attribute.deletable and not attribute.delegated:
+                if delete_item and not attribute.deletable and not attribute.delegated:
                     error = "attribute '{}' is not deletable".format(name)
                     raise AttributeError(error)
 
@@ -1288,8 +1319,8 @@ class ObjectFunctions(BaseObjectFunctions):
 
             # Prepare change.
             change = Update(
-                __redo__=ObjectFunctions.redo_raw_update,
-                __undo__=ObjectFunctions.undo_raw_update,
+                __redo__=Functions.redo_raw_update,
+                __undo__=Functions.undo_raw_update,
                 obj=obj,
                 old_children=old_children,
                 new_children=new_children,
@@ -1309,7 +1340,7 @@ class ObjectFunctions(BaseObjectFunctions):
 
         :param change: Change.
         """
-        ObjectFunctions.raw_update(
+        Functions.raw_update(
             change.obj,
             change.new_values,
             change.old_values,
@@ -1323,15 +1354,15 @@ class ObjectFunctions(BaseObjectFunctions):
 
         :param change: Change.
         """
-        ObjectFunctions.raw_update(
+        Functions.raw_update(
             change.obj,
             change.old_values,
             change.new_values,
         )
 
 
-# Mark 'ObjectFunctions' as a final member.
-type.__setattr__(cast(type, ObjectFunctions), FINAL_METHOD_TAG, True)
+# Mark 'Functions' as a final member.
+type.__setattr__(cast(type, Functions), FINAL_METHOD_TAG, True)
 
 
 class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
@@ -1426,24 +1457,24 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
     @property
     @final
     def _attribute_type(cls):
-        # type: () -> Type[ObjectAttribute]
+        # type: () -> Type[Attribute]
         """Attribute type."""
-        return ObjectAttribute
+        return Attribute
 
     @property
     @final
     def _attributes(cls):
-        # type: () -> Mapping[str, ObjectAttribute]
+        # type: () -> Mapping[str, Attribute]
         """Attributes mapped by name."""
-        return cast("Mapping[str, ObjectAttribute]", super(ObjectMeta, cls)._attributes)
+        return cast("Mapping[str, Attribute]", super(ObjectMeta, cls)._attributes)
 
     @property
     @final
     def _attribute_names(cls):
-        # type: () -> Mapping[ObjectAttribute, str]
+        # type: () -> Mapping[Attribute, str]
         """Names mapped by attribute."""
         return cast(
-            "Mapping[ObjectAttribute, str]", super(ObjectMeta, cls)._attribute_names
+            "Mapping[Attribute, str]", super(ObjectMeta, cls)._attribute_names
         )
 
     @property
@@ -1538,7 +1569,7 @@ class Object(
     """
 
     __slots__ = ()
-    __functions__ = ObjectFunctions
+    __functions__ = Functions
 
     def __init__(self, app, **initial):
         # type: (Application, Any) -> None
@@ -1552,64 +1583,10 @@ class Object(
             )
             self.__functions__.check_missing(cls, self._state)
 
-    @final
-    def __reversed__(self):
-        # type: () -> Iterator[str]
-        """
-        Iterate over reversed attribute names.
-
-        :return: Reversed attribute names iterator.
-        """
-        return self._state.__reversed__()
-
-    @final
-    def __getitem__(self, name):
-        # type: (str) -> Any
-        """
-        Get value for attribute name.
-
-        :param name: Attribute name.
-        :return: Value.
-        :raises KeyError: Attribute does not exist or has no value.
-        """
-        return self._state[name]
-
-    @final
-    def __len__(self):
-        # type: () -> int
-        """
-        Get key count.
-
-        :return: Key count.
-        """
-        return len(self._state)
-
-    @final
-    def __iter__(self):
-        # type: () -> Iterator[str]
-        """
-        Iterate over names of attributes with value.
-
-        :return: Names of attributes with value.
-        """
-        for name in self._state:
-            yield name
-
-    @final
-    def __contains__(self, name):
-        # type: (Any) -> bool
-        """
-        Get whether attribute name is valid and has a value.
-
-        :param name: Attribute name.
-        :return: True if attribute name is valid and has a value.
-        """
-        return name in self._state
-
     @classmethod
     @final
     def _get_relationship(cls, location):
-        # type: (str) -> ObjectRelationship
+        # type: (str) -> Relationship
         """
         Get relationship at location (attribute name).
 
@@ -1617,12 +1594,12 @@ class Object(
         :return: Relationship.
         :raises KeyError: Attribute does not exist.
         """
-        return cast("ObjectRelationship", cls._get_attribute(location).relationship)
+        return cast("Relationship", cls._get_attribute(location).relationship)
 
     @classmethod
     @final
     def _get_attribute(cls, name):
-        # type: (str) -> ObjectAttribute
+        # type: (str) -> Attribute
         """
         Get attribute by name.
 
@@ -1630,7 +1607,7 @@ class Object(
         :return: Attribute.
         :raises KeyError: Attribute does not exist.
         """
-        return cast("ObjectAttribute", cls._attributes[name])
+        return cast("Attribute", cls._attributes[name])
 
     @final
     def _clear(self):
@@ -1737,28 +1714,6 @@ class Object(
         """
         return self._locate(child)
 
-    @final
-    def keys(self):
-        # type: () -> SetState[str]
-        """
-        Get names of the attributes with values.
-
-        :return: Attribute names.
-        """
-        return SetState(iterkeys(self._state))
-
-    @final
-    def find_with_attributes(self, **attributes):
-        # type: (Any) -> Any
-        """
-        Find first value that matches unique attribute values.
-
-        :param attributes: Attributes to match.
-        :return: Value.
-        :raises ValueError: No attributes provided or no match found.
-        """
-        return self._state.find_with_attributes(**attributes)
-
     @classmethod
     @final
     def deserialize(cls, serialized, app=None, **kwargs):
@@ -1812,7 +1767,7 @@ class Object(
                     self.__functions__.get_initial(self, initial),
                     factory=False,
                 )
-                ObjectFunctions.check_missing(cls, self._state)
+                Functions.check_missing(cls, self._state)
             return self
 
     @final
@@ -1882,10 +1837,10 @@ class IntermediaryObjectInternals(Base):
         self.__cls = cls
         self.__state = state
         self.__dependencies = None
-        self.__in_getter = None  # type: Optional[ObjectAttribute]
+        self.__in_getter = None  # type: Optional[Attribute]
         self.__new_values = {}
         self.__old_values = {}
-        self.__dirty = set(cls._attributes).difference(state._state)
+        self.__dirty = set(cls._attributes).difference(state)
 
     def get_value(self, name):
         """
@@ -1999,7 +1954,7 @@ class IntermediaryObjectInternals(Base):
 
     @contextmanager
     def __getter_context(self, attribute):
-        # type: (ObjectAttribute) -> Iterator
+        # type: (Attribute) -> Iterator
         """
         Getter context.
 
@@ -2121,7 +2076,7 @@ class IntermediaryObjectInternals(Base):
 
     @property
     def in_getter(self):
-        # type: () -> Optional[ObjectAttribute]
+        # type: () -> Optional[Attribute]
         """Whether running in an attribute's getter delegate."""
         return self.__in_getter
 
@@ -2140,7 +2095,11 @@ class IntermediaryObject(Base):
 
     def __init__(self, app, cls, state):
         # type: (Application, Type[Object], DictState[str, Any]) -> None
-        self.__ = IntermediaryObjectInternals(self, app, cls, state)
+        object.__setattr__(
+            self,
+            "__",
+            IntermediaryObjectInternals(self, app, cls, state),
+        )
 
     def __dir__(self):
         # type: () -> List[str]
@@ -2306,7 +2265,7 @@ class BaseAuxiliaryObject(
     __slots__ = ()
     __functions__ = BaseAuxiliaryObjectFunctions
 
-    _relationship = ObjectRelationship()
+    _relationship = Relationship()
     """Relationship for all locations."""
 
     @final
@@ -2401,7 +2360,7 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
             locations = metadata.get("locations", DictState())  # type: DictState
 
             # Prepare change information.
-            child_counter = collections_abc.Counter()  # type: Counter[BaseObject]
+            child_counter = ValueCounter()  # type: Counter[BaseObject]
             old_children = set()
             new_children = set()
             history_adopters = set()
@@ -2446,11 +2405,11 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
 
                 # Child relationship.
                 if relationship.child:
-                    same_app = not delete_item and obj.__.in_same_application(value)
+                    same_app = not delete_item and obj._in_same_application(value)
 
                     # Update children counter, old/new children sets, and locations.
                     if old_value is not DELETED:
-                        if obj.__.in_same_application(old_value):
+                        if obj._in_same_application(old_value):
                             child_counter[old_value] -= 1
                             old_children.add(old_value)
                             locations = locations.delete(old_value)
@@ -2582,60 +2541,6 @@ class DictObject(
         # type: (...) -> None
         super(DictObject, self).__init__(app=app)
         self.__functions__.update(self, dict(initial))
-
-    @final
-    def __reversed__(self):
-        # type: () -> Iterator[KT]
-        """
-        Iterate over reversed keys.
-
-        :return: Reversed keys iterator.
-        """
-        return self._state.__reversed__()
-
-    @final
-    def __getitem__(self, key):
-        # type: (KT) -> VT
-        """
-        Get value for key.
-
-        :param key: Key.
-        :return: Value.
-        :raises KeyError: Invalid key.
-        """
-        return self._state[key]
-
-    @final
-    def __len__(self):
-        # type: () -> int
-        """
-        Get key count.
-
-        :return: Key count.
-        """
-        return len(self._state)
-
-    @final
-    def __iter__(self):
-        # type: () -> Iterator[KT]
-        """
-        Iterate over keys.
-
-        :return: Key iterator.
-        """
-        for key in self._state:
-            yield key
-
-    @final
-    def __contains__(self, key):
-        # type: (Any) -> bool
-        """
-        Get whether key is present.
-
-        :param key: Key.
-        :return: True if contains.
-        """
-        return key in self._state
 
     @final
     def _clear(self):
@@ -2852,7 +2757,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
             index = resolve_index(len(state), index, clamp=True)
 
             # Prepare change information.
-            child_counter = collections_abc.Counter()  # type: Counter[BaseObject]
+            child_counter = ValueCounter()  # type: Counter[BaseObject]
             new_children = set()  # type: Set[BaseObject]
             history_adopters = set()  # type: Set[BaseObject]
             new_values = []  # type: List[Any]
@@ -2872,7 +2777,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
 
                 # Child relationship.
                 if relationship.child:
-                    same_app = obj.__.in_same_application(value)
+                    same_app = obj._in_same_application(value)
 
                     # Update children counter and new children set.
                     if same_app:
@@ -2972,7 +2877,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
             slc = slice(index, stop)
 
             # Prepare change information.
-            child_counter = collections_abc.Counter()  # type: Counter[BaseObject]
+            child_counter = ValueCounter()  # type: Counter[BaseObject]
             old_children = set()  # type: Set[BaseObject]
             old_values = state[index : last_index + 1]  # type: ListState
 
@@ -2981,7 +2886,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
 
                 # Child relationship.
                 if relationship.child:
-                    same_app = obj.__.in_same_application(value)
+                    same_app = obj._in_same_application(value)
 
                     # Update children counter and new children set.
                     if same_app:
@@ -3070,7 +2975,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                 return
 
             # Prepare change information.
-            child_counter = collections_abc.Counter()  # type: Counter[BaseObject]
+            child_counter = ValueCounter()  # type: Counter[BaseObject]
             history_adopters = set()
             old_children = set()
             new_children = set()
@@ -3095,10 +3000,10 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
 
                 # Child relationship.
                 if relationship.child:
-                    same_app = obj.__.in_same_application(value)
+                    same_app = obj._in_same_application(value)
 
                     # Update children counter, old/new children sets.
-                    if obj.__.in_same_application(old_value):
+                    if obj._in_same_application(old_value):
                         child_counter[old_value] -= 1
                         old_children.add(old_value)
                     if same_app:
@@ -3221,7 +3126,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                 old_state=old_state,
                 new_state=state,
             )
-            write(state, data, metadata, collections_abc.Counter(), change)
+            write(state, data, metadata, ValueCounter(), change)
 
     @staticmethod
     def redo_move(change):
@@ -3294,68 +3199,6 @@ class ListObject(
         # type: (Application, Iterable[T]) -> None
         super(ListObject, self).__init__(app=app)
         self.__functions__.insert(self, 0, initial)
-
-    @final
-    def __reversed__(self):
-        # type: () -> Iterator[T]
-        """
-        Iterate over reversed values.
-
-        :return: Reversed values iterator.
-        """
-        return self._state.__reversed__()
-
-    @overload
-    def __getitem__(self, index):
-        # type: (int) -> T
-        pass
-
-    @overload
-    def __getitem__(self, index):
-        # type: (slice) -> ListState[T]
-        pass
-
-    @final
-    def __getitem__(self, index):
-        """
-        Get value/values at index/from slice.
-
-        :param index: Index/slice.
-        :return: Value/values.
-        """
-        return self._state[index]
-
-    @final
-    def __len__(self):
-        # type: () -> int
-        """
-        Get value count.
-
-        :return: Value count.
-        """
-        return len(self._state)
-
-    @final
-    def __iter__(self):
-        # type: () -> Iterator[T]
-        """
-        Iterate over values.
-
-        :return: Values iterator.
-        """
-        for value in self._state:
-            yield value
-
-    @final
-    def __contains__(self, value):
-        # type: (Any) -> bool
-        """
-        Get whether value is present.
-
-        :param value: Value.
-        :return: True if contains.
-        """
-        return value in self._state
 
     @final
     def _clear(self):
@@ -3621,7 +3464,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
             data_map = metadata.get("data_map", DictState())  # type: DictState
 
             # Prepare change information.
-            child_counter = collections_abc.Counter()  # type: Counter[BaseObject]
+            child_counter = ValueCounter()  # type: Counter[BaseObject]
             new_children = set()  # type: Set[BaseObject]
             history_adopters = set()  # type: Set[BaseObject]
             new_values = set()  # type: Set[Any]
@@ -3640,7 +3483,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
 
                 # Child relationship.
                 if relationship.child:
-                    same_app = obj.__.in_same_application(value)
+                    same_app = obj._in_same_application(value)
                     child = cast("BaseObject", value) if same_app else None
 
                     # Update children counter and new children set.
@@ -3734,7 +3577,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
             data_map = metadata.get("data_map", DictState())  # type: DictState
 
             # Prepare change information.
-            child_counter = collections_abc.Counter()  # type: Counter[BaseObject]
+            child_counter = ValueCounter()  # type: Counter[BaseObject]
             old_children = set()  # type: Set[BaseObject]
             old_values = set()  # type: Set[Hashable]
 
@@ -3748,7 +3591,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
 
                 # Child relationship.
                 if relationship.child:
-                    same_app = obj.__.in_same_application(value)
+                    same_app = obj._in_same_application(value)
                     child = cast("BaseObject", value) if same_app else None
 
                     # Update children counter and new children set.
@@ -3834,8 +3677,8 @@ _SO = TypeVar("_SO", bound="SetObject")
 class SetObject(
     with_metaclass(
         SetObjectMeta,
-        BaseAuxiliaryObject[KT],
-        BaseSetStructure[KT, VT],
+        BaseAuxiliaryObject[T],
+        BaseSetStructure[T],
     )
 ):
     """
@@ -3867,48 +3710,6 @@ class SetObject(
         # type: (...) -> None
         super(SetObject, self).__init__(app=app)
         self.__functions__.update(self, initial)
-
-    @final
-    def __reversed__(self):
-        # type: () -> Iterator[T]
-        """
-        Iterate over reversed values.
-
-        :return: Reversed values iterator.
-        """
-        return self._state.__reversed__()
-
-    @final
-    def __len__(self):
-        # type: () -> int
-        """
-        Get value count.
-
-        :return: Value count.
-        """
-        return len(self._state)
-
-    @final
-    def __iter__(self):
-        # type: () -> Iterator[T]
-        """
-        Iterate over values.
-
-        :return: Values iterator.
-        """
-        for value in self._state:
-            yield value
-
-    @final
-    def __contains__(self, value):
-        # type: (Any) -> bool
-        """
-        Get whether value is present.
-
-        :param value: Value.
-        :return: True if contains.
-        """
-        return value in self._state
 
     @final
     def _clear(self):
@@ -3996,7 +3797,7 @@ class SetObject(
     @classmethod
     @final
     def deserialize(cls, serialized, app=None, **kwargs):
-        # type: (Type[_O], Dict[str, Any], Application, Any) -> _O
+        # type: (Type[_O], List[Any], Application, Any) -> _O
         """
         Deserialize.
 

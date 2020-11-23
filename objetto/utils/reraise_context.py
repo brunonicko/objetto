@@ -55,15 +55,13 @@ class ReraiseContext(object):
         if exc_val is not None:
             if not isinstance(exc_val, self.exc_type):
                 return False
+            exc_message = "{}".format(exc_val)
             if self.message is not None:
-                exc_message = "{}".format(exc_val)
                 if exc_message:
                     exc_message = "{}; {}".format(self.message, exc_message)
                 else:
                     exc_message = self.message
-                exc = type(exc_val)(exc_message)
-            else:
-                exc = type(exc_val)(exc_val)
+            exc = type(exc_val)(exc_message, *exc_val.args[1:])
             raise_from(exc, None)
         return False
 

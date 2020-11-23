@@ -12,7 +12,14 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, raise_from, string_types, with_metaclass
+from six import (
+    iteritems,
+    iterkeys,
+    itervalues,
+    raise_from,
+    string_types,
+    with_metaclass,
+)
 
 from ._bases import (
     ABSTRACT_TAG,
@@ -40,7 +47,7 @@ from ._bases import (
     make_base_cls,
 )
 from ._states import BaseState, DictState, SetState
-from .utils.custom_repr import custom_mapping_repr
+from .utils.custom_repr import custom_mapping_repr, custom_iterable_repr
 from .utils.factoring import format_factory, import_factory, run_factory
 from .utils.lazy_import import get_path, import_path
 from .utils.reraise_context import ReraiseContext
@@ -66,6 +73,7 @@ if TYPE_CHECKING:
         Union,
     )
 
+    from ._states import ListState
     from .utils.factoring import LazyFactory
     from .utils.type_checking import LazyTypes
 
@@ -1341,7 +1349,26 @@ class BaseAttributeStructure(
 
     __slots__ = ()
 
-    @abstractmethod
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        return custom_mapping_repr(
+            dict(
+                (n, v)
+                for n, v in iteritems(self._state)
+                if type(self)._get_relationship(n).represented
+            ),
+            prefix="{}(".format(type(self).__fullname__),
+            template="{key}={value}",
+            suffix=")",
+            key_repr=str,
+        )
+
+    @final
     def __reversed__(self):
         # type: () -> Iterator[str]
         """
@@ -1349,9 +1376,9 @@ class BaseAttributeStructure(
 
         :return: Reversed attribute names iterator.
         """
-        raise NotImplementedError()
+        return self._state.__reversed__()
 
-    @abstractmethod
+    @final
     def __getitem__(self, name):
         # type: (str) -> Any
         """
@@ -1361,10 +1388,41 @@ class BaseAttributeStructure(
         :return: Value.
         :raises KeyError: Attribute does not exist or has no value.
         """
-        raise NotImplementedError()
+        return self._state[name]
+
+    @final
+    def __len__(self):
+        # type: () -> int
+        """
+        Get key count.
+
+        :return: Key count.
+        """
+        return len(self._state)
+
+    @final
+    def __iter__(self):
+        # type: () -> Iterator[str]
+        """
+        Iterate over names of attributes with value.
+
+        :return: Names of attributes with value.
+        """
+        for name in self._state:
+            yield name
+
+    @final
+    def __contains__(self, name):
+        # type: (Any) -> bool
+        """
+        Get whether attribute name is valid and has a value.
+
+        :param name: Attribute name.
+        :return: True if attribute name is valid and has a value.
+        """
+        return name in self._state
 
     @classmethod
-    @abstractmethod
     def _get_relationship(cls, location):
         # type: (str) -> BaseRelationship
         """
@@ -1377,7 +1435,6 @@ class BaseAttributeStructure(
         return cls._get_attribute(location).relationship
 
     @classmethod
-    @abstractmethod
     def _get_attribute(cls, name):
         # type: (str) -> BaseAttribute
         """
@@ -1443,7 +1500,7 @@ class BaseAttributeStructure(
         """
         raise NotImplementedError()
 
-    @abstractmethod
+    @final
     def keys(self):
         # type: () -> SetState[str]
         """
@@ -1451,6 +1508,25 @@ class BaseAttributeStructure(
 
         :return: Attribute names.
         """
+        return SetState(self._state.keys())
+
+    @final
+    def find_with_attributes(self, **attributes):
+        # type: (Any) -> VT
+        """
+        Find first value that matches unique attribute values.
+
+        :param attributes: Attributes to match.
+        :return: Value.
+        :raises ValueError: No attributes provided or no match found.
+        """
+        return self._state.find_with_attributes(**attributes)
+
+    @property
+    @abstractmethod
+    def _state(self):
+        # type: () -> DictState[str, Any]
+        """Internal state."""
         raise NotImplementedError()
 
 
@@ -1624,6 +1700,17 @@ class BaseAuxiliaryStructure(
         abstract_member()
     )  # type: Union[Type[AbstractMember], BaseRelationship]
     """Relationship for all locations."""
+
+    def find_with_attributes(self, **attributes):
+        # type: (Any) -> VT
+        """
+        Find first value that matches unique attribute values.
+
+        :param attributes: Attributes to match.
+        :return: Value.
+        :raises ValueError: No attributes provided or no match found.
+        """
+        return self._state.find_with_attributes(**attributes)
 
     @classmethod
     @final
@@ -1840,6 +1927,128 @@ class BaseDictStructure(
     )  # type: Union[Type[AbstractMember], KeyRelationship]
     """Relationship for the keys."""
 
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        if type(self)._relationship.represented:
+            return custom_mapping_repr(
+                self._state,
+                prefix="{}({{".format(type(self).__fullname__),
+                suffix="})",
+            )
+        else:
+            return "<{}>".format(type(self).__fullname__)
+
+    @final
+    def __reversed__(self):
+        # type: () -> Iterator[KT]
+        """
+        Iterate over reversed keys.
+
+        :return: Reversed keys iterator.
+        """
+        return reversed(self._state)
+
+    @final
+    def __getitem__(self, key):
+        # type: (KT) -> VT
+        """
+        Get value for key.
+
+        :param key: Key.
+        :return: Value.
+        :raises KeyError: Invalid key.
+        """
+        return self._state[key]
+
+    @final
+    def __len__(self):
+        # type: () -> int
+        """
+        Get key count.
+
+        :return: Key count.
+        """
+        return len(self._state)
+
+    @final
+    def __iter__(self):
+        # type: () -> Iterator[KT]
+        """
+        Iterate over keys.
+
+        :return: Key iterator.
+        """
+        for key in self._state:
+            yield key
+
+    @final
+    def __contains__(self, key):
+        # type: (Any) -> bool
+        """
+        Get whether key is present.
+
+        :param key: Key.
+        :return: True if contains.
+        """
+        return key in self._state
+
+    @final
+    def get(self, key, fallback=None):
+        # type: (KT, Any) -> Union[VT, Any]
+        """
+        Get value for key, return fallback value if key is not present.
+
+        :param key: Key.
+        :param fallback: Fallback value.
+        :return: Value or fallback value.
+        """
+        return self._state.get(key, fallback)
+
+    @final
+    def iteritems(self):
+        # type: () -> Iterator[Tuple[KT, VT]]
+        """
+        Iterate over keys.
+
+        :return: Key iterator.
+        """
+        for key, value in iteritems(self._state):
+            yield key, value
+
+    @final
+    def iterkeys(self):
+        # type: () -> Iterator[KT]
+        """
+        Iterate over keys.
+
+        :return: Keys iterator.
+        """
+        for key in iterkeys(self._state):
+            yield key
+
+    @final
+    def itervalues(self):
+        # type: () -> Iterator[VT]
+        """
+        Iterate over values.
+
+        :return: Values iterator.
+        """
+        for value in itervalues(self._state):
+            yield value
+
+    @property
+    @abstractmethod
+    def _state(self):
+        # type: () -> DictState[KT, VT]
+        """Internal state."""
+        raise NotImplementedError()
+
 
 class BaseInteractiveDictStructure(
     BaseDictStructure[KT, VT],
@@ -1877,6 +2086,140 @@ class BaseListStructure(
 
     __slots__ = ()
 
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        if type(self)._relationship.represented:
+            return custom_iterable_repr(
+                self._state,
+                prefix="{}([".format(type(self).__fullname__),
+                suffix="])",
+            )
+        else:
+            return "<{}>".format(type(self).__fullname__)
+
+    @final
+    def __reversed__(self):
+        # type: () -> Iterator[T]
+        """
+        Iterate over reversed values.
+
+        :return: Reversed values iterator.
+        """
+        return reversed(self._state)
+
+    @overload
+    def __getitem__(self, index):
+        # type: (int) -> T
+        pass
+
+    @overload
+    def __getitem__(self, index):
+        # type: (slice) -> ListState[T]
+        pass
+
+    @final
+    def __getitem__(self, index):
+        """
+        Get value/values at index/from slice.
+
+        :param index: Index/slice.
+        :return: Value/values.
+        """
+        return self._state[index]
+
+    @final
+    def __len__(self):
+        # type: () -> int
+        """
+        Get value count.
+
+        :return: Value count.
+        """
+        return len(self._state)
+
+    @final
+    def __iter__(self):
+        # type: () -> Iterator[T]
+        """
+        Iterate over values.
+
+        :return: Values iterator.
+        """
+        for value in self._state:
+            yield value
+
+    @final
+    def __contains__(self, value):
+        # type: (Any) -> bool
+        """
+        Get whether value is present.
+
+        :param value: Value.
+        :return: True if contains.
+        """
+        return value in self._state
+
+    @final
+    def count(self, value):
+        # type: (Any) -> int
+        """
+        Count number of occurrences of a value.
+
+        :return: Number of occurrences.
+        """
+        return self._state.count(value)
+
+    @final
+    def index(self, value, start=None, stop=None):
+        # type: (Any, Optional[int], Optional[int]) -> int
+        """
+        Get index of a value.
+
+        :param value: Value.
+        :param start: Start index.
+        :param stop: Stop index.
+        :return: Index of value.
+        :raises ValueError: Provided stop but did not provide start.
+        """
+        return self._state.index(value, start=start, stop=stop)
+
+    @final
+    def resolve_index(self, index, clamp=False):
+        # type: (int, bool) -> int
+        """
+        Resolve index to a positive number.
+
+        :param index: Input index.
+        :param clamp: Whether to clamp between zero and the length.
+        :return: Resolved index.
+        :raises IndexError: Index out of range.
+        """
+        return self._state.resolve_index(index, clamp=clamp)
+
+    @final
+    def resolve_continuous_slice(self, slc):
+        # type: (slice) -> Tuple[int, int]
+        """
+        Resolve continuous slice according to length.
+
+        :param slc: Continuous slice.
+        :return: Index and stop.
+        :raises IndexError: Slice is noncontinuous.
+        """
+        return self._state.resolve_continuous_slice(slc)
+
+    @property
+    @abstractmethod
+    def _state(self):
+        # type: () -> ListState[T]
+        """Internal state."""
+        raise NotImplementedError()
+
 
 class BaseInteractiveListStructure(
     BaseListStructure[T],
@@ -1913,6 +2256,153 @@ class BaseSetStructure(
     """Base set structure."""
 
     __slots__ = ()
+
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        if type(self)._relationship.represented:
+            return custom_iterable_repr(
+                self._state,
+                prefix="{}([".format(type(self).__fullname__),
+                suffix="])",
+                sorting=True,
+                sort_key=lambda v: hash(v),
+            )
+        else:
+            return "<{}>".format(type(self).__fullname__)
+
+    @final
+    def __reversed__(self):
+        # type: () -> Iterator[T]
+        """
+        Iterate over reversed values.
+
+        :return: Reversed values iterator.
+        """
+        return reversed(self._state)
+
+    @final
+    def __len__(self):
+        # type: () -> int
+        """
+        Get value count.
+
+        :return: Value count.
+        """
+        return len(self._state)
+
+    @final
+    def __iter__(self):
+        # type: () -> Iterator[T]
+        """
+        Iterate over values.
+
+        :return: Values iterator.
+        """
+        for value in self._state:
+            yield value
+
+    @final
+    def __contains__(self, value):
+        # type: (Any) -> bool
+        """
+        Get whether value is present.
+
+        :param value: Value.
+        :return: True if contains.
+        """
+        return value in self._state
+
+    def isdisjoint(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a disjoint set of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is disjoint.
+        """
+        return self._state.isdisjoint(iterable)
+
+    def issubset(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a subset of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is subset.
+        """
+        return self._state.issubset(iterable)
+
+    def issuperset(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a superset of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is superset.
+        """
+        return self._state.issuperset(iterable)
+
+    def intersection(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get intersection.
+
+        :param iterable: Iterable.
+        :return: Intersection.
+        """
+        return self._state.intersection(iterable)
+
+    def difference(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get difference.
+
+        :param iterable: Iterable.
+        :return: Difference.
+        """
+        return self._state.difference(iterable)
+
+    def inverse_difference(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get an iterable's difference to this.
+
+        :param iterable: Iterable.
+        :return: Inverse Difference.
+        """
+        return self._state.inverse_difference(iterable)
+
+    def symmetric_difference(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get symmetric difference.
+
+        :param iterable: Iterable.
+        :return: Symmetric difference.
+        """
+        return self._state.symmetric_difference(iterable)
+
+    def union(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get union.
+
+        :param iterable: Iterable.
+        :return: Union.
+        """
+        return self._state.union(iterable)
+
+    @property
+    @abstractmethod
+    def _state(self):
+        # type: () -> SetState[T]
+        """Internal state."""
+        raise NotImplementedError()
 
 
 class BaseInteractiveSetStructure(

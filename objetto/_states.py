@@ -27,16 +27,13 @@ from .utils.list_operations import pre_move, resolve_continuous_slice, resolve_i
 if TYPE_CHECKING:
     from typing import (
         Any,
-        ItemsView,
         Iterable,
         Iterator,
-        KeysView,
         Mapping,
         Optional,
         Tuple,
         Type,
         Union,
-        ValuesView,
     )
 
     from pyrsistent.typing import PMap, PSet, PVector
@@ -235,7 +232,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
 
         :return: Keys iterator.
         """
-        for key in iterkeys(self):
+        for key in iterkeys(self._internal):
             yield key
 
     def __len__(self):
@@ -386,33 +383,6 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         for value in itervalues(self._internal):
             yield value
 
-    def items(self):
-        # type: () -> ItemsView[KT, VT]
-        """
-        Get items.
-
-        :return: Items.
-        """
-        return collections_abc.ItemsView(self)
-
-    def keys(self):
-        # type: () -> KeysView[KT]
-        """
-        Get keys.
-
-        :return: Keys.
-        """
-        return collections_abc.KeysView(self)
-
-    def values(self):
-        # type: () -> ValuesView[VT]
-        """
-        Get values.
-
-        :return: Values.
-        """
-        return collections_abc.ValuesView(self)
-
     def find_with_attributes(self, **attributes):
         # type: (Any) -> VT
         """
@@ -425,7 +395,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         if not attributes:
             error = "no attributes provided"
             raise ValueError(error)
-        for value in itervalues(self):
+        for value in itervalues(self._internal):
             for a_name, a_value in iteritems(attributes):
                 if not hasattr(value, a_name) or getattr(value, a_name) != a_value:
                     break
