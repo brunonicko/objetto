@@ -24,7 +24,6 @@ from six import (
 from ._bases import (
     ABSTRACT_TAG,
     FINAL_METHOD_TAG,
-    INITIALIZING_TAG,
     MISSING,
     AbstractMember,
     Base,
@@ -113,7 +112,7 @@ __all__ = [
 
 _SERIALIZED_CLASS_KEY = "__class__"
 _ESCAPED_SERIALIZED_CLASS_KEY = "\\__class__"
-_SERIALIZED_VALUE_KEY = "value"
+_SERIALIZED_VALUE_KEY = "__state__"
 
 
 T = TypeVar("T")  # Any type.
@@ -858,6 +857,7 @@ class BaseStructure(
             relationship,
             cls._serializable_structure_types,
             cls.__fullname__,
+            **kwargs
         )
         if relationship.deserializer is None:
             return deserializer()
@@ -1187,7 +1187,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
             error = "attribute '{}' of '{}' has no value set".format(
                 name, type(instance).__fullname__
             )
-            if getattr(instance, INITIALIZING_TAG, False):
+            if instance._initializing:
                 error += " (instance hasn't finished initializing)"
             exc = AttributeError(error)
             raise_from(exc, None)

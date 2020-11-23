@@ -12,7 +12,7 @@ from enum import Enum, unique
 
 from six import string_types, iteritems
 
-from ._bases import INITIALIZING_TAG, Base, final
+from ._bases import Base, final
 from ._changes import BaseChange
 from ._data import BaseData, DataAttribute, InteractiveDictData
 from ._states import BaseState
@@ -460,7 +460,7 @@ class ApplicationInternals(Base):
                         "can't change parent for {} while its hierarchy is locked"
                     ).format(child)
                     raise ValueError(error)
-                if getattr(child, INITIALIZING_TAG):
+                if child._initializing:
                     error = (
                         "can't change parent for {} while running it's '__init__'"
                     ).format(child)
@@ -527,7 +527,7 @@ class ApplicationInternals(Base):
                 atomic_batch_change = None
                 if (
                     history is not None
-                    and not getattr(obj, INITIALIZING_TAG)
+                    and not obj._initializing
                     and not history.executing
                     and not history.in_batch()
                 ):
@@ -708,7 +708,7 @@ class ApplicationInternals(Base):
                 # Push change to history.
                 if (
                     history is not None
-                    and not getattr(obj, INITIALIZING_TAG)
+                    and not obj._initializing
                     and not history_provider._initializing
                 ):
                     history.__push_change__(change)
@@ -771,22 +771,19 @@ class ApplicationInternals(Base):
                 if type(commit) is BatchCommit:
                     for action in commit.actions:
                         exception_infos.extend(
-                            # action.receiver.__.subject.send(action, commit.phase)
-                            ()  # FIXME
+                            action.receiver.__.subject.send(action, commit.phase)
                         )
                 else:
                     for action in commit.actions:
                         exception_infos.extend(
-                            # action.receiver.__.subject.send(action, Phase.PRE)
-                            ()  # FIXME
+                            action.receiver.__.subject.send(action, Phase.PRE)
                         )
 
                     self.__storage.update(commit.stores)
 
                     for action in commit.actions:
                         exception_infos.extend(
-                            # action.receiver.__.subject.send(action, Phase.POST)
-                            ()  # FIXME
+                            action.receiver.__.subject.send(action, Phase.POST)
                         )
 
             if exception_infos:
@@ -1056,7 +1053,7 @@ class ApplicationInternals(Base):
                     # History Pre.
                     if (
                         history is not None
-                        and not getattr(obj, INITIALIZING_TAG)
+                        and not obj._initializing
                         and not history_provider._initializing
                     ):
                         history.__enter_batch__(change)
@@ -1073,7 +1070,7 @@ class ApplicationInternals(Base):
                     # History Post.
                     if (
                         history is not None
-                        and not getattr(obj, INITIALIZING_TAG)
+                        and not obj._initializing
                         and not history_provider._initializing
                     ):
                         history.__exit_batch__(change)

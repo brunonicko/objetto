@@ -59,7 +59,6 @@ __all__ = [
     "ABSTRACT_TAG",
     "FINAL_CLASS_TAG",
     "FINAL_METHOD_TAG",
-    "INITIALIZING_TAG",
     "final",
     "init_context",
     "init",
@@ -101,7 +100,8 @@ MISSING = object()
 ABSTRACT_TAG = "__isabstractmethod__"
 FINAL_CLASS_TAG = "__isfinalclass__"
 FINAL_METHOD_TAG = "__isfinalmethod__"
-INITIALIZING_TAG = "__isinitializing__"
+
+_INITIALIZING_TAG = "__isinitializing__"
 
 __final = final
 __base_cls_cache = WeakValueDictionary()  # type: MutableMapping[str, Type[Base]]
@@ -161,12 +161,12 @@ def init_context(obj):
     :param obj: Instance of :class:`Base`.
     :return: Context manager.
     """
-    previous = getattr(obj, INITIALIZING_TAG, False)
-    object.__setattr__(obj, INITIALIZING_TAG, True)
+    previous = getattr(obj, _INITIALIZING_TAG, False)
+    object.__setattr__(obj, _INITIALIZING_TAG, True)
     try:
         yield
     finally:
-        object.__setattr__(obj, INITIALIZING_TAG, previous)
+        object.__setattr__(obj, _INITIALIZING_TAG, previous)
 
 
 @decorator
@@ -493,7 +493,7 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
       - Simplified `__dir__` result that shows only relevant members for client code.
     """
 
-    __slots__ = (INITIALIZING_TAG,)
+    __slots__ = (_INITIALIZING_TAG,)
 
     def __copy__(self):
         # type: () -> Any
@@ -532,6 +532,13 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
                 continue
             member_names.update(simplify_member_names(base.__dict__))
         return sorted(member_names)
+
+    @property
+    @final
+    def _initializing(self):
+        # type: () -> bool
+        """Whether `__init__` is running or not."""
+        return getattr(self, _INITIALIZING_TAG, False)
 
 
 @final

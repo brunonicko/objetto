@@ -78,6 +78,7 @@ from .utils.reraise_context import ReraiseContext
 from .utils.type_checking import assert_is_callable, assert_is_instance, import_types
 from .utils.list_operations import resolve_index, resolve_continuous_slice, pre_move
 from .utils.weak_reference import WeakReference
+from .utils.subject_observer import Subject
 
 if TYPE_CHECKING:
     from typing import (
@@ -436,6 +437,41 @@ class BaseObjectFunctions(Base):
         raise NotImplementedError()
 
 
+class BaseObjectInternals(Base):
+    """
+    Internals for :class:`BaseObject`.
+
+    :param obj: Object.
+    :param app: Application.
+    """
+
+    __slots__ = ("__obj_ref", "__app", "__subject")
+
+    def __init__(self, obj, app):
+        # type: (BaseObject, Application) -> None
+        self.__obj_ref = WeakReference(obj)
+        self.__app = app
+        self.__subject = Subject()
+
+    @property
+    def obj_ref(self):
+        # type: () -> WeakReference[BaseObject]
+        """Weak reference to object."""
+        return self.__obj_ref
+
+    @property
+    def app(self):
+        # type: () -> Application
+        """Application."""
+        return self.__app
+
+    @property
+    def subject(self):
+        # type: () -> Subject
+        """Subject."""
+        return self.__subject
+
+
 class BaseObjectMeta(BaseStructureMeta):
     """
     Metaclass for :class:`BaseObject`.
@@ -574,14 +610,14 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     :param app: Application.
     """
 
-    __slots__ = ("__weakref__", "__app")
+    __slots__ = ("__weakref__", "__")
     __functions__ = BaseObjectFunctions
 
     def __init__(self, app):
         # type: (Application) -> None
         with ReraiseContext(TypeError, "'app' parameter"):
             assert_is_instance(app, Application)
-        self.__app = app
+        self.__ = BaseObjectInternals(self, app)
         app.__.init_object(self)
 
     @final
@@ -721,7 +757,7 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     def app(self):
         # type: () -> Application
         """Application."""
-        return self.__app
+        return self.__.app
 
     @property
     def data(self):
@@ -1731,6 +1767,7 @@ class Object(
                 "missing required 'app' keyword argument for '{}.deserialize()' method"
             ).format(cls.__fullname__)
             raise ValueError(error)
+        kwargs["app"] = app
 
         with app.write_context():
             self = cast("_O", cls.__new__(cls))
@@ -2665,6 +2702,7 @@ class DictObject(
                 "missing required 'app' keyword argument for '{}.deserialize()' method"
             ).format(cls.__fullname__)
             raise ValueError(error)
+        kwargs["app"] = app
 
         with app.write_context():
             self = cast("DictObject", cls.__new__(cls))
@@ -3375,6 +3413,7 @@ class ListObject(
                 "missing required 'app' keyword argument for '{}.deserialize()' method"
             ).format(cls.__name__)
             raise ValueError(error)
+        kwargs["app"] = app
 
         with app.write_context():
             self = cast("ListObject", cls.__new__(cls))
@@ -3811,6 +3850,7 @@ class SetObject(
                 "missing required 'app' keyword argument for '{}.deserialize()' method"
             ).format(cls.__fullname__)
             raise ValueError(error)
+        kwargs["app"] = app
 
         with app.write_context():
             self = cast("SetObject", cls.__new__(cls))
