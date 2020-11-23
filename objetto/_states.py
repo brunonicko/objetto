@@ -661,7 +661,7 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
             return self._make(self._internal.delete(index, stop))
         else:
             index = self.resolve_index(item)
-            return self._make(self._internal.delete(index))
+            return self._make(self._internal.delete(index, None))
 
     def _update(self, index, *values):
         # type: (_LS, int, T) -> _LS

@@ -147,6 +147,10 @@ class RejectChangeException(Exception):
         return self.__callback
 
 
+class TemporaryContextException(Exception):
+    """Temporary write context exception."""
+
+
 class ApplicationLock(Base):
     """
     Re-entrant threading lock for thread-safe applications.
@@ -935,12 +939,12 @@ class ApplicationInternals(Base):
                 self.__busy_writing.add(obj)
                 try:
                     self.__write(obj, state, data, metadata, child_counter, change)
-                except RejectChangeException as e:
+                except RejectChangeException as e_:
                     self.__busy_writing.remove(obj)
-                    if e.change is not change:
+                    if e_.change is not change:
                         raise
                     self.__revert(index)
-                    e.callback()
+                    e_.callback()
                 except Exception:
                     self.__busy_writing.remove(obj)
                     raise
@@ -949,9 +953,10 @@ class ApplicationInternals(Base):
 
             try:
                 yield read, write
-            except Exception:
+            except Exception as e:
                 self.__revert(index)
-                raise
+                if not topmost or type(e) is not TemporaryContextException:
+                    raise
             else:
                 if topmost:
                     with self.read_context():
@@ -1126,3 +1131,16 @@ class Application(Base):
         """Write context."""
         with self.__.write_context():
             yield
+
+    @final
+    @contextmanager
+    def temporary_context(self):
+        # type: () -> Iterator
+        """Temporary write context."""
+        with self.__.write_context():
+            try:
+                yield
+            except Exception:
+                raise
+            else:
+                raise TemporaryContextException()

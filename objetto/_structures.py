@@ -25,7 +25,6 @@ from ._bases import (
     ABSTRACT_TAG,
     FINAL_METHOD_TAG,
     MISSING,
-    AbstractMember,
     Base,
     BaseHashable,
     BaseInteractiveCollection,
@@ -41,7 +40,6 @@ from ._bases import (
     BaseProtectedDict,
     BaseProtectedList,
     BaseProtectedSet,
-    abstract_member,
     final,
     make_base_cls,
 )
@@ -613,11 +611,10 @@ class BaseStructureMeta(BaseMeta):
         raise NotImplementedError()
 
     @property
-    @abstractmethod
     def _relationship_type(cls):
         # type: () -> Type[BaseRelationship]
         """Relationship type."""
-        raise NotImplementedError()
+        return BaseRelationship
 
 
 # noinspection PyTypeChecker
@@ -1676,9 +1673,8 @@ class BaseAuxiliaryStructureMeta(BaseStructureMeta):
 
         # Check relationship type.
         relationship = getattr(cls, "_relationship")
-        if type(relationship) is not type(abstract_member()):
-            relationship_type = cls._relationship_type
-            assert_is_instance(relationship, relationship_type, subtypes=False)
+        relationship_type = cls._relationship_type
+        assert_is_instance(relationship, relationship_type, subtypes=False)
 
     @property
     @abstractmethod
@@ -1696,9 +1692,7 @@ class BaseAuxiliaryStructure(
 
     __slots__ = ()
 
-    _relationship = (
-        abstract_member()
-    )  # type: Union[Type[AbstractMember], BaseRelationship]
+    _relationship = BaseRelationship()
     """Relationship for all locations."""
 
     def find_with_attributes(self, **attributes):
@@ -1899,7 +1893,7 @@ class BaseDictStructureMeta(BaseAuxiliaryStructureMeta):
         # Check key relationship type.
         assert_is_instance(
             getattr(cls, "_key_relationship"),
-            (cls._key_relationship_type, type(abstract_member())),
+            cls._key_relationship_type,
             subtypes=False,
         )
 
@@ -1922,9 +1916,7 @@ class BaseDictStructure(
 
     __slots__ = ()
 
-    _key_relationship = (
-        abstract_member()
-    )  # type: Union[Type[AbstractMember], KeyRelationship]
+    _key_relationship = KeyRelationship()
     """Relationship for the keys."""
 
     def __repr__(self):

@@ -3836,7 +3836,7 @@ class SetObject(
     @classmethod
     @final
     def deserialize(cls, serialized, app=None, **kwargs):
-        # type: (Type[_O], List[Any], Application, Any) -> _O
+        # type: (Type[_SO], List[Any], Application, Any) -> _SO
         """
         Deserialize.
 
