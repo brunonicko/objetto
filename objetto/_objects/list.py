@@ -771,18 +771,6 @@ class MutableListObject(
     """Mutable dictionary object."""
     __slots__ = ()
 
-    @final
-    def __iadd__(self, iterable):
-        # type: (Iterable[T]) -> MutableSequence[T]
-        """
-        In place addition.
-
-        :param iterable: Another iterable.
-        :return: Added list.
-        """
-        self._extend(iterable)
-        return self
-
     @overload
     def __setitem__(self, index, value):
         # type: (int, T) -> None
@@ -849,7 +837,7 @@ class MutableListObject(
         with self.app.write_context():
             value = self[index]
             self._delete(index)
-            return value
+        return value
 
 
 # noinspection PyTypeChecker
@@ -861,7 +849,6 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
     """Mutable proxy list."""
     __slots__ = ()
 
-    __iadd__ = MutableListObject.__iadd__
     __setitem__ = MutableListObject.__setitem__
     __delitem__ = MutableListObject.__delitem__
     pop = MutableListObject.pop

@@ -17,7 +17,7 @@ from .object import (
 )
 from .dict import DictObject, MutableDictObject, ProxyDictObject
 from .list import ListObject, MutableListObject, ProxyListObject
-from .set import SetObject
+from .set import SetObject, MutableSetObject, ProxySetObject
 
 __all__ = [
     "Relationship",
@@ -37,4 +37,6 @@ __all__ = [
     "MutableListObject",
     "ProxyListObject",
     "SetObject",
+    "MutableSetObject",
+    "ProxySetObject",
 ]

@@ -17,13 +17,17 @@ from .bases import (
     BaseAuxiliaryObjectFunctions,
     BaseAuxiliaryObjectMeta,
     BaseAuxiliaryObject,
+    BaseMutableAuxiliaryObject,
+    BaseProxyObject,
 )
 from .._application import Application
-from .._bases import FINAL_METHOD_TAG, final, init_context
+from .._bases import FINAL_METHOD_TAG, final, init_context, BaseMutableSet
 from .._changes import SetUpdate, SetRemove
 from .._data import BaseData, InteractiveDictData, SetData
 from .._states import DictState, SetState
-from .._structures import BaseSetStructureMeta, BaseSetStructure
+from .._structures import (
+    BaseSetStructureMeta, BaseSetStructure, BaseMutableSetStructure
+)
 
 if TYPE_CHECKING:
     from typing import (
@@ -39,10 +43,14 @@ if TYPE_CHECKING:
 
     from .._application import Store
 
-__all__ = ["SetObject"]
+__all__ = ["SetObject", "MutableSetObject", "ProxySetObject"]
 
 
 T = TypeVar("T")  # Any type.
+
+
+DATA_MAP_METADATA_KEY = "data_map"
+"""Data child locations metadata key."""
 
 
 @final
@@ -64,8 +72,11 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
         """
         data = store.data._set(data_location, new_child_data)
         metadata = store.metadata.set(
-            "data_map",
-            store.metadata.get("data_map", DictState()).set(child, new_child_data),
+            DATA_MAP_METADATA_KEY,
+            store.metadata.get(
+                DATA_MAP_METADATA_KEY,
+                DictState(),
+            ).set(child, new_child_data),
         )
         return store.update({"data": data, "metadata": metadata})
 
@@ -87,7 +98,9 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
             state = old_state = store.state  # type: SetState
             data = store.data  # type: SetData
             metadata = store.metadata  # type: InteractiveDictData
-            data_map = metadata.get("data_map", DictState())  # type: DictState
+            data_map = metadata.get(
+                DATA_MAP_METADATA_KEY, DictState()
+            )  # type: DictState
 
             # Prepare change information.
             child_counter = ValueCounter()  # type: Counter[BaseObject]
@@ -150,7 +163,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
                 state = state.add(value)
 
             # Store data_map in the metadata.
-            metadata = metadata.set("data_map", data_map)
+            metadata = metadata.set(DATA_MAP_METADATA_KEY, data_map)
 
             # Prepare change.
             change = SetUpdate(
@@ -200,7 +213,9 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
             state = old_state = store.state  # type: SetState
             data = store.data  # type: SetData
             metadata = store.metadata  # type: InteractiveDictData
-            data_map = metadata.get("data_map", DictState())  # type: DictState
+            data_map = metadata.get(
+                DATA_MAP_METADATA_KEY, DictState()
+            )  # type: DictState
 
             # Prepare change information.
             child_counter = ValueCounter()  # type: Counter[BaseObject]
@@ -234,7 +249,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
                 state = state.remove(value)
 
             # Store data_map in the metadata.
-            metadata = metadata.set("data_map", data_map)
+            metadata = metadata.set(DATA_MAP_METADATA_KEY, data_map)
 
             # Prepare change.
             change = SetRemove(
@@ -420,6 +435,44 @@ class SetObject(
         self.__functions__.update(self, iterable)
         return self
 
+    @final
+    def _locate(self, child):
+        # type: (BaseObject) -> int
+        """
+        Locate child object.
+
+        :param child: Child object.
+        :return: Location.
+        :raises ValueError: Could not locate child.
+        """
+        with self.app.__.read_context(self) as read:
+            if child not in read().children:
+                error = "could not locate child {} in {}".format(child, self)
+                raise ValueError(error)
+            return child
+
+    @final
+    def _locate_data(self, child):
+        # type: (BaseObject) -> int
+        """
+        Locate child object's data.
+
+        :param child: Child object.
+        :return: Data location.
+        :raises ValueError: Could not locate child's data.
+        """
+        with self.app.__.read_context(self) as read:
+            if child not in read().children:
+                error = "could not locate child {} in {}".format(child, self)
+                raise ValueError(error)
+            metadata = read().metadata
+            try:
+                return metadata[DATA_MAP_METADATA_KEY][child]
+            except KeyError:
+                pass
+            error = "could not locate data of child {} in {}".format(child, self)
+            raise ValueError(error)
+
     @classmethod
     @final
     def deserialize(cls, serialized, app=None, **kwargs):
@@ -451,7 +504,7 @@ class SetObject(
                 self.__functions__.update(self, initial)
             return self
 
-    @abstractmethod
+    @final
     def serialize(self, **kwargs):
         # type: (Any) -> List[Hashable]
         """
@@ -480,3 +533,244 @@ class SetObject(
         # type: () -> SetData[T]
         """Data."""
         return cast("SetData[T]", super(BaseSetStructure, self).data)
+
+
+# noinspection PyAbstractClass
+class MutableSetObject(
+    SetObject[T], BaseMutableAuxiliaryObject[T], BaseMutableSetStructure[T]
+):
+    """Mutable set object."""
+    __slots__ = ()
+
+    @final
+    def pop(self):
+        # type: () -> T
+        """
+        Pop value.
+
+        :return: Value.
+        :raises KeyError: Empty set.
+        """
+        with self.app.write_context():
+            state = self._state
+            if not state:
+                error = "empty set"
+                raise KeyError(error)
+            value = next(iter(state))
+            self._remove(value)
+        return value
+
+    @final
+    def intersection_update(self, iterable):
+        # type: (Iterable[T]) -> None
+        """
+        Intersect.
+
+        :param iterable: Iterable.
+        """
+        with self.app.write_context():
+            difference = self.difference(iterable)
+            if difference:
+                self._remove(*difference)
+
+    @final
+    def symmetric_difference_update(self, iterable):
+        # type: (Iterable[T]) -> None
+        """
+        Symmetric difference.
+
+        :param iterable: Iterable.
+        """
+        with self.app.write_context():
+            inverse_difference = self.inverse_difference(iterable)
+            intersection = self.intersection(iterable)
+            self._update(inverse_difference)
+            self._remove(*intersection)
+
+    @final
+    def difference_update(self, iterable):
+        # type: (Iterable[T]) -> None
+        """
+        Difference.
+
+        :param iterable: Iterable.
+        """
+        with self.app.write_context():
+            intersection = self.intersection(iterable)
+            if intersection:
+                self._remove(*intersection)
+
+
+# noinspection PyTypeChecker
+_PSO = TypeVar("_PSO", bound="ProxySetObject")
+
+
+@final
+class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
+    """Mutable proxy set."""
+    __slots__ = ()
+
+    pop = MutableSetObject.pop
+    intersection_update = MutableSetObject.intersection_update
+    symmetric_difference_update = MutableSetObject.symmetric_difference_update
+    difference_update = MutableSetObject.difference_update
+
+    @classmethod
+    def _from_iterable(cls, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Make set state from iterable.
+
+        :param iterable: Iterable.
+        :return: Set data.
+        """
+        return SetState(iterable)
+
+    def _hash(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        return self._obj._hash()
+
+    def _add(self, value):
+        # type: (_PSO, T) -> _PSO
+        """
+        Add value.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        self._obj._add(value)
+        return self
+
+    def _discard(self, *values):
+        # type: (_PSO, T) -> _PSO
+        """
+        Discard value(s).
+
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        self._obj._discard(*values)
+        return self
+
+    def _remove(self, *values):
+        # type: (_PSO, T) -> _PSO
+        """
+        Remove existing value(s).
+
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        :raises KeyError: Value is not present.
+        """
+        self._obj._remove(*values)
+        return self
+
+    def _replace(self, old_value, new_value):
+        # type: (_PSO, T, T) -> _PSO
+        """
+        Replace existing value with a new one.
+
+        :param old_value: Existing value.
+        :param new_value: New value.
+        :return: Transformed.
+        :raises KeyError: Value is not present.
+        """
+        self._obj._replace(old_value, new_value)
+        return self
+
+    def _update(self, iterable):
+        # type: (_PSO, Iterable[T]) -> _PSO
+        """
+        Update with iterable.
+
+        :param iterable: Iterable.
+        :return: Transformed.
+        """
+        self._obj._update(iterable)
+        return self
+
+    def isdisjoint(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a disjoint set of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is disjoint.
+        """
+        return self._obj.isdisjoint(iterable)
+
+    def issubset(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a subset of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is subset.
+        """
+        return self._obj.issubset(iterable)
+
+    def issuperset(self, iterable):
+        # type: (Iterable) -> bool
+        """
+        Get whether is a superset of an iterable.
+
+        :param iterable: Iterable.
+        :return: True if is superset.
+        """
+        return self._obj.issuperset(iterable)
+
+    def intersection(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get intersection.
+
+        :param iterable: Iterable.
+        :return: Intersection.
+        """
+        return self._obj.intersection(iterable)
+
+    def difference(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get difference.
+
+        :param iterable: Iterable.
+        :return: Difference.
+        """
+        return self._obj.difference(iterable)
+
+    def inverse_difference(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get an iterable's difference to this.
+
+        :param iterable: Iterable.
+        :return: Inverse Difference.
+        """
+        return self._obj.inverse_difference(iterable)
+
+    def symmetric_difference(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get symmetric difference.
+
+        :param iterable: Iterable.
+        :return: Symmetric difference.
+        """
+        return self._obj.symmetric_difference(iterable)
+
+    def union(self, iterable):
+        # type: (Iterable) -> SetState
+        """
+        Get union.
+
+        :param iterable: Iterable.
+        :return: Union.
+        """
+        return self._obj.union(iterable)

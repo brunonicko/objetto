@@ -1503,16 +1503,17 @@ class BaseMutableList(
 
     __slots__ = ()
 
-    @abstractmethod
+    @final
     def __iadd__(self, iterable):
-        # type: (Iterable[T_co]) -> MutableSequence[T_co]
+        # type: (Iterable[T]) -> MutableSequence[T]
         """
         In place addition.
 
         :param iterable: Another iterable.
         :return: Added list.
         """
-        raise NotImplementedError()
+        self._extend(iterable)
+        return self
 
     @overload
     @abstractmethod
@@ -2172,6 +2173,7 @@ class BaseMutableSet(SlottedMutableSet, BaseProtectedSet[T], BaseMutableCollecti
         Pop value.
 
         :return: Value.
+        :raises KeyError: Empty set.
         """
         raise NotImplementedError()
 
