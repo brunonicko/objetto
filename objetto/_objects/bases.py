@@ -20,7 +20,7 @@ from six import (
 )
 
 from .._application import Application
-from .._bases import Base, BaseMeta, final, BaseMutableCollection
+from .._bases import Base, final, BaseMutableCollection
 from .._changes import Batch
 from .._data import BaseData, DataRelationship, BaseAuxiliaryData
 from .._states import BaseState, DictState

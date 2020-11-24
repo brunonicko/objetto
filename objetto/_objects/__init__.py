@@ -16,7 +16,7 @@ from .object import (
     Object,
 )
 from .dict import DictObject, MutableDictObject, ProxyDictObject
-from .list import ListObject
+from .list import ListObject, MutableListObject, ProxyListObject
 from .set import SetObject
 
 __all__ = [
@@ -34,5 +34,7 @@ __all__ = [
     "MutableDictObject",
     "ProxyDictObject",
     "ListObject",
+    "MutableListObject",
+    "ProxyListObject",
     "SetObject",
 ]

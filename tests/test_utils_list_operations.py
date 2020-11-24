@@ -38,7 +38,7 @@ def test_resolve_continuous_slice():
 
 
 def test_pre_move():
-    my_list = ["a", "b", "c", "c"]
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c']
     length = len(my_list)
 
     assert pre_move(length, 1, 2) is None
@@ -46,7 +46,8 @@ def test_pre_move():
     assert pre_move(length, 3, 0) == (3, 4, 0, 0)
     assert pre_move(length, 1, 3) == (1, 2, 3, 3)
     assert pre_move(length, slice(1, 3), 0) == (1, 3, 0, 0)
-    assert pre_move(length, slice(1, 3), 4) == (1, 3, 4, 3)
+    assert pre_move(length, slice(1, 3), 4) == (1, 3, 4, 3)  # FIXME: post target index
+    assert pre_move(length, slice(3, 5), 9) == (3, 5, 9, 7)
 
 
 if __name__ == "__main__":

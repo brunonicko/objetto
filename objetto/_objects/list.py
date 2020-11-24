@@ -2,7 +2,7 @@
 """List objects and proxy."""
 
 from collections import Counter as ValueCounter
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast, overload
 
 try:
     import collections.abc as collections_abc
@@ -16,13 +16,17 @@ from .bases import (
     BaseAuxiliaryObjectFunctions,
     BaseAuxiliaryObjectMeta,
     BaseAuxiliaryObject,
+    BaseMutableAuxiliaryObject,
+    BaseProxyObject,
 )
 from .._application import Application
-from .._bases import FINAL_METHOD_TAG, final, init_context
+from .._bases import FINAL_METHOD_TAG, final, init_context, BaseMutableList
 from .._changes import ListInsert, ListDelete, ListUpdate, ListMove
 from .._data import BaseData, InteractiveDictData, ListData
 from .._states import ListState
-from .._structures import BaseListStructureMeta, BaseListStructure
+from .._structures import (
+    BaseListStructureMeta, BaseListStructure, BaseMutableListStructure
+)
 from ..utils.list_operations import resolve_index, resolve_continuous_slice, pre_move
 
 if TYPE_CHECKING:
@@ -31,10 +35,14 @@ if TYPE_CHECKING:
         Callable,
         Counter,
         Dict,
+        MutableSequence,
         Iterable,
+        Iterator,
         List,
         Set,
         Type,
+        Tuple,
+        Optional,
         Union,
     )
 
@@ -74,9 +82,6 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         factory=True,  # type: bool
     ):
         # type: (...) -> None
-        if not input_values:
-            error = "no values provided"
-            raise ValueError(error)
         cls = type(obj)
         relationship = cls._relationship
         with obj.app.__.write_context(obj) as (read, write):
@@ -281,9 +286,6 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         factory=True,  # type: bool
     ):
         # type: (...) -> None
-        if not input_values:
-            error = "no values provided"
-            raise ValueError(error)
         cls = type(obj)
         relationship = cls._relationship
         with obj.app.__.write_context(obj) as (read, write):
@@ -562,6 +564,9 @@ class ListObject(
         :return: Transformed.
         :raises ValueError: No values provided.
         """
+        if not values:
+            error = "no values provided"
+            raise ValueError(error)
         self.__functions__.insert(self, index, values)
         return self
 
@@ -656,6 +661,9 @@ class ListObject(
         :return: Transformed.
         :raises ValueError: No values provided.
         """
+        if not input_values:
+            error = "no values provided"
+            raise ValueError(error)
         self.__functions__.update(self, index, values)
         return self
 
@@ -754,3 +762,284 @@ class ListObject(
         # type: () -> ListData[T]
         """Data."""
         return cast("ListData[T]", super(BaseListStructure, self).data)
+
+
+# noinspection PyAbstractClass
+class MutableListObject(
+    ListObject[T], BaseMutableAuxiliaryObject[T], BaseMutableListStructure[T]
+):
+    """Mutable dictionary object."""
+    __slots__ = ()
+
+    @final
+    def __iadd__(self, iterable):
+        # type: (Iterable[T]) -> MutableSequence[T]
+        """
+        In place addition.
+
+        :param iterable: Another iterable.
+        :return: Added list.
+        """
+        self._extend(iterable)
+        return self
+
+    @overload
+    def __setitem__(self, index, value):
+        # type: (int, T) -> None
+        pass
+
+    @overload
+    def __setitem__(self, slc, values):
+        # type: (slice, Iterable[T]) -> None
+        pass
+
+    @final
+    def __setitem__(self, item, value):
+        # type: (Union[int, slice], Union[T, Iterable[T]]) -> None
+        """
+        Set value/values at index/slice.
+
+        :param item: Index/slice.
+        :param value: Value/values.
+        :raises IndexError: Slice is noncontinuous.
+        :raises ValueError: Values length does not fit in slice.
+        """
+        if isinstance(item, slice):
+            with self.app.write_context():
+                index, stop = self.resolve_continuous_slice(item)
+                if len(value) != stop - index:
+                    error = "values length ({}) does not fit in slice ({})".format(
+                        len(value), stop - index
+                    )
+                    raise ValueError(error)
+                self._update(index, *value)
+        else:
+            self._update(item, value)
+
+    @overload
+    def __delitem__(self, index):
+        # type: (int) -> None
+        pass
+
+    @overload
+    def __delitem__(self, slc):
+        # type: (slice) -> None
+        pass
+
+    @final
+    def __delitem__(self, item):
+        # type: (Union[int, slice]) -> None
+        """
+        Delete value/values at index/slice.
+
+        :param item: Index/slice.
+        :raises IndexError: Slice is noncontinuous.
+        """
+        self._delete(item)
+
+    @final
+    def pop(self, index=-1):
+        # type: (int) -> T
+        """
+        Pop value from index.
+
+        :param index: Index.
+        :return: Value.
+        """
+        with self.app.write_context():
+            value = self[index]
+            self._delete(index)
+            return value
+
+
+# noinspection PyTypeChecker
+_PLO = TypeVar("_PLO", bound="ProxyListObject")
+
+
+@final
+class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
+    """Mutable proxy list."""
+    __slots__ = ()
+
+    __iadd__ = MutableListObject.__iadd__
+    __setitem__ = MutableListObject.__setitem__
+    __delitem__ = MutableListObject.__delitem__
+    pop = MutableListObject.pop
+
+    def __reversed__(self):
+        # type: () -> Iterator[T]
+        """
+        Iterate over reversed values.
+
+        :return: Reversed values iterator.
+        """
+        return reversed(self._state)
+
+    @overload
+    def __getitem__(self, index):
+        # type: (int) -> T
+        pass
+
+    @overload
+    def __getitem__(self, index):
+        # type: (slice) -> ListState[T]
+        pass
+
+    def __getitem__(self, index):
+        """
+        Get value/values at index/from slice.
+
+        :param index: Index/slice.
+        :return: Value/values.
+        """
+        return self._obj[index]
+
+    def _insert(self, index, *values):
+        # type: (_PLO, int, T) -> _PLO
+        """
+        Insert value(s) at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        self._obj._insert(index, *values)
+        return self
+
+    def _append(self, value):
+        # type: (_PLO, T) -> _PLO
+        """
+        Append value at the end.
+
+        :param value: Value.
+        :return: Transformed.
+        """
+        self._obj._append(value)
+        return self
+
+    def _extend(self, iterable):
+        # type: (_PLO, Iterable[T]) -> _PLO
+        """
+        Extend at the end with iterable.
+
+        :param iterable: Iterable.
+        :return: Transformed.
+        """
+        self._obj._extend(iterable)
+        return self
+
+    def _remove(self, value):
+        # type: (_PLO, T) -> _PLO
+        """
+        Remove first occurrence of value.
+
+        :param value: Value.
+        :return: Transformed.
+        :raises ValueError: Value is not present.
+        """
+        self._obj._remove(value)
+        return self
+
+    def _reverse(self):
+        # type: (_PLO) -> _PLO
+        """
+        Reverse values.
+
+        :return: Transformed.
+        """
+        self._obj._reverse()
+        return self
+
+    def _move(self, item, target_index):
+        # type: (_PLO, Union[slice, int], int) -> _PLO
+        """
+        Move values internally.
+
+        :param item: Index/slice.
+        :param target_index: Target index.
+        :return: Transformed.
+        """
+        self._obj._move(item, target_index)
+        return self
+
+    def _delete(self, item):
+        # type: (_PLO, Union[slice, int]) -> _PLO
+        """
+        Delete values at index/slice.
+
+        :param item: Index/slice.
+        :return: Transformed.
+        """
+        self._obj._delete(item)
+        return self
+
+    def _update(self, index, *values):
+        # type: (_PLO, int, T) -> _PLO
+        """
+        Update value(s) starting at index.
+
+        :param index: Index.
+        :param values: Value(s).
+        :return: Transformed.
+        :raises ValueError: No values provided.
+        """
+        self._obj._update(index, *values)
+        return self
+
+    def count(self, value):
+        # type: (Any) -> int
+        """
+        Count number of occurrences of a value.
+
+        :return: Number of occurrences.
+        """
+        return self._obj.count(value)
+
+    def index(self, value, start=None, stop=None):
+        # type: (Any, Optional[int], Optional[int]) -> int
+        """
+        Get index of a value.
+
+        :param value: Value.
+        :param start: Start index.
+        :param stop: Stop index.
+        :return: Index of value.
+        :raises ValueError: Provided stop but did not provide start.
+        """
+        return self._obj.index(value, start=start, stop=stop)
+
+    def resolve_index(self, index, clamp=False):
+        # type: (int, bool) -> int
+        """
+        Resolve index to a positive number.
+
+        :param index: Input index.
+        :param clamp: Whether to clamp between zero and the length.
+        :return: Resolved index.
+        :raises IndexError: Index out of range.
+        """
+        return self._obj.resolve_index(index, clamp=clamp)
+
+    def resolve_continuous_slice(self, slc):
+        # type: (slice) -> Tuple[int, int]
+        """
+        Resolve continuous slice according to length.
+
+        :param slc: Continuous slice.
+        :return: Index and stop.
+        :raises IndexError: Slice is noncontinuous.
+        """
+        return self._obj.resolve_continuous_slice(slc)
+
+    @property
+    def _state(self):
+        # type: () -> ListState[T]
+        """State."""
+        return cast("ListState[T]", super(ProxyListObject, self)._state)
+
+    @property
+    def data(self):
+        # type: () -> ListData[T]
+        """Data."""
+        return cast("ListData[T]", super(ProxyListObject, self).data)

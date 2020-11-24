@@ -1557,6 +1557,7 @@ class BaseMutableList(
         :param item: Index/slice.
         :param value: Value/values.
         :raises IndexError: Slice is noncontinuous.
+        :raises ValueError: Values length does not fit in slice.
         """
         raise NotImplementedError()
 

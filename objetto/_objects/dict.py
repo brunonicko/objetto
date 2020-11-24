@@ -566,7 +566,7 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
 
         :return: Reversed keys iterator.
         """
-        return self._obj.__reversed__()
+        return reversed(self._state)
 
     def __getitem__(self, key):
         # type: (KT) -> VT
