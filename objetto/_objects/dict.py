@@ -652,7 +652,7 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
 
         :return: Key iterator.
         """
-        for key, value in iteritems(self._obj):
+        for key, value in iteritems(self._state):
             yield key, value
 
     def iterkeys(self):
@@ -662,7 +662,7 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
 
         :return: Keys iterator.
         """
-        for key in iterkeys(self._obj):
+        for key in iterkeys(self._state):
             yield key
 
     def itervalues(self):
@@ -672,7 +672,7 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
 
         :return: Values iterator.
         """
-        for value in itervalues(self._obj):
+        for value in itervalues(self._state):
             yield value
 
     @property
