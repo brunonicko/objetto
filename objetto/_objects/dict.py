@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Dictionary objects and proxy."""
-from abc import abstractmethod
+
 from collections import Counter as ValueCounter
 from typing import TYPE_CHECKING, TypeVar, cast, overload
 
@@ -11,22 +11,25 @@ except ImportError:
 
 from six import iteritems, iterkeys, itervalues, raise_from, with_metaclass
 
-from .bases import (
-    DELETED,
-    BaseObject,
-    BaseAuxiliaryObjectFunctions,
-    BaseAuxiliaryObjectMeta,
-    BaseAuxiliaryObject,
-    BaseMutableAuxiliaryObject,
-    BaseProxyObject,
-)
 from .._application import Application
-from .._bases import FINAL_METHOD_TAG, final, init_context, BaseMutableDict
+from .._bases import FINAL_METHOD_TAG, BaseMutableDict, final, init_context
 from .._changes import DictUpdate
-from .._data import BaseData, InteractiveDictData, DictData
+from .._data import BaseData, DictData, InteractiveDictData
 from .._states import DictState
 from .._structures import (
-    MISSING, BaseDictStructureMeta, BaseDictStructure, BaseMutableDictStructure
+    MISSING,
+    BaseDictStructure,
+    BaseDictStructureMeta,
+    BaseMutableDictStructure,
+)
+from .bases import (
+    DELETED,
+    BaseAuxiliaryObject,
+    BaseAuxiliaryObjectFunctions,
+    BaseAuxiliaryObjectMeta,
+    BaseMutableAuxiliaryObject,
+    BaseObject,
+    BaseProxyObject,
 )
 
 if TYPE_CHECKING:
@@ -34,9 +37,9 @@ if TYPE_CHECKING:
         Any,
         Callable,
         Counter,
-        Iterator,
         Dict,
         Iterable,
+        Iterator,
         Mapping,
         Tuple,
         Type,
@@ -55,6 +58,7 @@ VT = TypeVar("VT")  # Value type.
 @final
 class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
     """Static functions for :class:`DictObject`."""
+
     __slots__ = ()
 
     @staticmethod
@@ -133,9 +137,7 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
                 if not delete_item:
                     if factory:
                         value = relationship.fabricate_value(
-                            value,
-                            factory=factory,
-                            **{"app": obj.app}
+                            value, factory=factory, **{"app": obj.app}
                         )
                 new_values[key] = value
 
@@ -279,6 +281,7 @@ class DictObject(
     :param app: Application.
     :param initial: Initial values.
     """
+
     __slots__ = ()
     __functions__ = DictObjectFunctions
 
@@ -464,6 +467,7 @@ class MutableDictObject(
     DictObject[KT, VT], BaseMutableAuxiliaryObject[KT], BaseMutableDictStructure[KT, VT]
 ):
     """Mutable dictionary object."""
+
     __slots__ = ()
 
     @final
@@ -551,6 +555,7 @@ _PDO = TypeVar("_PDO", bound="ProxyDictObject")
 @final
 class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
     """Mutable proxy dictionary."""
+
     __slots__ = ()
 
     __setitem__ = MutableDictObject.__setitem__

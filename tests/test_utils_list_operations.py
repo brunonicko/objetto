@@ -38,7 +38,7 @@ def test_resolve_continuous_slice():
 
 
 def test_pre_move():
-    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 'a', 'b', 'c']
+    my_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, "a", "b", "c"]
     length = len(my_list)
 
     assert pre_move(length, 1, 2) is None

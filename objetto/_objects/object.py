@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Object with state curated by attribute descriptors."""
 
-from contextlib import contextmanager
 from collections import Counter as ValueCounter
+from contextlib import contextmanager
 from itertools import chain
 from typing import TYPE_CHECKING, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
@@ -12,46 +12,30 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import (
-    iteritems,
-    raise_from,
-    with_metaclass,
-)
+from six import iteritems, raise_from, with_metaclass
 
-from .bases import (
-    DELETED,
-    Relationship,
-    BaseObjectFunctions,
-    BaseObjectMeta,
-    BaseObject,
-    BaseMutableObject,
-)
 from .._application import Application
-from .._bases import (
-    FINAL_METHOD_TAG,
-    MISSING,
-    Base,
-    final,
-    init_context,
-    make_base_cls,
-)
+from .._bases import FINAL_METHOD_TAG, MISSING, Base, final, init_context, make_base_cls
 from .._changes import Update
-from .._data import (
-    BaseData,
-    Data,
-    DataAttribute,
-    InteractiveDictData,
-)
+from .._data import BaseData, Data, DataAttribute, InteractiveDictData
 from .._states import DictState, SetState
 from .._structures import (
-    BaseAttributeMeta,
     BaseAttribute,
-    BaseMutableAttributeStructure,
+    BaseAttributeMeta,
     BaseAttributeStructureMeta,
+    BaseMutableAttributeStructure,
 )
 from ..utils.reraise_context import ReraiseContext
 from ..utils.type_checking import assert_is_callable, assert_is_instance
 from ..utils.weak_reference import WeakReference
+from .bases import (
+    DELETED,
+    BaseMutableObject,
+    BaseObject,
+    BaseObjectFunctions,
+    BaseObjectMeta,
+    Relationship,
+)
 
 if TYPE_CHECKING:
     from typing import (
@@ -159,18 +143,14 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
                     if isinstance(dependencies, collections_abc.Iterable):
                         visited_dependencies = set()
                         for dependency in dependencies:
-                            assert_is_instance(
-                                dependency, Attribute, subtypes=False
-                            )
+                            assert_is_instance(dependency, Attribute, subtypes=False)
                             if dependency in visited_dependencies:
                                 error = "can't declare same dependency more than once"
                                 raise ValueError(error)
                             visited_dependencies.add(dependency)
                         dependencies = tuple(dependencies)
                     else:
-                        assert_is_instance(
-                            dependencies, Attribute, subtypes=False
-                        )
+                        assert_is_instance(dependencies, Attribute, subtypes=False)
                         dependencies = (dependencies,)
             if changeable is not None:
                 error = "provided 'changeable' but 'delegated' is True"
@@ -810,9 +790,7 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
     def _attribute_names(cls):
         # type: () -> Mapping[Attribute, str]
         """Names mapped by attribute."""
-        return cast(
-            "Mapping[Attribute, str]", super(ObjectMeta, cls)._attribute_names
-        )
+        return cast("Mapping[Attribute, str]", super(ObjectMeta, cls)._attribute_names)
 
     @property
     @final
@@ -894,9 +872,7 @@ _O = TypeVar("_O", bound="Object")
 
 
 class Object(
-    with_metaclass(
-        ObjectMeta, BaseMutableObject[str], BaseMutableAttributeStructure
-    )
+    with_metaclass(ObjectMeta, BaseMutableObject[str], BaseMutableAttributeStructure)
 ):
     """
     Object.
@@ -1449,7 +1425,8 @@ class IntermediaryObject(Base):
         if self.__.in_getter is not None:
             attribute = self.__.in_getter
             return sorted(
-                n for n, a in iteritems(self.__.cls._attributes)
+                n
+                for n, a in iteritems(self.__.cls._attributes)
                 if a is attribute or a in a.dependencies
             )
         return sorted(self.__.cls._attributes)

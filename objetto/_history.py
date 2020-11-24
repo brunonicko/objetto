@@ -1,6 +1,6 @@
 from six import integer_types
 
-from ._objects import Object, Attribute, Relationship
+from ._objects import Attribute, Object, Relationship
 
 
 class HistoryObject(Object):

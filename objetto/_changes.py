@@ -3,7 +3,7 @@
 
 from typing import TYPE_CHECKING
 
-from six import string_types, integer_types
+from six import integer_types, string_types
 
 from ._bases import final
 from ._states import BaseState
@@ -11,15 +11,18 @@ from .data import (
     Data,
     data_attribute,
     data_dict_attribute,
-    data_set_attribute,
     data_list_attribute,
+    data_set_attribute,
 )
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Final
 
     from ._data import (
-        DataAttribute, InteractiveDictData, InteractiveListData, InteractiveSetData
+        DataAttribute,
+        InteractiveDictData,
+        InteractiveListData,
+        InteractiveSetData,
     )
     from ._objects import BaseObject
 
@@ -155,9 +158,7 @@ class ListInsert(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """Name describing the change."""
 
-    index = data_attribute(
-        integer_types, checked=False
-    )  # type: DataAttribute[int]
+    index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """Insertion index."""
 
     last_index = data_attribute(
@@ -165,9 +166,7 @@ class ListInsert(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """Last inserted value index."""
 
-    stop = data_attribute(
-        integer_types, checked=False
-    )  # type: DataAttribute[int]
+    stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """Stop index."""
 
     new_values = data_list_attribute(
@@ -185,9 +184,7 @@ class ListDelete(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """Name describing the change."""
 
-    index = data_attribute(
-        integer_types, checked=False
-    )  # type: DataAttribute[int]
+    index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """First removed value index."""
 
     last_index = data_attribute(
@@ -195,9 +192,7 @@ class ListDelete(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """Last removed value index."""
 
-    stop = data_attribute(
-        integer_types, checked=False
-    )  # type: DataAttribute[int]
+    stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """Stop index."""
 
     old_values = data_list_attribute(
@@ -215,9 +210,7 @@ class ListUpdate(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """Name describing the change."""
 
-    index = data_attribute(
-        integer_types, checked=False
-    )  # type: DataAttribute[int]
+    index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """First updated value index."""
 
     last_index = data_attribute(
@@ -225,9 +218,7 @@ class ListUpdate(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """Last updated value index."""
 
-    stop = data_attribute(
-        integer_types, checked=False
-    )  # type: DataAttribute[int]
+    stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """Stop index."""
 
     old_values = data_list_attribute(
@@ -250,9 +241,7 @@ class ListMove(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """Name describing the change."""
 
-    index = data_attribute(
-        integer_types, checked=False
-    )  # type: DataAttribute[int]
+    index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """First moved value index."""
 
     last_index = data_attribute(
@@ -260,9 +249,7 @@ class ListMove(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """Last moved value index."""
 
-    stop = data_attribute(
-        integer_types, checked=False
-    )  # type: DataAttribute[int]
+    stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """Stop index."""
 
     target_index = data_attribute(
@@ -280,9 +267,7 @@ class ListMove(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """Last moved value index after the move."""
 
-    post_stop = data_attribute(
-        integer_types, checked=False
-    )  # type: DataAttribute[int]
+    post_stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """Stop index after the move."""
 
     values = data_list_attribute(

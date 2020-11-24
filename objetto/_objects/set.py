@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Set objects and proxy."""
 
-from abc import abstractmethod
 from collections import Counter as ValueCounter
 from typing import TYPE_CHECKING, TypeVar, cast
 
@@ -12,34 +11,27 @@ except ImportError:
 
 from six import with_metaclass
 
-from .bases import (
-    BaseObject,
-    BaseAuxiliaryObjectFunctions,
-    BaseAuxiliaryObjectMeta,
-    BaseAuxiliaryObject,
-    BaseMutableAuxiliaryObject,
-    BaseProxyObject,
-)
 from .._application import Application
-from .._bases import FINAL_METHOD_TAG, final, init_context, BaseMutableSet
-from .._changes import SetUpdate, SetRemove
+from .._bases import FINAL_METHOD_TAG, BaseMutableSet, final, init_context
+from .._changes import SetRemove, SetUpdate
 from .._data import BaseData, InteractiveDictData, SetData
 from .._states import DictState, SetState
 from .._structures import (
-    BaseSetStructureMeta, BaseSetStructure, BaseMutableSetStructure
+    BaseMutableSetStructure,
+    BaseSetStructure,
+    BaseSetStructureMeta,
+)
+from .bases import (
+    BaseAuxiliaryObject,
+    BaseAuxiliaryObjectFunctions,
+    BaseAuxiliaryObjectMeta,
+    BaseMutableAuxiliaryObject,
+    BaseObject,
+    BaseProxyObject,
 )
 
 if TYPE_CHECKING:
-    from typing import (
-        Any,
-        Callable,
-        Counter,
-        Iterable,
-        Hashable,
-        List,
-        Set,
-        Type,
-    )
+    from typing import Any, Callable, Counter, Hashable, Iterable, List, Set, Type
 
     from .._application import Store
 
@@ -56,6 +48,7 @@ DATA_MAP_METADATA_KEY = "data_map"
 @final
 class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
     """Static functions for :class:`SetObject`."""
+
     __slots__ = ()
 
     @staticmethod
@@ -323,11 +316,12 @@ class SetObject(
     )
 ):
     """
-    Setionary object.
+    Set object.
 
     :param app: Application.
     :param initial: Initial values.
     """
+
     __slots__ = ()
     __functions__ = SetObjectFunctions
 
@@ -540,6 +534,7 @@ class MutableSetObject(
     SetObject[T], BaseMutableAuxiliaryObject[T], BaseMutableSetStructure[T]
 ):
     """Mutable set object."""
+
     __slots__ = ()
 
     @final
@@ -608,6 +603,7 @@ _PSO = TypeVar("_PSO", bound="ProxySetObject")
 @final
 class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
     """Mutable proxy set."""
+
     __slots__ = ()
 
     pop = MutableSetObject.pop

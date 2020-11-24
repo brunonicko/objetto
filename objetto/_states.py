@@ -25,16 +25,7 @@ from .utils.custom_repr import custom_iterable_repr, custom_mapping_repr
 from .utils.list_operations import pre_move, resolve_continuous_slice, resolve_index
 
 if TYPE_CHECKING:
-    from typing import (
-        Any,
-        Iterable,
-        Iterator,
-        Mapping,
-        Optional,
-        Tuple,
-        Type,
-        Union,
-    )
+    from typing import Any, Iterable, Iterator, Mapping, Optional, Tuple, Type, Union
 
     from pyrsistent.typing import PMap, PSet, PVector
 

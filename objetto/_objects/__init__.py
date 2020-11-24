@@ -2,22 +2,19 @@
 """Mutable structures coordinated by an application."""
 
 from .bases import (
-    Relationship,
-    HistoryDescriptor,
-    BaseObject,
-    BaseMutableObject,
-    BaseAuxiliaryObjectMeta,
     BaseAuxiliaryObject,
+    BaseAuxiliaryObjectMeta,
     BaseMutableAuxiliaryObject,
+    BaseMutableObject,
+    BaseObject,
     BaseProxyObject,
-)
-from .object import (
-    Attribute,
-    Object,
+    HistoryDescriptor,
+    Relationship,
 )
 from .dict import DictObject, MutableDictObject, ProxyDictObject
 from .list import ListObject, MutableListObject, ProxyListObject
-from .set import SetObject, MutableSetObject, ProxySetObject
+from .object import Attribute, Object
+from .set import MutableSetObject, ProxySetObject, SetObject
 
 __all__ = [
     "Relationship",

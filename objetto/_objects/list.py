@@ -11,23 +11,25 @@ except ImportError:
 
 from six import raise_from, with_metaclass
 
-from .bases import (
-    BaseObject,
-    BaseAuxiliaryObjectFunctions,
-    BaseAuxiliaryObjectMeta,
-    BaseAuxiliaryObject,
-    BaseMutableAuxiliaryObject,
-    BaseProxyObject,
-)
 from .._application import Application
-from .._bases import FINAL_METHOD_TAG, final, init_context, BaseMutableList
-from .._changes import ListInsert, ListDelete, ListUpdate, ListMove
+from .._bases import FINAL_METHOD_TAG, BaseMutableList, final, init_context
+from .._changes import ListDelete, ListInsert, ListMove, ListUpdate
 from .._data import BaseData, InteractiveDictData, ListData
 from .._states import ListState
 from .._structures import (
-    BaseListStructureMeta, BaseListStructure, BaseMutableListStructure
+    BaseListStructure,
+    BaseListStructureMeta,
+    BaseMutableListStructure,
 )
-from ..utils.list_operations import resolve_index, resolve_continuous_slice, pre_move
+from ..utils.list_operations import pre_move, resolve_continuous_slice, resolve_index
+from .bases import (
+    BaseAuxiliaryObject,
+    BaseAuxiliaryObjectFunctions,
+    BaseAuxiliaryObjectMeta,
+    BaseMutableAuxiliaryObject,
+    BaseObject,
+    BaseProxyObject,
+)
 
 if TYPE_CHECKING:
     from typing import (
@@ -35,14 +37,13 @@ if TYPE_CHECKING:
         Callable,
         Counter,
         Dict,
-        MutableSequence,
         Iterable,
         Iterator,
         List,
-        Set,
-        Type,
-        Tuple,
         Optional,
+        Set,
+        Tuple,
+        Type,
         Union,
     )
 
@@ -57,6 +58,7 @@ T = TypeVar("T")  # Any type.
 @final
 class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
     """Static functions for :class:`ListObject`."""
+
     __slots__ = ()
 
     @staticmethod
@@ -111,9 +113,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                 # Fabricate new value.
                 if factory:
                     value = relationship.fabricate_value(
-                        value,
-                        factory=factory,
-                        **{"app": obj.app}
+                        value, factory=factory, **{"app": obj.app}
                     )
                 new_values.append(value)
 
@@ -327,9 +327,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                 # Fabricate new value.
                 if factory:
                     value = relationship.fabricate_value(
-                        value,
-                        factory=factory,
-                        **{"app": obj.app}
+                        value, factory=factory, **{"app": obj.app}
                     )
                 new_values.append(value)
 
@@ -531,6 +529,7 @@ class ListObject(
     :param app: Application.
     :param initial: Initial values.
     """
+
     __slots__ = ()
     __functions__ = ListObjectFunctions
 
@@ -769,6 +768,7 @@ class MutableListObject(
     ListObject[T], BaseMutableAuxiliaryObject[T], BaseMutableListStructure[T]
 ):
     """Mutable dictionary object."""
+
     __slots__ = ()
 
     @overload
@@ -847,6 +847,7 @@ _PLO = TypeVar("_PLO", bound="ProxyListObject")
 @final
 class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
     """Mutable proxy list."""
+
     __slots__ = ()
 
     __setitem__ = MutableListObject.__setitem__

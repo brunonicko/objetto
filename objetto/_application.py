@@ -1,47 +1,51 @@
 # -*- coding: utf-8 -*-
 """Manages multiple objects under different contexts."""
 
-from traceback import format_exception
-from contextlib import contextmanager
 from collections import Counter as ValueCounter
+from contextlib import contextmanager
 from copy import deepcopy
+from enum import Enum, unique
 from threading import RLock
+from traceback import format_exception
 from typing import TYPE_CHECKING
 from weakref import WeakKeyDictionary
-from enum import Enum, unique
 
-from six import string_types, iteritems
+from six import iteritems, string_types
 
 from ._bases import Base, final
 from ._changes import BaseChange
 from ._data import BaseData, DataAttribute, InteractiveDictData
 from ._states import BaseState
 from .data import (
-    Data, data_attribute, data_dict_attribute, data_set_attribute, data_list_attribute
+    Data,
+    data_attribute,
+    data_dict_attribute,
+    data_list_attribute,
+    data_set_attribute,
 )
-from .utils.subject_observer import Subject
-from .utils.weak_reference import WeakReference
 from .utils.reraise_context import ReraiseContext
-from .utils.type_checking import assert_is_instance, assert_is_callable
+from .utils.subject_observer import Subject
+from .utils.type_checking import assert_is_callable, assert_is_instance
+from .utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
     from typing import (
         Any,
-        Counter,
         Callable,
+        Counter,
         Dict,
+        Iterator,
         List,
+        Mapping,
         Optional,
         Set,
         Tuple,
         Type,
-        Iterator,
         Union,
-        Mapping,
     )
 
-    from ._data import InteractiveListData, InteractiveSetData
     from ._changes import BaseAtomicChange, Batch
+    from ._data import InteractiveListData, InteractiveSetData
     from ._history import HistoryObject
     from ._objects import BaseObject
     from .utils.subject_observer import ObserverExceptionInfo
@@ -311,9 +315,7 @@ class Commit(Data):
     )  # type: DataAttribute[InteractiveListData[Action]]
     """Actions."""
 
-    stores = data_dict_attribute(
-        Store, checked=False
-    )  # type: InteractiveDictData
+    stores = data_dict_attribute(Store, checked=False)  # type: InteractiveDictData
     """Modified stores."""
 
 

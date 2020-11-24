@@ -44,7 +44,7 @@ from ._bases import (
     make_base_cls,
 )
 from ._states import BaseState, DictState, SetState
-from .utils.custom_repr import custom_mapping_repr, custom_iterable_repr
+from .utils.custom_repr import custom_iterable_repr, custom_mapping_repr
 from .utils.factoring import format_factory, import_factory, run_factory
 from .utils.lazy_import import get_path, import_path
 from .utils.reraise_context import ReraiseContext
@@ -1509,7 +1509,7 @@ class BaseAttributeStructure(
 
     @final
     def find_with_attributes(self, **attributes):
-        # type: (Any) -> VT
+        # type: (Any) -> Any
         """
         Find first value that matches unique attribute values.
 
@@ -1696,7 +1696,7 @@ class BaseAuxiliaryStructure(
     """Relationship for all locations."""
 
     def find_with_attributes(self, **attributes):
-        # type: (Any) -> VT
+        # type: (Any) -> Any
         """
         Find first value that matches unique attribute values.
 

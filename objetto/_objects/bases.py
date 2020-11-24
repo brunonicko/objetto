@@ -12,40 +12,34 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import (
-    integer_types,
-    iteritems,
-    string_types,
-    with_metaclass,
-)
+from six import integer_types, iteritems, string_types, with_metaclass
 
 from .._application import Application
-from .._bases import Base, final, BaseMutableCollection
+from .._bases import Base, BaseMutableCollection, final
 from .._changes import Batch
-from .._data import BaseData, DataRelationship, BaseAuxiliaryData
+from .._data import BaseAuxiliaryData, BaseData, DataRelationship
 from .._states import BaseState, DictState
 from .._structures import (
-    make_auxiliary_cls,
+    BaseAuxiliaryStructure,
+    BaseAuxiliaryStructureMeta,
+    BaseMutableAuxiliaryStructure,
     BaseMutableStructure,
     BaseRelationship,
     BaseStructure,
     BaseStructureMeta,
-    BaseAuxiliaryStructureMeta,
-    BaseAuxiliaryStructure,
-    BaseMutableAuxiliaryStructure,
+    make_auxiliary_cls,
 )
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.reraise_context import ReraiseContext
+from ..utils.subject_observer import Subject
 from ..utils.type_checking import assert_is_instance, import_types
 from ..utils.weak_reference import WeakReference
-from ..utils.subject_observer import Subject
 
 if TYPE_CHECKING:
     from typing import (
         Any,
         Callable,
         Dict,
-        Hashable,
         Iterator,
         Mapping,
         MutableMapping,
@@ -378,6 +372,7 @@ class HistoryDescriptor(Base):
 
 class BaseObjectFunctions(Base):
     """Base static functions for :class:`BaseObject`."""
+
     __slots__ = ()
 
     @staticmethod
@@ -740,6 +735,7 @@ class BaseMutableObject(BaseObject[T], BaseMutableStructure[T]):
 # noinspection PyAbstractClass
 class BaseAuxiliaryObjectFunctions(BaseObjectFunctions):
     """Base static functions for :class:`BaseAuxiliaryObject`."""
+
     __slots__ = ()
 
     @staticmethod
