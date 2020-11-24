@@ -227,7 +227,7 @@ def _make_base_cls(
     # Copy dct.
     dct_copy = dict(dct or {})  # type: Dict[str, Any]
 
-    # Define reduce method for pickling instances of the subclass.
+    # Define reduce method for pickling instances of the subclass.  FIXME: subclasses support
     def __reduce__(self):
         state = self.__getstate__()
         return _make_base_instance, (_base, qual_name, module, state, dct_copy, uuid)
@@ -1106,6 +1106,7 @@ class BaseMutableDict(
         Get item and discard key.
 
         :return: Item.
+        :raises KeyError: Dictionary is empty.
         """
         raise NotImplementedError()
 
