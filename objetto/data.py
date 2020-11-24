@@ -6,9 +6,7 @@ from typing import TYPE_CHECKING, TypeVar
 from ._bases import MISSING
 from ._data import DataAttribute, DataRelationship
 from ._data import InteractiveData as Data
-from ._data import InteractiveDictData as DictData
-from ._data import InteractiveListData as ListData
-from ._data import InteractiveSetData as SetData
+from ._data import InteractiveDictData, InteractiveListData, InteractiveSetData
 from ._structures import KeyRelationship, make_auxiliary_cls
 from .utils.caller_module import get_caller_module
 from .utils.reraise_context import ReraiseContext
@@ -140,7 +138,7 @@ def data_dict_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> DataAttribute[DictData[KT, VT]]
+    # type: (...) -> DataAttribute[InteractiveDictData[KT, VT]]
     """
     Make dictionary data attribute.
 
@@ -258,7 +256,7 @@ def data_list_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> DataAttribute[ListData[T]]
+    # type: (...) -> DataAttribute[InteractiveListData[T]]
     """
     Make dictionary list attribute.
 
@@ -368,7 +366,7 @@ def data_set_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> DataAttribute[SetData[T]]
+    # type: (...) -> DataAttribute[InteractiveSetData[T]]
     """
     Make dictionary set attribute.
 
@@ -475,7 +473,7 @@ def data_dict_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> Type[DictData[KT, VT]]
+    # type: (...) -> Type[InteractiveDictData[KT, VT]]
     """
     Make auxiliary dictionary data class.
 
@@ -530,7 +528,7 @@ def data_dict_cls(
         dct = {"_key_relationship": key_relationship}
 
     # Make class.
-    base = DictData  # type: Type[DictData[KT, VT]]
+    base = InteractiveDictData  # type: Type[InteractiveDictData[KT, VT]]
     with ReraiseContext(TypeError, "defining 'data_dict_cls'"):
         cls = make_auxiliary_cls(
             base,
@@ -558,7 +556,7 @@ def data_list_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> Type[ListData[T]]
+    # type: (...) -> Type[InteractiveListData[T]]
     """
     Make auxiliary list data class.
 
@@ -598,7 +596,7 @@ def data_list_cls(
         )
 
     # Make class.
-    base = ListData  # type: Type[ListData[T]]
+    base = InteractiveListData  # type: Type[InteractiveListData[T]]
     with ReraiseContext(TypeError, "defining 'data_list_cls'"):
         cls = make_auxiliary_cls(
             base,
@@ -625,7 +623,7 @@ def data_set_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> Type[SetData[T]]
+    # type: (...) -> Type[InteractiveSetData[T]]
     """
     Make auxiliary set data class.
 
@@ -665,7 +663,7 @@ def data_set_cls(
         )
 
     # Make class.
-    base = SetData  # type: Type[SetData[T]]
+    base = InteractiveSetData  # type: Type[InteractiveSetData[T]]
     with ReraiseContext(TypeError, "defining 'data_set_cls'"):
         cls = make_auxiliary_cls(
             base,
