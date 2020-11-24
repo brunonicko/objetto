@@ -75,7 +75,7 @@ def pre_move(length, item, target_index):
     if index <= target_index <= stop:
         return None
     elif target_index > stop:
-        post_index = target_index - (stop - index) + 1
+        post_index = target_index - (stop - index)
     else:
         post_index = target_index
 

@@ -44,9 +44,9 @@ def test_pre_move():
     assert pre_move(length, 1, 2) is None
     assert pre_move(length, 2, 3) is None
     assert pre_move(length, 3, 0) == (3, 4, 0, 0)
-    assert pre_move(length, 1, 3) == (1, 2, 3, 3)
+    assert pre_move(length, 1, 3) == (1, 2, 3, 2)
     assert pre_move(length, slice(1, 3), 0) == (1, 3, 0, 0)
-    assert pre_move(length, slice(1, 3), 4) == (1, 3, 4, 3)  # FIXME: post target index
+    assert pre_move(length, slice(1, 3), 4) == (1, 3, 4, 2)
     assert pre_move(length, slice(3, 5), 9) == (3, 5, 9, 7)
 
 
