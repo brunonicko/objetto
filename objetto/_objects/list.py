@@ -11,7 +11,7 @@ except ImportError:
 
 from six import raise_from, with_metaclass
 
-from .._application import Application
+from .._applications import Application
 from .._bases import FINAL_METHOD_TAG, BaseMutableList, final, init_context
 from .._changes import ListDelete, ListInsert, ListMove, ListUpdate
 from .._data import BaseData, InteractiveDictData, ListData
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
         Union,
     )
 
-    from .._application import Store
+    from .._applications import Store
 
 __all__ = ["ListObject"]
 

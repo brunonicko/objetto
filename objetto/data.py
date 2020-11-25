@@ -125,8 +125,7 @@ def data_dict_attribute(
     represented=True,  # type: bool
     compared=True,  # type: bool
     key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
-    key_subtypes=False,  # type: bool
-    key_checked=True,  # type: bool
+    key_subtypes=None,  # type: Optional[bool]
     key_factory=None,  # type: LazyFactory
     default=MISSING,  # type: Any
     default_factory=None,  # type: LazyFactory
@@ -154,7 +153,6 @@ def data_dict_attribute(
     :param compared: Whether the value should be leverage when comparing.
     :param key_types: Key types.
     :param key_subtypes: Whether to accept subtypes for the keys.
-    :param key_checked: Whether to perform runtime type check for the keys.
     :param key_factory: Key factory.
     :param default: Default value.
     :param default_factory: Default value factory.
@@ -188,7 +186,6 @@ def data_dict_attribute(
             compared=compared,
             key_types=key_types,
             key_subtypes=key_subtypes,
-            key_checked=key_checked,
             key_factory=key_factory,
             qual_name=qual_name,
             unique=unique,
@@ -467,8 +464,7 @@ def data_dict_cls(
     represented=True,  # type: bool
     compared=True,  # type: bool
     key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
-    key_subtypes=False,  # type: bool
-    key_checked=True,  # type: bool
+    key_subtypes=None,  # type: Optional[bool]
     key_factory=None,  # type: LazyFactory
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
@@ -489,7 +485,6 @@ def data_dict_cls(
     :param compared: Whether the value should be leverage when comparing.
     :param key_types: Key types.
     :param key_subtypes: Whether to accept subtypes for the keys.
-    :param key_checked: Whether to perform runtime type check for the keys.
     :param key_factory: Key factory.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
@@ -521,7 +516,7 @@ def data_dict_cls(
         key_relationship = KeyRelationship(
             types=key_types,
             subtypes=key_subtypes,
-            checked=key_checked,
+            checked=checked,
             module=module,
             factory=key_factory,
         )

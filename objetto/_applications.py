@@ -252,7 +252,7 @@ class Store(Data):
     """Data."""
 
     metadata = data_dict_attribute(
-        key_types=string_types, key_checked=False, checked=False
+        key_types=string_types, checked=False
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
     """Metadata."""
 

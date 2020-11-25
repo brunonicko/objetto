@@ -1,3 +1,4 @@
+# TODO: use 'decorator' for 'final'
 # TODO: objects public module, with helper functions, datamethod
 # TODO: structures '__repr__' maximum level
 # TODO: break up structures/data/objects into separate modules

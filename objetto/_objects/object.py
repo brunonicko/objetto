@@ -14,7 +14,7 @@ except ImportError:
 
 from six import iteritems, raise_from, with_metaclass
 
-from .._application import Application
+from .._applications import Application
 from .._bases import FINAL_METHOD_TAG, MISSING, Base, final, init_context, make_base_cls
 from .._changes import Update
 from .._data import BaseData, Data, DataAttribute, InteractiveDictData
@@ -54,7 +54,7 @@ if TYPE_CHECKING:
         Type,
     )
 
-    from .._application import Store
+    from .._applications import Store
     from ..utils.factoring import LazyFactory
 
 __all__ = ["Attribute", "Object"]

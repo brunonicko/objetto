@@ -132,9 +132,16 @@ def _final(obj):
     """
     if isinstance(obj, type):
         type.__setattr__(obj, FINAL_CLASS_TAG, True)
+        return __final(obj)
     else:
-        object.__setattr__(cast(object, obj), FINAL_METHOD_TAG, True)
-    return __final(obj)
+
+        @decorator
+        def final_(obj_, *args, **kwargs):
+            return obj_(*args, **kwargs)
+
+        decorated = final_(obj)
+        object.__setattr__(decorated, FINAL_METHOD_TAG, True)
+        return __final(decorated)
 
 
 # Replace typing.final with our custom decorator for runtime checking.

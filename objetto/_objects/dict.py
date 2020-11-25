@@ -11,13 +11,12 @@ except ImportError:
 
 from six import iteritems, iterkeys, itervalues, raise_from, with_metaclass
 
-from .._application import Application
-from .._bases import FINAL_METHOD_TAG, BaseMutableDict, final, init_context
+from .._applications import Application
+from .._bases import MISSING, FINAL_METHOD_TAG, BaseMutableDict, final, init_context
 from .._changes import DictUpdate
 from .._data import BaseData, DictData, InteractiveDictData
 from .._states import DictState
 from .._structures import (
-    MISSING,
     BaseDictStructure,
     BaseDictStructureMeta,
     BaseMutableDictStructure,
@@ -46,7 +45,7 @@ if TYPE_CHECKING:
         Union,
     )
 
-    from .._application import Store
+    from .._applications import Store
 
 __all__ = ["DictObject", "MutableDictObject", "ProxyDictObject"]
 

@@ -11,7 +11,7 @@ except ImportError:
 
 from six import with_metaclass
 
-from .._application import Application
+from .._applications import Application
 from .._bases import FINAL_METHOD_TAG, BaseMutableSet, final, init_context
 from .._changes import SetRemove, SetUpdate
 from .._data import BaseData, InteractiveDictData, SetData
@@ -33,7 +33,7 @@ from .bases import (
 if TYPE_CHECKING:
     from typing import Any, Callable, Counter, Hashable, Iterable, List, Set, Type
 
-    from .._application import Store
+    from .._applications import Store
 
 __all__ = ["SetObject", "MutableSetObject", "ProxySetObject"]
 

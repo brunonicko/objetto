@@ -65,7 +65,7 @@ class Batch(BaseChange):
     """Name describing the change."""
 
     metadata = data_dict_attribute(
-        key_types=string_types, key_checked=False
+        key_types=string_types, checked=False
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
     """Metadata."""
 

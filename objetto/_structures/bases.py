@@ -284,7 +284,7 @@ class BaseRelationship(Base):
         self.__hash = None  # type: Optional[int]
         self.__types = types
         self.__subtypes = bool(subtypes)
-        self.__checked = bool(checked)
+        self.__checked = checked
         self.__module = module
         self.__factory = factory
         self.__serialized = bool(serialized)

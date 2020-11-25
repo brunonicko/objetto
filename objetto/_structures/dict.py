@@ -9,7 +9,7 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, iterkeys, itervalues, with_metaclass
+from six import iteritems, iterkeys, itervalues, with_metaclass, string_types
 
 from .._bases import (
     Base,
@@ -22,6 +22,7 @@ from .._states import DictState
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.factoring import format_factory, import_factory, run_factory
 from ..utils.type_checking import assert_is_instance, format_types, import_types
+from ..utils.reraise_context import ReraiseContext
 from .bases import (
     BaseAuxiliaryStructure,
     BaseAuxiliaryStructureMeta,
@@ -73,16 +74,40 @@ class KeyRelationship(Base):
         self,
         types=(),  # type: LazyTypes
         subtypes=False,  # type: bool
-        checked=True,  # type: bool
+        checked=None,  # type: Optional[bool]
         module=None,  # type: Optional[str]
         factory=None,  # type: LazyFactory
     ):
+
+        # 'module'
+        with ReraiseContext(TypeError, "'module' parameter"):
+            assert_is_instance(module, string_types + (type(None),))
+        module = module or None
+
+        # 'types' and 'checked'
+        with ReraiseContext((ValueError, TypeError), "'types' parameter"):
+            types = format_types(types, module=module)
+        if not types:
+            if checked:
+                error = "did not provide any 'types' but 'checked' is True"
+                raise ValueError(error)
+            if checked is None:
+                checked = False
+        else:
+            if checked is None:
+                checked = True
+        checked = bool(checked)
+
+        # 'factory'
+        with ReraiseContext((ValueError, TypeError), "'factory' parameter"):
+            factory = format_factory(factory, module=module)
+
         self.__hash = None  # type: Optional[int]
-        self.__types = format_types(types, module=module)
+        self.__types = types
         self.__subtypes = bool(subtypes)
-        self.__checked = bool(checked)
+        self.__checked = checked
         self.__module = module
-        self.__factory = format_factory(factory, module=module)
+        self.__factory = factory
 
     def __hash__(self):
         # type: () -> int

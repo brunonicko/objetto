@@ -2,6 +2,10 @@
 """Mutable structures coordinated by an application."""
 
 from .bases import (
+    DELETED,
+    UNIQUE_ATTRIBUTES_METADATA_KEY,
+    REACTION_METHOD_TAG,
+    DATA_METHOD_TAG,
     BaseAuxiliaryObject,
     BaseAuxiliaryObjectMeta,
     BaseMutableAuxiliaryObject,
@@ -17,6 +21,10 @@ from .object import Attribute, Object
 from .set import MutableSetObject, ProxySetObject, SetObject
 
 __all__ = [
+    "DELETED",
+    "UNIQUE_ATTRIBUTES_METADATA_KEY",
+    "REACTION_METHOD_TAG",
+    "DATA_METHOD_TAG",
     "Relationship",
     "HistoryDescriptor",
     "BaseObject",

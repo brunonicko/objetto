@@ -14,7 +14,7 @@ except ImportError:
 
 from six import integer_types, iteritems, string_types, with_metaclass
 
-from .._application import Application
+from .._applications import Application
 from .._bases import Base, BaseMutableCollection, final
 from .._changes import Batch
 from .._data import BaseAuxiliaryData, BaseData, DataRelationship
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
         Union,
     )
 
-    from .._application import Store
+    from .._applications import Store
     from .._history import HistoryObject
     from ..utils.factoring import LazyFactory
     from ..utils.type_checking import LazyTypes
@@ -259,6 +259,20 @@ class Relationship(BaseRelationship):
                 compared=True,
             )
         return self.__data_relationship
+
+
+class Reaction(Base):  # TODO
+    """
+    Callable that runs whenever an action is sent through the object.
+
+    :param func: Function.
+    :param priority: Priority.
+    """
+    __slots__ = ("__priority",)
+
+    def __init__(self, func, priority=None):
+        self.__func = func
+        self.__priority = priority
 
 
 @final
