@@ -587,7 +587,7 @@ class ApplicationInternals(Base):
 
                     actions.append(action)
                     for reaction in type(action.receiver)._reactions:
-                        reaction.func(action.receiver, action, Phase.PRE)
+                        reaction(action.receiver, action, Phase.PRE)
 
                     child = parent
 
@@ -720,7 +720,7 @@ class ApplicationInternals(Base):
                 # Post phase.
                 for action in actions:
                     for reaction in type(action.receiver)._reactions:
-                        reaction.func(action.receiver, action, Phase.POST)
+                        reaction(action.receiver, action, Phase.POST)
 
                 # Exit history atomic batch.
                 if atomic_batch_change is not None:
@@ -1064,7 +1064,7 @@ class ApplicationInternals(Base):
                     # Pre.
                     for action in actions:
                         for reaction in type(action.receiver)._reactions:
-                            reaction.func(action.receiver, action, Phase.PRE)
+                            reaction(action.receiver, action, Phase.PRE)
 
                     yield change
 
@@ -1079,7 +1079,7 @@ class ApplicationInternals(Base):
                     # Post.
                     for action in actions:
                         for reaction in type(action.receiver)._reactions:
-                            reaction.func(action.receiver, action, Phase.POST)
+                            reaction(action.receiver, action, Phase.POST)
 
                     # Commit Post.
                     post_commit = BatchCommit(

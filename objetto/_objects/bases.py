@@ -32,7 +32,7 @@ from .._structures import (
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.reraise_context import ReraiseContext
 from ..utils.subject_observer import Subject
-from ..utils.type_checking import assert_is_instance, assert_is_callable, import_types
+from ..utils.type_checking import assert_is_instance, import_types
 from ..utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
@@ -60,7 +60,7 @@ __all__ = [
     "UNIQUE_ATTRIBUTES_METADATA_KEY",
     "DATA_METHOD_TAG",
     "Relationship",
-    "Reaction",
+    "BaseReaction",
     "HistoryDescriptor",
     "BaseObjectFunctions",
     "BaseObjectMeta",
@@ -258,33 +258,33 @@ class Relationship(BaseRelationship):
         return self.__data_relationship
 
 
-class Reaction(Base):
+# noinspection PyTypeChecker
+_BR = TypeVar("_BR", bound="BaseReaction")
+
+
+class BaseReaction(Base):
     """
-    Method-like object that gets called whenever an action is sent through the object.
-
-    :param func: Function.
-    :param priority: Priority.
+    Base method-like that gets called whenever an action is sent through the object.
     """
-    __slots__ = ("__func", "__priority")
+    __slots__ = ("_priority",)
 
-    def __init__(self, func, priority=None):
-        # type: (Callable[[BaseObject, Action, Phase], None], Optional[int]) -> None
+    def __init__(self):
+        self._priority = None
 
-        # 'func'
-        with ReraiseContext(TypeError):
-            assert_is_callable(func)
+    @abstractmethod
+    def __call__(self, obj, action, phase):
+        """
+        React to actions.
 
-        # 'priority'
-        if priority is not None:
-            with ReraiseContext(TypeError, "'priority' parameter"):
-                assert_is_instance(priority, integer_types)
-
-        self.__func = func
-        self.__priority = priority
+        :param obj: Object.
+        :param action: Action.
+        :param phase: Phase.
+        """
+        raise NotImplementedError()
 
     @overload
     def __get__(self, instance, owner):
-        # type: (None, Type[BaseObject]) -> Callable[[BaseObject, Action, Phase], None]
+        # type: (_BR, None, Type[BaseObject]) -> _BR
         pass
 
     @overload
@@ -292,17 +292,30 @@ class Reaction(Base):
         # type: (BaseObject, Type[BaseObject]) -> Callable[[Action, Phase], None]
         pass
 
+    @final
     def __get__(self, instance, owner):
         """
-        Get bound reaction method from valid instance or unbound function otherwise.
+        Get bound reaction method from valid instance or this descriptor otherwise.
 
         :param instance: Instance.
         :param owner: Owner class.
-        :return: Bound reaction method or unbound function.
+        :return: Bound reaction method or this descriptor.
         """
         if instance is not None:
-            return lambda action, phase: self.func(instance, action, phase)
-        return self.func
+
+            def reaction(action, phase):
+                # type: (Action, Phase) -> None
+                """
+                Bound reaction method.
+
+                :param action: Action.
+                :param phase: Phase.
+                """
+                self(instance, action, phase)
+
+            return reaction
+        else:
+            return self
 
     @final
     def __hash__(self):
@@ -313,7 +326,9 @@ class Reaction(Base):
         :return: Hash.
         """
         if self.__hash is None:
-            self.__hash = hash(frozenset(iteritems(self.to_dict())))
+            dct = self.to_dict()
+            del dct["priority"]
+            self.__hash = hash(frozenset(iteritems(dct)))
         return self.__hash
 
     @final
@@ -325,10 +340,20 @@ class Reaction(Base):
         :param other: Another object.
         :return: True if considered equal.
         """
+        if self is other:
+            return True
         if type(self) is not type(other):
             return False
-        assert isinstance(other, Reaction)
-        return self.to_dict() == other.to_dict()
+        assert isinstance(other, BaseReaction)
+        dct = self.to_dict()
+        del dct["priority"]
+        if not dct:
+            return False
+        other_dct = other.to_dict()
+        if not other_dct:
+            return False
+        del other_dct["priority"]
+        return dct == other_dct
 
     @final
     def __repr__(self):
@@ -354,35 +379,36 @@ class Reaction(Base):
         :return: Dictionary.
         """
         return {
-            "func": self.func,
             "priority": self.priority,
         }
 
+    @final
     def set_priority(self, priority):
-        # type: (int) -> Reaction
+        # type: (_BR, int) -> _BR
         """
         Set priority and return a new reaction.
-        
+
         :param priority: Priority.
         :return: New reaction.
-        :raises RuntimeError: Priority is already set.
         """
-        if self.__priority is not None:
-            error = "priority is already set"
-            raise RuntimeError(error)
-        return Reaction(self.func, priority)
+
+        # 'priority'
+        if priority is not None:
+            with ReraiseContext(TypeError, "'priority' parameter"):
+                assert_is_instance(priority, integer_types)
+
+        state = self.__getstate__()
+        new_reaction = type(self).__new__(type(self))
+        new_reaction.__setstate__(state)
+        new_reaction._priority = priority
+        return new_reaction
 
     @property
-    def func(self):
-        # type: () -> Callable[[BaseObject, Action, Phase], None]
-        """Function."""
-        return self.__func
-
-    @property
+    @final
     def priority(self):
         # type: () -> Optional[int]
         """Priority."""
-        return self.__priority
+        return self._priority
 
 
 @final
@@ -565,7 +591,7 @@ class BaseObjectMeta(BaseStructureMeta):
     )  # type: MutableMapping[BaseObjectMeta, Optional[HistoryDescriptor]]
     __reactions = WeakKeyDictionary(
         {}
-    )  # type: MutableMapping[BaseObjectMeta, Tuple[Reaction, ...]]
+    )  # type: MutableMapping[BaseObjectMeta, Tuple[BaseReaction, ...]]
     __data_methods = WeakKeyDictionary(
         {}
     )  # type: MutableMapping[BaseObjectMeta, DictState[str, Callable]]
@@ -576,7 +602,7 @@ class BaseObjectMeta(BaseStructureMeta):
 
         # Find history descriptor, data methods, and reactions.
         history_descriptors = {}  # type: Dict[str, HistoryDescriptor]
-        reactions = {}  # type: Dict[str, Reaction]
+        reactions = {}  # type: Dict[str, BaseReaction]
         data_methods = {}  # type: Dict[str, Callable]
         for base in reversed(getmro(cls)):
             for member_name, member in iteritems(base.__dict__):
@@ -589,7 +615,7 @@ class BaseObjectMeta(BaseStructureMeta):
                     history_descriptors[member_name] = member
 
                 # Reaction.
-                elif isinstance(member, Reaction):
+                elif isinstance(member, BaseReaction):
                     reactions[member_name] = member
 
                 # Data method.
@@ -664,7 +690,7 @@ class BaseObjectMeta(BaseStructureMeta):
     @property
     @final
     def _reactions(cls):
-        # type: () -> Tuple[Reaction, ...]
+        # type: () -> Tuple[BaseReaction, ...]
         """Reactions sorted by priority."""
         return type(cls).__reactions[cls]
 

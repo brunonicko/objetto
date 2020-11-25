@@ -1,15 +1,22 @@
 # -*- coding: utf-8 -*-
 """Objects."""
 
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, Callable
+
+try:
+    import collections.abc as collections_abc
+except ImportError:
+    import collections as collections_abc  # type: ignore
 
 from decorator import decorator
+from six import string_types
 
 from ._bases import MISSING
 from ._objects import (
     DATA_METHOD_TAG,
     Attribute,
     Relationship,
+    BaseReaction,
     Object,
     MutableDictObject,
     MutableListObject,
@@ -17,15 +24,22 @@ from ._objects import (
 )
 from ._structures import KeyRelationship, make_auxiliary_cls
 from ._data import DataRelationship
+from .reactions import reaction
 from .utils.caller_module import get_caller_module
 from .utils.reraise_context import ReraiseContext
 from .utils.type_checking import assert_is_instance
+from .utils.factoring import import_factory
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Iterable, Mapping, Optional, Tuple, Type, Union
+    from typing import (
+        Any, Dict, Iterable, Mapping, Optional, Tuple, Type, Union
+    )
 
     from .utils.factoring import LazyFactory
     from .utils.type_checking import LazyTypes
+
+    ReactionType = Union[LazyFactory, BaseReaction]
+    ReactionsType = Union[ReactionType, Iterable[ReactionType]]
 
 
 __all__ = [
@@ -81,20 +95,6 @@ def data_method(func):
     decorated = data_method_(func)
     setattr(decorated, DATA_METHOD_TAG, True)
     return decorated
-
-
-@decorator
-def reaction(func, priority=None, *args, **kwargs):
-    # type: (Callable[BaseObject, Action, Phase], Optional[int], Any, Any) -> Reaction
-    """
-    Decorates a method into a reaction.
-    Reaction methods are called automatically when an action propagates up the 
-    hierarchy during the 'PRE' and 'POST' phases.
-    
-    :param func: Method to be decorated.
-    :param priority: Priority.
-    :return: 
-    """
 
 
 def data_relationship(
@@ -269,6 +269,7 @@ def dict_attribute(
     abstracted=False,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
 ):
     # type: (...) -> Attribute[MutableDictObject[KT, VT]]
     """
@@ -299,6 +300,7 @@ def dict_attribute(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :param qual_name: Optional type qualified name for the generated class.
     :param unique: Whether generated class should have a unique descriptor.
+    :param reactions: Reaction functions ordered by priority.
     :return: Dictionary attribute.
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -328,6 +330,7 @@ def dict_attribute(
             custom_data_relationship=custom_data_relationship,
             qual_name=qual_name,
             unique=unique,
+            reactions=reactions,
         )  # type: Type[MutableDictObject[KT, VT]]
 
     # Factory for dict object relationship.
@@ -380,6 +383,34 @@ def dict_attribute(
     return attribute_
 
 
+def _prepare_reactions(reactions=None):
+    # type: (ReactionsType) -> Dict[str, BaseReaction]
+    """
+    Conform reactions parameter value into a dictionary with reaction methods.
+
+    :param reactions: Input reactions.
+    :return: Dictionary with reaction methods.
+    """
+    dct = {}
+    if reactions is None:
+        return dct
+    if (
+        isinstance(reactions, string_types) or
+        not isinstance(reactions, collections_abc.Iterable)
+    ):
+        reactions = (reactions,)
+    for i, reaction_ in enumerate(reactions):
+        if isinstance(reaction_, BaseReaction) and reaction_.priority != i:
+            reaction_ = reaction_.set_priority(i)
+        elif reaction_ is None:
+            continue
+        else:
+            # noinspection PyArgumentList
+            reaction_ = reaction(priority=i)(import_factory(reaction_))
+        dct["__reaction{}".format(i)] = reaction_
+    return dct
+
+
 def dict_cls(
     types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
     subtypes=False,  # type: bool
@@ -399,7 +430,7 @@ def dict_cls(
     custom_data_relationship=None,  # type: Optional[DataRelationship]
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
-    reactions=(),  # type: Iterable[Callable]
+    reactions=None,  # type: ReactionsType
 ):
     # type: (...) -> Type[MutableDictObject[KT, VT]]
     """
@@ -462,8 +493,8 @@ def dict_cls(
         dct = {"_key_relationship": key_relationship}
 
     # Reactions.
-    for reaction in reactions:
-
+    with ReraiseContext((TypeError, ValueError), "defining 'dict_cls'"):
+        dct.update(_prepare_reactions(reactions))
 
     # Make class.
     base = MutableDictObject  # type: Type[MutableDictObject[KT, VT]]

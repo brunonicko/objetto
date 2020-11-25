@@ -128,6 +128,8 @@ class KeyRelationship(Base):
         :param other: Another object.
         :return: True if considered equal.
         """
+        if self is other:
+            return True
         if type(self) is not type(other):
             return False
         assert isinstance(other, KeyRelationship)

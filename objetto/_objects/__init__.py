@@ -13,7 +13,7 @@ from .bases import (
     BaseProxyObject,
     HistoryDescriptor,
     Relationship,
-    Reaction,
+    BaseReaction,
 )
 from .dict import DictObject, MutableDictObject, ProxyDictObject
 from .list import ListObject, MutableListObject, ProxyListObject
@@ -25,7 +25,7 @@ __all__ = [
     "UNIQUE_ATTRIBUTES_METADATA_KEY",
     "DATA_METHOD_TAG",
     "Relationship",
-    "Reaction",
+    "BaseReaction",
     "HistoryDescriptor",
     "BaseObject",
     "BaseMutableObject",

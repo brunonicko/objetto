@@ -9,6 +9,7 @@ from .objects import (
     dict_attribute,
     dict_cls,
 )
+from .reactions import reaction
 
 __all__ = [
     "Application",
@@ -18,4 +19,5 @@ __all__ = [
     "attribute",
     "dict_attribute",
     "dict_cls",
+    "reaction",
 ]
