@@ -31,9 +31,7 @@ from .utils.type_checking import assert_is_instance
 from .utils.factoring import import_factory
 
 if TYPE_CHECKING:
-    from typing import (
-        Any, Dict, Iterable, Mapping, Optional, Tuple, Type, Union
-    )
+    from typing import Any, Dict, Iterable, Optional, Type, Union
 
     from .utils.factoring import LazyFactory
     from .utils.type_checking import LazyTypes
@@ -48,7 +46,11 @@ __all__ = [
     "data_relationship",
     "attribute",
     "dict_attribute",
+    "list_attribute",
+    "set_attribute",
     "dict_cls",
+    "list_cls",
+    "set_cls",
 ]
 
 
@@ -343,7 +345,7 @@ def dict_attribute(
 
     # Get default value/factory.
     if changeable and not required and default is MISSING and default_factory is None:
-        default = {}
+        default = ()
 
     # Relationship.
     with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
@@ -379,6 +381,268 @@ def dict_attribute(
             dependencies=None,
             deserialize_to=None,
         )  # type: Attribute[MutableDictObject[KT, VT]]
+
+    return attribute_
+
+
+def list_attribute(
+    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=None,  # type: Optional[bool]
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    child=True,  # type: bool
+    history=None,  # type: Optional[bool]
+    data=None,  # type: Optional[bool]
+    custom_data_relationship=None,  # type: Optional[DataRelationship]
+    default=MISSING,  # type: Any
+    default_factory=None,  # type: LazyFactory
+    required=False,  # type: bool
+    changeable=True,  # type: bool
+    deletable=False,  # type: bool
+    finalized=False,  # type: bool
+    abstracted=False,  # type: bool
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
+):
+    # type: (...) -> Attribute[MutableListObject[T]]
+    """
+    Make list attribute.
+
+    :param types: Types.
+    :param subtypes: Whether to accept subtypes.
+    :param checked: Whether to perform runtime type check.
+    :param module: Module path for lazy types/factories.
+    :param factory: Value factory.
+    :param serialized: Whether should be serialized.
+    :param serializer: Custom serializer.
+    :param deserializer: Custom deserializer.
+    :param represented: Whether should be represented.
+    :param child: Whether object values should be adopted as children.
+    :param history: Whether to propagate the history to the child object value.
+    :param data: Whether to generate data for the value.
+    :param custom_data_relationship: Custom data relationship.
+    :param default: Default value.
+    :param default_factory: Default value factory.
+    :param required: Whether attribute is required to have a value or not.
+    :param changeable: Whether attribute value can be changed.
+    :param deletable: Whether attribute value can be deleted.
+    :param finalized: If True, attribute can't be overridden by subclasses.
+    :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :param qual_name: Optional type qualified name for the generated class.
+    :param unique: Whether generated class should have a unique descriptor.
+    :param reactions: Reaction functions ordered by priority.
+    :return: List attribute.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Make list class.
+    with ReraiseContext((TypeError, ValueError), "defining 'list_attribute'"):
+        list_type = list_cls(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            custom_data_relationship=custom_data_relationship,
+            qual_name=qual_name,
+            unique=unique,
+            reactions=reactions,
+        )  # type: Type[MutableListObject[T]]
+
+    # Factory for list object relationship.
+    def list_factory(initial=(), app=None):
+        """Factory for the whole list object."""
+        if type(initial) is list_type and initial.app is app:
+            return initial
+        else:
+            return list_type(app, initial)
+
+    # Get default value/factory.
+    if changeable and not required and default is MISSING and default_factory is None:
+        default = ()
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+        relationship = Relationship(
+            types=list_type,
+            subtypes=False,
+            checked=False,
+            module=module,
+            factory=list_factory,
+            serialized=serialized,
+            serializer=None,
+            deserializer=None,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            data_relationship=None,
+        )
+
+    # Make attribute.
+    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+        attribute_ = Attribute(
+            relationship=relationship,
+            default=default,
+            default_factory=default_factory,
+            module=module,
+            required=required,
+            changeable=changeable,
+            deletable=deletable,
+            finalized=finalized,
+            abstracted=abstracted,
+            delegated=False,
+            dependencies=None,
+            deserialize_to=None,
+        )  # type: Attribute[MutableListObject[T]]
+
+    return attribute_
+
+
+def set_attribute(
+    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=None,  # type: Optional[bool]
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    child=True,  # type: bool
+    history=None,  # type: Optional[bool]
+    data=None,  # type: Optional[bool]
+    custom_data_relationship=None,  # type: Optional[DataRelationship]
+    default=MISSING,  # type: Any
+    default_factory=None,  # type: LazyFactory
+    required=False,  # type: bool
+    changeable=True,  # type: bool
+    deletable=False,  # type: bool
+    finalized=False,  # type: bool
+    abstracted=False,  # type: bool
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
+):
+    # type: (...) -> Attribute[MutableSetObject[T]]
+    """
+    Make set attribute.
+
+    :param types: Types.
+    :param subtypes: Whether to accept subtypes.
+    :param checked: Whether to perform runtime type check.
+    :param module: Module path for lazy types/factories.
+    :param factory: Value factory.
+    :param serialized: Whether should be serialized.
+    :param serializer: Custom serializer.
+    :param deserializer: Custom deserializer.
+    :param represented: Whether should be represented.
+    :param child: Whether object values should be adopted as children.
+    :param history: Whether to propagate the history to the child object value.
+    :param data: Whether to generate data for the value.
+    :param custom_data_relationship: Custom data relationship.
+    :param default: Default value.
+    :param default_factory: Default value factory.
+    :param required: Whether attribute is required to have a value or not.
+    :param changeable: Whether attribute value can be changed.
+    :param deletable: Whether attribute value can be deleted.
+    :param finalized: If True, attribute can't be overridden by subclasses.
+    :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :param qual_name: Optional type qualified name for the generated class.
+    :param unique: Whether generated class should have a unique descriptor.
+    :param reactions: Reaction functions ordered by priority.
+    :return: Set attribute.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Make set class.
+    with ReraiseContext((TypeError, ValueError), "defining 'set_attribute'"):
+        set_type = set_cls(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            custom_data_relationship=custom_data_relationship,
+            qual_name=qual_name,
+            unique=unique,
+            reactions=reactions,
+        )  # type: Type[MutableSetObject[T]]
+
+    # Factory for set object relationship.
+    def set_factory(initial=(), app=None):
+        """Factory for the whole set object."""
+        if type(initial) is set_type and initial.app is app:
+            return initial
+        else:
+            return set_type(app, initial)
+
+    # Get default value/factory.
+    if changeable and not required and default is MISSING and default_factory is None:
+        default = ()
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+        relationship = Relationship(
+            types=set_type,
+            subtypes=False,
+            checked=False,
+            module=module,
+            factory=set_factory,
+            serialized=serialized,
+            serializer=None,
+            deserializer=None,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            data_relationship=None,
+        )
+
+    # Make attribute.
+    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+        attribute_ = Attribute(
+            relationship=relationship,
+            default=default,
+            default_factory=default_factory,
+            module=module,
+            required=required,
+            changeable=changeable,
+            deletable=deletable,
+            finalized=finalized,
+            abstracted=abstracted,
+            delegated=False,
+            dependencies=None,
+            deserialize_to=None,
+        )  # type: Attribute[MutableSetObject[T]]
 
     return attribute_
 
@@ -499,6 +763,172 @@ def dict_cls(
     # Make class.
     base = MutableDictObject  # type: Type[MutableDictObject[KT, VT]]
     with ReraiseContext(TypeError, "defining 'dict_cls'"):
+        cls = make_auxiliary_cls(
+            base,
+            relationship,
+            qual_name=qual_name,
+            module=module,
+            unique_descriptor_name="unique_hash" if unique else None,
+            dct=dct,
+        )
+
+    return cls
+
+
+def list_cls(
+    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=None,  # type: Optional[bool]
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    child=True,  # type: bool
+    history=None,  # type: Optional[bool]
+    data=None,  # type: Optional[bool]
+    custom_data_relationship=None,  # type: Optional[DataRelationship]
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
+):
+    # type: (...) -> Type[MutableListObject[T]]
+    """
+    Make auxiliary list object class.
+
+    :param types: Types.
+    :param subtypes: Whether to accept subtypes.
+    :param checked: Whether to perform runtime type check.
+    :param module: Module path for lazy types/factories.
+    :param factory: Value factory.
+    :param serialized: Whether should be serialized.
+    :param serializer: Custom serializer.
+    :param deserializer: Custom deserializer.
+    :param represented: Whether should be represented.
+    :param child: Whether object values should be adopted as children.
+    :param history: Whether to propagate the history to the child object value.
+    :param data: Whether to generate data for the value.
+    :param custom_data_relationship: Custom data relationship.
+    :param qual_name: Optional type qualified name for the generated class.
+    :param unique: Whether generated class should have a unique descriptor.
+    :param reactions: Reaction functions ordered by priority.
+    :return: List object class.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'list_cls'"):
+        relationship = Relationship(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            data_relationship=custom_data_relationship,
+        )
+
+    # Reactions.
+    with ReraiseContext((TypeError, ValueError), "defining 'list_cls'"):
+        dct = _prepare_reactions(reactions)
+
+    # Make class.
+    base = MutableListObject  # type: Type[MutableListObject[T]]
+    with ReraiseContext(TypeError, "defining 'list_cls'"):
+        cls = make_auxiliary_cls(
+            base,
+            relationship,
+            qual_name=qual_name,
+            module=module,
+            unique_descriptor_name="unique_hash" if unique else None,
+            dct=dct,
+        )
+
+    return cls
+
+
+def set_cls(
+    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=None,  # type: Optional[bool]
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    child=True,  # type: bool
+    history=None,  # type: Optional[bool]
+    data=None,  # type: Optional[bool]
+    custom_data_relationship=None,  # type: Optional[DataRelationship]
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
+):
+    # type: (...) -> Type[MutableSetObject[T]]
+    """
+    Make auxiliary set object class.
+
+    :param types: Types.
+    :param subtypes: Whether to accept subtypes.
+    :param checked: Whether to perform runtime type check.
+    :param module: Module path for lazy types/factories.
+    :param factory: Value factory.
+    :param serialized: Whether should be serialized.
+    :param serializer: Custom serializer.
+    :param deserializer: Custom deserializer.
+    :param represented: Whether should be represented.
+    :param child: Whether object values should be adopted as children.
+    :param history: Whether to propagate the history to the child object value.
+    :param data: Whether to generate data for the value.
+    :param custom_data_relationship: Custom data relationship.
+    :param qual_name: Optional type qualified name for the generated class.
+    :param unique: Whether generated class should have a unique descriptor.
+    :param reactions: Reaction functions ordered by priority.
+    :return: Set object class.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'set_cls'"):
+        relationship = Relationship(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            data_relationship=custom_data_relationship,
+        )
+
+    # Reactions.
+    with ReraiseContext((TypeError, ValueError), "defining 'set_cls'"):
+        dct = _prepare_reactions(reactions)
+
+    # Make class.
+    base = MutableSetObject  # type: Type[MutableSetObject[T]]
+    with ReraiseContext(TypeError, "defining 'set_cls'"):
         cls = make_auxiliary_cls(
             base,
             relationship,
