@@ -12,7 +12,7 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import integer_types, iteritems, string_types, with_metaclass
+from six import integer_types, iteritems, itervalues, string_types, with_metaclass
 
 from .._applications import Application
 from .._bases import Base, BaseMutableCollection, final
@@ -32,7 +32,7 @@ from .._structures import (
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.reraise_context import ReraiseContext
 from ..utils.subject_observer import Subject
-from ..utils.type_checking import assert_is_instance, import_types
+from ..utils.type_checking import assert_is_instance, assert_is_callable, import_types
 from ..utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
         Union,
     )
 
-    from .._applications import Store
+    from .._applications import Phase, Action, Store
     from .._history import HistoryObject
     from ..utils.factoring import LazyFactory
     from ..utils.type_checking import LazyTypes
@@ -58,9 +58,9 @@ if TYPE_CHECKING:
 __all__ = [
     "DELETED",
     "UNIQUE_ATTRIBUTES_METADATA_KEY",
-    "REACTION_METHOD_TAG",
     "DATA_METHOD_TAG",
     "Relationship",
+    "Reaction",
     "HistoryDescriptor",
     "BaseObjectFunctions",
     "BaseObjectMeta",
@@ -81,9 +81,6 @@ DELETED = object()
 
 UNIQUE_ATTRIBUTES_METADATA_KEY = "unique_attributes"
 """Unique attributes index cache metadata key."""
-
-REACTION_METHOD_TAG = "__isreaction__"
-"""Reaction method tag."""
 
 DATA_METHOD_TAG = "__isdatamethod__"
 """Data method tag."""
@@ -261,18 +258,131 @@ class Relationship(BaseRelationship):
         return self.__data_relationship
 
 
-class Reaction(Base):  # TODO
+class Reaction(Base):
     """
-    Callable that runs whenever an action is sent through the object.
+    Method-like object that gets called whenever an action is sent through the object.
 
     :param func: Function.
     :param priority: Priority.
     """
-    __slots__ = ("__priority",)
+    __slots__ = ("__func", "__priority")
 
     def __init__(self, func, priority=None):
+        # type: (Callable[[BaseObject, Action, Phase], None], Optional[int]) -> None
+
+        # 'func'
+        with ReraiseContext(TypeError):
+            assert_is_callable(func)
+
+        # 'priority'
+        if priority is not None:
+            with ReraiseContext(TypeError, "'priority' parameter"):
+                assert_is_instance(priority, integer_types)
+
         self.__func = func
         self.__priority = priority
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (None, Type[BaseObject]) -> Callable[[BaseObject, Action, Phase], None]
+        pass
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (BaseObject, Type[BaseObject]) -> Callable[[Action, Phase], None]
+        pass
+
+    def __get__(self, instance, owner):
+        """
+        Get bound reaction method from valid instance or unbound function otherwise.
+
+        :param instance: Instance.
+        :param owner: Owner class.
+        :return: Bound reaction method or unbound function.
+        """
+        if instance is not None:
+            return lambda action, phase: self.func(instance, action, phase)
+        return self.func
+
+    @final
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash.
+
+        :return: Hash.
+        """
+        if self.__hash is None:
+            self.__hash = hash(frozenset(iteritems(self.to_dict())))
+        return self.__hash
+
+    @final
+    def __eq__(self, other):
+        # type: (object) -> bool
+        """
+        Compare with another object for equality.
+
+        :param other: Another object.
+        :return: True if considered equal.
+        """
+        if type(self) is not type(other):
+            return False
+        assert isinstance(other, Reaction)
+        return self.to_dict() == other.to_dict()
+
+    @final
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        return custom_mapping_repr(
+            self.to_dict(),
+            prefix="{}(".format(type(self).__name__),
+            template="{key}={value}",
+            suffix=")",
+            key_repr=str,
+        )
+
+    def to_dict(self):
+        # type: () -> Dict[str, Any]
+        """
+        Convert to dictionary.
+
+        :return: Dictionary.
+        """
+        return {
+            "func": self.func,
+            "priority": self.priority,
+        }
+
+    def set_priority(self, priority):
+        # type: (int) -> Reaction
+        """
+        Set priority and return a new reaction.
+        
+        :param priority: Priority.
+        :return: New reaction.
+        :raises RuntimeError: Priority is already set.
+        """
+        if self.__priority is not None:
+            error = "priority is already set"
+            raise RuntimeError(error)
+        return Reaction(self.func, priority)
+
+    @property
+    def func(self):
+        # type: () -> Callable[[BaseObject, Action, Phase], None]
+        """Function."""
+        return self.__func
+
+    @property
+    def priority(self):
+        # type: () -> Optional[int]
+        """Priority."""
+        return self.__priority
 
 
 @final
@@ -455,7 +565,7 @@ class BaseObjectMeta(BaseStructureMeta):
     )  # type: MutableMapping[BaseObjectMeta, Optional[HistoryDescriptor]]
     __reactions = WeakKeyDictionary(
         {}
-    )  # type: MutableMapping[BaseObjectMeta, Tuple[str, ...]]
+    )  # type: MutableMapping[BaseObjectMeta, Tuple[Reaction, ...]]
     __data_methods = WeakKeyDictionary(
         {}
     )  # type: MutableMapping[BaseObjectMeta, DictState[str, Callable]]
@@ -466,18 +576,24 @@ class BaseObjectMeta(BaseStructureMeta):
 
         # Find history descriptor, data methods, and reactions.
         history_descriptors = {}  # type: Dict[str, HistoryDescriptor]
-        reactions = {}  # type: Dict[str, Optional[int]]
+        reactions = {}  # type: Dict[str, Reaction]
         data_methods = {}  # type: Dict[str, Callable]
         for base in reversed(getmro(cls)):
             for member_name, member in iteritems(base.__dict__):
                 history_descriptors.pop(member_name, None)
                 reactions.pop(member_name, None)
                 data_methods.pop(member_name, None)
+
+                # History descriptor.
                 if isinstance(member, HistoryDescriptor):
                     history_descriptors[member_name] = member
-                elif hasattr(member, REACTION_METHOD_TAG) and callable(member):
-                    reactions[member_name] = getattr(member, REACTION_METHOD_TAG)
-                elif getattr(member, DATA_METHOD_TAG, False) and callable(member):
+
+                # Reaction.
+                elif isinstance(member, Reaction):
+                    reactions[member_name] = member
+
+                # Data method.
+                elif callable(member) and getattr(member, DATA_METHOD_TAG, False):
                     data_methods[member_name] = member
 
         # Can't have more than one history descriptor.
@@ -500,8 +616,10 @@ class BaseObjectMeta(BaseStructureMeta):
 
         # Store reactions in a tuple, sort them by priority.
         sorted_reactions = tuple(
-            r
-            for r, _ in sorted(iteritems(reactions), key=lambda p: (p[1] is None, p[1]))
+            sorted(
+                itervalues(reactions),
+                key=lambda r: (r.priority is None, r.priority),
+            )
         )
         type(cls).__reactions[cls] = sorted_reactions
 
@@ -546,8 +664,8 @@ class BaseObjectMeta(BaseStructureMeta):
     @property
     @final
     def _reactions(cls):
-        # type: () -> Tuple[str, ...]
-        """Names of reaction methods ordered by priority."""
+        # type: () -> Tuple[Reaction, ...]
+        """Reactions sorted by priority."""
         return type(cls).__reactions[cls]
 
     @property

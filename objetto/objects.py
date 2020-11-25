@@ -38,12 +38,14 @@ __all__ = [
 ]
 
 
+F = TypeVar("F", bound=Callable)  # Callable type.
 T = TypeVar("T")  # Any type.
 KT = TypeVar("KT")  # Any key type.
 VT = TypeVar("VT")  # Any value type.
 
 
 def data_method(func):
+    # type: (F) -> F
     """
     Decorate object methods by tagging them as data methods.
     The generated data class will have the decorated methods in them.
@@ -79,6 +81,20 @@ def data_method(func):
     decorated = data_method_(func)
     setattr(decorated, DATA_METHOD_TAG, True)
     return decorated
+
+
+@decorator
+def reaction(func, priority=None, *args, **kwargs):
+    # type: (Callable[BaseObject, Action, Phase], Optional[int], Any, Any) -> Reaction
+    """
+    Decorates a method into a reaction.
+    Reaction methods are called automatically when an action propagates up the 
+    hierarchy during the 'PRE' and 'POST' phases.
+    
+    :param func: Method to be decorated.
+    :param priority: Priority.
+    :return: 
+    """
 
 
 def data_relationship(

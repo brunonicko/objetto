@@ -58,7 +58,7 @@ if TYPE_CHECKING:
     ReadMetadataFunction = Callable[[], InteractiveDictData]
     UpdateMetadataFunction = Callable[[Mapping[str, Any]], None]
 
-__all__ = ["Application"]
+__all__ = ["Phase", "Action", "Store", "Application"]
 
 
 @unique
@@ -587,9 +587,7 @@ class ApplicationInternals(Base):
 
                     actions.append(action)
                     for reaction in type(action.receiver)._reactions:
-                        getattr(type(action.receiver), reaction)(
-                            action.receiver, action, Phase.PRE
-                        )
+                        reaction.func(action.receiver, action, Phase.PRE)
 
                     child = parent
 
@@ -722,9 +720,7 @@ class ApplicationInternals(Base):
                 # Post phase.
                 for action in actions:
                     for reaction in type(action.receiver)._reactions:
-                        getattr(type(action.receiver), reaction)(
-                            action.receiver, action, Phase.POST
-                        )
+                        reaction.func(action.receiver, action, Phase.POST)
 
                 # Exit history atomic batch.
                 if atomic_batch_change is not None:
@@ -1068,9 +1064,7 @@ class ApplicationInternals(Base):
                     # Pre.
                     for action in actions:
                         for reaction in type(action.receiver)._reactions:
-                            getattr(type(action.receiver), reaction)(
-                                action.receiver, action, Phase.PRE
-                            )
+                            reaction.func(action.receiver, action, Phase.PRE)
 
                     yield change
 
@@ -1085,9 +1079,7 @@ class ApplicationInternals(Base):
                     # Post.
                     for action in actions:
                         for reaction in type(action.receiver)._reactions:
-                            getattr(type(action.receiver), reaction)(
-                                action.receiver, action, Phase.POST
-                            )
+                            reaction.func(action.receiver, action, Phase.POST)
 
                     # Commit Post.
                     post_commit = BatchCommit(

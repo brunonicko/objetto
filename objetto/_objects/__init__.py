@@ -4,7 +4,6 @@
 from .bases import (
     DELETED,
     UNIQUE_ATTRIBUTES_METADATA_KEY,
-    REACTION_METHOD_TAG,
     DATA_METHOD_TAG,
     BaseAuxiliaryObject,
     BaseAuxiliaryObjectMeta,
@@ -14,6 +13,7 @@ from .bases import (
     BaseProxyObject,
     HistoryDescriptor,
     Relationship,
+    Reaction,
 )
 from .dict import DictObject, MutableDictObject, ProxyDictObject
 from .list import ListObject, MutableListObject, ProxyListObject
@@ -23,9 +23,9 @@ from .set import MutableSetObject, ProxySetObject, SetObject
 __all__ = [
     "DELETED",
     "UNIQUE_ATTRIBUTES_METADATA_KEY",
-    "REACTION_METHOD_TAG",
     "DATA_METHOD_TAG",
     "Relationship",
+    "Reaction",
     "HistoryDescriptor",
     "BaseObject",
     "BaseMutableObject",

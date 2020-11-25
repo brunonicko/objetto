@@ -49,7 +49,7 @@ if TYPE_CHECKING:
 
     from .._applications import Store
 
-__all__ = ["ListObject"]
+__all__ = ["ListObject", "MutableListObject", "ProxyListObject"]
 
 
 T = TypeVar("T")  # Any type.
