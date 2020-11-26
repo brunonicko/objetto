@@ -13,6 +13,7 @@ setuptools.setup(
     long_description_content_type="text/x-rst",
     url="https://github.com/brunonicko/objetto",
     packages=setuptools.find_packages(),
+    package_data={"objetto": ["py.typed"]},
     install_requires=[
         "enum34; python_version < '3.4'",
         "decorator",

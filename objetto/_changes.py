@@ -60,7 +60,7 @@ class Batch(BaseChange):
     """Batch change."""
 
     name = data_attribute(
-        string_types, checked=False, abstracted=True
+        string_types, checked=False
     )  # type: DataAttribute[str]
     """Name describing the change."""
 

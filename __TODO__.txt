@@ -11,6 +11,7 @@
 # TODO: release to pypi!
 
 # DONE
+# add py.typed file
 # structures '__repr__' maximum level
 # __storage should only be change during a 'push'
 # fix objects initialized within a write context that gets reverted

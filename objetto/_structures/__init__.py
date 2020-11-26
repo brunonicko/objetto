@@ -12,6 +12,7 @@ from .bases import (
     BaseStructure,
     BaseStructureMeta,
     UniqueDescriptor,
+    unique_descriptor,
     make_auxiliary_cls,
 )
 from .dict import (
@@ -44,6 +45,7 @@ from .structure import (
 
 __all__ = [
     "make_auxiliary_cls",
+    "unique_descriptor",
     "BaseRelationship",
     "UniqueDescriptor",
     "BaseStructureMeta",

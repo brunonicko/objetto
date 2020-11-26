@@ -3,6 +3,8 @@
 from .applications import Application
 from .objects import (
     Object,
+    unique_descriptor,
+    history_descriptor,
     attribute,
     data_method,
     data_relationship,
@@ -22,6 +24,8 @@ from .reactions import reaction
 __all__ = [
     "Application",
     "Object",
+    "unique_descriptor",
+    "history_descriptor",
     "data_relationship",
     "data_method",
     "attribute",

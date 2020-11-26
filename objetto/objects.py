@@ -23,13 +23,14 @@ from ._objects import (
     MutableListObject,
     MutableSetObject,
     Object,
+    HistoryDescriptor,
     ProxyDictObject,
     ProxyListObject,
     ProxySetObject,
     Relationship,
     SetObject,
 )
-from ._structures import KeyRelationship, make_auxiliary_cls
+from ._structures import KeyRelationship, make_auxiliary_cls, unique_descriptor
 from .reactions import reaction
 from .utils.caller_module import get_caller_module
 from .utils.factoring import import_factory
@@ -50,6 +51,8 @@ __all__ = [
     "Object",
     "data_method",
     "data_relationship",
+    "unique_descriptor",
+    "history_descriptor",
     "attribute",
     "protected_attribute_pair",
     "dict_attribute",
@@ -162,6 +165,36 @@ def data_relationship(
         represented=represented,
         compared=compared,
     )
+
+
+def history_descriptor(size=None):
+    # type: (Optional[int]) -> HistoryDescriptor
+    """
+    Descriptor to be used when declaring an :class:`objetto.objects.Object` class.
+    When used, every instance of the object class will hold a history that will keep
+    track of its changes (and the changes of its children that define a history
+    relationship), allowing for easy undo/redo operations.
+    If accessed through an instance, the descriptor will return the history object.
+
+    .. code:: python
+
+        >>> from objetto import Application, Object, attribute, history_descriptor
+
+        >>> class Person(Object):
+        ...     history = history_descriptor()
+        ...     name = attribute(str)
+        ...
+        >>> app = Application()
+        >>> person = Person(app, name="Albert")
+        >>> person.name = "Einstein"
+        >>> person.history.undo()
+        >>> person.name
+        'Albert'
+
+    :param size: How many changes to remember.
+    :return: History descriptor.
+    """
+    return HistoryDescriptor(size=size)
 
 
 def attribute(

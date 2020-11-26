@@ -58,6 +58,7 @@ __all__ = [
     "make_auxiliary_cls",
     "BaseRelationship",
     "UniqueDescriptor",
+    "unique_descriptor",
     "BaseStructureMeta",
     "BaseStructure",
     "BaseInteractiveStructure",
@@ -502,6 +503,33 @@ class UniqueDescriptor(Base):
             if getattr(cls, "_unique_descriptor", None) is self:
                 return hash(id(instance))
         return self
+
+
+def unique_descriptor():
+    # type: () -> UniqueDescriptor
+    """
+    Descriptor to be used when declaring an :class:`objetto.objects.Object` or a
+    :class:`objetto.data.Data` container class.
+    When used, the hash for the container will be the object ID, and the equality method
+    will compare by identity instead of values.
+    If accessed through an instance, the descriptor will return the unique hash based
+    on the object's ID.
+
+    .. code:: python
+
+        >>> from objetto import Application, Object, unique_descriptor
+
+        >>> class UniqueObject(Object):
+        ...     unique_hash = unique_descriptor()
+        ...
+        >>> app = Application()
+        >>> obj = UniqueObject(app)
+        >>> obj.unique_hash == hash(id(obj))
+        True
+
+    :return: Unique descriptor.
+    """
+    return UniqueDescriptor()
 
 
 class BaseStructureMeta(BaseMeta):
