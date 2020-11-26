@@ -463,7 +463,7 @@ class ApplicationInternals(Base):
                     if isinstance(child, self.__history_cls):
                         error = (
                             "can't have '{}' objects as children of other objects"
-                        ).format(self.__history_cls.__name__)
+                        ).format(self.__history_cls.__fullname__)
                         raise ValueError(error)
                 if self.__busy_hierarchy.get(child):
                     error = (
