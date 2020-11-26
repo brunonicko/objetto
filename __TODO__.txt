@@ -1,3 +1,5 @@
+# TODO: fix objects initialized within a write context that gets reverted
+# TODO: __storage should only be change during a 'push'
 # TODO: structures '__repr__' maximum level
 # TODO: history reaction conflict validation?
 # TODO: history object

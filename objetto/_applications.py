@@ -842,35 +842,39 @@ class ApplicationInternals(Base):
 
         :param obj: Object.
         """
-        assert obj not in self.__storage
+        with self.write_context():
 
-        cls = type(obj)
-        kwargs = {}
+            assert obj not in self.__storage
 
-        history_descriptor = cls._history_descriptor
-        if history_descriptor is not None:
-            app = self.__app_ref()
-            assert app is not None
+            cls = type(obj)
+            kwargs = {}
 
-            if self.__history_cls is None:
-                from ._history import HistoryObject
+            history_descriptor = cls._history_descriptor
+            if history_descriptor is not None:
+                app = self.__app_ref()
+                assert app is not None
 
-                self.__history_cls = HistoryObject
+                if self.__history_cls is None:
+                    from ._history import HistoryObject
 
-            kwargs.update(
-                history_provider_ref=WeakReference(obj),
-                history=self.__history_cls(app, size=history_descriptor.size),
-            )
+                    self.__history_cls = HistoryObject
 
-        state = cls._state_factory()
+                kwargs.update(
+                    history_provider_ref=WeakReference(obj),
+                    history=self.__history_cls(app, size=history_descriptor.size),
+                )
 
-        data_type = cls.Data
-        if data_type is not None:
-            data = data_type.__make__()
-        else:
-            data = None
+            state = cls._state_factory()
 
-        self.__storage[obj] = Store(state=state, data=data, **kwargs)
+            data_type = cls.Data
+            if data_type is not None:
+                data = data_type.__make__()
+            else:
+                data = None
+
+            self.__storage[obj] = Store(
+                state=state, data=data, **kwargs
+            )  # FIXME: __storage should only be change during a 'push'
 
     @contextmanager
     def read_context(self, obj=None):
