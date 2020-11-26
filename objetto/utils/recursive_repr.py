@@ -11,7 +11,7 @@ except ImportError:
     import collections as collections_abc  # type: ignore
 
 from decorator import decorator
-from qualname import qualname
+from qualname import qualname  # type: ignore
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Optional

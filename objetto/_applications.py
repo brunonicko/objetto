@@ -7,7 +7,7 @@ from copy import deepcopy
 from enum import Enum, unique
 from threading import RLock
 from traceback import format_exception
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 from weakref import WeakKeyDictionary
 
 from six import iteritems, string_types
@@ -31,6 +31,7 @@ from .utils.weak_reference import WeakReference
 if TYPE_CHECKING:
     from typing import (
         Any,
+        AbstractSet,
         Callable,
         Counter,
         Dict,
@@ -47,8 +48,10 @@ if TYPE_CHECKING:
     from ._changes import BaseAtomicChange, Batch
     from ._data import InteractiveListData, InteractiveSetData
     from ._history import HistoryObject
-    from ._objects import BaseObject
+    from ._objects import BaseObject, Relationship
     from .utils.subject_observer import ObserverExceptionInfo
+
+    assert Relationship
 
     ReadFunction = Callable[[], "Store"]
     WriteFunction = Callable[
@@ -303,7 +306,7 @@ class Action(Data):
 
     change = data_attribute(
         BaseChange, subtypes=True, checked=False
-    )  # type: BaseChange
+    )  # type: DataAttribute[BaseChange]
     """Change that happened in the sender."""
 
 
@@ -315,7 +318,9 @@ class Commit(Data):
     )  # type: DataAttribute[InteractiveListData[Action]]
     """Actions."""
 
-    stores = data_dict_attribute(Store, checked=False)  # type: InteractiveDictData
+    stores = data_dict_attribute(
+        Store, checked=False, key_types=".._objects|BaseObject", key_subtypes=True
+    )  # type: DataAttribute[InteractiveDictData[BaseObject, Store]]
     """Modified stores."""
 
 
@@ -566,7 +571,10 @@ class ApplicationInternals(Base):
                         location = parent._locate(child)
                         locations = [location] + all_locations[-1]
 
-                        relationship = parent._get_relationship(location)
+                        relationship = cast(
+                            "Relationship",
+                            parent._get_relationship(location)
+                        )
                         if relationship.data:
                             data_location = parent._locate_data(child)
                             data_locations = [data_location, all_data_locations[-1]]
@@ -685,7 +693,10 @@ class ApplicationInternals(Base):
                             continue
 
                         location = single_locations[i]
-                        relationship = parent._get_relationship(location)
+                        relationship = cast(
+                            "Relationship",
+                            parent._get_relationship(location)
+                        )
                         if not relationship.data:
                             break
                         data_location = single_data_locations[i]
@@ -822,7 +833,7 @@ class ApplicationInternals(Base):
 
     @contextmanager
     def __new_children_context(self, new_children):
-        # type: (Set[BaseObject]) -> Iterator
+        # type: (AbstractSet[BaseObject]) -> Iterator
         """
         Context manager that locks parenting for new children.
 

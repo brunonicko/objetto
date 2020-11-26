@@ -73,16 +73,6 @@ class BaseSetStructure(
             return "<{}>".format(type(self).__fullname__)
 
     @final
-    def __reversed__(self):
-        # type: () -> Iterator[T]
-        """
-        Iterate over reversed values.
-
-        :return: Reversed values iterator.
-        """
-        return reversed(self._state)
-
-    @final
     def __len__(self):
         # type: () -> int
         """

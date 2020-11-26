@@ -288,4 +288,4 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
     def _internal(self):
         # type: () -> PMap[KT, VT]
         """Internal state."""
-        return cast("PMap[KT, VT", super(DictState, self)._internal)
+        return cast("PMap[KT, VT]", super(DictState, self)._internal)

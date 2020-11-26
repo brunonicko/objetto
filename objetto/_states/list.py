@@ -380,4 +380,4 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
     def _internal(self):
         # type: () -> PVector[T]
         """Internal state."""
-        return cast("PVector[T", super(ListState, self)._internal)
+        return cast("PVector[T]", super(ListState, self)._internal)

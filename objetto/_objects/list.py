@@ -73,7 +73,9 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         :param new_child_data: New child's data.
         :return: Updated object's store.
         """
-        data = store.data._set(data_location, new_child_data)
+        original_data = store.data
+        assert original_data is not None
+        data = cast("ListData", original_data)._set(data_location, new_child_data)
         return store.set("data", data)
 
     @staticmethod

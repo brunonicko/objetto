@@ -90,7 +90,8 @@ __all__ = [
     "BaseMutableSet",
 ]
 
-F = TypeVar("F", bound=Callable)  # Callable type.
+# noinspection PyTypeChecker
+F = TypeVar("F", "Callable", "Type")  # Callable type.
 T = TypeVar("T")  # Any type.
 KT = TypeVar("KT")  # Key type.
 VT = TypeVar("VT")  # Value type.

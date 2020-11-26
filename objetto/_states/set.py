@@ -336,4 +336,4 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
     def _internal(self):
         # type: () -> PSet[T]
         """Internal state."""
-        return cast("PSet[T", super(SetState, self)._internal)
+        return cast("PSet[T]", super(SetState, self)._internal)

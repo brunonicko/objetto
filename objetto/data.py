@@ -126,7 +126,7 @@ def data_dict_attribute(
     represented=True,  # type: bool
     compared=True,  # type: bool
     key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
-    key_subtypes=None,  # type: Optional[bool]
+    key_subtypes=False,  # type: bool
     key_factory=None,  # type: LazyFactory
     default=MISSING,  # type: Any
     default_factory=None,  # type: LazyFactory
@@ -465,7 +465,7 @@ def data_dict_cls(
     represented=True,  # type: bool
     compared=True,  # type: bool
     key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
-    key_subtypes=None,  # type: Optional[bool]
+    key_subtypes=False,  # type: bool
     key_factory=None,  # type: LazyFactory
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool

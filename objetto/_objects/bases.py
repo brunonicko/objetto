@@ -268,10 +268,11 @@ class BaseReaction(Base):
     Base method-like that gets called whenever an action is sent through the object.
     """
 
-    __slots__ = ("_priority",)
+    __slots__ = ("__hash", "_priority")
 
     def __init__(self):
-        self._priority = None
+        self.__hash = None  # type: Optional[int]
+        self._priority = None  # type: Optional[int]
 
     @abstractmethod
     def __call__(self, obj, action, phase):
