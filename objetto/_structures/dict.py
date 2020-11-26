@@ -9,7 +9,7 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, iterkeys, itervalues, with_metaclass, string_types
+from six import iteritems, iterkeys, itervalues, string_types, with_metaclass
 
 from .._bases import (
     Base,
@@ -21,8 +21,9 @@ from .._bases import (
 from .._states import DictState
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.factoring import format_factory, import_factory, run_factory
-from ..utils.type_checking import assert_is_instance, format_types, import_types
+from ..utils.recursive_repr import recursive_repr
 from ..utils.reraise_context import ReraiseContext
+from ..utils.type_checking import assert_is_instance, format_types, import_types
 from .bases import (
     BaseAuxiliaryStructure,
     BaseAuxiliaryStructureMeta,
@@ -135,6 +136,7 @@ class KeyRelationship(Base):
         assert isinstance(other, KeyRelationship)
         return self.to_dict() == other.to_dict()
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """
@@ -255,6 +257,7 @@ class BaseDictStructure(
     _key_relationship = KeyRelationship()
     """Relationship for the keys."""
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """

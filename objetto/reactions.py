@@ -1,28 +1,24 @@
 # -*- coding: utf-8 -*-
 """Reactions."""
 
-from collections import defaultdict
 from collections import Counter as ValueCounter
+from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 from decorator import decorator
-from six import integer_types, string_types, iteritems
+from six import integer_types, iteritems, string_types
 
+from ._applications import Phase, RejectChangeException
 from ._bases import MISSING, final
 from ._changes import BaseAtomicChange, Update
 from ._data import InteractiveDictData
-from ._applications import RejectChangeException, Phase
-from ._objects import (
-    UNIQUE_ATTRIBUTES_METADATA_KEY,
-    BaseReaction,
-    Object,
-)
+from ._objects import UNIQUE_ATTRIBUTES_METADATA_KEY, BaseReaction, Object
 from ._states import DictState
 from .utils.reraise_context import ReraiseContext
-from .utils.type_checking import assert_is_instance, assert_is_callable
+from .utils.type_checking import assert_is_callable, assert_is_instance
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, Counter, Callable, Mapping, Optional, FrozenSet
+    from typing import Any, Callable, Counter, Dict, FrozenSet, Mapping, Optional
 
     from ._applications import Action
     from ._objects import BaseObject
@@ -65,6 +61,7 @@ class CustomReaction(BaseReaction):
     :param func: Function.
     :param priority: Priority.
     """
+
     __slots__ = ("__func", "__priority")
 
     def __init__(self, func, priority=None):
@@ -101,9 +98,11 @@ class CustomReaction(BaseReaction):
         :return: Dictionary.
         """
         dct = super(CustomReaction, self).to_dict()
-        dct.update({
-            "func": self.func,
-        })
+        dct.update(
+            {
+                "func": self.func,
+            }
+        )
         return dct
 
     @property
@@ -240,9 +239,7 @@ class UniqueAttributes(BaseReaction):
                                     if name not in cache:
                                         cache = cache.set(
                                             name,
-                                            InteractiveDictData(
-                                                {value: child}
-                                            ),
+                                            InteractiveDictData({value: child}),
                                         )
                                     else:
                                         cache = cache.set(
@@ -298,9 +295,7 @@ class UniqueAttributes(BaseReaction):
                                 if name not in cache:
                                     cache = cache.set(
                                         name,
-                                        InteractiveDictData(
-                                            {new_value: child}
-                                        ),
+                                        InteractiveDictData({new_value: child}),
                                     )
                                 else:
                                     cache = cache.set(
@@ -410,10 +405,12 @@ class UniqueAttributes(BaseReaction):
         :return: Dictionary.
         """
         dct = super(UniqueAttributes, self).to_dict()
-        dct.update({
-            "names": self.names,
-            "incrementers": self.incrementers,
-        })
+        dct.update(
+            {
+                "names": self.names,
+                "incrementers": self.incrementers,
+            }
+        )
         return dct
 
     @property
@@ -497,10 +494,12 @@ class LimitChildren(BaseReaction):
         :return: Dictionary.
         """
         dct = super(LimitChildren, self).to_dict()
-        dct.update({
-            "minimum": self.minimum,
-            "maximum": self.maximum,
-        })
+        dct.update(
+            {
+                "minimum": self.minimum,
+                "maximum": self.maximum,
+            }
+        )
         return dct
 
     @property
@@ -578,10 +577,12 @@ class Limit(BaseReaction):
         :return: Dictionary.
         """
         dct = super(Limit, self).to_dict()
-        dct.update({
-            "minimum": self.minimum,
-            "maximum": self.maximum,
-        })
+        dct.update(
+            {
+                "minimum": self.minimum,
+                "maximum": self.maximum,
+            }
+        )
         return dct
 
     @property

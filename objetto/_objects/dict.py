@@ -12,7 +12,7 @@ except ImportError:
 from six import iteritems, iterkeys, itervalues, raise_from, with_metaclass
 
 from .._applications import Application
-from .._bases import MISSING, FINAL_METHOD_TAG, BaseMutableDict, final, init_context
+from .._bases import FINAL_METHOD_TAG, MISSING, BaseMutableDict, final, init_context
 from .._changes import DictUpdate
 from .._data import BaseData, DictData, InteractiveDictData
 from .._states import DictState
@@ -40,10 +40,10 @@ if TYPE_CHECKING:
         Iterable,
         Iterator,
         Mapping,
+        Optional,
         Tuple,
         Type,
         Union,
-        Optional,
     )
 
     from .._applications import Store
@@ -73,11 +73,13 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
         dct = super(DictObjectFunctions, DictObjectFunctions).make_data_cls_dct(
             auxiliary_cls
         )
-        dct.update({
-            "_key_relationship": cast(
-                "Type[DictObject]", auxiliary_cls
-            )._key_relationship
-        })
+        dct.update(
+            {
+                "_key_relationship": cast(
+                    "Type[DictObject]", auxiliary_cls
+                )._key_relationship
+            }
+        )
         return dct
 
     @staticmethod

@@ -29,6 +29,7 @@ from .._states import BaseState
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.factoring import format_factory, import_factory, run_factory
 from ..utils.lazy_import import get_path, import_path
+from ..utils.recursive_repr import recursive_repr
 from ..utils.reraise_context import ReraiseContext
 from ..utils.type_checking import (
     assert_is_instance,
@@ -320,6 +321,7 @@ class BaseRelationship(Base):
         assert isinstance(other, BaseRelationship)
         return self.to_dict() == other.to_dict()
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """
@@ -335,6 +337,15 @@ class BaseRelationship(Base):
             sorting=True,
             key_repr=str,
         )
+
+    def __str__(self):
+        # type: () -> str
+        """
+        Get string representation.
+
+        :return: String representation.
+        """
+        return self.__repr__()
 
     def to_dict(self):
         # type: () -> Dict[str, Any]

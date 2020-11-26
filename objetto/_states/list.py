@@ -15,6 +15,7 @@ from six import iteritems
 from .._bases import BaseInteractiveList, final
 from ..utils.custom_repr import custom_iterable_repr, custom_mapping_repr
 from ..utils.list_operations import pre_move, resolve_continuous_slice, resolve_index
+from ..utils.recursive_repr import recursive_repr
 from .bases import BaseState
 
 if TYPE_CHECKING:
@@ -115,6 +116,7 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         """
         return len(self._internal)
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """

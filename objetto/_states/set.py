@@ -13,6 +13,7 @@ from six import iteritems
 
 from .._bases import BaseInteractiveSet, final
 from ..utils.custom_repr import custom_iterable_repr, custom_mapping_repr
+from ..utils.recursive_repr import recursive_repr
 from .bases import BaseState
 
 if TYPE_CHECKING:
@@ -127,6 +128,7 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         """
         return len(self._internal)
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """

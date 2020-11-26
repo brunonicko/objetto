@@ -4,6 +4,8 @@
 from typing import TYPE_CHECKING, Generic, TypeVar
 from weakref import ref as _ref
 
+from .recursive_repr import recursive_repr
+
 if TYPE_CHECKING:
     from typing import Any, Optional, Tuple, Type
 
@@ -81,6 +83,7 @@ class WeakReference(Generic[T], object):
             return NotImplemented
         return not result
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """

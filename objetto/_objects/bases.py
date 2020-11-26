@@ -30,6 +30,7 @@ from .._structures import (
     make_auxiliary_cls,
 )
 from ..utils.custom_repr import custom_mapping_repr
+from ..utils.recursive_repr import recursive_repr
 from ..utils.reraise_context import ReraiseContext
 from ..utils.subject_observer import Subject
 from ..utils.type_checking import assert_is_instance, import_types
@@ -50,7 +51,7 @@ if TYPE_CHECKING:
         Union,
     )
 
-    from .._applications import Phase, Action, Store
+    from .._applications import Action, Phase, Store
     from .._history import HistoryObject
     from ..utils.factoring import LazyFactory
     from ..utils.type_checking import LazyTypes
@@ -266,6 +267,7 @@ class BaseReaction(Base):
     """
     Base method-like that gets called whenever an action is sent through the object.
     """
+
     __slots__ = ("_priority",)
 
     def __init__(self):
@@ -356,6 +358,7 @@ class BaseReaction(Base):
         return dct == other_dct
 
     @final
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """
@@ -489,6 +492,7 @@ class HistoryDescriptor(Base):
         assert isinstance(other, HistoryDescriptor)
         return self.to_dict() == other.to_dict()
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """
@@ -1031,6 +1035,7 @@ class BaseProxyObject(BaseMutableCollection[T]):
         self.__obj = obj
 
     @final
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """

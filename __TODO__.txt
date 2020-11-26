@@ -1,8 +1,5 @@
-# TODO: fix objects initialized within a write context that gets reverted
-# TODO: __storage should only be change during a 'push'
-# TODO: structures '__repr__' maximum level
-# TODO: history reaction conflict validation?
 # TODO: history object
+# TODO: history reaction conflict validation?
 # TODO: application root descriptors
 # TODO: custom exceptions?
 # TODO: mypy
@@ -14,6 +11,9 @@
 # TODO: release to pypi!
 
 # DONE
+# structures '__repr__' maximum level
+# __storage should only be change during a 'push'
+# fix objects initialized within a write context that gets reverted
 # application
 # reactions
 # factories

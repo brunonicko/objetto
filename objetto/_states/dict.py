@@ -13,6 +13,7 @@ from six import iteritems, iterkeys, itervalues
 
 from .._bases import BaseInteractiveDict, final
 from ..utils.custom_repr import custom_mapping_repr
+from ..utils.recursive_repr import recursive_repr
 from .bases import BaseState
 
 if TYPE_CHECKING:
@@ -114,6 +115,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         """
         return len(self._internal)
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """

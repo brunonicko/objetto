@@ -512,6 +512,15 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
         error = "'{}' object can't be shallow copied".format(type(self).__fullname__)
         raise RuntimeError(error)
 
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        return "<{} at {}>".format(type(self).__fullname__, hex(id(self)))
+
     @final
     def __ne__(self, other):
         # type: (object) -> bool

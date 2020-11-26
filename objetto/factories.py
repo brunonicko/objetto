@@ -11,8 +11,8 @@ from six import string_types
 
 from ._bases import Base
 from .utils.factoring import format_factory, run_factory
-from .utils.type_checking import assert_is_callable, assert_is_instance
 from .utils.reraise_context import ReraiseContext
+from .utils.type_checking import assert_is_callable, assert_is_instance
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Iterable, Optional, Tuple, Union

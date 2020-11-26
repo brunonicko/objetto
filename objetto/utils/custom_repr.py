@@ -5,15 +5,12 @@ from typing import TYPE_CHECKING
 
 from six import iteritems
 
-from .recursive_repr import recursive_repr
-
 if TYPE_CHECKING:
     from typing import Any, Callable, Hashable, Iterable, Mapping, Optional, Tuple
 
 __all__ = ["custom_mapping_repr", "custom_iterable_repr"]
 
 
-@recursive_repr
 def custom_mapping_repr(
     mapping,  # type: Mapping
     prefix="{",  # type: str
@@ -60,7 +57,6 @@ def custom_mapping_repr(
     return prefix + separator.join(parts) + suffix
 
 
-@recursive_repr
 def custom_iterable_repr(
     iterable,  # type: Iterable
     prefix="[",  # type: str

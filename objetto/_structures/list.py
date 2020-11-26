@@ -13,6 +13,7 @@ from six import with_metaclass
 
 from .._bases import BaseInteractiveList, BaseMutableList, BaseProtectedList, final
 from ..utils.custom_repr import custom_iterable_repr
+from ..utils.recursive_repr import recursive_repr
 from .bases import (
     BaseAuxiliaryStructure,
     BaseAuxiliaryStructureMeta,
@@ -52,6 +53,7 @@ class BaseListStructure(
 
     __slots__ = ()
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """

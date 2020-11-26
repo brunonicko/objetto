@@ -111,7 +111,6 @@ class BaseState(BaseHashable, BaseInteractiveCollection[T]):
         """
         raise NotImplementedError()
 
-    @final
     def __str__(self):
         # type: () -> str
         """

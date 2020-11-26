@@ -2,18 +2,18 @@
 """Mutable structures coordinated by an application."""
 
 from .bases import (
+    DATA_METHOD_TAG,
     DELETED,
     UNIQUE_ATTRIBUTES_METADATA_KEY,
-    DATA_METHOD_TAG,
     BaseAuxiliaryObject,
     BaseAuxiliaryObjectMeta,
     BaseMutableAuxiliaryObject,
     BaseMutableObject,
     BaseObject,
     BaseProxyObject,
+    BaseReaction,
     HistoryDescriptor,
     Relationship,
-    BaseReaction,
 )
 from .dict import DictObject, MutableDictObject, ProxyDictObject
 from .list import ListObject, MutableListObject, ProxyListObject

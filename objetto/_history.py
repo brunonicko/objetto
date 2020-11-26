@@ -26,17 +26,13 @@ class HistoryError(Exception):
 @final
 class BatchChanges(Object):
 
-    change = attribute(
-        BaseChange, subtypes=True, child=False, changeable=False
-    )
+    change = attribute(BaseChange, subtypes=True, child=False, changeable=False)
 
     __changes__, changes = protected_list_attribute_pair(
         (BaseChange, "BatchChanges"), subtypes=True, data=False
     )
 
-    __closed__, closed = protected_attribute_pair(
-        bool, default=False, child=False
-    )
+    __closed__, closed = protected_attribute_pair(bool, default=False, child=False)
 
     name = attribute(str, delegated=True, child=False, dependencies=(change,))
 
@@ -84,27 +80,19 @@ class HistoryObject(Object):
         child=False,
     )
 
-    __executing, executing = protected_attribute_pair(
-        bool, default=False, child=False
-    )
+    __executing, executing = protected_attribute_pair(bool, default=False, child=False)
 
-    __undoing, undoing = protected_attribute_pair(
-        bool, default=False, child=False
-    )
+    __undoing, undoing = protected_attribute_pair(bool, default=False, child=False)
 
-    __redoing, redoing = protected_attribute_pair(
-        bool, default=False, child=False
-    )
+    __redoing, redoing = protected_attribute_pair(bool, default=False, child=False)
 
-    __index, index = protected_attribute_pair(
-        int, default=0, child=False
-    )
+    __index, index = protected_attribute_pair(int, default=0, child=False)
 
     __changes, changes = protected_list_attribute_pair(
         (BaseChange, BatchChanges, type(None)),
         subtypes=True,
         default=(None,),
-        data=False
+        data=False,
     )
 
     def set_index(self, index):

@@ -407,7 +407,11 @@ class ApplicationInternals(Base):
                 return self.__commits[-1].stores[obj]
             except (IndexError, KeyError):
                 pass
-        return self.__storage[obj]
+        try:
+            return self.__storage[obj]
+        except KeyError:
+            error = "object {} is no longer valid".format(obj)
+            raise RuntimeError(error)
 
     def __read_history(
         self,
@@ -807,7 +811,6 @@ class ApplicationInternals(Base):
         while parent is not None:
             self.__busy_hierarchy[parent] += 1
             hierarchy.append(parent)
-            # noinspection PyTypeChecker
             parent = self.__read(parent).parent_ref()
         try:
             yield hierarchy
@@ -843,12 +846,19 @@ class ApplicationInternals(Base):
         :param obj: Object.
         """
         with self.write_context():
+            try:
+                stores = self.__commits[-1].stores
+            except IndexError:
+                stores = InteractiveDictData()
 
-            assert obj not in self.__storage
+            if obj in stores or obj in self.__storage:
+                error = "object {} can't be initialized more than once".format(obj)
+                raise RuntimeError(error)
 
             cls = type(obj)
             kwargs = {}
 
+            # History object.
             history_descriptor = cls._history_descriptor
             if history_descriptor is not None:
                 app = self.__app_ref()
@@ -864,17 +874,20 @@ class ApplicationInternals(Base):
                     history=self.__history_cls(app, size=history_descriptor.size),
                 )
 
+            # State.
             state = cls._state_factory()
 
+            # Data.
             data_type = cls.Data
             if data_type is not None:
                 data = data_type.__make__()
             else:
                 data = None
 
-            self.__storage[obj] = Store(
-                state=state, data=data, **kwargs
-            )  # FIXME: __storage should only be change during a 'push'
+            # Commit!
+            stores = stores.set(obj, Store(state=state, data=data, **kwargs))
+            commit = Commit(stores=stores)
+            self.__commits.append(commit)
 
     @contextmanager
     def read_context(self, obj=None):

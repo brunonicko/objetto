@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Objects."""
 
-from typing import TYPE_CHECKING, TypeVar, Callable, cast
+from typing import TYPE_CHECKING, Callable, TypeVar, cast
 
 try:
     import collections.abc as collections_abc
@@ -12,32 +12,32 @@ from decorator import decorator
 from six import string_types
 
 from ._bases import MISSING
+from ._data import DataRelationship
 from ._objects import (
     DATA_METHOD_TAG,
     Attribute,
-    Relationship,
     BaseReaction,
-    Object,
     DictObject,
-    MutableDictObject,
-    ProxyDictObject,
     ListObject,
+    MutableDictObject,
     MutableListObject,
-    ProxyListObject,
-    SetObject,
     MutableSetObject,
+    Object,
+    ProxyDictObject,
+    ProxyListObject,
     ProxySetObject,
+    Relationship,
+    SetObject,
 )
 from ._structures import KeyRelationship, make_auxiliary_cls
-from ._data import DataRelationship
 from .reactions import reaction
 from .utils.caller_module import get_caller_module
+from .utils.factoring import import_factory
 from .utils.reraise_context import ReraiseContext
 from .utils.type_checking import assert_is_instance
-from .utils.factoring import import_factory
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, Iterable, Optional, Type, Union, Tuple
+    from typing import Any, Dict, Iterable, Optional, Tuple, Type, Union
 
     from .utils.factoring import LazyFactory
     from .utils.type_checking import LazyTypes
@@ -356,7 +356,7 @@ def protected_attribute_pair(
         abstracted=abstracted,
         delegated=True,
         dependencies=(protected_attribute,),
-        deserialize_to=protected_attribute,
+        deserialize_to=protected_attribute if serialized else None,
     )
 
     def getter(iobj):
@@ -1135,9 +1135,8 @@ def _prepare_reactions(reactions=None):
     dct = {}  # type: Dict[str, BaseReaction]
     if reactions is None:
         return dct
-    if (
-        isinstance(reactions, string_types) or
-        not isinstance(reactions, collections_abc.Iterable)
+    if isinstance(reactions, string_types) or not isinstance(
+        reactions, collections_abc.Iterable
     ):
         reactions = (reactions,)
     for i, reaction_ in enumerate(reactions):
@@ -1148,9 +1147,7 @@ def _prepare_reactions(reactions=None):
         else:
             reaction_decorator = reaction(priority=i)  # type: ignore
             # noinspection PyArgumentList
-            reaction_ = reaction_decorator(
-                import_factory(reaction_)
-            )  # type: ignore
+            reaction_ = reaction_decorator(import_factory(reaction_))  # type: ignore
         dct["__reaction{}".format(i)] = cast("BaseReaction", reaction_)
     return dct
 

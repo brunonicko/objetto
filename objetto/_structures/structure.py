@@ -13,10 +13,21 @@ except ImportError:
 
 from six import iteritems, raise_from, string_types, with_metaclass
 
-from .._bases import ABSTRACT_TAG, FINAL_METHOD_TAG, MISSING, Base, BaseMeta, final
+from .._bases import (
+    ABSTRACT_TAG,
+    FINAL_METHOD_TAG,
+    MISSING,
+    Base,
+    BaseDict,
+    BaseList,
+    BaseMeta,
+    BaseSet,
+    final,
+)
 from .._states import DictState, SetState
-from ..utils.custom_repr import custom_mapping_repr
+from ..utils.custom_repr import custom_iterable_repr, custom_mapping_repr
 from ..utils.factoring import format_factory, import_factory, run_factory
+from ..utils.recursive_repr import recursive_repr
 from ..utils.reraise_context import ReraiseContext
 from ..utils.type_checking import assert_is_instance
 from .bases import (
@@ -208,6 +219,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
         return other is self
 
     @final
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """
@@ -431,6 +443,7 @@ class BaseAttributeStructure(
 
     __slots__ = ()
 
+    @recursive_repr
     def __repr__(self):
         # type: () -> str
         """
@@ -438,9 +451,32 @@ class BaseAttributeStructure(
 
         :return: Representation.
         """
+
+        class SimplifiedAuxiliary(object):
+            __slots__ = ("auxiliary",)
+
+            def __init__(self, auxiliary):
+                self.auxiliary = auxiliary
+
+            def __repr__(self):
+                if isinstance(self.auxiliary, BaseDict):
+                    return recursive_repr(custom_mapping_repr)(self.auxiliary)
+                elif isinstance(self.auxiliary, BaseList) or not self.auxiliary:
+                    return recursive_repr(custom_iterable_repr)(self.auxiliary)
+                else:
+                    return recursive_repr(custom_iterable_repr)(
+                        self.auxiliary, prefix="{", suffix="}"
+                    )
+
+        def simplify_auxiliary(value):
+            if isinstance(value, (BaseDict, BaseList, BaseSet)):
+                return SimplifiedAuxiliary(value)
+            else:
+                return value
+
         return custom_mapping_repr(
             dict(
-                (n, v)
+                (n, simplify_auxiliary(v))
                 for n, v in iteritems(self._state)
                 if type(self)._get_relationship(n).represented
             ),

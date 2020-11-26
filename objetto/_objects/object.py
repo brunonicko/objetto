@@ -397,11 +397,11 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
                     default=MISSING,
                     default_factory=None,
                     module=self.module,
-                    required=self.required,
+                    required=False,
                     changeable=True,
                     deletable=True,
-                    finalized=self.finalized,
-                    abstracted=self.abstracted,
+                    finalized=False,
+                    abstracted=False,
                 )
         return self.__data_attribute
 
