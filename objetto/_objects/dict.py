@@ -43,6 +43,7 @@ if TYPE_CHECKING:
         Tuple,
         Type,
         Union,
+        Optional,
     )
 
     from .._applications import Store
@@ -62,7 +63,7 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
 
     @staticmethod
     def make_data_cls_dct(auxiliary_cls):
-        # type: (Type[DictObject]) -> Dict[str, Any]
+        # type: (Type[BaseAuxiliaryObject]) -> Dict[str, Any]
         """
         Make data class member dictionary.
 
@@ -72,7 +73,11 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
         dct = super(DictObjectFunctions, DictObjectFunctions).make_data_cls_dct(
             auxiliary_cls
         )
-        dct.update({"_key_relationship": auxiliary_cls._key_relationship})
+        dct.update({
+            "_key_relationship": cast(
+                "Type[DictObject]", auxiliary_cls
+            )._key_relationship
+        })
         return dct
 
     @staticmethod
@@ -87,7 +92,8 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
         :param new_child_data: New child's data.
         :return: Updated object's store.
         """
-        data = store.data._set(data_location, new_child_data)
+        assert store.data is not None
+        data = cast("DictData", store.data)._set(data_location, new_child_data)
         return store.set("data", data)
 
     @staticmethod
@@ -178,6 +184,7 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
                             data = data._remove(key)
                         else:
                             data_relationship = relationship.data_relationship
+                            assert data_relationship is not None
                             if same_app:
                                 with value.app.__.write_context(value) as (v_read, _):
                                     data = data._set(
@@ -308,6 +315,11 @@ class DictObject(
 
     @overload
     def _update(self, __m, **kwargs):
+        # type: (_DO, Mapping[KT, VT], VT) -> _DO
+        pass
+
+    @overload
+    def _update(self, __m, **kwargs):
         # type: (_DO, Iterable[Tuple[KT, VT]], VT) -> _DO
         pass
 
@@ -419,7 +431,7 @@ class DictObject(
         kwargs["app"] = app
 
         with app.write_context():
-            self = cast("DictObject", cls.__new__(cls))
+            self = cast("_DO", cls.__new__(cls))
             with init_context(self):
                 super(DictObject, self).__init__(app)
                 initial = dict(
@@ -531,7 +543,7 @@ class MutableDictObject(
 
     @final
     def setdefault(self, key, default=None):
-        # type: (KT, VT) -> VT
+        # type: (KT, Optional[VT]) -> VT
         """
         Get the value for the specified key, insert key with default if not present.
 
@@ -543,8 +555,8 @@ class MutableDictObject(
             try:
                 return self[key]
             except KeyError:
-                self._set(key, default)
-                return default
+                self._set(key, cast("VT", default))
+                return self[key]
 
 
 # noinspection PyTypeChecker
@@ -585,12 +597,17 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
 
     @overload
     def _update(self, __m, **kwargs):
-        # type: (_DO, Iterable[Tuple[KT, VT]], VT) -> _DO
+        # type: (_PDO, Mapping[KT, VT], VT) -> _PDO
+        pass
+
+    @overload
+    def _update(self, __m, **kwargs):
+        # type: (_PDO, Iterable[Tuple[KT, VT]], VT) -> _PDO
         pass
 
     @overload
     def _update(self, **kwargs):
-        # type: (_DO, VT) -> _DO
+        # type: (_PDO, VT) -> _PDO
         pass
 
     def _update(self, *args, **kwargs):
@@ -678,6 +695,12 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         """
         for value in itervalues(self._state):
             yield value
+
+    @property
+    def _obj(self):
+        # type: () -> DictObject[KT, VT]
+        """Dict object."""
+        return cast("DictObject[KT, VT]", super(ProxyDictObject, self)._obj)
 
     @property
     def _state(self):

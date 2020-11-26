@@ -1116,7 +1116,6 @@ class BaseProxyObject(BaseMutableCollection[T]):
         return self._obj.find_with_attributes(**attributes)
 
     @property
-    @final
     def _obj(self):
         # type: () -> BaseAuxiliaryObject
         """Auxiliary object."""

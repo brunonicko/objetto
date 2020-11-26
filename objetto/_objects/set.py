@@ -487,7 +487,7 @@ class SetObject(
         kwargs["app"] = app
 
         with app.write_context():
-            self = cast("SetObject", cls.__new__(cls))
+            self = cast("_SO", cls.__new__(cls))
             with init_context(self):
                 super(SetObject, self).__init__(app)
                 initial = set(
@@ -770,3 +770,21 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         :return: Union.
         """
         return self._obj.union(iterable)
+
+    @property
+    def _obj(self):
+        # type: () -> SetObject[T]
+        """Set object."""
+        return cast("SetObject[T]", super(ProxySetObject, self)._obj)
+
+    @property
+    def _state(self):
+        # type: () -> SetState[T]
+        """State."""
+        return cast("SetState[T]", super(ProxySetObject, self)._state)
+
+    @property
+    def data(self):
+        # type: () -> SetData[T]
+        """Data."""
+        return cast("SetData[T]", super(ProxySetObject, self).data)

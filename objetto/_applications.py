@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     from ._objects import BaseObject
     from .utils.subject_observer import ObserverExceptionInfo
 
-    ReadFunction = Callable[[], "_Store"]
+    ReadFunction = Callable[[], "Store"]
     WriteFunction = Callable[
         [Any, BaseData, Mapping[str, Any], Counter[BaseObject], BaseAtomicChange], None
     ]

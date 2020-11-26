@@ -721,7 +721,7 @@ class ListObject(
         kwargs["app"] = app
 
         with app.write_context():
-            self = cast("ListObject", cls.__new__(cls))
+            self = cast("_LO", cls.__new__(cls))
             with init_context(self):
                 super(ListObject, self).__init__(app)
                 initial = (
@@ -794,13 +794,14 @@ class MutableListObject(
         """
         if isinstance(item, slice):
             with self.app.write_context():
+                values = tuple(value)
                 index, stop = self.resolve_continuous_slice(item)
-                if len(value) != stop - index:
+                if len(values) != stop - index:
                     error = "values length ({}) does not fit in slice ({})".format(
-                        len(value), stop - index
+                        len(values), stop - index
                     )
                     raise ValueError(error)
-                self._update(index, *value)
+                self._update(index, *values)
         else:
             self._update(item, value)
 
@@ -1019,6 +1020,12 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         :raises IndexError: Slice is noncontinuous.
         """
         return self._obj.resolve_continuous_slice(slc)
+
+    @property
+    def _obj(self):
+        # type: () -> ListObject[T]
+        """List object."""
+        return cast("ListObject[T]", super(ProxyListObject, self)._obj)
 
     @property
     def _state(self):

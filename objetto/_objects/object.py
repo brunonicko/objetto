@@ -398,8 +398,8 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
                     default_factory=None,
                     module=self.module,
                     required=self.required,
-                    changeable=self.changeable,
-                    deletable=self.deletable,
+                    changeable=True,
+                    deletable=True,
                     finalized=self.finalized,
                     abstracted=self.abstracted,
                 )
@@ -732,13 +732,9 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
                 # Dependency is not in the same object.
                 if dependency not in cls._attribute_names:
                     error = (
-                        "attribute '{}.{}' declares {} as a dependency, which is not a "
-                        "valid attribute in the same object"
-                    ).format(
-                        name,
-                        attribute_name,
-                        dependency,
-                    )
+                        "attribute '{}.{}' declares an attribute as a dependency which "
+                        "is not a valid attribute in the same object"
+                    ).format(name, attribute_name)
                     raise TypeError(error)
 
                 # Store dependencies.
@@ -1220,17 +1216,17 @@ class IntermediaryObjectInternals(Base):
 
         attribute = self.__get_attribute(name)
         if not attribute.changeable:
+            if attribute.delegated:
+                error = "attribute '{}' is read-only".format(name)
+                raise AttributeError(error)
             try:
                 self.get_value(name)
             except AttributeError:
                 pass
             else:
-                if attribute.delegated:
-                    error = "attribute '{}' is read-only".format(name)
-                else:
-                    error = (
-                        "attribute '{}' already has a value and can't be changed"
-                    ).format(name)
+                error = (
+                    "attribute '{}' already has a value and can't be changed"
+                ).format(name)
                 raise AttributeError(error)
 
         if factory:

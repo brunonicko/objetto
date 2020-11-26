@@ -176,7 +176,9 @@ class UniqueAttributes(BaseReaction):
                         # Get existing cache.
                         metadata = read()
                         if UNIQUE_ATTRIBUTES_METADATA_KEY not in metadata:
-                            cache = InteractiveDictData()
+                            cache = InteractiveDictData(
+                                ()
+                            )  # type: InteractiveDictData[str, Any]
                         else:
                             cache = metadata[UNIQUE_ATTRIBUTES_METADATA_KEY]
 

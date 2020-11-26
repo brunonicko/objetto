@@ -1119,7 +1119,7 @@ class BaseMutableDict(
 
     @abstractmethod
     def setdefault(self, key, default=None):
-        # type: (KT, VT) -> VT
+        # type: (KT, Optional[VT]) -> Optional[VT]
         """
         Get the value for the specified key, insert key with default if not present.
 
