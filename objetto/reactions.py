@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
 """Reactions."""
 
-from ._reactions import (
-    reaction,
-    UniqueAttributes,
-    LimitChildren,
-    Limit,
-)
+from ._reactions import Limit, LimitChildren, UniqueAttributes, reaction
 
 __all__ = [
     "reaction",

@@ -264,8 +264,10 @@ def test_generated_base_subclass():
     assert MySubBase.__name__ != MyGeneratedBase.__name__
     try:
         my_sub_base_qual_name = MySubBase.__qualname__
-    except AttributeError:
-        pass
+    except AttributeError:  # for python 2.7
+        assert MyGeneratedBase.__qualname__ == MyGeneratedBase.__name__
+        assert not hasattr(object, "__qualname__")
+        assert not hasattr(MySubBase, "__qualname__")
     else:
         assert my_sub_base_qual_name != MyGeneratedBase.__qualname__
 

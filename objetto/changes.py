@@ -3,14 +3,14 @@
 
 from ._changes import (
     Batch,
-    Update,
     DictUpdate,
-    ListInsert,
     ListDelete,
-    ListUpdate,
+    ListInsert,
     ListMove,
-    SetUpdate,
+    ListUpdate,
     SetRemove,
+    SetUpdate,
+    Update,
 )
 
 __all__ = [

@@ -5,7 +5,14 @@ from abc import abstractmethod
 from contextlib import contextmanager
 from inspect import getmro
 from typing import (
-    TYPE_CHECKING, Callable, Type, Generic, TypeVar, cast, final, overload
+    TYPE_CHECKING,
+    Callable,
+    Generic,
+    Type,
+    TypeVar,
+    cast,
+    final,
+    overload,
 )
 from uuid import uuid4
 from weakref import WeakKeyDictionary, WeakValueDictionary
@@ -241,27 +248,35 @@ def _make_base_cls(
         state = self.__getstate__()
         if type(self).__dict__.get("__base_cls_uuid__", None) == uuid:
             return _make_base_instance, (
-                _base, qual_name, module, state, dct_copy, uuid
+                _base,
+                qual_name,
+                module,
+                state,
+                dct_copy,
+                uuid,
             )
         else:
             return _make_base_subclass_instance, (type(self), state)
 
     # Fallback qualified name property for python 2.7.
     if not hasattr(object, "__qualname__"):
-        class QualNameClassProperty(object):
+
+        class QualNameClsProperty(object):
             __slots__ = ()
 
             def __get__(self, instance, owner):
+                if owner is None:
+                    return self
                 if instance is not None:
                     owner = type(instance)
-                if owner is not None and "__qualname__" not in owner.__dict__:
+                if owner.__dict__.get("__qualname__", None) is not self:
                     error = "type object '{}' has no attribute '__qualname__'".format(
                         owner.__name__,
                     )
                     raise AttributeError(error)
                 return qual_name
 
-        __qualname__ = QualNameClassProperty()
+        __qualname__ = QualNameClsProperty()  # type: Union[str, QualNameClsProperty]
     else:
         __qualname__ = qual_name
 
@@ -281,8 +296,8 @@ def _make_base_cls(
 
 
 def _make_base_subclass_instance(
-    cls,  # type: Optional[Type[_B]]
-    state,  # type: Mapping[str, Any]
+    cls,  # type: Type[_B]
+    state,  # type: Dict[str, Any]
 ):
     # type: (...) -> _B
     """
