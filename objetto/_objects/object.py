@@ -613,6 +613,7 @@ class Functions(BaseObjectFunctions):
                             data = data._delete(name)
                         else:
                             data_relationship = relationship.data_relationship
+                            assert data_relationship is not None
                             if same_app:
                                 with value.app.__.write_context(value) as (v_read, _):
                                     data = data._set(
@@ -660,7 +661,7 @@ class Functions(BaseObjectFunctions):
         :param change: Change.
         """
         Functions.raw_update(
-            change.obj,
+            cast("Object", change.obj),
             change.new_values,
             change.old_values,
         )
@@ -674,7 +675,7 @@ class Functions(BaseObjectFunctions):
         :param change: Change.
         """
         Functions.raw_update(
-            change.obj,
+            cast("Object", change.obj),
             change.old_values,
             change.new_values,
         )
@@ -851,6 +852,7 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
             dct.update(cls._data_methods)
             dct.update(attributes)
             if cls._unique_descriptor is not None:
+                assert cls._unique_descriptor_name is not None
                 dct[cls._unique_descriptor_name] = cls._unique_descriptor
 
             # Build data type and cache it.
@@ -1148,11 +1150,11 @@ class IntermediaryObjectInternals(Base):
         self.__app = app
         self.__cls = cls
         self.__state = state
-        self.__dependencies = None
+        self.__dependencies = None  # type: Optional[Tuple[Attribute, ...]]
         self.__in_getter = None  # type: Optional[Attribute]
-        self.__new_values = {}
-        self.__old_values = {}
-        self.__dirty = set(cls._attributes).difference(state)
+        self.__new_values = {}  # type: Dict[str, Any]
+        self.__old_values = {}  # type: Dict[str, Any]
+        self.__dirty = set(cls._attributes).difference(state)  # type: Set[str]
 
     def get_value(self, name):
         """

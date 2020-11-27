@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 from ._bases import final
-from ._changes import BaseChange
+from ._changes import BaseAtomicChange, Batch
 from .factories import Integer
 from .objects import (
     Object,
@@ -13,7 +13,36 @@ from .objects import (
 )
 
 if TYPE_CHECKING:
-    pass
+    from typing import Any, Union, TypeVar, Optional
+
+    from ._objects import (
+        Attribute,
+        ProxyListObject,
+        ListObject,
+        DictObject,
+        MutableDictObject,
+        MutableListObject,
+        MutableSetObject,
+        Object,
+        ProxyDictObject,
+        ProxySetObject,
+        SetObject,
+    )
+
+    T = TypeVar("T")  # Any type.
+    KT = TypeVar("KT")  # Any key type.
+    VT = TypeVar("VT")  # Any value type.
+
+    MDA = Attribute[MutableDictObject[KT, VT]]
+    MLA = Attribute[MutableListObject[T]]
+    MSA = Attribute[MutableSetObject[T]]
+    DA = Attribute[DictObject[KT, VT]]
+    LA = Attribute[ListObject[T]]
+    SA = Attribute[SetObject[T]]
+    PDA = Attribute[ProxyDictObject[KT, VT]]
+    PLA = Attribute[ProxyListObject[T]]
+    PSA = Attribute[ProxySetObject[T]]
+    CT = Union[BaseAtomicChange, "BatchChanges"]
 
 __all__ = ["HistoryObject"]
 
@@ -25,22 +54,37 @@ class HistoryError(Exception):
 # noinspection PyAbstractClass
 @final
 class BatchChanges(Object):
+    """Batch changes."""
 
-    change = attribute(BaseChange, subtypes=True, child=False, changeable=False)
+    __slots__ = ()
 
-    __changes__, changes = protected_list_attribute_pair(
-        (BaseChange, "BatchChanges"), subtypes=True, data=False
-    )
+    change = attribute(
+        Batch, subtypes=True, child=False, changeable=False, checked=False
+    )  # type: Attribute[Batch]
+    """Batch change with name and metadata."""
 
-    __closed__, closed = protected_attribute_pair(bool, default=False, child=False)
+    name = attribute(
+        str, child=False, checked=False, changeable=False
+    )  # type: Attribute[str]
+    """The batch change name."""
 
-    name = attribute(str, delegated=True, child=False, dependencies=(change,))
+    _changes, changes = protected_list_attribute_pair(
+        (BaseAtomicChange, "BatchChanges"), subtypes=True, data=False, checked=False
+    )  # type: PLA[CT], LA[CT]
+    """Changes executed during the batch."""
 
-    @name.getter  # type: ignore
-    def name(self):
-        return self.change.name
+    _closed, closed = protected_attribute_pair(
+        bool, default=False, child=False, checked=False
+    )  # type: Attribute[bool], Attribute[bool]
+    """Whether the batch has already completed or is still running."""
 
     def format_changes(self):
+        # type: () -> str
+        """
+        Format changes into readable string.
+
+        :return: Formatted changes.
+        """
         with self.app.read_context():
             parts = []
             for change in self.changes:
@@ -59,10 +103,14 @@ class BatchChanges(Object):
             return "\n".join(parts)
 
     def __undo__(self, _):
+        # type: (Any) -> None
+        """Undo."""
         for change in reversed(self.changes):
             change.__undo__(change)
 
     def __redo__(self, _):
+        # type: (Any) -> None
+        """Redo."""
         for change in self.changes:
             change.__redo__(change)
 
@@ -70,6 +118,8 @@ class BatchChanges(Object):
 # noinspection PyAbstractClass
 @final
 class HistoryObject(Object):
+    """History object."""
+
     __slots__ = ()
 
     size = attribute(
@@ -78,24 +128,44 @@ class HistoryObject(Object):
         factory=Integer(minimum=0, accepts_none=True),
         changeable=False,
         child=False,
-    )
+    )  # type: Attribute[int]
+    """How many changes to remember."""
 
-    __executing, executing = protected_attribute_pair(bool, default=False, child=False)
+    __executing, executing = protected_attribute_pair(
+        bool, default=False, child=False
+    )  # type: Attribute[bool], Attribute[bool]
+    """Whether the history is undoing or redoing."""
 
-    __undoing, undoing = protected_attribute_pair(bool, default=False, child=False)
+    __undoing, undoing = protected_attribute_pair(
+        bool, default=False, child=False
+    )  # type: Attribute[bool], Attribute[bool]
+    """Whether the history is undoing."""
 
-    __redoing, redoing = protected_attribute_pair(bool, default=False, child=False)
+    __redoing, redoing = protected_attribute_pair(
+        bool, default=False, child=False
+    )  # type: Attribute[bool], Attribute[bool]
+    """Whether the history is redoing."""
 
-    __index, index = protected_attribute_pair(int, default=0, child=False)
+    __index, index = protected_attribute_pair(
+        int, default=0, child=False
+    )  # type: Attribute[int], Attribute[int]
+    """The index of the current change."""
 
     __changes, changes = protected_list_attribute_pair(
-        (BaseChange, BatchChanges, type(None)),
+        (BaseAtomicChange, BatchChanges, type(None)),
         subtypes=True,
         default=(None,),
         data=False,
-    )
+    )  # type: PLA[Optional[CT]], LA[Optional[CT]]
+    """List of changes."""
 
     def set_index(self, index):
+        # type: (int) -> None
+        """
+        Undo/redo until we reach the desired index.
+
+        :param index: Index.
+        """
         with self.app.write_context():
             if 0 <= index < len(self.changes) - 1:
                 if index > self.__index:
@@ -127,12 +197,15 @@ class HistoryObject(Object):
                     self.redo()
 
     def redo(self):
+        # type: () -> None
+        """Redo."""
         with self.app.write_context():
             if self.__executing:
                 error = "can't redo while executing"
                 raise HistoryError(error)
             if self.__index < len(self.changes) - 1:
                 change = self.changes[self.__index + 1]
+                assert change is not None
                 with self._batch_context("Redo", change=change):
                     self.__executing = True
                     self.__redoing = True
@@ -147,6 +220,8 @@ class HistoryObject(Object):
                 raise HistoryError(error)
 
     def undo(self):
+        # type: () -> None
+        """Undo."""
         with self.app.write_context():
             if self.__executing:
                 error = "can't undo while executing"
@@ -154,6 +229,7 @@ class HistoryObject(Object):
 
             if self.__index > 0:
                 change = self.changes[self.index]
+                assert change is not None
                 with self._batch_context("Undo", change=change):
                     self.__executing = True
                     self.__undoing = True
@@ -168,6 +244,12 @@ class HistoryObject(Object):
                 raise HistoryError(error)
 
     def flush(self):
+        # type: () -> None
+        """
+        Flush all changes.
+
+        :raises HistoryError: Can't flush while executing.
+        """
         with self.app.write_context():
             if self.__executing:
                 error = "can't flush history while executing"
@@ -178,6 +260,12 @@ class HistoryObject(Object):
                     del self.__changes[1:]
 
     def flush_redo(self):
+        # type: () -> None
+        """
+        Flush changes ahead of the current index.
+
+        :raises HistoryError: Can't flush while executing.
+        """
         with self.app.write_context():
             if self.__executing:
                 error = "can't flush history while executing"
@@ -188,6 +276,13 @@ class HistoryObject(Object):
                         del self.__changes[self.__index + 1 :]
 
     def in_batch(self):
+        # type: () -> bool
+        """
+        Get whether history is currently in an open batch.
+
+        :return: True if currently in an open batch.
+        :raises HistoryError: Can't check while executing.
+        """
         with self.app.read_context():
             if self.__executing:
                 error = "can't check if in a batch while executing"
@@ -199,6 +294,12 @@ class HistoryObject(Object):
             )
 
     def format_changes(self):
+        # type: () -> str
+        """
+        Format changes into readable string.
+
+        :return: Formatted changes.
+        """
         with self.app.read_context():
             parts = ["--- <-" if self.index == 0 else "---"]
             for i, change in enumerate(self.changes):
@@ -225,6 +326,12 @@ class HistoryObject(Object):
             return "\n".join(parts)
 
     def __enter_batch__(self, batch):
+        # type: (Batch) -> None
+        """
+        Enter batch context.
+
+        :param batch: Batch.
+        """
         with self.app.write_context():
             if self.__executing:
                 return
@@ -234,8 +341,8 @@ class HistoryObject(Object):
                 while changes and isinstance(changes[-1], BatchChanges):
                     if changes[-1].closed:
                         break
-                    changes = changes[-1].__changes__
-                changes.append(BatchChanges(self.app, change=batch))
+                    changes = changes[-1]._changes
+                changes.append(BatchChanges(self.app, change=batch, name=batch.name))
                 if changes is self.__changes:
                     if self.size is not None and len(self.changes) > self.size + 1:
                         del self.__changes[1:2]
@@ -243,6 +350,12 @@ class HistoryObject(Object):
                         self.__index += 1
 
     def __push_change__(self, change):
+        # type: (BaseAtomicChange) -> None
+        """
+        Push change to the current batch.
+
+        :param change: Change.
+        """
         with self.app.write_context():
             if self.__executing:
                 return
@@ -252,7 +365,7 @@ class HistoryObject(Object):
                 while changes and isinstance(changes[-1], BatchChanges):
                     if changes[-1].closed:
                         break
-                    changes = changes[-1].__changes__
+                    changes = changes[-1]._changes
                 changes.append(change)
                 if changes is self.__changes:
                     if self.size is not None and len(self.changes) > self.size + 1:
@@ -261,6 +374,12 @@ class HistoryObject(Object):
                         self.__index += 1
 
     def __exit_batch__(self, batch):
+        # type: (Batch) -> None
+        """
+        Exit batch context.
+
+        :param batch: Batch.
+        """
         with self.app.write_context():
             if self.__executing:
                 return
@@ -268,6 +387,6 @@ class HistoryObject(Object):
                 changes = self.__changes
                 while changes and isinstance(changes[-1], BatchChanges):
                     if changes[-1].change is batch:
-                        changes[-1].__closed__ = True
+                        changes[-1]._closed = True
                         break
-                    changes = changes[-1].__changes__
+                    changes = changes[-1]._changes

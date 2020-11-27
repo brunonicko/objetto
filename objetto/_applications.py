@@ -260,17 +260,23 @@ class Store(Data):
     """Metadata."""
 
     parent_ref = data_attribute(
-        WeakReference, checked=False, default=WeakReference()
+        cast("Type[WeakReference[BaseObject]]", WeakReference),
+        checked=False,
+        default=WeakReference(),
     )  # type: DataAttribute[WeakReference[BaseObject]]
     """Weak reference to the parent."""
 
     history_provider_ref = data_attribute(
-        WeakReference, checked=False, default=WeakReference()
+        cast("Type[WeakReference[BaseObject]]", WeakReference),
+        checked=False,
+        default=WeakReference(),
     )  # type: DataAttribute[WeakReference[BaseObject]]
     """Weak reference to the history provider."""
 
     last_parent_history_ref = data_attribute(
-        WeakReference, checked=False, default=WeakReference()
+        cast("Type[WeakReference[HistoryObject]]", WeakReference),
+        checked=False,
+        default=WeakReference(),
     )  # type: DataAttribute[WeakReference[HistoryObject]]
     """Weak reference to the last history object."""
 
@@ -281,7 +287,7 @@ class Store(Data):
 
     children = data_set_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False
-    )  # type: DataAttribute[InteractiveSetData[HistoryObject]]
+    )  # type: DataAttribute[InteractiveSetData[BaseObject]]
     """Children."""
 
 
@@ -350,7 +356,7 @@ class ApplicationInternals(Base):
     def __init__(self, app):
         # type: (Application) -> None
         self.__app_ref = WeakReference(app)
-        self.__history_cls = None  # type: Optional[HistoryObject]
+        self.__history_cls = None  # type: Optional[Type[HistoryObject]]
         self.__lock = ApplicationLock()
         self.__storage = ApplicationStorage()
         self.__busy_writing = set()  # type: Set[BaseObject]
@@ -511,7 +517,7 @@ class ApplicationInternals(Base):
         obj,  # type: BaseObject
         state,  # type: BaseState
         data,  # type: Optional[BaseData]
-        metadata,  # type: InteractiveDictData
+        metadata,  # type: Mapping[str, Any]
         child_counter,  # type: Counter[BaseObject]
         change,  # type: BaseAtomicChange
     ):
@@ -691,6 +697,7 @@ class ApplicationInternals(Base):
                         if i == 0:
                             child = parent
                             continue
+                        assert child is not None
 
                         location = single_locations[i]
                         relationship = cast(
@@ -699,12 +706,13 @@ class ApplicationInternals(Base):
                         )
                         if not relationship.data:
                             break
+
+                        assert data is not None
+                        assert child_data is not None
+
                         data_location = single_data_locations[i]
 
                         parent_old_store = self.__read(parent)
-                        parent_data_type = type(parent).Data
-                        assert parent_data_type is not None
-
                         parent_new_store = type(
                             parent
                         ).__functions__.replace_child_data(
@@ -727,6 +735,7 @@ class ApplicationInternals(Base):
                 # Push change to history.
                 if (
                     history is not None
+                    and history_provider is not None
                     and not obj._initializing
                     and not history_provider._initializing
                 ):
@@ -738,7 +747,7 @@ class ApplicationInternals(Base):
                         reaction(action.receiver, action, Phase.POST)
 
                 # Exit history atomic batch.
-                if atomic_batch_change is not None:
+                if history is not None and atomic_batch_change is not None:
                     history.__exit_batch__(atomic_batch_change)
 
     def __update_metadata(
@@ -787,8 +796,11 @@ class ApplicationInternals(Base):
             for commit in commits:
                 if type(commit) is BatchCommit:
                     for action in commit.actions:
+                        phase = commit.phase  # type: ignore
                         exception_infos.extend(
-                            action.receiver.__.subject.send(action, commit.phase)
+                            action.receiver.__.subject.send(
+                                action, cast("Phase", phase)
+                            )
                         )
                 else:
                     for action in commit.actions:
@@ -817,8 +829,8 @@ class ApplicationInternals(Base):
         :param obj: Object.
         :return: Cached upper hierarchy (starting with the object itself).
         """
-        hierarchy = []
-        parent = obj
+        hierarchy = []  # type: List[BaseObject]
+        parent = obj  # type: Optional[BaseObject]
         while parent is not None:
             self.__busy_hierarchy[parent] += 1
             hierarchy.append(parent)
@@ -866,8 +878,8 @@ class ApplicationInternals(Base):
                 error = "object {} can't be initialized more than once".format(obj)
                 raise RuntimeError(error)
 
-            cls = type(obj)
-            kwargs = {}
+            cls = type(obj)  # type: Type[BaseObject]
+            kwargs = {}  # type: Dict[str, Any]
 
             # History object.
             history_descriptor = cls._history_descriptor
@@ -891,7 +903,7 @@ class ApplicationInternals(Base):
             # Data.
             data_type = cls.Data
             if data_type is not None:
-                data = data_type.__make__()
+                data = data_type.__make__()  # type: ignore
             else:
                 data = None
 
@@ -1084,6 +1096,7 @@ class ApplicationInternals(Base):
                     # History Pre.
                     if (
                         history is not None
+                        and history_provider is not None
                         and not obj._initializing
                         and not history_provider._initializing
                     ):
@@ -1099,6 +1112,7 @@ class ApplicationInternals(Base):
                     # History Post.
                     if (
                         history is not None
+                        and history_provider is not None
                         and not obj._initializing
                         and not history_provider._initializing
                     ):

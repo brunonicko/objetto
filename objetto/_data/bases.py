@@ -159,7 +159,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
 
     @classmethod
     def __make__(cls, state):
-        # type: (Type[_BD], BaseState) -> _BD
+        # type: (Type[_BD], Any) -> _BD
         """
         Make a new data.
 

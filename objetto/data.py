@@ -34,8 +34,12 @@ KT = TypeVar("KT")  # Any key type.
 VT = TypeVar("VT")  # Any value type.
 
 
+if TYPE_CHECKING:
+    NT = Type[None]
+
+
 def data_attribute(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -115,7 +119,7 @@ def data_attribute(
 
 
 def data_dict_attribute(
-    types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
+    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -125,7 +129,7 @@ def data_dict_attribute(
     deserializer=None,  # type: LazyFactory
     represented=True,  # type: bool
     compared=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
+    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
     key_subtypes=False,  # type: bool
     key_factory=None,  # type: LazyFactory
     default=MISSING,  # type: Any
@@ -190,7 +194,7 @@ def data_dict_attribute(
             key_factory=key_factory,
             qual_name=qual_name,
             unique=unique,
-        )
+        )  # type: Type[InteractiveDictData[KT, VT]]
 
     # Factory that forces the dictionary type.
     def dict_factory(initial=()):
@@ -234,7 +238,7 @@ def data_dict_attribute(
 
 
 def data_list_attribute(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -300,7 +304,7 @@ def data_list_attribute(
             compared=compared,
             qual_name=qual_name,
             unique=unique,
-        )
+        )  # type: Type[InteractiveListData[T]]
 
     # Factory that forces the list type.
     def list_factory(initial=()):
@@ -344,7 +348,7 @@ def data_list_attribute(
 
 
 def data_set_attribute(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -410,7 +414,7 @@ def data_set_attribute(
             compared=compared,
             qual_name=qual_name,
             unique=unique,
-        )
+        )  # type: Type[InteractiveSetData[T]]
 
     # Factory that forces the set type.
     def set_factory(initial=()):
@@ -454,7 +458,7 @@ def data_set_attribute(
 
 
 def data_dict_cls(
-    types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
+    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -464,7 +468,7 @@ def data_dict_cls(
     deserializer=None,  # type: LazyFactory
     represented=True,  # type: bool
     compared=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
+    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
     key_subtypes=False,  # type: bool
     key_factory=None,  # type: LazyFactory
     qual_name=None,  # type: Optional[str]
@@ -539,7 +543,7 @@ def data_dict_cls(
 
 
 def data_list_cls(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -606,7 +610,7 @@ def data_list_cls(
 
 
 def data_set_cls(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]

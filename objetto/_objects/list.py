@@ -75,7 +75,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         """
         original_data = store.data
         assert original_data is not None
-        data = cast("ListData", original_data)._set(data_location, new_child_data)
+        data = cast("ListData", original_data)._update(data_location, new_child_data)
         return store.set("data", data)
 
     @staticmethod
@@ -136,6 +136,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                     # Update data.
                     if relationship.data:
                         data_relationship = relationship.data_relationship
+                        assert data_relationship is not None
                         if same_app:
                             with value.app.__.write_context(value) as (v_read, _):
                                 data_value = data_relationship.fabricate_value(
@@ -238,9 +239,9 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                         old_children.add(value)
 
             # Update state and data.
-            state = state.delete_slice(slc)
+            state = state.delete(slc)
             if relationship.data:
-                data = data._delete_slice(slc)
+                data = data._delete(slc)
 
             # Store locations in the metadata.
             metadata = metadata.set("locations", locations)
@@ -356,6 +357,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                     # Update data.
                     if relationship.data:
                         data_relationship = relationship.data_relationship
+                        assert data_relationship is not None
                         if same_app:
                             with value.app.__.write_context(value) as (v_read, _):
                                 data_value = data_relationship.fabricate_value(
@@ -366,9 +368,9 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                         new_data_values.append(data_value)
 
             # Update state and data.
-            state = state.set_slice(slc, new_values)
+            state = state.update(index, *new_values)
             if relationship.data:
-                data = data._set_slice(slc, new_data_values)
+                data = data._update(index, *new_data_values)
 
             # Store locations in the metadata.
             metadata = metadata.set("locations", locations)
@@ -662,7 +664,7 @@ class ListObject(
         :return: Transformed.
         :raises ValueError: No values provided.
         """
-        if not input_values:
+        if not values:
             error = "no values provided"
             raise ValueError(error)
         self.__functions__.update(self, index, values)
@@ -796,7 +798,7 @@ class MutableListObject(
         """
         if isinstance(item, slice):
             with self.app.write_context():
-                values = tuple(value)
+                values = tuple(cast("Iterable[T]", value))
                 index, stop = self.resolve_continuous_slice(item)
                 if len(values) != stop - index:
                     error = "values length ({}) does not fit in slice ({})".format(

@@ -73,6 +73,7 @@ VT = TypeVar("VT")  # Any value type.
 
 
 if TYPE_CHECKING:
+    NT = Type[None]
     MutableDictAttribute = Attribute[MutableDictObject[KT, VT]]
     MutableListAttribute = Attribute[MutableListObject[T]]
     MutableSetAttribute = Attribute[MutableSetObject[T]]
@@ -198,7 +199,7 @@ def history_descriptor(size=None):
 
 
 def attribute(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -300,7 +301,7 @@ def attribute(
 
 
 def protected_attribute_pair(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -402,7 +403,7 @@ def protected_attribute_pair(
 
 
 def dict_attribute(
-    types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
+    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -411,7 +412,7 @@ def dict_attribute(
     serializer=None,  # type: LazyFactory
     deserializer=None,  # type: LazyFactory
     represented=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
+    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
     key_subtypes=False,  # type: bool
     key_factory=None,  # type: LazyFactory
     child=True,  # type: bool
@@ -430,7 +431,7 @@ def dict_attribute(
     reactions=None,  # type: ReactionsType
     interactive=True,  # type: bool
 ):
-    # type: (...) -> Union[MutableDictAttribute, DictAttribute]
+    # type: (...) -> Union[MutableDictAttribute[KT, VT], DictAttribute[KT, VT]]
     """
     Make dictionary attribute.
 
@@ -545,7 +546,7 @@ def dict_attribute(
 
 
 def protected_dict_attribute_pair(
-    types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
+    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -554,7 +555,7 @@ def protected_dict_attribute_pair(
     serializer=None,  # type: LazyFactory
     deserializer=None,  # type: LazyFactory
     represented=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
+    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
     key_subtypes=False,  # type: bool
     key_factory=None,  # type: LazyFactory
     child=True,  # type: bool
@@ -569,7 +570,7 @@ def protected_dict_attribute_pair(
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
 ):
-    # type: (...) -> Tuple[ProxyDictAttribute, DictAttribute]
+    # type: (...) -> Tuple[ProxyDictAttribute[KT, VT], DictAttribute[KT, VT]]
     """
     Make protected-public dictionary attribute pair.
 
@@ -666,7 +667,7 @@ def protected_dict_attribute_pair(
 
 
 def list_attribute(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -691,7 +692,7 @@ def list_attribute(
     reactions=None,  # type: ReactionsType
     interactive=True,  # type: bool
 ):
-    # type: (...) -> Union[MutableListAttribute, ListAttribute]
+    # type: (...) -> Union[MutableListAttribute[T], ListAttribute[T]]
     """
     Make list attribute.
 
@@ -800,7 +801,7 @@ def list_attribute(
 
 
 def protected_list_attribute_pair(
-    types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
+    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -821,7 +822,7 @@ def protected_list_attribute_pair(
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
 ):
-    # type: (...) -> Tuple[ProxyListAttribute, ListAttribute]
+    # type: (...) -> Tuple[ProxyListAttribute[T], ListAttribute[T]]
     """
     Make protected-public list attribute pair.
 
@@ -912,7 +913,7 @@ def protected_list_attribute_pair(
 
 
 def set_attribute(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -937,7 +938,7 @@ def set_attribute(
     reactions=None,  # type: ReactionsType
     interactive=True,  # type: bool
 ):
-    # type: (...) -> Union[MutableSetAttribute, SetAttribute]
+    # type: (...) -> Union[MutableSetAttribute[T], SetAttribute[T]]
     """
     Make set attribute.
 
@@ -1046,7 +1047,7 @@ def set_attribute(
 
 
 def protected_set_attribute_pair(
-    types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
+    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -1067,7 +1068,7 @@ def protected_set_attribute_pair(
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
 ):
-    # type: (...) -> Tuple[ProxySetAttribute, SetAttribute]
+    # type: (...) -> Tuple[ProxySetAttribute[T], SetAttribute[T]]
     """
     Make protected-public set attribute pair.
 
@@ -1186,7 +1187,7 @@ def _prepare_reactions(reactions=None):
 
 
 def dict_cls(
-    types=(),  # type: Union[Type[VT], str, Iterable[Union[Type[VT], str]]]
+    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -1195,7 +1196,7 @@ def dict_cls(
     serializer=None,  # type: LazyFactory
     deserializer=None,  # type: LazyFactory
     represented=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], str, Iterable[Union[Type[KT], str]]]
+    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
     key_subtypes=False,  # type: bool
     key_factory=None,  # type: LazyFactory
     child=True,  # type: bool
@@ -1292,7 +1293,7 @@ def dict_cls(
 
 
 def list_cls(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -1379,7 +1380,7 @@ def list_cls(
 
 
 def set_cls(
-    types=(),  # type: Union[Type[T], str, Iterable[Union[Type[T], str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]

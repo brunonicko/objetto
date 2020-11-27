@@ -132,6 +132,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
                     # Update data.
                     if relationship.data:
                         data_relationship = relationship.data_relationship
+                        assert data_relationship is not None
                         if child is not None:
                             if type(child)._unique_descriptor is None:
                                 error = (
@@ -472,7 +473,7 @@ class SetObject(
     @classmethod
     @final
     def deserialize(cls, serialized, app=None, **kwargs):
-        # type: (Type[_SO], List[Any], Application, Any) -> _SO
+        # type: (Type[_SO], Any, Application, Any) -> _SO
         """
         Deserialize.
 
@@ -481,6 +482,8 @@ class SetObject(
         :param kwargs: Keyword arguments to be passed to the deserializers.
         :return: Deserialized.
         """
+        assert isinstance(serialized, list)
+
         if app is None:
             error = (
                 "missing required 'app' keyword argument for '{}.deserialize()' method"
