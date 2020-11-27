@@ -42,7 +42,6 @@ if TYPE_CHECKING:
         Any,
         Callable,
         Counter,
-        Union,
         Dict,
         Iterable,
         Iterator,
@@ -53,11 +52,12 @@ if TYPE_CHECKING:
         Set,
         Tuple,
         Type,
+        Union,
     )
 
     from .._applications import Store
-    from ..utils.factoring import LazyFactory
     from .._history import HistoryObject
+    from ..utils.factoring import LazyFactory
 
 __all__ = ["Attribute", "Object"]
 

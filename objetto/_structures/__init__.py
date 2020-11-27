@@ -12,8 +12,8 @@ from .bases import (
     BaseStructure,
     BaseStructureMeta,
     UniqueDescriptor,
-    unique_descriptor,
     make_auxiliary_cls,
+    unique_descriptor,
 )
 from .dict import (
     BaseDictStructure,

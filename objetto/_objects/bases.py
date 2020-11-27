@@ -4,7 +4,7 @@
 from abc import abstractmethod
 from contextlib import contextmanager
 from inspect import getmro
-from typing import TYPE_CHECKING, TypeVar, overload, cast
+from typing import TYPE_CHECKING, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
 
 try:

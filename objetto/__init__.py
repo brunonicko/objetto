@@ -3,13 +3,12 @@
 from .applications import Application
 from .objects import (
     Object,
-    unique_descriptor,
-    history_descriptor,
     attribute,
     data_method,
     data_relationship,
     dict_attribute,
     dict_cls,
+    history_descriptor,
     list_attribute,
     list_cls,
     protected_attribute_pair,
@@ -18,6 +17,7 @@ from .objects import (
     protected_set_attribute_pair,
     set_attribute,
     set_cls,
+    unique_descriptor,
 )
 from .reactions import reaction
 

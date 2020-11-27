@@ -30,8 +30,8 @@ from .utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
     from typing import (
-        Any,
         AbstractSet,
+        Any,
         Callable,
         Counter,
         Dict,
@@ -578,8 +578,7 @@ class ApplicationInternals(Base):
                         locations = [location] + all_locations[-1]
 
                         relationship = cast(
-                            "Relationship",
-                            parent._get_relationship(location)
+                            "Relationship", parent._get_relationship(location)
                         )
                         if relationship.data:
                             data_location = parent._locate_data(child)
@@ -700,8 +699,7 @@ class ApplicationInternals(Base):
 
                         location = single_locations[i]
                         relationship = cast(
-                            "Relationship",
-                            parent._get_relationship(location)
+                            "Relationship", parent._get_relationship(location)
                         )
                         if not relationship.data:
                             break

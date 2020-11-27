@@ -13,18 +13,18 @@ from .objects import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Union, TypeVar, Optional
+    from typing import Any, Optional, TypeVar, Union
 
     from ._objects import (
         Attribute,
-        ProxyListObject,
-        ListObject,
         DictObject,
+        ListObject,
         MutableDictObject,
         MutableListObject,
         MutableSetObject,
         Object,
         ProxyDictObject,
+        ProxyListObject,
         ProxySetObject,
         SetObject,
     )
@@ -58,14 +58,10 @@ class BatchChanges(Object):
 
     __slots__ = ()
 
-    change = attribute(
-        Batch, checked=False, changeable=False
-    )  # type: Attribute[Batch]
+    change = attribute(Batch, checked=False, changeable=False)  # type: Attribute[Batch]
     """Batch change with name and metadata."""
 
-    name = attribute(
-        str, checked=False, changeable=False
-    )  # type: Attribute[str]
+    name = attribute(str, checked=False, changeable=False)  # type: Attribute[str]
     """The batch change name."""
 
     _changes, changes = protected_list_attribute_pair(

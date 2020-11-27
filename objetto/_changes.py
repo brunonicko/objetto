@@ -24,8 +24,8 @@ if TYPE_CHECKING:
         InteractiveListData,
         InteractiveSetData,
     )
-    from ._objects import BaseObject
     from ._history import HistoryObject
+    from ._objects import BaseObject
 
 __all__ = [
     "BaseChange",
@@ -60,9 +60,7 @@ class BaseChange(Data):
 class Batch(BaseChange):
     """Batch change."""
 
-    name = data_attribute(
-        string_types, checked=False
-    )  # type: DataAttribute[str]
+    name = data_attribute(string_types, checked=False)  # type: DataAttribute[str]
     """Name describing the change."""
 
     metadata = data_dict_attribute(

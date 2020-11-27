@@ -32,7 +32,15 @@ from .bases import (
 
 if TYPE_CHECKING:
     from typing import (
-        Any, Callable, Counter, Hashable, Iterable, List, Set, Type, Optional
+        Any,
+        Callable,
+        Counter,
+        Hashable,
+        Iterable,
+        List,
+        Optional,
+        Set,
+        Type,
     )
 
     from .._applications import Store
