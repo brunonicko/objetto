@@ -31,7 +31,7 @@ from ._objects import (
     SetObject,
 )
 from ._structures import KeyRelationship, make_auxiliary_cls, unique_descriptor
-from .reactions import reaction
+from ._reactions import reaction
 from .utils.caller_module import get_caller_module
 from .utils.factoring import import_factory
 from .utils.reraise_context import ReraiseContext

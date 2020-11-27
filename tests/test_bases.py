@@ -253,6 +253,34 @@ def test_make_base_cls():
     assert type(pickled_instance) is base_cls
 
 
+MyGeneratedBase = make_base_cls(Base, "MyGeneratedBase", __name__, {})
+
+
+class MySubBase(MyGeneratedBase):
+    pass
+
+
+def test_generated_base_subclass():
+    assert MySubBase.__name__ != MyGeneratedBase.__name__
+    try:
+        my_sub_base_qual_name = MySubBase.__qualname__
+    except AttributeError:
+        pass
+    else:
+        assert my_sub_base_qual_name != MyGeneratedBase.__qualname__
+
+
+def test_generated_base_subclass_instance():
+    instance = MySubBase()
+    assert isinstance(instance, MySubBase)
+    assert type(instance) is MySubBase
+    pickled_instance = pickle.loads(pickle.dumps(instance))
+    assert pickled_instance is not instance
+    assert isinstance(pickled_instance, MyGeneratedBase)
+    assert isinstance(pickled_instance, MySubBase)
+    assert type(pickled_instance) is MySubBase
+
+
 def test_dir():
     def get_var():
         return None

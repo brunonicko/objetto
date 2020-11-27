@@ -29,8 +29,8 @@ if TYPE_CHECKING:
 
 __all__ = [
     "BaseChange",
-    "Batch",
     "BaseAtomicChange",
+    "Batch",
     "Update",
     "DictUpdate",
     "ListInsert",
@@ -54,19 +54,6 @@ class BaseChange(Data):
         ".._objects|BaseObject", subtypes=True, checked=False, finalized=True
     )  # type: Final[DataAttribute[BaseObject]]
     """Object being changed."""
-
-
-@final
-class Batch(BaseChange):
-    """Batch change."""
-
-    name = data_attribute(string_types, checked=False)  # type: DataAttribute[str]
-    """Name describing the change."""
-
-    metadata = data_dict_attribute(
-        key_types=string_types, checked=False
-    )  # type: DataAttribute[InteractiveDictData[str, Any]]
-    """Metadata."""
 
 
 class BaseAtomicChange(BaseChange):
@@ -115,6 +102,19 @@ class BaseAtomicChange(BaseChange):
         default=None,
     )  # type: Final[DataAttribute[Optional[HistoryObject]]]
     """History where this changed originated from (result of an redo/undo operation)."""
+
+
+@final
+class Batch(BaseChange):
+    """Batch change."""
+
+    name = data_attribute(string_types, checked=False)  # type: DataAttribute[str]
+    """Name describing the change."""
+
+    metadata = data_dict_attribute(
+        key_types=string_types, checked=False
+    )  # type: DataAttribute[InteractiveDictData[str, Any]]
+    """Metadata."""
 
 
 @final

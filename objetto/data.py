@@ -7,7 +7,7 @@ from ._bases import MISSING
 from ._data import DataAttribute, DataRelationship
 from ._data import InteractiveData as Data
 from ._data import InteractiveDictData, InteractiveListData, InteractiveSetData
-from ._structures import KeyRelationship, make_auxiliary_cls, unique_descriptor
+from ._structures import KeyRelationship, make_auxiliary_cls
 from .utils.caller_module import get_caller_module
 from .utils.reraise_context import ReraiseContext
 
@@ -18,7 +18,6 @@ if TYPE_CHECKING:
 
 __all__ = [
     "Data",
-    "unique_descriptor",
     "data_attribute",
     "data_dict_attribute",
     "data_list_attribute",

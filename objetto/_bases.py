@@ -4,7 +4,9 @@
 from abc import abstractmethod
 from contextlib import contextmanager
 from inspect import getmro
-from typing import TYPE_CHECKING, Generic, TypeVar, cast, final, overload
+from typing import (
+    TYPE_CHECKING, Callable, Type, Generic, TypeVar, cast, final, overload
+)
 from uuid import uuid4
 from weakref import WeakKeyDictionary, WeakValueDictionary
 
@@ -49,7 +51,6 @@ if TYPE_CHECKING:
         Sequence,
         Set,
         Tuple,
-        Type,
         Union,
         ValuesView,
     )
@@ -91,7 +92,7 @@ __all__ = [
 ]
 
 # noinspection PyTypeChecker
-F = TypeVar("F", "Callable", "Type")  # Callable type.
+F = TypeVar("F", Callable, Type)  # Callable type.
 T = TypeVar("T")  # Any type.
 KT = TypeVar("KT")  # Key type.
 VT = TypeVar("VT")  # Value type.
@@ -235,16 +236,41 @@ def _make_base_cls(
     # Copy dct.
     dct_copy = dict(dct or {})  # type: Dict[str, Any]
 
-    # Define reduce method for pickling instances of the subclass.  FIXME: subclasses support
+    # Define reduce method for pickling instances of the subclass.
     def __reduce__(self):
         state = self.__getstate__()
-        return _make_base_instance, (_base, qual_name, module, state, dct_copy, uuid)
+        if type(self).__dict__.get("__base_cls_uuid__", None) == uuid:
+            return _make_base_instance, (
+                _base, qual_name, module, state, dct_copy, uuid
+            )
+        else:
+            return _make_base_subclass_instance, (type(self), state)
+
+    # Fallback qualified name property for python 2.7.
+    if not hasattr(object, "__qualname__"):
+        class QualNameClassProperty(object):
+            __slots__ = ()
+
+            def __get__(self, instance, owner):
+                if instance is not None:
+                    owner = type(instance)
+                if owner is not None and "__qualname__" not in owner.__dict__:
+                    error = "type object '{}' has no attribute '__qualname__'".format(
+                        owner.__name__,
+                    )
+                    raise AttributeError(error)
+                return qual_name
+
+        __qualname__ = QualNameClassProperty()
+    else:
+        __qualname__ = qual_name
 
     # Assemble class dict by copying dct once again.
     cls_dct = dct_copy.copy()  # type: Dict[str, Any]
     cls_dct_update = {
+        "__base_cls_uuid__": uuid,
         "__reduce__": __reduce__,
-        "__qualname__": qual_name,
+        "__qualname__": __qualname__,
         "__module__": module,
     }  # type: Dict[str, Any]
     cls_dct.update(cls_dct_update)
@@ -252,6 +278,23 @@ def _make_base_cls(
     # Make new subclass and cache it by UUID.
     cls = __base_cls_cache[uuid] = cast("BaseMeta", mcs)(name, (_base,), cls_dct)
     return cls
+
+
+def _make_base_subclass_instance(
+    cls,  # type: Optional[Type[_B]]
+    state,  # type: Mapping[str, Any]
+):
+    # type: (...) -> _B
+    """
+    Make an instance of a subclass of a generated :class:`Base`.
+
+    :param cls: Base subclass.
+    :param state: Pickled state.
+    :return: Generated instance.
+    """
+    self = cast("_B", cls.__new__(cls))
+    self.__setstate__(state or {})
+    return self
 
 
 def _make_base_instance(

@@ -22,7 +22,6 @@ if TYPE_CHECKING:
     FactoryType = Union[Callable[[Any, Any], Any], "BaseFactory"]
 
 __all__ = [
-    "MultiFactory",
     "Integer",
     "FloatingPoint",
     "RegexMatch",
