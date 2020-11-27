@@ -47,6 +47,7 @@ if TYPE_CHECKING:
     )
 
     from .._applications import Store
+    from .._history import HistoryObject
 
 __all__ = ["DictObject", "MutableDictObject", "ProxyDictObject"]
 
@@ -104,8 +105,17 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
         obj,  # type: DictObject
         input_values,  # type: Mapping
         factory=True,  # type: bool
+        history=None,  # type: Optional[HistoryObject]
     ):
         # type: (...) -> None
+        """
+        Update values.
+
+        :param obj: Object.
+        :param input_values: Input values.
+        :param factory: Whether to run values through factory.
+        :param history: History than triggered this change during undo/redo.
+        """
         cls = type(obj)
         relationship = cls._relationship
         key_relationship = cls._key_relationship
@@ -223,6 +233,7 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
                 old_state=old_state,
                 new_state=state,
                 history_adopters=history_adopters,
+                history=history,
             )
             write(state, data, metadata, child_counter, change)
 
@@ -233,6 +244,7 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
             cast("DictObject", change.obj),
             change.new_values,
             factory=False,
+            history=change.obj._history,
         )
 
     @staticmethod
@@ -242,6 +254,7 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
             cast("DictObject", change.obj),
             change.old_values,
             factory=False,
+            history=change.obj._history,
         )
 
 
@@ -485,28 +498,6 @@ class MutableDictObject(
     __slots__ = ()
 
     @final
-    def __setitem__(self, key, value):
-        # type: (KT, VT) -> None
-        """
-        Set value for key.
-
-        :param key: Key.
-        :param value: Value.
-        """
-        self._set(key, value)
-
-    @final
-    def __delitem__(self, key):
-        # type: (KT) -> None
-        """
-        Delete key.
-
-        :param key: Key.
-        :raises KeyError: Key is not preset.
-        """
-        self._remove(key)
-
-    @final
     def pop(self, key, fallback=MISSING):
         # type: (KT, Any) -> Union[VT, Any]
         """
@@ -571,12 +562,6 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
     """Mutable proxy dictionary."""
 
     __slots__ = ()
-
-    __setitem__ = MutableDictObject.__setitem__
-    __delitem__ = MutableDictObject.__delitem__
-    pop = MutableDictObject.pop
-    popitem = MutableDictObject.popitem
-    setdefault = MutableDictObject.setdefault
 
     def __reversed__(self):
         # type: () -> Iterator[KT]
@@ -698,6 +683,58 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         """
         for value in itervalues(self._state):
             yield value
+
+    def pop(self, key, fallback=MISSING):
+        # type: (KT, Any) -> Union[VT, Any]
+        """
+        Get value for key and remove it, return fallback value if key is not present.
+
+        :param key: Key.
+        :param fallback: Fallback value.
+        :return: Value or fallback value.
+        :raises KeyError: Key is not present and fallback value not provided.
+        """
+        with self.app.write_context():
+            try:
+                value = self[key]
+            except KeyError:
+                if fallback is not MISSING:
+                    return fallback
+                raise
+            else:
+                self._remove(key)
+                return value
+
+    def popitem(self):
+        # type: () -> Tuple[KT, VT]
+        """
+        Get item and discard key.
+
+        :return: Item.
+        :raises KeyError: Dictionary is empty.
+        """
+        with self.app.write_context():
+            if not self:
+                error = "dictionary is empty"
+                raise KeyError(error)
+            key = next(iter(self))
+            return key, self.pop(key)
+
+    def setdefault(self, key, default=None):
+        # type: (KT, Optional[VT]) -> VT
+        """
+        Get the value for the specified key, insert key with default if not present.
+
+        :param key: Key.
+        :param default: Default value.
+        :return: Existing or default value.
+        """
+        with self.app.write_context():
+            try:
+                return self[key]
+            except KeyError:
+                self._set(key, cast("VT", default))
+                return self[key]
 
     @property
     def _obj(self):

@@ -16,7 +16,7 @@ from .data import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Final
+    from typing import Any, Callable, Final, Optional
 
     from ._data import (
         DataAttribute,
@@ -25,6 +25,7 @@ if TYPE_CHECKING:
         InteractiveSetData,
     )
     from ._objects import BaseObject
+    from ._history import HistoryObject
 
 __all__ = [
     "BaseChange",
@@ -107,6 +108,15 @@ class BaseAtomicChange(BaseChange):
         ".._objects|BaseObject", subtypes=True, checked=False, finalized=True
     )  # type: Final[DataAttribute[InteractiveSetData[BaseObject]]]
     """Objects adopting the history from the object being changed."""
+
+    history = data_attribute(
+        (".._history|HistoryObject", type(None)),
+        subtypes=False,
+        checked=False,
+        finalized=True,
+        default=None,
+    )  # type: Final[DataAttribute[Optional[HistoryObject]]]
+    """History where this changed originated from (result of an redo/undo operation)."""
 
 
 @final

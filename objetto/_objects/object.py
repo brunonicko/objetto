@@ -57,6 +57,7 @@ if TYPE_CHECKING:
 
     from .._applications import Store
     from ..utils.factoring import LazyFactory
+    from .._history import HistoryObject
 
 __all__ = ["Attribute", "Object"]
 
@@ -539,6 +540,7 @@ class Functions(BaseObjectFunctions):
         obj,  # type: Object
         new_values,  # type: Mapping[str, Any]
         old_values,  # type: Mapping[str, Any]
+        history=None,  # type: Optional[HistoryObject]
     ):
         # type: (...) -> None
         """
@@ -547,6 +549,7 @@ class Functions(BaseObjectFunctions):
         :param obj: Object.
         :param new_values: New values.
         :param old_values: Old values.
+        :param history: History than triggered this change during undo/redo.
         :raises AttributeError: Attribute is not changeable and already has a value.
         :raises AttributeError: Attribute is not deletable.
         """
@@ -650,6 +653,7 @@ class Functions(BaseObjectFunctions):
                 old_state=old_state,
                 new_state=state,
                 history_adopters=history_adopters,
+                history=history,
             )
             write(state, data, metadata, child_counter, change)
 
@@ -665,6 +669,7 @@ class Functions(BaseObjectFunctions):
             cast("Object", change.obj),
             change.new_values,
             change.old_values,
+            history=change.obj._history,
         )
 
     @staticmethod
@@ -679,6 +684,7 @@ class Functions(BaseObjectFunctions):
             cast("Object", change.obj),
             change.old_values,
             change.new_values,
+            history=change.obj._history,
         )
 
 
@@ -946,6 +952,11 @@ class Object(
                 raise AttributeError(error)
             self._update(update)
         return self
+
+    @overload
+    def _update(self, __m, **kwargs):
+        # type: (_O, Mapping[str, Any], Any) -> _O
+        pass
 
     @overload
     def _update(self, __m, **kwargs):

@@ -604,8 +604,7 @@ class ApplicationInternals(Base):
                     assert action.receiver is parent
 
                     actions.append(action)
-                    for reaction in type(action.receiver)._reactions:
-                        reaction(action.receiver, action, Phase.PRE)
+                    self.__react(action.receiver, action, Phase.PRE)
 
                     child = parent
 
@@ -743,8 +742,7 @@ class ApplicationInternals(Base):
 
                 # Post phase.
                 for action in actions:
-                    for reaction in type(action.receiver)._reactions:
-                        reaction(action.receiver, action, Phase.POST)
+                    self.__react(action.receiver, action, Phase.POST)
 
                 # Exit history atomic batch.
                 if history is not None and atomic_batch_change is not None:
@@ -860,6 +858,19 @@ class ApplicationInternals(Base):
                 self.__busy_hierarchy[new_child] -= 1
                 if not self.__busy_hierarchy[new_child]:
                     del self.__busy_hierarchy[new_child]
+
+    @staticmethod
+    def __react(obj, action, phase):
+        # type: (BaseObject, Action, Phase) -> None
+        """
+        Run object's reactions.
+
+        :param obj: Object.
+        :param action: Action.
+        :param phase: Phase.
+        """
+        for reaction in type(obj)._reactions:
+            reaction(obj, action, phase)
 
     def init_object(self, obj):
         # type: (BaseObject) -> None
@@ -1104,8 +1115,7 @@ class ApplicationInternals(Base):
 
                     # Pre.
                     for action in actions:
-                        for reaction in type(action.receiver)._reactions:
-                            reaction(action.receiver, action, Phase.PRE)
+                        self.__react(action.receiver, action, Phase.PRE)
 
                     yield change
 
@@ -1120,8 +1130,7 @@ class ApplicationInternals(Base):
 
                     # Post.
                     for action in actions:
-                        for reaction in type(action.receiver)._reactions:
-                            reaction(action.receiver, action, Phase.POST)
+                        self.__react(action.receiver, action, Phase.POST)
 
                     # Commit Post.
                     post_commit = BatchCommit(

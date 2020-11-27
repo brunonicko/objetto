@@ -1,8 +1,7 @@
-# TODO: proper proxy mutable methods
-# TODO: history object
-# TODO: history reaction conflict validation?
+# TODO
 # TODO: application root descriptors
 # TODO: custom exceptions?
+# TODO: missing docstrings
 # TODO: mypy
 # TODO: action public module?
 # TODO: tests
@@ -12,6 +11,9 @@
 # TODO: release to pypi!
 
 # DONE
+# proper proxy mutable methods
+# history reaction conflict validation
+# history object
 # add py.typed file
 # structures '__repr__' maximum level
 # __storage should only be change during a 'push'

@@ -643,18 +643,21 @@ def protected_dict_attribute_pair(
     )
 
     # Make protected attribute.
-    protected_attribute = attribute(
-        types=ProxyDictObject,
-        subtypes=False,
-        checked=False,
-        module=module,
-        represented=False,
-        child=False,
-        required=False,
-        finalized=finalized,
-        abstracted=abstracted,
-        delegated=True,
-        dependencies=(public_attribute,),
+    protected_attribute = cast(
+        "ProxyDictAttribute[KT, VT]",
+        attribute(
+            types=ProxyDictObject,
+            subtypes=False,
+            checked=False,
+            module=module,
+            represented=False,
+            child=False,
+            required=False,
+            finalized=finalized,
+            abstracted=abstracted,
+            delegated=True,
+            dependencies=(public_attribute,),
+        ),
     )
 
     def getter(iobj):
@@ -889,18 +892,21 @@ def protected_list_attribute_pair(
     )
 
     # Make protected attribute.
-    protected_attribute = attribute(
-        types=ProxyListObject,
-        subtypes=False,
-        checked=False,
-        module=module,
-        represented=False,
-        child=False,
-        required=False,
-        finalized=finalized,
-        abstracted=abstracted,
-        delegated=True,
-        dependencies=(public_attribute,),
+    protected_attribute = cast(
+        "ProxyListAttribute[T]",
+        attribute(
+            types=ProxyListObject,
+            subtypes=False,
+            checked=False,
+            module=module,
+            represented=False,
+            child=False,
+            required=False,
+            finalized=finalized,
+            abstracted=abstracted,
+            delegated=True,
+            dependencies=(public_attribute,),
+        ),
     )
 
     def getter(iobj):
@@ -1135,18 +1141,21 @@ def protected_set_attribute_pair(
     )
 
     # Make protected attribute.
-    protected_attribute = attribute(
-        types=ProxySetObject,
-        subtypes=False,
-        checked=False,
-        module=module,
-        represented=False,
-        child=False,
-        required=False,
-        finalized=finalized,
-        abstracted=abstracted,
-        delegated=True,
-        dependencies=(public_attribute,),
+    protected_attribute = cast(
+        "ProxySetAttribute[T]",
+        attribute(
+            types=ProxySetObject,
+            subtypes=False,
+            checked=False,
+            module=module,
+            represented=False,
+            child=False,
+            required=False,
+            finalized=finalized,
+            abstracted=abstracted,
+            delegated=True,
+            dependencies=(public_attribute,),
+        ),
     )
 
     def getter(iobj):

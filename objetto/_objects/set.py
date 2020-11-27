@@ -31,9 +31,12 @@ from .bases import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Counter, Hashable, Iterable, List, Set, Type
+    from typing import (
+        Any, Callable, Counter, Hashable, Iterable, List, Set, Type, Optional
+    )
 
     from .._applications import Store
+    from .._history import HistoryObject
 
 __all__ = ["SetObject", "MutableSetObject", "ProxySetObject"]
 
@@ -80,6 +83,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
         obj,  # type: SetObject
         input_values,  # type: Iterable[Hashable]
         factory=True,  # type: bool
+        history=None,  # type: Optional[HistoryObject]
     ):
         # type: (...) -> None
         cls = type(obj)
@@ -172,6 +176,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
                 history_adopters=history_adopters,
                 old_state=old_state,
                 new_state=state,
+                history=history,
             )
             write(state, data, metadata, child_counter, change)
 
@@ -182,6 +187,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
             cast("SetObject", change.obj),
             change.new_values,
             factory=False,
+            history=change.obj._history,
         )
 
     @staticmethod
@@ -190,12 +196,14 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
         SetObjectFunctions.remove(
             cast("SetObject", change.obj),
             change.new_values,
+            history=change.obj._history,
         )
 
     @staticmethod
     def remove(
         obj,  # type: SetObject
         input_values,  # type: Iterable[Hashable]
+        history=None,  # type: Optional[HistoryObject]
     ):
         # type: (...) -> None
         cls = type(obj)
@@ -258,6 +266,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
                 history_adopters=(),
                 old_state=old_state,
                 new_state=state,
+                history=history,
             )
             write(state, data, metadata, child_counter, change)
 
@@ -267,6 +276,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
         SetObjectFunctions.remove(
             cast("SetObject", change.obj),
             change.old_values,
+            history=change.obj._history,
         )
 
     @staticmethod
@@ -276,6 +286,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
             cast("SetObject", change.obj),
             change.old_values,
             factory=False,
+            history=change.obj._history,
         )
 
 
@@ -611,10 +622,59 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
 
     __slots__ = ()
 
-    pop = MutableSetObject.pop
-    intersection_update = MutableSetObject.intersection_update
-    symmetric_difference_update = MutableSetObject.symmetric_difference_update
-    difference_update = MutableSetObject.difference_update
+    def pop(self):
+        # type: () -> T
+        """
+        Pop value.
+
+        :return: Value.
+        :raises KeyError: Empty set.
+        """
+        with self.app.write_context():
+            state = self._state
+            if not state:
+                error = "empty set"
+                raise KeyError(error)
+            value = next(iter(state))
+            self._remove(value)
+        return value
+
+    def intersection_update(self, iterable):
+        # type: (Iterable[T]) -> None
+        """
+        Intersect.
+
+        :param iterable: Iterable.
+        """
+        with self.app.write_context():
+            difference = self.difference(iterable)
+            if difference:
+                self._remove(*difference)
+
+    def symmetric_difference_update(self, iterable):
+        # type: (Iterable[T]) -> None
+        """
+        Symmetric difference.
+
+        :param iterable: Iterable.
+        """
+        with self.app.write_context():
+            inverse_difference = self.inverse_difference(iterable)
+            intersection = self.intersection(iterable)
+            self._update(inverse_difference)
+            self._remove(*intersection)
+
+    def difference_update(self, iterable):
+        # type: (Iterable[T]) -> None
+        """
+        Difference.
+
+        :param iterable: Iterable.
+        """
+        with self.app.write_context():
+            intersection = self.intersection(iterable)
+            if intersection:
+                self._remove(*intersection)
 
     @classmethod
     def _from_iterable(cls, iterable):

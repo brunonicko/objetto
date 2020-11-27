@@ -5,7 +5,6 @@ from collections import Counter as ValueCounter
 from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
-from decorator import decorator
 from six import integer_types, iteritems, string_types
 
 from ._applications import Phase, RejectChangeException
@@ -18,10 +17,14 @@ from .utils.reraise_context import ReraiseContext
 from .utils.type_checking import assert_is_callable, assert_is_instance
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Counter, Dict, FrozenSet, Mapping, Optional
+    from typing import Any, Callable, Counter, Dict, FrozenSet, Mapping, Optional, Union
 
     from ._applications import Action
     from ._objects import BaseObject
+
+    ReactionDecorator = Callable[
+        [Callable[[BaseObject, Action, Phase], None]], "CustomReaction"
+    ]
 
 __all__ = [
     "reaction",
@@ -31,26 +34,66 @@ __all__ = [
 ]
 
 
-@decorator
 def reaction(
-    func,  # type: Callable[[BaseObject, Action, Phase], None]
+    func=None,  # type: Optional[Callable[[BaseObject, Action, Phase], None]]
     priority=None,  # type: Optional[int]
 ):
-    # type: (...) -> CustomReaction
+    # type: (...) -> Union[CustomReaction, ReactionDecorator]
     """
     Decorates an object's method into a custom reaction.
     Reaction methods are called automatically when an action propagates up the
     hierarchy during the 'PRE' and 'POST' phases.
 
-    :param func: Method to be decorated.
+    . code:: python
+
+        >>> from objetto.applications import Application
+        >>> from objetto.objects import Object, attribute
+        >>> from objetto.reactions import reaction
+
+        >>> class MyObject(Object):
+        ...     value = attribute(int, default=0)
+        ...
+        ...     @reaction
+        ...     def __on_received(self, action, phase):
+        ...         if not self._initializing:
+        ...             print("LAST -", action.change.name, phase)
+        ...
+        ...     @reaction(priority=1)
+        ...     def __on_received_first(self, action, phase):
+        ...         if not self._initializing:
+        ...             print("FIRST -", action.change.name, phase)
+        ...
+        >>> app = Application()
+        >>> my_obj = MyObject(app)
+        >>> my_obj.value = 42
+        FIRST - Update Attributes Phase.PRE
+        LAST - Update Attributes Phase.PRE
+        FIRST - Update Attributes Phase.POST
+        LAST - Update Attributes Phase.POST
+
+    :param func: Method to be decorated or None.
     :param priority: Priority.
-    :return: Decorated custom reaction method.
+    :return: Decorated custom reaction method or decorator.
     """
-    if isinstance(func, CustomReaction):
-        if func.priority == priority:
-            return func
-        func = func.func
-    return CustomReaction(func, priority=priority)
+
+    def _reaction(func_):
+        # type: (Callable[[BaseObject, Action, Phase], None]) -> CustomReaction
+        """
+        Reaction method decorator.
+
+        :param func_: Method function.
+        :return: Custom reaction object.
+        """
+        if isinstance(func_, CustomReaction):
+            if func_.priority == priority:
+                return func_
+            func_ = func_.func
+        return CustomReaction(func_, priority=priority)
+
+    if func is not None:
+        return _reaction(func)
+    else:
+        return _reaction
 
 
 @final

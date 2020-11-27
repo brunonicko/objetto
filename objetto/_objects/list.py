@@ -48,6 +48,7 @@ if TYPE_CHECKING:
     )
 
     from .._applications import Store
+    from .._history import HistoryObject
 
 __all__ = ["ListObject", "MutableListObject", "ProxyListObject"]
 
@@ -84,6 +85,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         index,  # type: int
         input_values,  # type: Iterable[Any]
         factory=True,  # type: bool
+        history=None,  # type: Optional[HistoryObject]
     ):
         # type: (...) -> None
         cls = type(obj)
@@ -172,6 +174,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                 old_state=old_state,
                 new_state=state,
                 history_adopters=history_adopters,
+                history=history,
             )
             write(state, data, metadata, child_counter, change)
 
@@ -183,6 +186,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
             change.index,
             change.new_values,
             factory=False,
+            history=change.obj._history,
         )
 
     @staticmethod
@@ -191,12 +195,14 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         ListObjectFunctions.delete(
             cast("ListObject", change.obj),
             slice(change.index, change.stop),
+            history=change.obj._history,
         )
 
     @staticmethod
     def delete(
         obj,  # type: ListObject
         item,  # type: Union[int, slice]
+        history=None,  # type: Optional[HistoryObject]
     ):
         # type: (...) -> None
         cls = type(obj)
@@ -260,6 +266,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                 old_state=old_state,
                 new_state=state,
                 history_adopters=(),
+                history=history,
             )
             write(state, data, metadata, child_counter, change)
 
@@ -269,6 +276,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         ListObjectFunctions.delete(
             cast("ListObject", change.obj),
             slice(change.index, change.stop),
+            history=change.obj._history,
         )
 
     @staticmethod
@@ -279,6 +287,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
             change.index,
             change.old_values,
             factory=False,
+            history=change.obj._history,
         )
 
     @staticmethod
@@ -287,6 +296,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         item,  # type: Union[int, slice]
         input_values,  # type: Iterable[Any]
         factory=True,  # type: bool
+        history=None,  # type: Optional[HistoryObject]
     ):
         # type: (...) -> None
         cls = type(obj)
@@ -390,6 +400,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                 new_values=new_values,
                 old_state=old_state,
                 new_state=state,
+                history=history,
             )
             write(state, data, metadata, child_counter, change)
 
@@ -401,6 +412,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
             slice(change.index, change.stop),
             change.new_values,
             factory=False,
+            history=change.obj._history,
         )
 
     @staticmethod
@@ -411,6 +423,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
             slice(change.index, change.stop),
             change.old_values,
             factory=False,
+            history=change.obj._history,
         )
 
     @staticmethod
@@ -418,6 +431,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         obj,  # type: ListObject
         item,  # type: Union[int, slice]
         target_index,  # type: int
+        history=None,  # type: Optional[HistoryObject]
     ):
         # type: (...) -> None
         with obj.app.__.write_context(obj) as (read, write):
@@ -466,6 +480,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                 values=values,
                 old_state=old_state,
                 new_state=state,
+                history=history,
             )
             write(state, data, metadata, ValueCounter(), change)
 
@@ -476,6 +491,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
             cast("ListObject", change.obj),
             slice(change.index, change.stop),
             change.target_index,
+            history=change.obj._history,
         )
 
     @staticmethod
@@ -485,6 +501,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
             cast("ListObject", change.obj),
             slice(change.post_index, change.post_stop),
             change.index,
+            history=change.obj._history,
         )
 
 
@@ -855,9 +872,58 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
 
     __slots__ = ()
 
-    __setitem__ = MutableListObject.__setitem__
-    __delitem__ = MutableListObject.__delitem__
-    pop = MutableListObject.pop
+    @overload
+    def __setitem__(self, index, value):
+        # type: (int, T) -> None
+        pass
+
+    @overload
+    def __setitem__(self, slc, values):
+        # type: (slice, Iterable[T]) -> None
+        pass
+
+    def __setitem__(self, item, value):
+        # type: (Union[int, slice], Union[T, Iterable[T]]) -> None
+        """
+        Set value/values at index/slice.
+
+        :param item: Index/slice.
+        :param value: Value/values.
+        :raises IndexError: Slice is noncontinuous.
+        :raises ValueError: Values length does not fit in slice.
+        """
+        if isinstance(item, slice):
+            with self.app.write_context():
+                values = tuple(cast("Iterable[T]", value))
+                index, stop = self.resolve_continuous_slice(item)
+                if len(values) != stop - index:
+                    error = "values length ({}) does not fit in slice ({})".format(
+                        len(values), stop - index
+                    )
+                    raise ValueError(error)
+                self._update(index, *values)
+        else:
+            self._update(item, cast("T", value))
+
+    @overload
+    def __delitem__(self, index):
+        # type: (int) -> None
+        pass
+
+    @overload
+    def __delitem__(self, slc):
+        # type: (slice) -> None
+        pass
+
+    def __delitem__(self, item):
+        # type: (Union[int, slice]) -> None
+        """
+        Delete value/values at index/slice.
+
+        :param item: Index/slice.
+        :raises IndexError: Slice is noncontinuous.
+        """
+        self._delete(item)
 
     def __reversed__(self):
         # type: () -> Iterator[T]
@@ -979,6 +1045,19 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         """
         self._obj._update(index, *values)
         return self
+
+    def pop(self, index=-1):
+        # type: (int) -> T
+        """
+        Pop value from index.
+
+        :param index: Index.
+        :return: Value.
+        """
+        with self.app.write_context():
+            value = self[index]
+            self._delete(index)
+        return value
 
     def count(self, value):
         # type: (Any) -> int

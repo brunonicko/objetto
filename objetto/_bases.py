@@ -1075,7 +1075,7 @@ class BaseMutableDict(
 
     __slots__ = ()
 
-    @abstractmethod
+    @final
     def __setitem__(self, key, value):
         # type: (KT, VT) -> None
         """
@@ -1084,9 +1084,9 @@ class BaseMutableDict(
         :param key: Key.
         :param value: Value.
         """
-        raise NotImplementedError()
+        self._set(key, value)
 
-    @abstractmethod
+    @final
     def __delitem__(self, key):
         # type: (KT) -> None
         """
@@ -1095,7 +1095,7 @@ class BaseMutableDict(
         :param key: Key.
         :raises KeyError: Key is not preset.
         """
-        raise NotImplementedError()
+        self._remove(key)
 
     @final
     def clear(self):
