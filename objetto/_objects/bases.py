@@ -4,7 +4,7 @@
 from abc import abstractmethod
 from contextlib import contextmanager
 from inspect import getmro
-from typing import TYPE_CHECKING, TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar, overload, cast
 from weakref import WeakKeyDictionary
 
 try:
@@ -715,7 +715,7 @@ class BaseObjectMeta(BaseStructureMeta):
 
 
 # noinspection PyTypeChecker
-_BO = TypeVar("_BO", bound="BaseData")
+_BO = TypeVar("_BO", bound="BaseObject")
 
 
 class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
@@ -940,11 +940,11 @@ class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryStructureMeta):
         # type: () -> Type[BaseAuxiliaryData]
         """Data type."""
         mcs = type(cls)
+        cls_ = cast("Type[BaseAuxiliaryObject]", cls)
         try:
             data_type = mcs.__data_type[cls]
         except KeyError:
-            assert issubclass(cls, BaseAuxiliaryObject)
-            data_relationship = cls._relationship.data_relationship
+            data_relationship = cls_._relationship.data_relationship
             if data_relationship is None:
                 data_type = mcs.__data_type[cls] = cls._base_auxiliary_data_type
             else:
@@ -954,7 +954,7 @@ class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryStructureMeta):
                     qual_name="{}.{}".format(cls.__fullname__, "Data"),
                     module=cls.__module__,
                     unique_descriptor_name=cls._unique_descriptor_name,
-                    dct=cls.__functions__.make_data_cls_dct(cls),
+                    dct=cls_.__functions__.make_data_cls_dct(cls_),
                 )
         return data_type
 

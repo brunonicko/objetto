@@ -807,7 +807,7 @@ class MutableListObject(
                     raise ValueError(error)
                 self._update(index, *values)
         else:
-            self._update(item, value)
+            self._update(item, cast("T", value))
 
     @overload
     def __delitem__(self, index):

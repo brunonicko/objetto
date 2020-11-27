@@ -2,7 +2,7 @@
 """Dictionary structures."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, cast
 
 try:
     import collections.abc as collections_abc
@@ -229,8 +229,9 @@ class BaseDictStructureMeta(BaseAuxiliaryStructureMeta):
         super(BaseDictStructureMeta, cls).__init__(name, bases, dct)
 
         # Check key relationship type.
+        cls_ = cast("Type[BaseDictStructure]", cls)
         assert_is_instance(
-            getattr(cls, "_key_relationship"),
+            cls_._key_relationship,
             cls._key_relationship_type,
             subtypes=False,
         )

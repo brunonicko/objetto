@@ -220,7 +220,7 @@ def attribute(
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
     delegated=False,  # type: bool
-    dependencies=None,  # type: Optional[Iterable[Attribute]]
+    dependencies=None,  # type: Optional[Union[Iterable[Attribute], Attribute]]
     deserialize_to=None,  # type: Optional[Attribute]
 ):
     # type: (...) -> Attribute[T]
@@ -610,7 +610,7 @@ def protected_dict_attribute_pair(
         default = ()
 
     public_attribute = cast(
-        "DictAttribute",
+        "DictAttribute[KT, VT]",
         dict_attribute(
             types=types,
             subtypes=subtypes,
@@ -859,7 +859,7 @@ def protected_list_attribute_pair(
         default = ()
 
     public_attribute = cast(
-        "ListAttribute",
+        "ListAttribute[T]",
         list_attribute(
             types=types,
             subtypes=subtypes,
@@ -1105,7 +1105,7 @@ def protected_set_attribute_pair(
         default = ()
 
     public_attribute = cast(
-        "SetAttribute",
+        "SetAttribute[T]",
         set_attribute(
             types=types,
             subtypes=subtypes,

@@ -42,6 +42,7 @@ if TYPE_CHECKING:
         Any,
         Callable,
         Counter,
+        Union,
         Dict,
         Iterable,
         Iterator,
@@ -127,7 +128,7 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
         finalized=False,  # type: bool
         abstracted=False,  # type: bool
         delegated=False,  # type: bool
-        dependencies=None,  # type: Optional[Iterable[Attribute]]
+        dependencies=None,  # type: Optional[Union[Iterable[Attribute], Attribute]]
         deserialize_to=None,  # type: Optional[Attribute]
     ):
         # type: (...) -> None

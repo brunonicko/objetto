@@ -434,12 +434,12 @@ class SetObject(
 
     @final
     def _locate(self, child):
-        # type: (BaseObject) -> int
+        # type: (BaseObject) -> BaseObject
         """
         Locate child object.
 
         :param child: Child object.
-        :return: Location.
+        :return: Location (the child object itself).
         :raises ValueError: Could not locate child.
         """
         with self.app.__.read_context(self) as read:
@@ -450,12 +450,12 @@ class SetObject(
 
     @final
     def _locate_data(self, child):
-        # type: (BaseObject) -> int
+        # type: (BaseObject) -> BaseData
         """
         Locate child object's data.
 
         :param child: Child object.
-        :return: Data location.
+        :return: Data location (the child data itself).
         :raises ValueError: Could not locate child's data.
         """
         with self.app.__.read_context(self) as read:

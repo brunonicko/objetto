@@ -83,10 +83,7 @@ class DictData(
     @final
     def __init__(self, initial=()):
         # type: (Union[Mapping[KT, VT], Iterable[Tuple[KT, VT]]]) -> None
-        if type(initial) is type(self):
-            self._init_state(getattr(initial, "_state"))
-        else:
-            self._init_state(self.__get_initial_state(dict(initial)))
+        self._init_state(self.__get_initial_state(dict(initial)))
 
     @classmethod
     @final

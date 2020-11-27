@@ -52,7 +52,7 @@ if TYPE_CHECKING:
     )
 
     from ..utils.factoring import LazyFactory
-    from ..utils.type_checking import LazyTypes
+    from ..utils.type_checking import LazyTypes, LazyTypesTuple
 
 __all__ = [
     "make_auxiliary_cls",
@@ -407,7 +407,7 @@ class BaseRelationship(Base):
 
     @property
     def types(self):
-        # type: () -> LazyTypes
+        # type: () -> LazyTypesTuple
         """Types."""
         return self.__types
 
@@ -580,13 +580,13 @@ class BaseStructureMeta(BaseMeta):
 
         # Store unique descriptor.
         unique_descriptor_name = None  # type: Optional[str]
-        unique_descriptor = None  # type: Optional[UniqueDescriptor]
+        unique_descriptor_ = None  # type: Optional[UniqueDescriptor]
         if unique_descriptors:
-            unique_descriptor_name, unique_descriptor = next(
+            unique_descriptor_name, unique_descriptor_ = next(
                 iteritems(unique_descriptors)
             )
         type(cls).__unique_descriptor_name[cls] = unique_descriptor_name
-        type(cls).__unique_descriptor[cls] = unique_descriptor
+        type(cls).__unique_descriptor[cls] = unique_descriptor_
 
     @property
     @final

@@ -90,10 +90,7 @@ class SetData(
     @final
     def __init__(self, initial=()):
         # type: (Iterable[T]) -> None
-        if type(initial) is type(self):
-            self._init_state(getattr(initial, "_state"))
-        else:
-            self._init_state(self.__get_initial_state(initial))
+        self._init_state(self.__get_initial_state(initial))
 
     @classmethod
     @final

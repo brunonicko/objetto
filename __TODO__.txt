@@ -1,3 +1,4 @@
+# TODO: proper proxy mutable methods
 # TODO: history object
 # TODO: history reaction conflict validation?
 # TODO: application root descriptors
