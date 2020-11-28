@@ -466,6 +466,10 @@ class BaseRelationship(Base):
         return (not self.types or not self.checked) and self.factory is None
 
 
+# noinspection PyTypeChecker
+_UD = TypeVar("_UD", bound="UniqueDescriptor")
+
+
 @final
 class UniqueDescriptor(Base):
     """
@@ -482,12 +486,17 @@ class UniqueDescriptor(Base):
 
     @overload
     def __get__(self, instance, owner):
-        # type: (None, Type[BaseStructure]) -> UniqueDescriptor
+        # type: (_UD, None, Type[BaseStructure]) -> _UD
         pass
 
     @overload
     def __get__(self, instance, owner):
         # type: (BaseStructure, Type[BaseStructure]) -> int
+        pass
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (_UD, object, type) -> _UD
         pass
 
     def __get__(self, instance, owner):

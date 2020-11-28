@@ -295,6 +295,11 @@ class BaseReaction(Base):
         # type: (BaseObject, Type[BaseObject]) -> Callable[[Action, Phase], None]
         pass
 
+    @overload
+    def __get__(self, instance, owner):
+        # type: (_BR, object, type) -> _BR
+        pass
+
     @final
     def __get__(self, instance, owner):
         """
@@ -415,6 +420,10 @@ class BaseReaction(Base):
         return self._priority
 
 
+# noinspection PyTypeChecker
+_HD = TypeVar("_HD", bound="HistoryDescriptor")
+
+
 @final
 class HistoryDescriptor(Base):
     """
@@ -442,12 +451,17 @@ class HistoryDescriptor(Base):
 
     @overload
     def __get__(self, instance, owner):
-        # type: (None, Type[BaseObject]) -> HistoryDescriptor
+        # type: (_HD, None, Type[BaseObject]) -> _HD
         pass
 
     @overload
     def __get__(self, instance, owner):
         # type: (BaseObject, Type[BaseObject]) -> HistoryObject
+        pass
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (_HD, object, type) -> _HD
         pass
 
     def __get__(self, instance, owner):

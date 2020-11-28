@@ -77,6 +77,10 @@ class BaseAttributeMeta(BaseMeta):
         return BaseRelationship
 
 
+# noinspection PyTypeChecker
+_BA = TypeVar("_BA", bound="BaseAttribute")
+
+
 class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
     """
     Base attribute descriptor.
@@ -174,12 +178,17 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
 
     @overload
     def __get__(self, instance, owner):
-        # type: (None, Type[BaseAttributeStructure]) -> BaseAttribute[T]
+        # type: (_BA, None, Type[BaseAttributeStructure]) -> _BA
         pass
 
     @overload
     def __get__(self, instance, owner):
         # type: (BaseAttributeStructure, Type[BaseAttributeStructure]) -> T
+        pass
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (_BA, object, type) -> _BA
         pass
 
     def __get__(self, instance, owner):
