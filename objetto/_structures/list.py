@@ -2,7 +2,7 @@
 """List structures."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar
 
 try:
     import collections.abc as collections_abc
@@ -79,26 +79,6 @@ class BaseListStructure(
         :return: Reversed values iterator.
         """
         return reversed(self._state)
-
-    @overload
-    def __getitem__(self, index):
-        # type: (int) -> T
-        pass
-
-    @overload
-    def __getitem__(self, index):
-        # type: (slice) -> ListState[T]
-        pass
-
-    @final
-    def __getitem__(self, index):
-        """
-        Get value/values at index/from slice.
-
-        :param index: Index/slice.
-        :return: Value/values.
-        """
-        return self._state[index]
 
     @final
     def __len__(self):
@@ -202,9 +182,9 @@ class BaseInteractiveListStructure(
 
 # noinspection PyAbstractClass
 class BaseMutableListStructure(
+    BaseMutableList[T],
     BaseListStructure[T],
     BaseMutableAuxiliaryStructure[T],
-    BaseMutableList[T],
 ):
     """Base mutable list structure."""
 

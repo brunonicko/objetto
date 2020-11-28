@@ -555,7 +555,7 @@ class SetObject(
 
 # noinspection PyAbstractClass
 class MutableSetObject(
-    SetObject[T], BaseMutableAuxiliaryObject[T], BaseMutableSetStructure[T]
+    BaseMutableSetStructure[T], SetObject[T], BaseMutableAuxiliaryObject[T]
 ):
     """Mutable set object."""
 

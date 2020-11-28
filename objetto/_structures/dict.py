@@ -395,9 +395,9 @@ class BaseInteractiveDictStructure(
 
 # noinspection PyAbstractClass
 class BaseMutableDictStructure(
+    BaseMutableDict[KT, VT],
     BaseDictStructure[KT, VT],
     BaseMutableAuxiliaryStructure[KT],
-    BaseMutableDict[KT, VT],
 ):
     """Base mutable dictionary structure."""
 

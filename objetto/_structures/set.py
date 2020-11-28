@@ -205,9 +205,9 @@ class BaseInteractiveSetStructure(
 
 # noinspection PyAbstractClass
 class BaseMutableSetStructure(
+    BaseMutableSet[T],
     BaseSetStructure[T],
     BaseMutableAuxiliaryStructure[T],
-    BaseMutableSet[T],
 ):
     """Base mutable set structure."""
 

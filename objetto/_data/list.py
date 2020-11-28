@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """List data structures."""
 
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast, overload
 
 try:
     import collections.abc as collections_abc
@@ -24,7 +24,7 @@ from .bases import (
 )
 
 if TYPE_CHECKING:
-    from typing import Any, Iterable, List, Type, Union
+    from typing import Any, Iterable, List, Sequence, Type, Union
 
 
 __all__ = ["ListData", "InteractiveListData"]
@@ -79,6 +79,26 @@ class ListData(
     def __init__(self, initial=()):
         # type: (Iterable[T]) -> None
         self._init_state(self.__get_initial_state(initial))
+
+    @overload
+    def __getitem__(self, index):
+        # type: (int) -> T
+        pass
+
+    @overload
+    def __getitem__(self, index):
+        # type: (slice) -> Sequence[T]
+        pass
+
+    @final
+    def __getitem__(self, index):
+        """
+        Get value/values at index/from slice.
+
+        :param index: Index/slice.
+        :return: Value/values.
+        """
+        return self._state[index]
 
     @classmethod
     @final

@@ -40,7 +40,9 @@ if TYPE_CHECKING:
         Iterable,
         Iterator,
         List,
+        MutableSequence,
         Optional,
+        Sequence,
         Set,
         Tuple,
         Type,
@@ -559,6 +561,25 @@ class ListObject(
         super(ListObject, self).__init__(app=app)
         self.__functions__.insert(self, 0, initial)
 
+    @overload
+    def __getitem__(self, index):
+        # type: (int) -> T
+        pass
+
+    @overload
+    def __getitem__(self, index):
+        # type: (slice) -> Sequence[T]
+        pass
+
+    def __getitem__(self, index):  # FIXME: make final somehow?
+        """
+        Get value/values at index/from slice.
+
+        :param index: Index/slice.
+        :return: Value/values.
+        """
+        return self._state[index]
+
     @final
     def _clear(self):
         # type: (_LO) -> _LO
@@ -786,11 +807,34 @@ class ListObject(
 
 # noinspection PyAbstractClass
 class MutableListObject(
-    ListObject[T], BaseMutableAuxiliaryObject[T], BaseMutableListStructure[T]
+    BaseMutableListStructure[T], ListObject[T], BaseMutableAuxiliaryObject[T]
 ):
     """Mutable dictionary object."""
 
     __slots__ = ()
+
+    @overload
+    def __getitem__(self, index):
+        # type: (int) -> T
+        pass
+
+    @overload
+    def __getitem__(self, index):
+        # type: (slice) -> MutableSequence[T]
+        pass
+
+    @final
+    def __getitem__(self, index):
+        """
+        Get value/values at index/from slice.
+
+        :param index: Index/slice.
+        :return: Value/values.
+        """
+        if isinstance(index, slice):
+            return list(self._state[index])
+        else:
+            return self._state[index]
 
     @overload
     def __setitem__(self, index, value):
@@ -941,7 +985,7 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
 
     @overload
     def __getitem__(self, index):
-        # type: (slice) -> ListState[T]
+        # type: (slice) -> MutableSequence[T]
         pass
 
     def __getitem__(self, index):

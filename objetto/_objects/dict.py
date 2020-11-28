@@ -491,7 +491,7 @@ class DictObject(
 
 # noinspection PyAbstractClass
 class MutableDictObject(
-    DictObject[KT, VT], BaseMutableAuxiliaryObject[KT], BaseMutableDictStructure[KT, VT]
+    BaseMutableDictStructure[KT, VT], DictObject[KT, VT], BaseMutableAuxiliaryObject[KT]
 ):
     """Mutable dictionary object."""
 
