@@ -1593,13 +1593,13 @@ class BaseMutableList(
     @overload
     @abstractmethod
     def __getitem__(self, index):
-        # type: (int) -> T_co
+        # type: (int) -> T
         pass
 
     @overload
     @abstractmethod
     def __getitem__(self, index):
-        # type: (slice) -> MutableSequence[T_co]
+        # type: (slice) -> MutableSequence[T]
         pass
 
     @abstractmethod
