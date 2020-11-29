@@ -3,10 +3,10 @@
 
 from typing import TYPE_CHECKING
 
-from ._applications import BO, ApplicationRoot, Application
+from ._applications import BO, Application, ApplicationRoot
 
 if TYPE_CHECKING:
-    from typing import Type, Optional, Any
+    from typing import Any, Optional, Type
 
 __all__ = ["root", "Application"]
 

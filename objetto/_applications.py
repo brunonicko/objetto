@@ -5,15 +5,15 @@ from collections import Counter as ValueCounter
 from contextlib import contextmanager
 from copy import deepcopy
 from enum import Enum, unique
-from threading import RLock
 from inspect import getmro
+from threading import RLock
 from traceback import format_exception
-from typing import TYPE_CHECKING, TypeVar, Generic, cast, overload
+from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
 
-from six import iteritems, string_types, with_metaclass, itervalues
+from six import iteritems, itervalues, string_types, with_metaclass
 
-from ._bases import BaseMeta, Base, final
+from ._bases import Base, BaseMeta, final
 from ._changes import BaseChange
 from ._data import BaseData, DataAttribute, InteractiveDictData
 from ._states import BaseState, DictState
@@ -24,14 +24,16 @@ from .data import (
     data_list_attribute,
     data_set_attribute,
 )
+from .utils.custom_repr import custom_mapping_repr
+from .utils.recursive_repr import recursive_repr
 from .utils.reraise_context import ReraiseContext
 from .utils.subject_observer import Subject
 from .utils.type_checking import (
-    assert_is_callable, assert_is_instance, assert_is_subclass
+    assert_is_callable,
+    assert_is_instance,
+    assert_is_subclass,
 )
 from .utils.weak_reference import WeakReference
-from .utils.recursive_repr import recursive_repr
-from .utils.custom_repr import custom_mapping_repr
 
 if TYPE_CHECKING:
     from typing import (
@@ -361,6 +363,7 @@ class ApplicationRoot(Base, Generic[BO]):
     :raises ValueError: Used reserved keyword argument.
     :raises TypeError: Invalid object type.
     """
+
     __slots__ = ("__obj_type", "__priority", "__kwargs")
 
     def __init__(self, obj_type, priority=None, **kwargs):
