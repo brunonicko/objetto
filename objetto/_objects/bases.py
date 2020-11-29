@@ -568,19 +568,31 @@ class BaseObjectInternals(Base):
     :param app: Application.
     """
 
-    __slots__ = ("__obj_ref", "__app", "__subject")
+    __slots__ = ("__obj_ref", "__is_root", "__app", "__subject")
 
     def __init__(self, obj, app):
         # type: (BaseObject, Application) -> None
         self.__obj_ref = WeakReference(obj)
+        self.__is_root = False
         self.__app = app
         self.__subject = Subject()
+
+    def set_root(self):
+        # type: () -> None
+        """Set object as root."""
+        self.__is_root = True
 
     @property
     def obj_ref(self):
         # type: () -> WeakReference[BaseObject]
         """Weak reference to object."""
         return self.__obj_ref
+
+    @property
+    def is_root(self):
+        # type: () -> bool
+        """Whether object is root."""
+        return self.__is_root
 
     @property
     def app(self):
@@ -859,6 +871,13 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         """Parent object or None."""
         with self.app.__.read_context(self) as read:
             return read().parent_ref()
+
+    @property
+    @final
+    def _is_root(self):
+        # type: () -> bool
+        """Whether object is root."""
+        return self.__.is_root
 
     @property
     @final
@@ -1153,6 +1172,13 @@ class BaseProxyObject(BaseMutableCollection[T]):
         # type: () -> Optional[BaseObject]
         """Parent object or None."""
         return self._obj._parent
+
+    @property
+    @final
+    def _is_root(self):
+        # type: () -> bool
+        """Whether object is root."""
+        return self._obj._is_root
 
     @property
     @final

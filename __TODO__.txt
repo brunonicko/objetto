@@ -1,5 +1,4 @@
 # TODO
-# TODO: application root descriptors
 # TODO: custom exceptions?
 # TODO: missing docstrings
 # TODO: mypy
@@ -11,6 +10,7 @@
 # TODO: release to pypi!
 
 # DONE
+# application root descriptors
 # make '__getitem__' in list object semi-final somehow
 # proper proxy mutable methods
 # history reaction conflict validation

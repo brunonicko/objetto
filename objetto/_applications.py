@@ -6,16 +6,17 @@ from contextlib import contextmanager
 from copy import deepcopy
 from enum import Enum, unique
 from threading import RLock
+from inspect import getmro
 from traceback import format_exception
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeVar, Generic, cast, overload
 from weakref import WeakKeyDictionary
 
-from six import iteritems, string_types
+from six import iteritems, string_types, with_metaclass, itervalues
 
-from ._bases import Base, final
+from ._bases import BaseMeta, Base, final
 from ._changes import BaseChange
 from ._data import BaseData, DataAttribute, InteractiveDictData
-from ._states import BaseState
+from ._states import BaseState, DictState
 from .data import (
     Data,
     data_attribute,
@@ -25,8 +26,12 @@ from .data import (
 )
 from .utils.reraise_context import ReraiseContext
 from .utils.subject_observer import Subject
-from .utils.type_checking import assert_is_callable, assert_is_instance
+from .utils.type_checking import (
+    assert_is_callable, assert_is_instance, assert_is_subclass
+)
 from .utils.weak_reference import WeakReference
+from .utils.recursive_repr import recursive_repr
+from .utils.custom_repr import custom_mapping_repr
 
 if TYPE_CHECKING:
     from typing import (
@@ -38,6 +43,7 @@ if TYPE_CHECKING:
         Iterator,
         List,
         Mapping,
+        MutableMapping,
         Optional,
         Set,
         Tuple,
@@ -61,7 +67,7 @@ if TYPE_CHECKING:
     ReadMetadataFunction = Callable[[], InteractiveDictData]
     UpdateMetadataFunction = Callable[[Mapping[str, Any]], None]
 
-__all__ = ["Phase", "Action", "Store", "Application"]
+__all__ = ["Phase", "Action", "Store", "BO", "ApplicationRoot", "Application"]
 
 
 @unique
@@ -337,6 +343,137 @@ class BatchCommit(Commit):
     """Batch phase."""
 
 
+# noinspection PyTypeChecker
+_AR = TypeVar("_AR", bound="ApplicationRoot")
+
+# noinspection PyTypeChecker
+BO = TypeVar("BO", bound="BaseObject")
+
+
+@final
+class ApplicationRoot(Base, Generic[BO]):
+    """
+    Describes a root object that gets initialized with the application.
+
+    :param obj_type: Object type.
+    :param priority: Initialization priority.
+    :param kwargs: Keyword arguments to be passed to object's '__init__'.
+    :raises ValueError: Used reserved keyword argument.
+    :raises TypeError: Invalid object type.
+    """
+    __slots__ = ("__obj_type", "__priority", "__kwargs")
+
+    def __init__(self, obj_type, priority=None, **kwargs):
+        # type: (Type[BO], Optional[int], Any) -> None
+
+        # Check kwargs for reserved keys.
+        if "app" in kwargs:
+            error = "can't use reserved keyword argument 'app'"
+            raise ValueError(error)
+
+        from ._objects import BaseObject
+
+        with ReraiseContext(TypeError, "'obj_type' parameter"):
+            assert_is_subclass(obj_type, BaseObject)
+        self.__obj_type = obj_type
+        self.__priority = priority
+        self.__kwargs = DictState(kwargs)
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (_AR, None, Type[Application]) -> _AR
+        pass
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (Application, Type[Application]) -> BO
+        pass
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (_AR, object, type) -> _AR
+        pass
+
+    def __get__(self, instance, owner):
+        """
+        Get attribute value when accessing from valid instance or this descriptor
+        otherwise.
+
+        :param instance: Instance.
+        :param owner: Owner class.
+        :return: Value or this descriptor.
+        """
+        if instance is not None and isinstance(instance, Application):
+            return instance.__.get_root_obj(self)
+        return self
+
+    def __hash__(self):
+        # type: () -> int
+        """
+        Get hash based on object id.
+
+        :return: Hash based on object id.
+        """
+        return hash(id(self))
+
+    def __eq__(self, other):
+        # type: (object) -> bool
+        """
+        Compare with another object for identity.
+
+        :param other: Another object.
+        :return: True if the same object.
+        """
+        return other is self
+
+    @recursive_repr
+    def __repr__(self):
+        # type: () -> str
+        """
+        Get representation.
+
+        :return: Representation.
+        """
+        return custom_mapping_repr(
+            self.to_dict(),
+            prefix="{}(".format(type(self).__name__),
+            template="{key}={value}",
+            suffix=")",
+            key_repr=str,
+        )
+
+    def to_dict(self):
+        # type: () -> Dict[str, Any]
+        """
+        Convert to dictionary.
+
+        :return: Dictionary.
+        """
+        return {
+            "obj_type": self.obj_type,
+            "priority": self.priority,
+            "kwargs": self.kwargs,
+        }
+
+    @property
+    def obj_type(self):
+        # type: () -> Type[BO]
+        """Object type."""
+        return self.__obj_type
+
+    @property
+    def priority(self):
+        # type: () -> Optional[int]
+        """Initialization priority."""
+        return self.__priority
+
+    @property
+    def kwargs(self):
+        # type: () -> DictState[str, Any]
+        """Keyword arguments to be passed to object's '__init__'."""
+        return self.__kwargs
+
+
 class ApplicationInternals(Base):
     """Internals for :class:`Application`."""
 
@@ -350,7 +487,9 @@ class ApplicationInternals(Base):
         "__commits",
         "__reading",
         "__writing",
+        "__roots",
         "__subject",
+        "__roots",
     )
 
     def __init__(self, app):
@@ -364,6 +503,7 @@ class ApplicationInternals(Base):
         self.__commits = []  # type: List[Commit]
         self.__reading = []  # type: List[Optional[BaseObject]]
         self.__writing = []  # type: List[Optional[BaseObject]]
+        self.__roots = {}  # type: Dict[ApplicationRoot, BaseObject]
         self.__subject = Subject()
 
     def __deepcopy__(self, memo=None):
@@ -457,6 +597,7 @@ class ApplicationInternals(Base):
         :param hierarchy: Cached hierarchy.
         :param child_counter: Child object counter.
         :raises ValueError: Can't have history objects as children of other objects.
+        :raises ValueError: Can't have root objects as children of other objects.
         :raises ValueError: Can't change parent while object's hierarchy is locked.
         :raises ValueError: Can't change parent while object is initializing.
         :raises ValueError: Object is already parented.
@@ -476,6 +617,11 @@ class ApplicationInternals(Base):
                             "can't have '{}' objects as children of other objects"
                         ).format(self.__history_cls.__fullname__)
                         raise ValueError(error)
+                if child.__.is_root:
+                    error = "'{}' object is a root and can't be parented".format(
+                        type(child).__fullname__
+                    )
+                    raise ValueError(error)
                 if self.__busy_hierarchy.get(child):
                     error = (
                         "can't change parent for {} while its hierarchy is locked"
@@ -1143,8 +1289,79 @@ class ApplicationInternals(Base):
                     raise
                 e.callback()
 
+    def init_root_objs(self):
+        # type: () -> None
+        """Initialize root objects."""
+        app = self.__app_ref()
+        assert app is not None
+        assert not self.__roots
+        roots = type(app)._roots
+        if roots:
+            with self.write_context():
+                sorted_roots = sorted(
+                    itervalues(roots), key=lambda r: (r.priority is None, r.priority)
+                )
+                for root in sorted_roots:
+                    root_obj = root.obj_type(app, **root.kwargs)
+                    self.__roots[root] = root_obj
+                    root_obj.__.set_root()
 
-class Application(Base):
+    def get_root_obj(self, root):
+        # type: (ApplicationRoot) -> BaseObject
+        """
+        Get root object.
+
+        :param root: Application root descriptor.
+        :return: Root object.
+        """
+        return self.__roots[root]
+
+
+class ApplicationMeta(BaseMeta):
+    """Metaclass for :class:`Application`."""
+
+    __roots = WeakKeyDictionary(
+        {}
+    )  # type: MutableMapping[ApplicationMeta, Mapping[str, ApplicationRoot]]
+    __root_names = WeakKeyDictionary(
+        {}
+    )  # type: MutableMapping[ApplicationMeta, Mapping[ApplicationRoot, str]]
+
+    def __init__(cls, name, bases, dct):
+        # type: (str, Tuple[Type, ...], Dict[str, Any]) -> None
+        super(ApplicationMeta, cls).__init__(name, bases, dct)
+
+        # Store roots.
+        roots = {}
+        for base in reversed(getmro(cls)):
+            for member_name, member in iteritems(base.__dict__):
+                if isinstance(member, ApplicationRoot):
+                    roots[member_name] = member
+                elif member_name in roots:
+                    del roots[member_name]
+
+        # Store root names.
+        root_names = {}
+        for root_name, root in iteritems(roots):
+            root_names[root] = root_name
+
+        type(cls).__roots[cls] = DictState(roots)
+        type(cls).__root_names[cls] = DictState(root_names)
+
+    @property
+    def _roots(cls):
+        # type: () -> Mapping[str, ApplicationRoot]
+        """Attributes mapped by name."""
+        return type(cls).__roots[cls]
+
+    @property
+    def _root_names(cls):
+        # type: () -> Mapping[Any, str]
+        """Names mapped by root."""
+        return type(cls).__root_names[cls]
+
+
+class Application(with_metaclass(ApplicationMeta, Base)):
     """
     Application.
 
@@ -1158,6 +1375,7 @@ class Application(Base):
 
     def __init__(self):
         self.__ = ApplicationInternals(self)
+        self.__.init_root_objs()
 
     @final
     @contextmanager

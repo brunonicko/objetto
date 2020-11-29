@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from .applications import Application
+from .applications import Application, root
 from .objects import (
     Object,
     attribute,
@@ -23,6 +23,7 @@ from .reactions import reaction
 
 __all__ = [
     "Application",
+    "root",
     "Object",
     "unique_descriptor",
     "history_descriptor",
