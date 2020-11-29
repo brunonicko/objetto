@@ -1,5 +1,4 @@
 # TODO
-# TODO: disable 'data' by default in objects?
 # TODO: custom exceptions?
 # TODO: missing docstrings
 # TODO: mypy
