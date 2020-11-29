@@ -33,7 +33,7 @@ from ..utils.custom_repr import custom_mapping_repr
 from ..utils.recursive_repr import recursive_repr
 from ..utils.reraise_context import ReraiseContext
 from ..utils.subject_observer import Subject
-from ..utils.type_checking import assert_is_instance, import_types
+from ..utils.type_checking import assert_is_instance, import_types, assert_is_subclass
 from ..utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
@@ -973,22 +973,45 @@ class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryStructureMeta):
         # type: () -> Type[BaseAuxiliaryData]
         """Data type."""
         mcs = type(cls)
+
+        # Try to get cached data type.
         cls_ = cast("Type[BaseAuxiliaryObject]", cls)
         try:
             data_type = mcs.__data_type[cls]
         except KeyError:
-            data_relationship = cls_._relationship.data_relationship
-            if data_relationship is None:
-                data_type = mcs.__data_type[cls] = cls._base_auxiliary_data_type
+            user_data_type = None
+            user_data_type_owner = None
+            for base in reversed(getmro(cls)):
+                if "Data" in base.__dict__:
+                    user_data_type = base.__dict__["Data"]
+                    user_data_type_owner = base
+
+            # User-defined data type.
+            if user_data_type is not None:
+                assert user_data_type_owner is not None
+                with ReraiseContext(
+                    TypeError, "custom 'Data' class member defined in '{}'".format(
+                        user_data_type_owner.__name__
+                    )
+                ):
+                    assert_is_subclass(user_data_type, cls._base_auxiliary_data_type)
+                mcs.__data_type[cls] = data_type = user_data_type
+
+            # Automatically defined data type.
             else:
-                data_type = mcs.__data_type[cls] = make_auxiliary_cls(
-                    cls._base_auxiliary_data_type,
-                    data_relationship,
-                    qual_name="{}.{}".format(cls.__fullname__, "Data"),
-                    module=cls.__module__,
-                    unique_descriptor_name=cls._unique_descriptor_name,
-                    dct=cls_.__functions__.make_data_cls_dct(cls_),
-                )
+                data_relationship = cls_._relationship.data_relationship
+                if data_relationship is None:
+                    data_type = mcs.__data_type[cls] = cls._base_auxiliary_data_type
+                else:
+                    data_type = mcs.__data_type[cls] = make_auxiliary_cls(
+                        cls._base_auxiliary_data_type,
+                        data_relationship,
+                        qual_name="{}.{}".format(cls.__fullname__, "Data"),
+                        module=cls.__module__,
+                        unique_descriptor_name=cls._unique_descriptor_name,
+                        dct=cls_.__functions__.make_data_cls_dct(cls_),
+                    )
+
         return data_type
 
 

@@ -4,6 +4,7 @@
 from collections import Counter as ValueCounter
 from contextlib import contextmanager
 from itertools import chain
+from inspect import getmro
 from typing import TYPE_CHECKING, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
 
@@ -26,7 +27,9 @@ from .._structures import (
     BaseMutableAttributeStructure,
 )
 from ..utils.reraise_context import ReraiseContext
-from ..utils.type_checking import assert_is_callable, assert_is_instance
+from ..utils.type_checking import (
+    assert_is_callable, assert_is_instance, assert_is_subclass
+)
 from ..utils.weak_reference import WeakReference
 from .bases import (
     DELETED,
@@ -718,8 +721,6 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
         # type: (str, Tuple[Type, ...], Dict[str, Any]) -> None
         super(ObjectMeta, cls).__init__(name, bases, dct)
 
-        # TODO: prevent attributes/methods with reserved names
-
         # Check and gather attribute dependencies.
         dependencies = dict(
             (n, SetState()) for n in cls._attributes
@@ -844,32 +845,52 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
         try:
             data_type = mcs.__data_type[cls]
         except KeyError:
+            user_data_type = None
+            user_data_type_owner = None
+            for base in reversed(getmro(cls)):
+                if "Data" in base.__dict__:
+                    user_data_type = base.__dict__["Data"]
+                    user_data_type_owner = base
 
-            # Build data attributes.
-            attributes = {}
-            for attribute_name, attribute in iteritems(cls._attributes):
-                if attribute.relationship.data:
-                    data_attribute = attribute.data_attribute
-                    if data_attribute is None:
-                        continue
-                    attributes[attribute_name] = data_attribute
+            # User-defined data type.
+            if user_data_type is not None:
+                assert user_data_type_owner is not None
+                with ReraiseContext(
+                    TypeError, "custom 'Data' class member defined in '{}'".format(
+                        user_data_type_owner.__name__
+                    )
+                ):
+                    assert_is_subclass(user_data_type, Data)
+                mcs.__data_type[cls] = data_type = user_data_type
 
-            # Prepare dct.
-            dct = {}  # type: Dict[str, Any]
-            dct.update(cls._data_methods)
-            dct.update(attributes)
-            if cls._unique_descriptor is not None:
-                assert cls._unique_descriptor_name is not None
-                dct[cls._unique_descriptor_name] = cls._unique_descriptor
+            # Automatically defined data type.
+            else:
 
-            # Build data type and cache it.
-            data_type = make_base_cls(
-                base=Data,
-                qual_name="{}.{}".format(cls.__fullname__, "Data"),
-                module=cls.__module__,
-                dct=dct,
-            )
-            mcs.__data_type[cls] = data_type
+                # Build data attributes.
+                attributes = {}
+                for attribute_name, attribute in iteritems(cls._attributes):
+                    if attribute.relationship.data:
+                        data_attribute = attribute.data_attribute
+                        if data_attribute is None:
+                            continue
+                        attributes[attribute_name] = data_attribute
+
+                # Prepare dct.
+                dct = {}  # type: Dict[str, Any]
+                dct.update(cls._data_methods)
+                dct.update(attributes)
+                if cls._unique_descriptor is not None:
+                    assert cls._unique_descriptor_name is not None
+                    dct[cls._unique_descriptor_name] = cls._unique_descriptor
+
+                # Build data type and cache it.
+                data_type = make_base_cls(
+                    base=Data,
+                    qual_name="{}.{}".format(cls.__fullname__, "Data"),
+                    module=cls.__module__,
+                    dct=dct,
+                )
+                mcs.__data_type[cls] = data_type
 
         return data_type
 

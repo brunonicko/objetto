@@ -304,6 +304,18 @@ def assert_is_subclass(cls, types, subtypes=True):
     :raises ValueError: No types were provided.
     :raises TypeError: Class is not a subclass of provided types.
     """
+    if not is_instance(cls, type):
+        types = flatten_types(types)
+        error = "got instance of '{}', expected {}{}{}".format(
+            type(cls).__name__,
+            "one of " if len(types) > 1 else "class ",
+            ", ".join("'{}'".format(name) for name in get_type_names(types)),
+            " or any of {} subclasses".format("their" if len(types) > 1 else "its")
+            if subtypes
+            else " (subclasses are not accepted)",
+        )
+        raise TypeError(error)
+
     if not is_subclass(cls, types, subtypes=subtypes):
         types = flatten_types(types)
         if not types:
