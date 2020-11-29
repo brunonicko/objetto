@@ -513,6 +513,22 @@ type.__setattr__(cast(type, ListObjectFunctions), FINAL_METHOD_TAG, True)
 class ListObjectMeta(BaseAuxiliaryObjectMeta, BaseListStructureMeta):
     """Metaclass for :class:`ListObject`."""
 
+    def __init__(cls, name, bases, dct):
+        # type: (str, Tuple[Type, ...], Dict[str, Any]) -> None
+        super(ListObjectMeta, cls).__init__(name, bases, dct)
+
+        # Prevent subclasses from overriding '__getitem__'.
+        if "__getitem__" in dct:
+            allowed_classes = set()
+            try:
+                allowed_classes.add(ListObject)
+                allowed_classes.add(MutableListObject)
+            except NameError:
+                pass
+            if len(allowed_classes) == 2 and cls not in allowed_classes:
+                error = "can't override final member '__getitem__'"
+                raise TypeError(error)
+
     @property
     @final
     def _state_factory(cls):
@@ -571,7 +587,8 @@ class ListObject(
         # type: (slice) -> Sequence[T]
         pass
 
-    def __getitem__(self, index):  # FIXME: make final somehow?
+    # @final (special case, taken care of by the metaclass)
+    def __getitem__(self, index):
         """
         Get value/values at index/from slice.
 

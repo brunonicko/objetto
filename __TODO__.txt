@@ -1,5 +1,4 @@
 # TODO
-# TODO: make '__getitem__' in list object semi-final somehow?
 # TODO: application root descriptors
 # TODO: custom exceptions?
 # TODO: missing docstrings
@@ -12,6 +11,7 @@
 # TODO: release to pypi!
 
 # DONE
+# make '__getitem__' in list object semi-final somehow
 # proper proxy mutable methods
 # history reaction conflict validation
 # history object
