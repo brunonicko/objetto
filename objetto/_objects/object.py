@@ -1250,6 +1250,10 @@ class IntermediaryObjectInternals(Base):
         :raises AttributeError: Attribute is not deletable.
         """
 
+        if value is DELETED:
+            self.delete_value(name)
+            return
+
         if self.__in_getter is not None:
             error = "can't set attributes while running getter delegate"
             raise AttributeError(error)

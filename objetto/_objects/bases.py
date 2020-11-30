@@ -78,7 +78,10 @@ __all__ = [
 T = TypeVar("T")  # Any type.
 
 DELETED = object()
-"""Special marker that represents a deleted value."""
+"""
+Special marker that represents a deleted value.
+Can be used when updating :class:`Object` attributes or :class:`DictObject` values. 
+"""
 
 UNIQUE_ATTRIBUTES_METADATA_KEY = "unique_attributes"
 """Unique attributes index cache metadata key."""

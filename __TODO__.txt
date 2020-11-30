@@ -1,5 +1,4 @@
 # TODO
-# TODO: action public module?
 # TODO: bases public module
 # TODO: tests
 # TODO: documentation
