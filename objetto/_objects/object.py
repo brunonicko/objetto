@@ -3,8 +3,8 @@
 
 from collections import Counter as ValueCounter
 from contextlib import contextmanager
-from itertools import chain
 from inspect import getmro
+from itertools import chain
 from typing import TYPE_CHECKING, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
 
@@ -28,7 +28,9 @@ from .._structures import (
 )
 from ..utils.reraise_context import ReraiseContext
 from ..utils.type_checking import (
-    assert_is_callable, assert_is_instance, assert_is_subclass
+    assert_is_callable,
+    assert_is_instance,
+    assert_is_subclass,
 )
 from ..utils.weak_reference import WeakReference
 from .bases import (
@@ -856,9 +858,10 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
             if user_data_type is not None:
                 assert user_data_type_owner is not None
                 with ReraiseContext(
-                    TypeError, "custom 'Data' class member defined in '{}'".format(
+                    TypeError,
+                    "custom 'Data' class member defined in '{}'".format(
                         user_data_type_owner.__name__
-                    )
+                    ),
                 ):
                     assert_is_subclass(user_data_type, Data)
                 mcs.__data_type[cls] = data_type = user_data_type

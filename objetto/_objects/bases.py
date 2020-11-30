@@ -33,7 +33,7 @@ from ..utils.custom_repr import custom_mapping_repr
 from ..utils.recursive_repr import recursive_repr
 from ..utils.reraise_context import ReraiseContext
 from ..utils.subject_observer import Subject
-from ..utils.type_checking import assert_is_instance, import_types, assert_is_subclass
+from ..utils.type_checking import assert_is_instance, assert_is_subclass, import_types
 from ..utils.weak_reference import WeakReference
 
 if TYPE_CHECKING:
@@ -990,9 +990,10 @@ class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryStructureMeta):
             if user_data_type is not None:
                 assert user_data_type_owner is not None
                 with ReraiseContext(
-                    TypeError, "custom 'Data' class member defined in '{}'".format(
+                    TypeError,
+                    "custom 'Data' class member defined in '{}'".format(
                         user_data_type_owner.__name__
-                    )
+                    ),
                 ):
                     assert_is_subclass(user_data_type, cls._base_auxiliary_data_type)
                 mcs.__data_type[cls] = data_type = user_data_type

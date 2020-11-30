@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
 """Base exceptions."""
 
-# TODO
+__all__ = ["BaseObjettoException"]
+
+
+class BaseObjettoException(Exception):
+    """Base `Objetto` exception."""

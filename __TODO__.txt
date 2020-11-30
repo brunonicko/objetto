@@ -1,8 +1,8 @@
 # TODO
-# TODO: custom exceptions?
 # TODO: missing docstrings
 # TODO: mypy
 # TODO: action public module?
+# TODO: bases public module
 # TODO: tests
 # TODO: documentation
 # TODO: squash commits, merge branch
@@ -10,6 +10,7 @@
 # TODO: release to pypi!
 
 # DONE
+# custom exceptions
 # support for custom data classes in objects
 # application root descriptors
 # make '__getitem__' in list object semi-final somehow

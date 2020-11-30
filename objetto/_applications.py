@@ -16,6 +16,7 @@ from six import iteritems, itervalues, string_types, with_metaclass
 from ._bases import Base, BaseMeta, final
 from ._changes import BaseChange
 from ._data import BaseData, DataAttribute, InteractiveDictData
+from ._exceptions import BaseObjettoException
 from ._states import BaseState, DictState
 from .data import (
     Data,
@@ -69,7 +70,16 @@ if TYPE_CHECKING:
     ReadMetadataFunction = Callable[[], InteractiveDictData]
     UpdateMetadataFunction = Callable[[Mapping[str, Any]], None]
 
-__all__ = ["Phase", "Action", "Store", "BO", "ApplicationRoot", "Application"]
+__all__ = [
+    "ObserversFailedError",
+    "RejectChangeException",
+    "Phase",
+    "Action",
+    "Store",
+    "BO",
+    "ApplicationRoot",
+    "Application",
+]
 
 
 @unique
@@ -83,9 +93,9 @@ class Phase(Enum):
     """After the changes."""
 
 
-class ObserversFailedError(Exception):
+class ObserversFailedError(BaseObjettoException):
     """
-    Observers fail to receive payload.
+    Observers failed to receive payload.
 
     :param exception_infos: Observer exception infos.
     """
@@ -123,9 +133,10 @@ class ObserversFailedError(Exception):
         return self.__exception_infos
 
 
-class RejectChangeException(Exception):
+class RejectChangeException(BaseObjettoException):
     """
-    Reject change exception.
+    Exception to be raised from within a reaction. This will cause the change to be
+    reverted and and the custom callback function to run after that.
 
     :param change: Change to reject.
     :param callback: Callback to run after change is rewound.
@@ -162,7 +173,7 @@ class RejectChangeException(Exception):
         return self.__callback
 
 
-class TemporaryContextException(Exception):
+class TemporaryContextException(BaseObjettoException):
     """Temporary write context exception."""
 
 

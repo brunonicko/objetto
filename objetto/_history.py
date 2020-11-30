@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from ._bases import final
 from ._changes import BaseAtomicChange, Batch
+from ._exceptions import BaseObjettoException
 from .factories import Integer
 from .objects import (
     Object,
@@ -44,11 +45,11 @@ if TYPE_CHECKING:
     PSA = Attribute[ProxySetObject[T]]
     CT = Union[BaseAtomicChange, "BatchChanges"]
 
-__all__ = ["HistoryObject"]
+__all__ = ["HistoryError", "HistoryObject"]
 
 
-class HistoryError(Exception):
-    pass
+class HistoryError(BaseObjettoException):
+    """History failed to execute."""
 
 
 # noinspection PyAbstractClass
