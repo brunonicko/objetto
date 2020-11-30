@@ -29,7 +29,7 @@ mutable structures referred to as `Objects <Object_>`_.
   - `Objects <Object_>`_ can perform `Reactions <Reaction>`_ in response to `Actions
     <Action>`_ received from themselves, their children, and grandchildren.
   - `Objects <Object_>`_ can be observed by external `Observers <Observer>`_ such as GUI
-    widgets or even other `Objects <Object_>`_ in a different `Application`_.
+    widgets.
   - `Objects <Object_>`_ feature built-in human-readable `Serialization`_ and
     `Deserialization`_ capabilities.
   - `Objects <Object_>`_ can be automatically tracked by a `History`_, which allows for
@@ -47,7 +47,7 @@ other as regular values and can never be part of the same `Hierarchy`_.
 
 .. code:: python
 
-    >>> from objetto.applications import Application
+    >>> from objetto import Application
 
     >>> app = Application()  # instantiate a new application
 
@@ -60,7 +60,7 @@ not to be modified.
 
 .. code:: python
 
-    >>> from objetto.applications import Application
+    >>> from objetto import Application
 
     >>> app = Application()
     >>> with app.read_context():
@@ -83,20 +83,24 @@ context was entered, and external `Observers <Observer>`_ will not receive `Acti
 
 .. code:: python
 
-    >>> from objetto.applications import Application
+    >>> from objetto import Application
 
     >>> app = Application()
     >>> with app.write_context():
     >>>     pass  # send actions to external observers only at the end, revert if errors
+
+Roots
+*****
+TODO
 
 Object
 ------
 `Objects <Object_>`_ are the building blocks of an `Application`_. An `Object`_ is
 mutable, has state, and can be a parent and/or a child of another `Object`_.
 
-The class `objetto.objects.Object` is the most important `Object`_ class, and the one
-we will probably be dealing with the most. It is curated by `Attributes <Attribute>`_
-defined in subclasses.
+The class `objetto.Object` is the most important `Object`_ class, and the one we will
+probably be dealing with the most. It is curated by `Attributes <Attribute>`_ defined
+in subclasses.
 
 To define our own `Object`_, we have to inherit from `objetto.objects.Object` and use
 `Attributes <Attribute>`_ to define its schema. You need to instantiate it with an
@@ -106,9 +110,7 @@ To define our own `Object`_, we have to inherit from `objetto.objects.Object` an
 
 .. code:: python
 
-    >>> from objetto.applications import Application
-    >>> from objetto.objects import Object
-    >>> from objetto.attributes import attribute
+    >>> from objetto import Application, Object, attribute
 
     >>> class Hobby(Object):  # inherit from objetto.objects.Object
     ...     description = attribute(str)  # example attribute called 'description'
@@ -130,29 +132,29 @@ Attributes <Auxiliary Attribute>`_ to contain multiple values in different ways:
   - `ListObject`
   - `DictObject`
   - `SetObject`
-  - `InteractiveListObject`
-  - `InteractiveDictObject`
-  - `InteractiveSetObject`
+  - `MutableListObject`
+  - `MutableDictObject`
+  - `MutableSetObject`
 
-The interactive versions of `Auxiliary Objects <Auxiliary Object>`_ expose the mutable
-methods as public, whereas the non-interactive ones have them as protected (their names
+The mutable versions of `Auxiliary Objects <Auxiliary Object>`_ expose the mutable
+methods as public, whereas the non-mutable ones have them as protected (their names
 start with an underscore).
 
-When subclassing, the `Auxiliary Object`_ schema is defined by a single `Relationship`
-assigned to the class variable `_relationship`.
+When subclassing, the `Auxiliary Object`_ schema is defined by a `Relationship` assigned
+to the class variable `_relationship`.
 
-**Example**: Make a subclass of `InteractiveListObject` with a custom `Relationship`.
+**Example**: Make a subclass of `MutableListObject` with a custom `Relationship`.
 
 .. code:: python
 
-    >>> from objetto.applications import Application
-    >>> from objetto.objects import Object, InteractiveListObject, Relationship
+    >>> from objetto import Application
+    >>> from objetto.objects import MutableListObject, Relationship
     >>> from objetto.attributes import attribute
 
     >>> class Hobby(Object):
     ...     description = attribute(str)
     ...
-    >>> class HobbiesList(InteractiveListObject):  # inherit from InteractiveListObject
+    >>> class HobbiesList(MutableListObject):  # inherit from MutableListObject
     ...     _relationship = Relationship(Hobby)  # define relationship with value type
     ...
     >>> app = Application()
@@ -167,8 +169,8 @@ An `Object`_ can enter a `Batch Context`_, which will group multiple `Changes <C
 happening to itself and/or to other `Objects <Object>`_ into one single entry in the
 associated `History`_.
 
-A special `Action`_ carrying the provided `Batch Change`_ will be sent when entering
-(`PRE` `Phase`_) and when exiting the context (`POST` `Phase`_).
+A special `Action`_ carrying the provided `Batch Change`_ and its metadata will be sent
+when entering (`PRE` `Phase`_) and when exiting the batch context (`POST` `Phase`_).
 
 **Example**: Enter a `Batch Context`_.
 
@@ -177,7 +179,7 @@ A special `Action`_ carrying the provided `Batch Change`_ will be sent when ente
     >>> from objetto.applications import Application
     >>> from objetto.objects import Object, history_descriptor
     >>> from objetto.attributes import attribute
-    >>> from objetto.changes import BatchChange
+    >>> from objetto.changes import Change
 
     >>> class Hobby(Object):
     ...     description = attribute(str)
@@ -188,7 +190,7 @@ A special `Action`_ carrying the provided `Batch Change`_ will be sent when ente
     ...     hobby = attribute(Hobby)  # history will propagate by default
     ...
     ...     def set_info(self, name, hobby_description):
-    ...         change = BatchChange(name="Set Person Info")  # custom 'change'
+    ...         change = Change(name="Set Person Info")  # custom 'change'
     ...         with self._batch_context(change):  # enter batch context, group changes
     ...             self.name = name  # single change
     ...             self.hobby.description = hobby_description  # single change

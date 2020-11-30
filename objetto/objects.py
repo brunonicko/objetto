@@ -49,6 +49,14 @@ if TYPE_CHECKING:
 
 __all__ = [
     "Object",
+    "DictObject",
+    "MutableDictObject",
+    "ListObject",
+    "MutableListObject",
+    "SetObject",
+    "MutableSetObject",
+    "Relationship",
+    "KeyRelationship",
     "data_method",
     "data_relationship",
     "unique_descriptor",
