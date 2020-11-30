@@ -35,6 +35,7 @@ __all__ = [
 ]
 
 
+# noinspection PyAbstractClass
 def reaction(
     func=None,  # type: Optional[Callable[[BaseObject, Action, Phase], None]]
     priority=None,  # type: Optional[int]

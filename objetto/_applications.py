@@ -990,6 +990,7 @@ class ApplicationInternals(Base):
         while parent is not None:
             self.__busy_hierarchy[parent] += 1
             hierarchy.append(parent)
+            # noinspection PyCallingNonCallable
             parent = self.__read(parent).parent_ref()
         try:
             yield hierarchy

@@ -240,6 +240,11 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
     @staticmethod
     def redo_update(change):
         # type: (DictUpdate) -> None
+        """
+        Redo update values.
+
+        :param change: Dictionary update changes.
+        """
         DictObjectFunctions.update(
             cast("DictObject", change.obj),
             change.new_values,
@@ -250,6 +255,11 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
     @staticmethod
     def undo_update(change):
         # type: (DictUpdate) -> None
+        """
+        Undo update values.
+
+        :param change: Dictionary update changes.
+        """
         DictObjectFunctions.update(
             cast("DictObject", change.obj),
             change.old_values,

@@ -84,6 +84,7 @@ class BatchChanges(Object):
         """
         with self.app.read_context():
             parts = []
+            # noinspection PyTypeChecker
             for change in self.changes:
                 if isinstance(change, BatchChanges):
                     parts.append(
@@ -102,12 +103,14 @@ class BatchChanges(Object):
     def __undo__(self, _):
         # type: (Any) -> None
         """Undo."""
+        # noinspection PyTypeChecker
         for change in reversed(self.changes):
             change.__undo__(change)
 
     def __redo__(self, _):
         # type: (Any) -> None
         """Redo."""
+        # noinspection PyTypeChecker
         for change in self.changes:
             change.__redo__(change)
 
@@ -208,6 +211,7 @@ class HistoryObject(Object):
                 while self.__index < len(self.changes) - 1:
                     self.redo()
 
+    # noinspection PyTypeChecker
     def redo(self):
         # type: () -> None
         """Redo."""
@@ -231,6 +235,7 @@ class HistoryObject(Object):
                 error = "can't redo any further"
                 raise HistoryError(error)
 
+    # noinspection PyTypeChecker
     def undo(self):
         # type: () -> None
         """Undo."""
@@ -268,6 +273,7 @@ class HistoryObject(Object):
                 raise HistoryError(error)
             if len(self.changes) > 1:
                 with self._batch_context("Flush"):
+                    # noinspection PyTypeChecker
                     self.__index = 0
                     del self.__changes[1:]
 
@@ -329,7 +335,7 @@ class HistoryObject(Object):
                     )
                     for part in change.format_changes().split("\n"):
                         parts.append("  {}".format(part))
-                else:
+                elif change is not None:
                     parts.append(
                         "{} ({}) <-".format(change.name, type(change.obj).__name__)
                         if self.index == i

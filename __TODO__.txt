@@ -1,6 +1,4 @@
 # TODO
-# TODO: missing docstrings
-# TODO: mypy
 # TODO: action public module?
 # TODO: bases public module
 # TODO: tests
@@ -10,6 +8,8 @@
 # TODO: release to pypi!
 
 # DONE
+# mypy
+# missing docstrings
 # custom exceptions
 # support for custom data classes in objects
 # application root descriptors

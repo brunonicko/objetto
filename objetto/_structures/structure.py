@@ -467,6 +467,7 @@ class BaseAttributeStructure(
             def __init__(self, auxiliary):
                 self.auxiliary = auxiliary
 
+            # noinspection PyCallingNonCallable
             def __repr__(self):
                 if isinstance(self.auxiliary, BaseDict):
                     return recursive_repr(custom_mapping_repr)(self.auxiliary)

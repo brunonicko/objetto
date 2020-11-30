@@ -85,6 +85,7 @@ if TYPE_CHECKING:
     ProxySetAttribute = Attribute[ProxySetObject[T]]
 
 
+# noinspection PyAbstractClass
 def data_method(func):
     # type: (Callable) -> Callable
     """
@@ -168,6 +169,7 @@ def data_relationship(
     )
 
 
+# noinspection PyAbstractClass
 def history_descriptor(size=None):
     # type: (Optional[int]) -> HistoryDescriptor
     """
