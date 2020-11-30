@@ -7,6 +7,7 @@
 # TODO: release to pypi!
 
 # DONE
+# external observer class
 # mypy
 # missing docstrings
 # custom exceptions

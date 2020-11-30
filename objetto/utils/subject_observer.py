@@ -7,11 +7,11 @@ Implementation of the `Subject-Observer Pattern
 from abc import abstractmethod
 from sys import exc_info
 from types import TracebackType
-from typing import TYPE_CHECKING, NamedTuple, Optional, Type
+from typing import TYPE_CHECKING, NamedTuple, Optional, Type, Tuple
 from weakref import WeakKeyDictionary, ref
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, MutableMapping, Set, Tuple
+    from typing import Any, Dict, List, MutableMapping, Set
 
 __all__ = ["Subject", "Observer", "ObserverToken", "ObserverExceptionInfo"]
 
@@ -97,6 +97,7 @@ class Subject(object):
                     exception_type, exception, traceback = exc_info()
                     exception_info = ObserverExceptionInfo(
                         observer=observer,
+                        payload=self.__payload,
                         exception_type=exception_type,
                         exception=exception,
                         traceback=traceback,
@@ -132,6 +133,7 @@ class Subject(object):
                 exception_type, exception, traceback = exc_info()
                 exception_info = ObserverExceptionInfo(
                     observer=observer,
+                    payload=self.__payload,
                     exception_type=exception_type,
                     exception=exception,
                     traceback=traceback,
@@ -331,6 +333,7 @@ class ObserverExceptionInfo(
         "ObserverExceptionInfo",
         (
             ("observer", Observer),
+            ("payload", Tuple),
             ("exception_type", Optional[Type[BaseException]]),
             ("exception", Optional[BaseException]),
             ("traceback", Optional[TracebackType]),

@@ -59,8 +59,10 @@ if TYPE_CHECKING:
     from ._history import HistoryObject
     from ._objects import BaseObject, Relationship
     from .utils.subject_observer import ObserverExceptionInfo
+    from ._observers import InternalObserver
 
     assert Relationship
+    assert InternalObserver
 
     ReadFunction = Callable[[], "Store"]
     WriteFunction = Callable[
@@ -105,10 +107,18 @@ class ObserversFailedError(BaseObjettoException):
         message = (
             (
                 message
-                + ":\n\n"
+                + "\n\n"
                 + "\n".join(
                     (
-                        "{}\n".format(exception_info.observer)
+                        (
+                            "Observer: {}\n"
+                            "Change: {}\n"
+                            "Phase: {}\n"
+                        ).format(
+                            exception_info.observer,
+                            type(exception_info.payload[0].change).__fullname__,
+                            exception_info.payload[1].name,
+                        )
                         + "".join(
                             format_exception(
                                 exception_info.exception_type,
@@ -949,31 +959,52 @@ class ApplicationInternals(Base):
             self.__commits = []
 
             exception_infos = []  # type: List[ObserverExceptionInfo]
+
+            def ingest_exception_infos(result):
+                # type: (Tuple[ObserverExceptionInfo, ...]) -> None
+                """
+                Ingest exception information.
+
+                :param result: Exception information from subject-observers.
+                """
+                for exception_info in result:
+                    internal_observer = cast(
+                        "InternalObserver",
+                        exception_info.observer
+                    )
+                    action_observer = internal_observer.action_observer_ref()
+                    if action_observer is not None:
+                        exception_info = exception_info._replace(
+                            observer=action_observer  # type: ignore
+                        )
+                        exception_infos.append(exception_info)
+
             for commit in commits:
                 if type(commit) is BatchCommit:
                     for action in commit.actions:
                         phase = commit.phase  # type: ignore
-                        exception_infos.extend(
+                        ingest_exception_infos(
                             action.receiver.__.subject.send(
                                 action, cast("Phase", phase)
                             )
                         )
                 else:
                     for action in commit.actions:
-                        exception_infos.extend(
+                        ingest_exception_infos(
                             action.receiver.__.subject.send(action, Phase.PRE)
                         )
 
                     self.__storage.update(commit.stores)
 
                     for action in commit.actions:
-                        exception_infos.extend(
+                        ingest_exception_infos(
                             action.receiver.__.subject.send(action, Phase.POST)
                         )
 
             if exception_infos:
                 raise ObserversFailedError(
-                    "external observers raised exceptions", tuple(exception_infos)
+                    "external observers raised exceptions (see tracebacks below)",
+                    tuple(exception_infos)
                 )
 
     @contextmanager

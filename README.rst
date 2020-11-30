@@ -22,10 +22,10 @@ mutable structures referred to as `Objects <Object_>`_.
   - `Objects <Object_>`_ are associated with an `Application`_ when initialized.
   - `Objects <Object_>`_ are part of a parent-children `Hierarchy`_ tree.
   - `Objects <Object_>`_ have their schema defined by `Attributes <Attribute>`_.
-  - `Objects <Object_>`_ encase an immutable 'mirror' version of themselves referred to
+  - `Objects <Object_>`_ encase an immutable subset version of themselves referred to
     as `Data`_.
-  - `Objects <Object_>`_ will send an `Action`_ for every `Change`_ that happens in
-    their state to themselves, their parent, and grandparents.
+  - `Objects <Object_>`_ will send an `Action`_ to themselves, their parent, and
+    grandparents everytime a `Change`_ happens.
   - `Objects <Object_>`_ can perform `Reactions <Reaction>`_ in response to `Actions
     <Action>`_ received from themselves, their children, and grandchildren.
   - `Objects <Object_>`_ can be observed by external `Observers <Observer>`_ such as GUI
