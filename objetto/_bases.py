@@ -120,7 +120,7 @@ def _final(obj):
     # type: (F) -> F
     """
     Decorator based on :func:`typing.final` that enables runtime checking for
-    :class:`Base` classes.
+    :class:`objetto.bases.Base` classes.
 
     .. code:: python
 
@@ -172,9 +172,10 @@ def simplify_member_names(names):
 def init_context(obj):
     # type: (Base) -> Iterator
     """
-    Context manager that sets the initializing tag for :class:`Base` objects.
+    Context manager that sets the initializing tag for :class:`objetto.bases.Base`
+    objects.
 
-    :param obj: Instance of :class:`Base`.
+    :param obj: Instance of :class:`objetto.bases.Base`.
     :return: Context manager.
     """
     previous = getattr(obj, INITIALIZING_TAG, False)
@@ -189,7 +190,8 @@ def init_context(obj):
 def init(func, *args, **kwargs):
     # type: (F, Any, Any) -> F
     """
-    Method decorator that sets the initializing tag for :class:`Base` objects.
+    Method decorator that sets the initializing tag for :class:`objetto.bases.Base`
+    objects.
 
     :param func: Method function.
     :return: Decorated method function.
@@ -213,7 +215,7 @@ def _make_base_cls(
 ):
     # type: (...) -> Type[_B]
     """
-    Make a subclass of :class:`Base` on the fly.
+    Make a subclass of :class:`objetto.bases.Base` on the fly.
 
     :param base: Base class.
     :param qual_name: Qualified name.
@@ -301,7 +303,7 @@ def _make_base_subclass_instance(
 ):
     # type: (...) -> _B
     """
-    Make an instance of a subclass of a generated :class:`Base`.
+    Make an instance of a subclass of a generated :class:`objetto.bases.Base`.
 
     :param cls: Base subclass.
     :param state: Pickled state.
@@ -322,7 +324,7 @@ def _make_base_instance(
 ):
     # type: (...) -> _B
     """
-    Make an instance of a subclass of :class:`Base` on the fly.
+    Make an instance of a subclass of :class:`objetto.bases.Base` on the fly.
 
     :param base: Base class.
     :param qual_name: Qualified name.
@@ -364,7 +366,7 @@ def make_base_cls(
 ):
     # type: (...) -> Type[_B]
     """
-    Make a subclass of :class:`Base` on the fly.
+    Make a subclass of :class:`objetto.bases.Base` on the fly.
 
     :param base: Base class.
     :param qual_name: Qualified name.
@@ -377,12 +379,12 @@ def make_base_cls(
 
 class BaseMeta(SlottedABCMeta):
     """
-    Metaclass for :class:`Base`.
+    Metaclass for :class:`objetto.bases.Base`.
 
       - Forces the use of `__slots__`.
       - Forces `__hash__` to be declared if `__eq__` was declared.
       - Decorates `__init__` methods to update the initializing tag.
-      - Prevents class attributes owned by :class:`BaseMeta` bases from being changed.
+      - Prevents base class attributes from changing.
       - Runtime checking for `final` decorated classes/methods.
     """
 
@@ -554,7 +556,7 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
       - Property that tells whether instance is initializing or not.
       - Default implementation of `__copy__` raises an error.
       - Default implementation of `__ne__` returns the opposite of `__eq__`.
-      - Prevents class attributes owned by :class:`BaseMeta` bases from being changed.
+      - Prevents base class attributes from changing.
       - Runtime checking for `final` decorated classes/methods.
       - Simplified `__dir__` result that shows only relevant members for client code.
     """

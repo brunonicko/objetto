@@ -874,7 +874,7 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         """
         Parent object or `None`.
 
-        :rtype: objetto.bases.BaseObject
+        :rtype: objetto.bases.BaseObject or None
         """
         with self.app.__.read_context(self) as read:
             return read().parent_ref()

@@ -1,14 +1,17 @@
 Objects
 =======
 
+.. autoclass:: objetto.Object
+   :members: _parent
+
+Attributes
+----------
+.. autofunction:: objetto.attribute
+.. autofunction:: objetto.dict_attribute
+.. autofunction:: objetto.list_attribute
+.. autofunction:: objetto.set_attribute
+
 Actions
 -------
 .. autoclass:: objetto.objects.Action
    :members:
-
-Attributes
-----------
-.. autofunction:: objetto.objects.attribute
-.. autofunction:: objetto.objects.dict_attribute
-.. autofunction:: objetto.objects.list_attribute
-.. autofunction:: objetto.objects.set_attribute
