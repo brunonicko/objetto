@@ -58,8 +58,8 @@ if TYPE_CHECKING:
     from ._data import InteractiveListData, InteractiveSetData
     from ._history import HistoryObject
     from ._objects import BaseObject, Relationship
-    from .utils.subject_observer import ObserverExceptionInfo
     from ._observers import InternalObserver
+    from .utils.subject_observer import ObserverExceptionInfo
 
     assert Relationship
     assert InternalObserver
@@ -110,11 +110,7 @@ class ObserversFailedError(BaseObjettoException):
                 + "\n\n"
                 + "\n".join(
                     (
-                        (
-                            "Observer: {}\n"
-                            "Change: {}\n"
-                            "Phase: {}\n"
-                        ).format(
+                        ("Observer: {}\n" "Change: {}\n" "Phase: {}\n").format(
                             exception_info.observer,
                             type(exception_info.payload[0].change).__fullname__,
                             exception_info.payload[1].name,
@@ -969,8 +965,7 @@ class ApplicationInternals(Base):
                 """
                 for exception_info in result:
                     internal_observer = cast(
-                        "InternalObserver",
-                        exception_info.observer
+                        "InternalObserver", exception_info.observer
                     )
                     action_observer = internal_observer.action_observer_ref()
                     if action_observer is not None:
@@ -1004,7 +999,7 @@ class ApplicationInternals(Base):
             if exception_infos:
                 raise ObserversFailedError(
                     "external observers raised exceptions (see tracebacks below)",
-                    tuple(exception_infos)
+                    tuple(exception_infos),
                 )
 
     @contextmanager

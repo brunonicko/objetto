@@ -7,7 +7,7 @@ Implementation of the `Subject-Observer Pattern
 from abc import abstractmethod
 from sys import exc_info
 from types import TracebackType
-from typing import TYPE_CHECKING, NamedTuple, Optional, Type, Tuple
+from typing import TYPE_CHECKING, NamedTuple, Optional, Tuple, Type
 from weakref import WeakKeyDictionary, ref
 
 if TYPE_CHECKING:

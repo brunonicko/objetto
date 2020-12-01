@@ -4,6 +4,7 @@ from .applications import Application, root
 from .objects import (
     Object,
     attribute,
+    constant_attribute,
     data_method,
     data_relationship,
     dict_attribute,
@@ -18,7 +19,6 @@ from .objects import (
     set_attribute,
     set_cls,
     unique_descriptor,
-    constant_attribute,
 )
 from .reactions import reaction
 

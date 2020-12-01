@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Constants."""
 
-from ._objects import DELETED
 from ._applications import Phase
+from ._objects import DELETED
 
 __all__ = ["DELETED", "PRE", "POST"]
 

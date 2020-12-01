@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 from weakref import ref
 
 from ._objects import BaseObject
+from .utils.reraise_context import ReraiseContext
 from .utils.subject_observer import Observer, ObserverToken
 from .utils.type_checking import assert_is_instance
-from .utils.reraise_context import ReraiseContext
 
 if TYPE_CHECKING:
     from typing import Any, Optional
 
-    from ._applications import Phase, Action
+    from ._applications import Action, Phase
 
 __all__ = ["ActionObserver"]
 
