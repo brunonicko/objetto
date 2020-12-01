@@ -26,6 +26,8 @@ from ._bases import (
     abstract_member,
     final,
 )
+from ._objects import Attribute
+from ._data import DataAttribute
 
 __all__ = [
     "final",

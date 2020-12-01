@@ -18,6 +18,7 @@ from .objects import (
     set_attribute,
     set_cls,
     unique_descriptor,
+    constant_attribute,
 )
 from .reactions import reaction
 
@@ -40,5 +41,6 @@ __all__ = [
     "dict_cls",
     "list_cls",
     "set_cls",
+    "constant_attribute",
     "reaction",
 ]

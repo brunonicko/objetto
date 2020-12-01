@@ -141,7 +141,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
             module = relationship.module
         else:
             with ReraiseContext(TypeError, "'module' parameter"):
-                assert_is_instance(module, string_types + (type(None),))
+                assert_is_instance(module, string_types + (None,))
             module = module or None
 
         # 'default' and 'default_factory'

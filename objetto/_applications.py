@@ -279,7 +279,7 @@ class Store(Data):
     """State."""
 
     data = data_attribute(
-        (BaseData, type(None)), subtypes=True, checked=False
+        (BaseData, None), subtypes=True, checked=False
     )  # type: DataAttribute[Optional[BaseData]]
     """Data."""
 
@@ -310,7 +310,7 @@ class Store(Data):
     """Weak reference to the last history object."""
 
     history = data_attribute(
-        (".._history|HistoryObject", type(None)), checked=False, default=None
+        (".._history|HistoryObject", None), checked=False, default=None
     )  # type: DataAttribute[HistoryObject]
     """History object."""
 

@@ -5,7 +5,7 @@ from abc import abstractmethod
 from re import compile as re_compile
 from re import match as re_match
 from re import sub as re_sub
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from six import string_types
 
@@ -15,6 +15,7 @@ from .utils.reraise_context import ReraiseContext
 from .utils.type_checking import assert_is_callable, assert_is_instance
 
 if TYPE_CHECKING:
+    from re import Pattern
     from typing import Any, Callable, Iterable, Optional, Tuple, Union
 
     from .utils.factoring import LazyFactory
@@ -240,7 +241,11 @@ class FloatingPoint(BaseFactory):
 
 
 class String(BaseFactory):
-    """String factory."""
+    """
+    String factory.
+
+    :param accepts_none: Whether accepts None.
+    """
 
     __slots__ = ("__accepts_none",)
 
@@ -259,22 +264,26 @@ class String(BaseFactory):
 
     @property
     def accepts_none(self):
+        # type: () -> bool
+        """Whether accepts None."""
         return self.__accepts_none
 
 
 class RegexMatch(String):
-    """Regex match check factory."""
+    """
+    Regex match check factory.
 
-    __slots__ = ("__pattern", "__compiled_pattern", "__accepts_none")
+    :param pattern: Regex pattern.
+    :param accepts_none: Whether accepts None.
+    """
+
+    __slots__ = ("__pattern", "__compiled_pattern")
 
     def __init__(self, pattern, accepts_none=False):
-        # type: (str, bool) -> None
+        # type: ("Union[str, bytes]", bool) -> None
         super(RegexMatch, self).__init__(accepts_none=accepts_none)
-        with ReraiseContext(TypeError, "'pattern' parameter"):
-            assert_is_instance(pattern, string_types)
-        self.__pattern = pattern
-        self.__compiled_pattern = re_compile(pattern)
-        self.__accepts_none = bool(accepts_none)
+        self.__pattern = cast("Union[str, bytes]", pattern)
+        self.__compiled_pattern = re_compile(pattern)  # type: Pattern
 
     def __call__(self, value, **kwargs):
         # type: (Any, Any) -> Any
@@ -283,17 +292,21 @@ class RegexMatch(String):
             return value
         if not re_match(self.compiled_pattern, value):
             error_msg = "'{}' does not match regex pattern '{}'".format(
-                value, self.pattern
+                value, str(self.pattern)
             )
             raise ValueError(error_msg)
         return value
 
     @property
     def pattern(self):
+        # type: () -> "Union[str, bytes]"
+        """Regex pattern."""
         return self.__pattern
 
     @property
     def compiled_pattern(self):
+        # type: () -> Pattern
+        """Compiled regex pattern."""
         return self.__compiled_pattern
 
 

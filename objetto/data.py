@@ -6,7 +6,11 @@ from typing import TYPE_CHECKING, TypeVar
 from ._bases import MISSING
 from ._data import DataAttribute, DataRelationship
 from ._data import InteractiveData as Data
-from ._data import InteractiveDictData, InteractiveListData, InteractiveSetData
+from ._data import (
+    InteractiveDictData,
+    InteractiveListData,
+    InteractiveSetData,
+)
 from ._structures import KeyRelationship, make_auxiliary_cls
 from .utils.caller_module import get_caller_module
 from .utils.reraise_context import ReraiseContext
@@ -18,6 +22,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "Data",
+    "DataAttribute",
     "data_attribute",
     "data_dict_attribute",
     "data_list_attribute",
@@ -25,6 +30,7 @@ __all__ = [
     "data_dict_cls",
     "data_list_cls",
     "data_set_cls",
+    "data_constant_attribute",
 ]
 
 
@@ -34,7 +40,7 @@ VT = TypeVar("VT")  # Any value type.
 
 
 if TYPE_CHECKING:
-    NT = Type[None]
+    NT = Union[Type[None], None]
 
 
 def data_attribute(
@@ -673,3 +679,59 @@ def data_set_cls(
         )
 
     return cls
+
+
+def data_constant_attribute(
+    value,  # type: T
+    serialized=False,  # type: bool
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=False,  # type: bool
+    compared=True,  # type: bool
+    finalized=False,  # type: bool
+    abstracted=False,  # type: bool
+):
+    # type: (...) -> DataAttribute[T]
+    """
+    Make constant data attribute.
+
+    :param value: Constant value.
+    :param serialized: Whether should be serialized.
+    :param serializer: Custom serializer.
+    :param deserializer: Custom deserializer.
+    :param represented: Whether should be represented.
+    :param compared: Whether the value should be leverage when comparing.
+    :param finalized: If True, attribute can't be overridden by subclasses.
+    :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :return: Constant data attribute.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'data_constant_attribute'"):
+        relationship = DataRelationship(
+            types=type(value),
+            subtypes=False,
+            checked=False,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            compared=compared,
+        )
+
+    # Make attribute.
+    with ReraiseContext((TypeError, ValueError), "defining 'data_constant_attribute'"):
+        attribute_ = DataAttribute(
+            relationship=relationship,
+            default=value,
+            default_factory=None,
+            required=False,
+            changeable=False,
+            deletable=False,
+            finalized=finalized,
+            abstracted=abstracted,
+        )  # type: DataAttribute[T]
+
+    return attribute_

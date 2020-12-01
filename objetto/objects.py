@@ -72,6 +72,7 @@ __all__ = [
     "dict_cls",
     "list_cls",
     "set_cls",
+    "constant_attribute",
 ]
 
 
@@ -81,7 +82,7 @@ VT = TypeVar("VT")  # Any value type.
 
 
 if TYPE_CHECKING:
-    NT = Type[None]
+    NT = Union[Type[None], None]
     MutableDictAttribute = Attribute[MutableDictObject[KT, VT]]
     MutableListAttribute = Attribute[MutableListObject[T]]
     MutableSetAttribute = Attribute[MutableSetObject[T]]
@@ -1483,3 +1484,62 @@ def set_cls(
         else:
             base = SetObject  # type: Type[SetObject[T]]
             return make_auxiliary_cls(base, **cls_kwargs)
+
+
+def constant_attribute(
+    value,  # type: T
+    serialized=False,  # type: bool
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=False,  # type: bool
+    data=True,  # type: bool
+    finalized=False,  # type: bool
+    abstracted=False,  # type: bool
+):
+    # type: (...) -> Attribute[T]
+    """
+    Make constant attribute.
+
+    :param value: Constant value.
+    :param serialized: Whether should be serialized.
+    :param serializer: Custom serializer.
+    :param deserializer: Custom deserializer.
+    :param represented: Whether should be represented.
+    :param data: Whether to generate data for the value.
+    :param finalized: If True, attribute can't be overridden by subclasses.
+    :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :return: Constant attribute.
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'constant_attribute'"):
+        relationship = Relationship(
+            types=type(value),
+            subtypes=False,
+            checked=False,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            child=True,
+            history=False,
+            data=data,
+            data_relationship=None,
+        )
+
+    # Make attribute.
+    with ReraiseContext((TypeError, ValueError), "defining 'constant_attribute'"):
+        attribute_ = Attribute(
+            relationship=relationship,
+            default=value,
+            default_factory=None,
+            required=False,
+            changeable=False,
+            deletable=False,
+            finalized=finalized,
+            abstracted=abstracted,
+        )  # type: Attribute[T]
+
+    return attribute_

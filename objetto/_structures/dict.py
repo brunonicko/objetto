@@ -82,7 +82,7 @@ class KeyRelationship(Base):
 
         # 'module'
         with ReraiseContext(TypeError, "'module' parameter"):
-            assert_is_instance(module, string_types + (type(None),))
+            assert_is_instance(module, string_types + (None,))
         module = module or None
 
         # 'types' and 'checked'

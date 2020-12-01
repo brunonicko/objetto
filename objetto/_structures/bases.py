@@ -145,17 +145,17 @@ def make_auxiliary_cls(
 
     # 'qual_name'
     with ReraiseContext(TypeError, "'qual_name' parameter"):
-        assert_is_instance(qual_name, string_types + (type(None),))
+        assert_is_instance(qual_name, string_types + (None,))
 
     # 'module'
     with ReraiseContext(TypeError, "'module' parameter"):
-        assert_is_instance(module, string_types + (type(None),))
+        assert_is_instance(module, string_types + (None,))
     module = module or None
 
     # Generate default name based on relationship types.
     if qual_name is None:
         type_names = get_type_names(
-            tuple(t for t in relationship.types if type(None) is not t)
+            tuple(t for t in relationship.types if t not in (type(None), None))
         )
         if not type_names:
             qual_name = base.__name__
@@ -244,7 +244,7 @@ class BaseRelationship(Base):
 
         # 'module'
         with ReraiseContext(TypeError, "'module' parameter"):
-            assert_is_instance(module, string_types + (type(None),))
+            assert_is_instance(module, string_types + (None,))
         module = module or None
 
         # 'types' and 'checked'

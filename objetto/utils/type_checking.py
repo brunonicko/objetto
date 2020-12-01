@@ -17,7 +17,7 @@ if TYPE_CHECKING:
     from typing import Any, Iterable, Optional, Tuple, Type, Union
 
     _LazyType = Union[Type, str]
-    LazyTypes = Union[_LazyType, Iterable[_LazyType]]
+    LazyTypes = Union[Optional[_LazyType], Iterable[Optional[_LazyType]]]
     LazyTypesTuple = Tuple[_LazyType, ...]
 else:
     LazyTypes = None
@@ -60,6 +60,8 @@ def format_types(types, module=None):
     :raises ValueError: Invalid type path/no module provided.
     :raises TypeError: Did not provide valid types.
     """
+    if types is None:
+        return (type(None),)
     if isinstance(types, type):
         return (types,)
     elif isinstance(types, string_types):
@@ -87,7 +89,8 @@ def get_type_names(types):
     :return: Type names.
     """
     return tuple(
-        t.split("|")[-1].split(".")[-1] if isinstance(t, string_types) else t.__name__
+        t.split("|")[-1].split(".")[-1] if isinstance(t, string_types) else
+        (t.__name__ if isinstance(t, type) else type(t).__name__)
         for t in flatten_types(types)
     )
 
@@ -110,7 +113,9 @@ def flatten_types(types):
     :return: Flattened types.
     :raises TypeError: Invalid types.
     """
-    if isinstance(types, (string_types, type)):
+    if types is None:
+        return (type(None),)
+    elif isinstance(types, (string_types, type)):
         return (types,)
     elif isinstance(types, collections_abc.Iterable):
         return tuple(chain.from_iterable(flatten_types(t) for t in types))

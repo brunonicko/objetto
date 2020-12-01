@@ -123,7 +123,7 @@ class HistoryObject(Object):
     __slots__ = ()
 
     size = attribute(
-        (int, type(None)),
+        (int, None),
         checked=False,
         default=None,
         factory=Integer(minimum=0, accepts_none=True),
@@ -152,7 +152,7 @@ class HistoryObject(Object):
     """The index of the current change."""
 
     __changes, changes = protected_list_attribute_pair(
-        (BaseAtomicChange, BatchChanges, type(None)),
+        (BaseAtomicChange, BatchChanges, None),
         subtypes=True,
         default=(None,),
     )  # type: PLA[Optional[CT]], LA[Optional[CT]]

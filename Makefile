@@ -10,6 +10,8 @@ environment:
 tests:
 	python -m pytest tests
 	python -m pytest objetto --doctest-modules
+	python -m pytest docs --doctest-glob="*.rst"
+	python -m pytest README.rst --doctest-glob="*.rst"
 mypy:
 	mypy objetto
 format:

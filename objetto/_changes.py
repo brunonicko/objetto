@@ -95,7 +95,7 @@ class BaseAtomicChange(BaseChange):
     """Objects adopting the history from the object being changed."""
 
     history = data_attribute(
-        (".._history|HistoryObject", type(None)),
+        (".._history|HistoryObject", None),
         subtypes=False,
         checked=False,
         finalized=True,
