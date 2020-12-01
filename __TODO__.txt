@@ -1,4 +1,5 @@
 # TODO
+# TODO: expose public constants from utils/etc
 # TODO: bases public module
 # TODO: tests
 # TODO: documentation
