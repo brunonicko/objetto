@@ -9,7 +9,7 @@ def test_send_payload():
         def __init__(self):
             self.payload = ()
 
-        def __receive__(self, *_payload):
+        def __observe__(self, *_payload):
             self.payload = payload
 
     subject = Subject()
@@ -44,7 +44,7 @@ def test_tokens():
             self.payload = ()
             self.index = index
 
-        def __receive__(self, *_payload):
+        def __observe__(self, *_payload):
             called.append(self.index)
             if self.index < 99:
                 wait_for = self.index + 1
@@ -77,7 +77,7 @@ def test_token_cycle_errors():
             self.payload = ()
             self.index = index
 
-        def __receive__(self, *_payload):
+        def __observe__(self, *_payload):
             called.append(self.index)
             tokens[99 - self.index].wait()
             observed.append(self.index)

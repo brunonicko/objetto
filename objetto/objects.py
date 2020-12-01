@@ -47,7 +47,6 @@ if TYPE_CHECKING:
     ReactionType = Union[LazyFactory, BaseReaction]
     ReactionsType = Union[ReactionType, Iterable[ReactionType]]
 
-
 __all__ = [
     "Object",
     "DictObject",
@@ -129,6 +128,7 @@ def data_method(func):
 
     @decorator
     def data_method_(func_, *args, **kwargs):
+        """Data method decorator."""
         return func_(*args, **kwargs)
 
     decorated = data_method_(func)
@@ -407,6 +407,7 @@ def protected_attribute_pair(
     )
 
     def getter(iobj):
+        """Getter delegate."""
         protected_name = iobj.__.cls._attribute_names[protected_attribute]
         return iobj[protected_name]
 
@@ -674,6 +675,7 @@ def protected_dict_attribute_pair(
     )
 
     def getter(iobj):
+        """Getter delegate."""
         public_name = iobj.__.cls._attribute_names[public_attribute]
         return ProxyDictObject(iobj[public_name])
 
@@ -923,6 +925,7 @@ def protected_list_attribute_pair(
     )
 
     def getter(iobj):
+        """Getter delegate."""
         public_name = iobj.__.cls._attribute_names[public_attribute]
         return ProxyListObject(iobj[public_name])
 
@@ -1172,6 +1175,7 @@ def protected_set_attribute_pair(
     )
 
     def getter(iobj):
+        """Getter delegate."""
         public_name = iobj.__.cls._attribute_names[public_attribute]
         return ProxySetObject(iobj[public_name])
 

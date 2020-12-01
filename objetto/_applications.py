@@ -58,7 +58,7 @@ if TYPE_CHECKING:
     from ._data import InteractiveListData, InteractiveSetData
     from ._history import HistoryObject
     from ._objects import BaseObject, Relationship
-    from ._observers import InternalObserver
+    from ._observers import InternalObserver, ActionObserverExceptionInfo
     from .utils.subject_observer import ObserverExceptionInfo
 
     assert Relationship
@@ -73,7 +73,7 @@ if TYPE_CHECKING:
     UpdateMetadataFunction = Callable[[Mapping[str, Any]], None]
 
 __all__ = [
-    "ObserversFailedError",
+    "ActionObserversFailedError",
     "RejectChangeException",
     "Phase",
     "Action",
@@ -95,15 +95,15 @@ class Phase(Enum):
     """After the changes."""
 
 
-class ObserversFailedError(BaseObjettoException):
+class ActionObserversFailedError(BaseObjettoException):
     """
-    Observers failed to receive payload.
+    Action observers failed while observing action.
 
     :param exception_infos: Observer exception infos.
     """
 
     def __init__(self, message, exception_infos):
-        # type: (str, Tuple[ObserverExceptionInfo, ...]) -> None
+        # type: (str, Tuple[ActionObserverExceptionInfo, ...]) -> None
         message = (
             (
                 message
@@ -112,8 +112,8 @@ class ObserversFailedError(BaseObjettoException):
                     (
                         ("Observer: {}\n" "Change: {}\n" "Phase: {}\n").format(
                             exception_info.observer,
-                            type(exception_info.payload[0].change).__fullname__,
-                            exception_info.payload[1].name,
+                            type(exception_info.action.change).__fullname__,
+                            exception_info.phase.name,
                         )
                         + "".join(
                             format_exception(
@@ -129,12 +129,12 @@ class ObserversFailedError(BaseObjettoException):
             if exception_infos
             else message
         )
-        super(ObserversFailedError, self).__init__(message)
+        super(ActionObserversFailedError, self).__init__(message)
         self.__exception_infos = exception_infos
 
     @property
     def exception_infos(self):
-        # type: () -> Tuple[ObserverExceptionInfo, ...]
+        # type: () -> Tuple[ActionObserverExceptionInfo, ...]
         """Observer exception infos."""
         return self.__exception_infos
 
@@ -970,9 +970,9 @@ class ApplicationInternals(Base):
             commits = self.__commits
             self.__commits = []
 
-            exception_infos = []  # type: List[ObserverExceptionInfo]
+            action_exception_infos = []  # type: List[ActionObserverExceptionInfo]
 
-            def ingest_exception_infos(result):
+            def ingest_action_exception_infos(result):
                 # type: (Tuple[ObserverExceptionInfo, ...]) -> None
                 """
                 Ingest exception information.
@@ -985,37 +985,42 @@ class ApplicationInternals(Base):
                     )
                     action_observer = internal_observer.action_observer_ref()
                     if action_observer is not None:
-                        exception_info = exception_info._replace(
-                            observer=action_observer  # type: ignore
+                        action_exception_info = ActionObserverExceptionInfo(
+                            observer=action_observer,
+                            action=cast("Action", exception_info.payload[0]),
+                            phase=cast("Phase", exception_info.payload[1]),
+                            exception_type=exception_info.exception_type,
+                            exception=exception_info.exception,
+                            traceback=exception_info.traceback,
                         )
-                        exception_infos.append(exception_info)
+                        action_exception_infos.append(action_exception_info)
 
             for commit in commits:
                 if type(commit) is BatchCommit:
                     for action in commit.actions:
                         phase = commit.phase  # type: ignore
-                        ingest_exception_infos(
+                        ingest_action_exception_infos(
                             action.receiver.__.subject.send(
                                 action, cast("Phase", phase)
                             )
                         )
                 else:
                     for action in commit.actions:
-                        ingest_exception_infos(
+                        ingest_action_exception_infos(
                             action.receiver.__.subject.send(action, Phase.PRE)
                         )
 
                     self.__storage.update(commit.stores)
 
                     for action in commit.actions:
-                        ingest_exception_infos(
+                        ingest_action_exception_infos(
                             action.receiver.__.subject.send(action, Phase.POST)
                         )
 
-            if exception_infos:
-                raise ObserversFailedError(
+            if action_exception_infos:
+                raise ActionObserversFailedError(
                     "external observers raised exceptions (see tracebacks below)",
-                    tuple(exception_infos),
+                    tuple(action_exception_infos),
                 )
 
     @contextmanager
@@ -1139,6 +1144,7 @@ class ApplicationInternals(Base):
 
             def read():
                 # type: () -> Store
+                """Read object store."""
                 assert obj is not None
                 return self.__read(obj)
 
@@ -1171,6 +1177,7 @@ class ApplicationInternals(Base):
 
             def read():
                 # type: () -> Store
+                """Read object store."""
                 assert obj is not None
                 return self.__read(obj)
 
@@ -1182,6 +1189,7 @@ class ApplicationInternals(Base):
                 change,  # type: BaseAtomicChange
             ):
                 # type: (...) -> None
+                """Write changes to object."""
                 assert obj is not None
                 if obj in self.__busy_writing:
                     error_ = "reaction cycle detected on {}".format(obj)
@@ -1235,12 +1243,14 @@ class ApplicationInternals(Base):
 
             def read_metadata():
                 # type: () -> InteractiveDictData
+                """Read metadata."""
                 return self.__read(obj).metadata
 
             def update_metadata(
                 update,  # type: Mapping[str, Any]
             ):
                 # type: (...) -> None
+                """Update metadata."""
                 self.__update_metadata(obj, update)
 
             yield read_metadata, update_metadata

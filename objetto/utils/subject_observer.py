@@ -79,9 +79,20 @@ class Subject(object):
         Wait for the token's observer to receive the payload before continuing.
 
         :param token: Observer token.
+        :raises ValueError: Token does not belong to this subject.
+        :raises RuntimeError: Token cycle detected.
+        :raises RuntimeError: Can't wait for failed observer.
         """
         if self.__payload is not None:
-            observer = token.observer
+            subject = token._subject_ref()
+            if subject is None:
+                return
+            if subject is not self:
+                error = "token does not belong to this subject"
+                raise ValueError(error)
+            observer = token._observer_ref()
+            if observer is None:
+                return
             if observer in self.__receiving:
                 error = "token wait cycle detected in {}".format(observer)
                 raise RuntimeError(error)
@@ -92,7 +103,7 @@ class Subject(object):
                 self.__observing.remove(observer)
                 self.__receiving.add(observer)
                 try:
-                    observer.__receive__(*self.__payload)
+                    observer.__observe__(*self.__payload)
                 except Exception:
                     exception_type, exception, traceback = exc_info()
                     exception_info = ObserverExceptionInfo(
@@ -128,7 +139,7 @@ class Subject(object):
             observer = self.__observing.pop()
             self.__receiving.add(observer)
             try:
-                observer.__receive__(*self.__payload)
+                observer.__observe__(*self.__payload)
             except Exception:
                 exception_type, exception, traceback = exc_info()
                 exception_info = ObserverExceptionInfo(
@@ -203,7 +214,7 @@ class Observer(object):
 
         >>> class MyObserver(Observer):
         ...
-        ...     def __receive__(self, *payload):
+        ...     def __observe__(self, *payload):
         ...         print("received payload {}".format(payload))
         ...
         >>> subject = Subject()
@@ -214,7 +225,7 @@ class Observer(object):
     """
 
     @abstractmethod
-    def __receive__(self, *payload):
+    def __observe__(self, *payload):
         # type: (Any) -> None
         """
         Receive a payload sent from a subject and react to it.
@@ -223,7 +234,7 @@ class Observer(object):
         :raises NotImplementedError: Abstract method not implemented.
         """
         error = (
-            "observer class '{}' did not implement abstract method '__receive__'; "
+            "observer class '{}' did not implement abstract method '__observe__'; "
             "can't receive payload {}"
         ).format(type(self).__name__, payload)
         raise NotImplementedError(error)
@@ -267,7 +278,7 @@ class ObserverToken(object):
         ...         self.actions = actions
         ...         self.dependency = dependency
         ...
-        ...     def __receive__(self, *payload):
+        ...     def __observe__(self, *payload):
         ...         if self.dependency:
         ...             self.dependency.wait()
         ...         action = "{} received payload {}".format(self.name, payload)
@@ -287,7 +298,7 @@ class ObserverToken(object):
         ['A received payload (1, 2, 3)', 'B received payload (1, 2, 3)']
     """
 
-    __slots__ = ("__subject_ref", "__observer_ref")
+    __slots__ = ("_subject_ref", "_observer_ref")
 
     @classmethod
     def __make__(cls, subject, observer):
@@ -300,24 +311,24 @@ class ObserverToken(object):
         :return: New token.
         """
         self = cls.__new__(cls)
-        self.__subject_ref = ref(subject)
-        self.__observer_ref = ref(observer)
+        self._subject_ref = ref(subject)
+        self._observer_ref = ref(observer)
         return self
 
     def __init__(self, subject, observer):
         # type: (Subject, Observer) -> None
-        self.__subject_ref = ref(subject)
-        self.__observer_ref = ref(observer)
+        self._subject_ref = ref(subject)
+        self._observer_ref = ref(observer)
         error = "'{}' object can't be instantiated directly".format(type(self).__name__)
         raise RuntimeError(error)
 
     def wait(self):
         # type: () -> None
-        """Wait for the associated observer to receive payload before continuing."""
-        subject = self.__subject_ref()
+        """Wait for the associated observer to finish observing before continuing."""
+        subject = self._subject_ref()
         if subject is None:
             return
-        observer = self.observer
+        observer = self._observer_ref()
         if observer is None:
             return
         subject.wait(self)
@@ -325,9 +336,10 @@ class ObserverToken(object):
     @property
     def observer(self):
         """Observer."""
-        return self.__observer_ref()
+        return self._observer_ref()
 
 
+# noinspection PyUnresolvedReferences
 class ObserverExceptionInfo(
     NamedTuple(
         "ObserverExceptionInfo",
@@ -344,6 +356,7 @@ class ObserverExceptionInfo(
     Describes an exception raised by an observer receiving a payload.
 
     :param observer: Observer.
+    :param payload: Payload.
     :param exception_type: Exception type.
     :param exception: Exception.
     :param traceback: Traceback.

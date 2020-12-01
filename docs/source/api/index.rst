@@ -6,4 +6,6 @@ API Reference
 
    applications
    objects
+   observers
    bases
+   constants

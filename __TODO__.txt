@@ -1,13 +1,14 @@
 # TODO
-# TODO: expose public constants from utils/etc
+# TODO: documentation
 # TODO: bases public module
 # TODO: tests
-# TODO: documentation
 # TODO: squash commits, merge branch
 # TODO: github actions
 # TODO: release to pypi!
 
 # DONE
+# observer token property
+# expose public constants from utils/etc
 # external observer class
 # mypy
 # missing docstrings

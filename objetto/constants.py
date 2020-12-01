@@ -3,8 +3,20 @@
 
 from ._applications import Phase
 from ._objects import DELETED
+from .utils.lazy_import import (
+    PARTIAL_IMPORT_PATH_REGEX,
+    RELATIVE_IMPORT_PATH_REGEX,
+    IMPORT_PATH_REGEX,
+)
 
-__all__ = ["DELETED", "PRE", "POST"]
+__all__ = [
+    "DELETED",
+    "PRE",
+    "POST",
+    "PARTIAL_IMPORT_PATH_REGEX",
+    "RELATIVE_IMPORT_PATH_REGEX",
+    "IMPORT_PATH_REGEX",
+]
 
 
 PRE = Phase.PRE
