@@ -136,8 +136,11 @@ def _final(obj):
         ...         pass
         ...
 
-    :param obj: Method or class.
-    :return: Decorated method or class.
+    :param obj: Method function or class.
+    :type obj: function or type
+
+    :return: Decorated method function or class.
+    :rtype: function or type
     """
     if isinstance(obj, type):
         type.__setattr__(obj, FINAL_CLASS_TAG, True)
@@ -146,6 +149,7 @@ def _final(obj):
 
         @decorator
         def final_(obj_, *args, **kwargs):
+            """Decorator for final methods."""
             return obj_(*args, **kwargs)
 
         decorated = final_(obj)

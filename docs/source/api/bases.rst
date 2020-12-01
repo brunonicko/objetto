@@ -4,7 +4,13 @@ Bases
 Base Classes
 ------------
 .. autoclass:: objetto.bases.Base
+   :special-members:
+     '__copy__',
+     '__repr__',
+     '__ne__',
+     '__dir__',
    :members:
+     _initializing,
 .. autoclass:: objetto.bases.BaseHashable
    :members:
 .. autoclass:: objetto.bases.BaseSized
@@ -72,4 +78,4 @@ Base Change Classes
      old_children,
      new_children,
      history_adopters,
-     history
+     history,
