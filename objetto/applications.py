@@ -8,7 +8,7 @@ from ._applications import BO, Application, ApplicationRoot
 if TYPE_CHECKING:
     from typing import Any, Optional, Type
 
-__all__ = ["root", "Application"]
+__all__ = ["Application", "root"]
 
 
 def root(obj_type, priority=None, **kwargs):
@@ -18,7 +18,7 @@ def root(obj_type, priority=None, **kwargs):
 
     :param obj_type: Object type.
     :param priority: Initialization priority.
-    :param kwargs: Keyword arguments to be passed to object's '__init__'.
+    :param kwargs: Keyword arguments to be passed to the object's `__init__`.
     :raises ValueError: Used reserved keyword argument.
     :raises TypeError: Invalid object type.
     """

@@ -5,5 +5,4 @@ isort
 mypy
 pytest
 sphinx
-sphinx-autodoc-typehints
 sphinx-rtd-theme

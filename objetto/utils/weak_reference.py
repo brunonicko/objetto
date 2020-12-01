@@ -117,7 +117,7 @@ class WeakReference(Generic[T], object):
         """
         Get strong reference to the object or None if no longer alive.
 
-        :return: Strong reference or None.
+        :return: Strong reference or `None`.
         """
         return self.__ref()
 

@@ -73,7 +73,7 @@ def reaction(
         FIRST - Update Attributes Phase.POST
         LAST - Update Attributes Phase.POST
 
-    :param func: Method to be decorated or None.
+    :param func: Method to be decorated or `None`.
     :param priority: Priority.
     :return: Decorated custom reaction method or decorator.
     """

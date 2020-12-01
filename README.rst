@@ -271,8 +271,8 @@ and they will be imported lazily during runtime. It's also possible to use multi
 `Types <Value Type>`_ by specifying them in a tuple.
 
 .. note::
-    Static type checkers such as `mypy <http://mypy-lang.org/>`_ will not understand
-    types properly when multiple/lazy types are declared. In that case, you can help
+    Static type checkers such as `mypy <http://mypy-lang.org/>`_ might not understand
+    types correctly when multiple/lazy types are declared. In that case, you can help
     the type checker by adding a type hint/comment using the `Attribute`_ base like so:
 
     **Example**: Helping static type checkers with a type hint for the attribute.
@@ -280,7 +280,7 @@ and they will be imported lazily during runtime. It's also possible to use multi
     .. code:: python
 
         >>> from typing import Union
-        >>> from objetto.objects import Attribute  # use 'Attribute' class for type hint
+        >>> from objetto.objects import Attribute  # use 'Attribute' base for type hint
         >>> from objetto import Object, attribute
 
         >>> class Example(Object):
@@ -380,10 +380,10 @@ The `Auxiliary Attributes <Auxiliary Attribute>`_ are:
 
 Delegated Attribute
 *******************
-`Attributes <Attributes>`_ can have delegate methods that will get, set and/or delete
-the values of other `Attributes <Attributes>`_ in the same `Object`_.
+`Attributes <Attribute>`_ can have delegate methods that will get, set and/or delete
+the values of other `Attributes <Attribute>`_ in the same `Object`_.
 
-When defining delegates, you have to specify which `Attributes <Attributes>`_ they will
+When defining delegates, you have to specify which `Attributes <Attribute>`_ they will
 read from with as `dependencies`.
 
 .. note::

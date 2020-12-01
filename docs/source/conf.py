@@ -19,30 +19,19 @@ release = version  # the full version, including alpha/beta/rc tags
 extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.autodoc",
-    "sphinx_autodoc_typehints",
     "sphinx_rtd_theme",
 ]
 
 # Intersphinx configuration.
-intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
+intersphinx_mapping = {
+    "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
+    "python": ("https://docs.python.org/3", None)
+}
 
 # Autodoc configuration.
 autoclass_content = "class"
-autodoc_member_order = "groupwise"
-autodoc_default_options = {
-    "members": True,
-    "member-order": "groupwise",
-    "private-members": True,
-    "special-members": True,
-    "inherited-members": True,
-    "imported-members": True,
-    "exclude-members": "",
-}
-
-# Autodoc typehints configuration.
-set_type_checking_flag = False
-always_document_param_types = True
-typehints_document_rtype = True
+autodoc_typehints = "none"
+autodoc_member_order = "bysource"
 
 # Templates' paths.
 templates_path = ["_templates"]
@@ -79,12 +68,10 @@ latex_documents = [
     (master_doc, "Objetto.tex", "Objetto Documentation", "Bruno Nicko", "manual"),
 ]
 
-
 # Manual Page options.
 man_pages = [
     (master_doc, "objetto", "Objetto Documentation", [author], 1),
 ]
-
 
 # Texinfo options.
 texinfo_documents = [

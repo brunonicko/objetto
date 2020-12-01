@@ -26,6 +26,13 @@ from ._bases import (
     abstract_member,
     final,
 )
+from ._objects import (
+    BaseObject,
+)
+from ._changes import (
+    BaseChange,
+    BaseAtomicChange,
+)
 
 __all__ = [
     "final",
@@ -51,4 +58,7 @@ __all__ = [
     "BaseProtectedSet",
     "BaseInteractiveSet",
     "BaseMutableSet",
+    "BaseObject",
+    "BaseChange",
+    "BaseAtomicChange",
 ]

@@ -43,7 +43,11 @@ __all__ = [
 
 
 class BaseChange(Data):
-    """Base change."""
+    """
+    Inherits from: :class:`objetto.data.Data`
+
+    Base change.
+    """
 
     name = data_attribute(
         string_types, checked=False, abstracted=True
@@ -57,7 +61,11 @@ class BaseChange(Data):
 
 
 class BaseAtomicChange(BaseChange):
-    """Base atomic object change."""
+    """
+    Inherits from: :class:`objetto.bases.BaseChange`
+
+    Base atomic object change.
+    """
 
     __redo__ = data_attribute(
         finalized=True, compared=False, serialized=False, represented=False

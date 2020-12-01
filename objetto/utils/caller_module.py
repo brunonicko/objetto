@@ -16,7 +16,7 @@ def get_caller_module(frames=0):
     Get caller module name if possible.
 
     :param frames: How many frames in the stack to go back relative to the caller.
-    :return: Module name or None.
+    :return: Module name or `None`.
     """
     try:
         frame = stack()[2 + frames]

@@ -12,6 +12,7 @@ from decorator import decorator
 from six import string_types
 
 from ._bases import MISSING
+from ._applications import Action
 from ._data import DataRelationship
 from ._objects import (
     DATA_METHOD_TAG,
@@ -57,6 +58,7 @@ __all__ = [
     "MutableSetObject",
     "Relationship",
     "KeyRelationship",
+    "Action",
     "data_method",
     "data_relationship",
     "unique_descriptor",

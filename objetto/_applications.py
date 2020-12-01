@@ -323,22 +323,38 @@ class Action(Data):
     sender = data_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False
     )  # type: DataAttribute[BaseObject]
-    """Object where the action originated from (where the change happened)."""
+    """
+    Object where the action originated from (where the change happened).
+    
+    :type: objetto.bases.BaseObject
+    """
 
     receiver = data_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False
     )  # type: DataAttribute[BaseObject]
-    """Object relaying the action up the hierarchy."""
+    """
+    Object relaying the action up the hierarchy.
+    
+    :type: objetto.bases.BaseObject
+    """
 
     locations = data_list_attribute(
         checked=False
     )  # type: DataAttribute[InteractiveListData[Any]]
-    """List of relative locations from the receiver to the sender."""
+    """
+    List of relative locations from the receiver to the sender.
+    
+    :type: list[str or int or collections.abc.Hashable]
+    """
 
     change = data_attribute(
         BaseChange, subtypes=True, checked=False
     )  # type: DataAttribute[BaseChange]
-    """Change that happened in the sender."""
+    """
+    Change that happened in the sender.
+    
+    :type: objetto.bases.BaseChange
+    """
 
 
 class Commit(Data):
@@ -1406,10 +1422,10 @@ class Application(with_metaclass(ApplicationMeta, Base)):
     """
     Application.
 
-      - Manages multiple objects under the same hierarchy.
+      - Manages multiple :class:`objetto.bases.BaseObject` under the same hierarchy.
       - Offers contexts for reading/writing/batch.
       - Reverts changes when an error occurs.
-      - Manages action propagation, internally and externally.
+      - Manages :class:`objetto.objects.Action` propagation, internally and externally.
     """
 
     __slots__ = ("__weakref__", "__")
@@ -1422,7 +1438,12 @@ class Application(with_metaclass(ApplicationMeta, Base)):
     @contextmanager
     def read_context(self):
         # type: () -> Iterator
-        """Read context."""
+        """
+        Read context.
+
+        :return: Context manager.
+        :rtype: contextlib.AbstractContextManager
+        """
         with self.__.read_context():
             yield
 
@@ -1430,7 +1451,12 @@ class Application(with_metaclass(ApplicationMeta, Base)):
     @contextmanager
     def write_context(self):
         # type: () -> Iterator
-        """Write context."""
+        """
+        Write context.
+
+        :return: Context manager.
+        :rtype: contextlib.AbstractContextManager
+        """
         with self.__.write_context():
             yield
 
@@ -1438,7 +1464,12 @@ class Application(with_metaclass(ApplicationMeta, Base)):
     @contextmanager
     def temporary_context(self):
         # type: () -> Iterator
-        """Temporary write context."""
+        """
+        Temporary write context.
+
+        :return: Context manager.
+        :rtype: contextlib.AbstractContextManager
+        """
         with self.__.write_context():
             try:
                 yield

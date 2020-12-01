@@ -711,14 +711,14 @@ class BaseObjectMeta(BaseStructureMeta):
     @final
     def _history_descriptor_name(cls):
         # type: () -> Optional[str]
-        """History descriptor name or None."""
+        """History descriptor name or `None`."""
         return type(cls).__history_descriptor_name[cls]
 
     @property
     @final
     def _history_descriptor(cls):
         # type: () -> Optional[HistoryDescriptor]
-        """History descriptor or None."""
+        """History descriptor or `None`."""
         return type(cls).__history_descriptor[cls]
 
     @property
@@ -871,7 +871,11 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     @final
     def _parent(self):
         # type: () -> Optional[BaseObject]
-        """Parent object or None."""
+        """
+        Parent object or `None`.
+
+        :rtype: objetto.bases.BaseObject
+        """
         with self.app.__.read_context(self) as read:
             return read().parent_ref()
 
@@ -894,7 +898,7 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     @final
     def _history(self):
         # type: () -> Optional[HistoryObject]
-        """History or None."""
+        """History or `None`."""
         with self.app.__.read_context(self) as read:
             store = read()
             if store.history is not None:
@@ -1197,7 +1201,7 @@ class BaseProxyObject(BaseMutableCollection[T]):
     @final
     def _parent(self):
         # type: () -> Optional[BaseObject]
-        """Parent object or None."""
+        """Parent object or `None`."""
         return self._obj._parent
 
     @property
@@ -1218,7 +1222,7 @@ class BaseProxyObject(BaseMutableCollection[T]):
     @final
     def _history(self):
         # type: () -> Optional[HistoryObject]
-        """History or None."""
+        """History or `None`."""
         return self._obj._history
 
     @property

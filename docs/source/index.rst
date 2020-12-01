@@ -6,6 +6,11 @@ Welcome to Objetto's documentation!
 
    readme
 
+.. toctree::
+   :maxdepth: 2
+
+   api/index
+
 Indices and tables
 ==================
 

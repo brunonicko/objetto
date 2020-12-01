@@ -602,14 +602,14 @@ class BaseStructureMeta(BaseMeta):
     @final
     def _unique_descriptor_name(cls):
         # type: () -> Optional[str]
-        """Unique descriptor name or None."""
+        """Unique descriptor name or `None`."""
         return type(cls).__unique_descriptor_name[cls]
 
     @property
     @final
     def _unique_descriptor(cls):
         # type: () -> Optional[UniqueDescriptor]
-        """Unique descriptor or None."""
+        """Unique descriptor or `None`."""
         return type(cls).__unique_descriptor[cls]
 
     @property
