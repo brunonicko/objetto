@@ -49,7 +49,19 @@ class BaseListStructure(
         BaseProtectedList[T],
     )
 ):
-    """Base list structure."""
+    """
+    Base list structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryStructure`
+      - :class:`objetto.bases.BaseProtectedList`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseInteractiveListStructure`
+      - :class:`objetto.bases.BaseMutableListStructure`
+      - :class:`objetto.data.ListData`
+      - :class:`objetto.objects.ListObject`
+    """
 
     __slots__ = ()
 
@@ -60,6 +72,7 @@ class BaseListStructure(
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         if type(self)._relationship.represented:
             return custom_iterable_repr(
@@ -77,6 +90,7 @@ class BaseListStructure(
         Iterate over reversed values.
 
         :return: Reversed values iterator.
+        :rtype: collections.abc.Iterator
         """
         return reversed(self._state)
 
@@ -87,6 +101,7 @@ class BaseListStructure(
         Get value count.
 
         :return: Value count.
+        :rtype: int
         """
         return len(self._state)
 
@@ -97,6 +112,7 @@ class BaseListStructure(
         Iterate over values.
 
         :return: Values iterator.
+        :rtype: collections.abc.Iterator
         """
         for value in self._state:
             yield value
@@ -108,7 +124,9 @@ class BaseListStructure(
         Get whether value is present.
 
         :param value: Value.
+
         :return: True if contains.
+        :rtype: bool
         """
         return value in self._state
 
@@ -119,6 +137,7 @@ class BaseListStructure(
         Count number of occurrences of a value.
 
         :return: Number of occurrences.
+        :rtype: int
         """
         return self._state.count(value)
 
@@ -129,9 +148,16 @@ class BaseListStructure(
         Get index of a value.
 
         :param value: Value.
+
         :param start: Start index.
+        :type start: int or None
+
         :param stop: Stop index.
+        :type stop: int or None
+
         :return: Index of value.
+        :rtype: int
+
         :raises ValueError: Provided stop but did not provide start.
         """
         return self._state.index(value, start=start, stop=stop)
@@ -143,8 +169,14 @@ class BaseListStructure(
         Resolve index to a positive number.
 
         :param index: Input index.
+        :type index: int
+
         :param clamp: Whether to clamp between zero and the length.
+        :type clamp: bool
+
         :return: Resolved index.
+        :rtype: int
+
         :raises IndexError: Index out of range.
         """
         return self._state.resolve_index(index, clamp=clamp)
@@ -156,7 +188,11 @@ class BaseListStructure(
         Resolve continuous slice according to length.
 
         :param slc: Continuous slice.
+        :type slc: slice
+
         :return: Index and stop.
+        :rtype: tuple[int, int]
+
         :raises IndexError: Slice is noncontinuous.
         """
         return self._state.resolve_continuous_slice(slc)
@@ -165,7 +201,13 @@ class BaseListStructure(
     @abstractmethod
     def _state(self):
         # type: () -> ListState[T]
-        """Internal state."""
+        """
+        Internal state.
+
+        :rtype: objetto.states.ListState
+
+        :raises NotImplementedError: Abstract method not implemented.
+        """
         raise NotImplementedError()
 
 
@@ -175,7 +217,17 @@ class BaseInteractiveListStructure(
     BaseInteractiveAuxiliaryStructure[T],
     BaseInteractiveList[T],
 ):
-    """Base interactive list structure."""
+    """
+    Base interactive list structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseListStructure`
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryStructure`
+      - :class:`objetto.bases.BaseInteractiveList`
+
+    Inherited By:
+      - :class:`objetto.data.InteractiveListData`
+    """
 
     __slots__ = ()
 
@@ -186,6 +238,16 @@ class BaseMutableListStructure(
     BaseListStructure[T],
     BaseMutableAuxiliaryStructure[T],
 ):
-    """Base mutable list structure."""
+    """
+    Base mutable list structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMutableList`
+      - :class:`objetto.bases.BaseListStructure`
+      - :class:`objetto.bases.BaseMutableAuxiliaryStructure`
+
+    Inherited By:
+      - :class:`objetto.objects.MutableListObject`
+    """
 
     __slots__ = ()

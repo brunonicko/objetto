@@ -44,8 +44,6 @@ __all__ = [
 
 class BaseChange(Data):
     """
-    Inherits from: :class:`objetto.data.Data`
-
     Base change.
     """
 

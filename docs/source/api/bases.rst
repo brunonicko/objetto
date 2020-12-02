@@ -4,8 +4,6 @@ Bases
 Base Classes
 ------------
 
-Base Class
-**********
 .. autoclass:: objetto.bases.Base
    :members: _initializing
 
@@ -14,26 +12,18 @@ Base Class
    .. automethod:: objetto.bases.Base.__ne__
    .. automethod:: objetto.bases.Base.__dir__
 
-Base Hashable Class
-*******************
 .. autoclass:: objetto.bases.BaseHashable
 
    .. automethod:: objetto.bases.BaseHashable.__hash__
 
-Base Sized Class
-****************
 .. autoclass:: objetto.bases.BaseSized
 
    .. automethod:: objetto.bases.BaseSized.__len__
 
-Base Iterable Class
-*******************
 .. autoclass:: objetto.bases.BaseIterable
 
    .. automethod:: objetto.bases.BaseIterable.__iter__
 
-Base Container Class
-********************
 .. autoclass:: objetto.bases.BaseContainer
 
    .. automethod:: objetto.bases.BaseContainer.__contains__
@@ -41,51 +31,34 @@ Base Container Class
 Base Decorators
 ---------------
 
-Final Decorator
-***************
 .. autodecorator:: objetto.bases.final
-
-Init Decorator
-**************
 .. autodecorator:: objetto.bases.init
 
 Base Context Managers
 ---------------------
 
-Init Context Manager
-********************
 .. autofunction:: objetto.bases.init_context
 
 Base Abstract Member
 --------------------
 
-Base Abstract Member Function
-*****************************
 .. autofunction:: objetto.bases.abstract_member
 
 Base Collection Classes
 -----------------------
 
-Base Collection Class
-*********************
 .. autoclass:: objetto.bases.BaseCollection
 
    .. automethod:: objetto.bases.BaseCollection.find_with_attributes
 
-Base Protected Collection Class
-*******************************
 .. autoclass:: objetto.bases.BaseProtectedCollection
 
    .. automethod:: objetto.bases.BaseProtectedCollection._clear
 
-Base Interactive Collection Class
-*********************************
 .. autoclass:: objetto.bases.BaseInteractiveCollection
 
    .. automethod:: objetto.bases.BaseInteractiveCollection.clear
 
-Base Mutable Collection Class
-*****************************
 .. autoclass:: objetto.bases.BaseMutableCollection
 
    .. automethod:: objetto.bases.BaseMutableCollection.clear
@@ -93,8 +66,6 @@ Base Mutable Collection Class
 Base Dictionary Classes
 ***********************
 
-Base Dictionary Class
-^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseDict
 
    .. automethod:: objetto.bases.BaseDict.__eq__
@@ -108,8 +79,6 @@ Base Dictionary Class
    .. automethod:: objetto.bases.BaseDict.keys
    .. automethod:: objetto.bases.BaseDict.values
 
-Base Protected Dictionary Class
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseProtectedDict
 
    .. automethod:: objetto.bases.BaseProtectedDict._discard
@@ -117,8 +86,6 @@ Base Protected Dictionary Class
    .. automethod:: objetto.bases.BaseProtectedDict._set
    .. automethod:: objetto.bases.BaseProtectedDict._update
 
-Base Interactive Dictionary Class
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseInteractiveDict
 
    .. automethod:: objetto.bases.BaseInteractiveDict.discard
@@ -126,8 +93,6 @@ Base Interactive Dictionary Class
    .. automethod:: objetto.bases.BaseInteractiveDict.set
    .. automethod:: objetto.bases.BaseInteractiveDict.update
 
-Base Mutable Dictionary Class
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseMutableDict
 
    .. automethod:: objetto.bases.BaseMutableDict.__setitem__
@@ -144,8 +109,6 @@ Base Mutable Dictionary Class
 Base List Classes
 *****************
 
-Base List Class
-^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseList
 
    .. automethod:: objetto.bases.BaseList.__eq__
@@ -156,8 +119,6 @@ Base List Class
    .. automethod:: objetto.bases.BaseList.resolve_index
    .. automethod:: objetto.bases.BaseList.resolve_continuous_slice
 
-Base Protected List Class
-^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseProtectedList
 
    .. automethod:: objetto.bases.BaseProtectedList._insert
@@ -169,8 +130,6 @@ Base Protected List Class
    .. automethod:: objetto.bases.BaseProtectedList._delete
    .. automethod:: objetto.bases.BaseProtectedList._update
 
-Base Interactive List Class
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseInteractiveList
 
    .. automethod:: objetto.bases.BaseInteractiveList.insert
@@ -182,8 +141,6 @@ Base Interactive List Class
    .. automethod:: objetto.bases.BaseInteractiveList.delete
    .. automethod:: objetto.bases.BaseInteractiveList.update
 
-Base Mutable List Class
-^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseMutableList
 
    .. automethod:: objetto.bases.BaseMutableList.__iadd__
@@ -204,8 +161,6 @@ Base Mutable List Class
 Base Set Classes
 *****************
 
-Base Set Class
-^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseSet
 
    .. automethod:: objetto.bases.BaseSet.__le__
@@ -232,8 +187,6 @@ Base Set Class
    .. automethod:: objetto.bases.BaseSet.difference
    .. automethod:: objetto.bases.BaseSet.inverse_difference
 
-Base Protected Set Class
-^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseProtectedSet
 
    .. automethod:: objetto.bases.BaseProtectedSet._add
@@ -242,8 +195,6 @@ Base Protected Set Class
    .. automethod:: objetto.bases.BaseProtectedSet._replace
    .. automethod:: objetto.bases.BaseProtectedSet._update
 
-Base Interactive Set Class
-^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseInteractiveSet
 
    .. automethod:: objetto.bases.BaseInteractiveSet.add
@@ -252,8 +203,6 @@ Base Interactive Set Class
    .. automethod:: objetto.bases.BaseInteractiveSet.replace
    .. automethod:: objetto.bases.BaseInteractiveSet.update
 
-Base Mutable Set Class
-^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseMutableSet
 
    .. automethod:: objetto.bases.BaseMutableSet.__iand__
@@ -289,6 +238,174 @@ Base State Class
 Base Structure Classes
 ----------------------
 .. autoclass:: objetto.bases.BaseStructure
+   :members: _state
+
+   .. automethod:: objetto.bases.BaseStructure.__hash__
+   .. automethod:: objetto.bases.BaseStructure.__eq__
+   .. automethod:: objetto.bases.BaseStructure._hash
+   .. automethod:: objetto.bases.BaseStructure._eq
+   .. automethod:: objetto.bases.BaseStructure._get_relationship
+   .. automethod:: objetto.bases.BaseStructure.deserialize_value
+   .. automethod:: objetto.bases.BaseStructure.serialize_value
+   .. automethod:: objetto.bases.BaseStructure.deserialize
+   .. automethod:: objetto.bases.BaseStructure.serialize
+
+.. autoclass:: objetto.bases.BaseInteractiveStructure
+
+.. autoclass:: objetto.bases.BaseMutableStructure
+
+.. autoclass:: objetto.bases.BaseAuxiliaryStructure
+   :members: _relationship
+
+   .. automethod:: objetto.bases.BaseAuxiliaryStructure.find_with_attributes
+   .. automethod:: objetto.bases.BaseAuxiliaryStructure._get_relationship
+
+.. autoclass:: objetto.bases.BaseInteractiveAuxiliaryStructure
+
+.. autoclass:: objetto.bases.BaseMutableAuxiliaryStructure
+
+Base Dict Structure Classes
+***************************
+
+.. autoclass:: objetto.bases.BaseDictStructure
+   :members: _key_relationship, _state
+
+   .. automethod:: objetto.bases.BaseDictStructure.__repr__
+   .. automethod:: objetto.bases.BaseDictStructure.__reversed__
+   .. automethod:: objetto.bases.BaseDictStructure.__getitem__
+   .. automethod:: objetto.bases.BaseDictStructure.__len__
+   .. automethod:: objetto.bases.BaseDictStructure.__iter__
+   .. automethod:: objetto.bases.BaseDictStructure.__contains__
+   .. automethod:: objetto.bases.BaseDictStructure.get
+   .. automethod:: objetto.bases.BaseDictStructure.iteritems
+   .. automethod:: objetto.bases.BaseDictStructure.iterkeys
+   .. automethod:: objetto.bases.BaseDictStructure.itervalues
+
+.. autoclass:: objetto.bases.BaseInteractiveDictStructure
+
+.. autoclass:: objetto.bases.BaseMutableDictStructure
+
+Base List Structure Classes
+***************************
+
+.. autoclass:: objetto.bases.BaseListStructure
+   :members: _state
+
+   .. automethod:: objetto.bases.BaseListStructure.__repr__
+   .. automethod:: objetto.bases.BaseListStructure.__reversed__
+   .. automethod:: objetto.bases.BaseListStructure.__len__
+   .. automethod:: objetto.bases.BaseListStructure.__iter__
+   .. automethod:: objetto.bases.BaseListStructure.__contains__
+   .. automethod:: objetto.bases.BaseListStructure.count
+   .. automethod:: objetto.bases.BaseListStructure.index
+   .. automethod:: objetto.bases.BaseListStructure.resolve_index
+   .. automethod:: objetto.bases.BaseListStructure.resolve_continuous_slice
+
+.. autoclass:: objetto.bases.BaseInteractiveListStructure
+.. autoclass:: objetto.bases.BaseMutableListStructure
+
+Base Set Structure Classes
+**************************
+
+.. autoclass:: objetto.bases.BaseSetStructure
+   :members: _state
+
+   .. automethod:: objetto.bases.BaseSetStructure.__repr__
+   .. automethod:: objetto.bases.BaseSetStructure.__len__
+   .. automethod:: objetto.bases.BaseSetStructure.__iter__
+   .. automethod:: objetto.bases.BaseSetStructure.__contains__
+   .. automethod:: objetto.bases.BaseSetStructure.isdisjoint
+   .. automethod:: objetto.bases.BaseSetStructure.issubset
+   .. automethod:: objetto.bases.BaseSetStructure.issuperset
+   .. automethod:: objetto.bases.BaseSetStructure.intersection
+   .. automethod:: objetto.bases.BaseSetStructure.difference
+   .. automethod:: objetto.bases.BaseSetStructure.inverse_difference
+   .. automethod:: objetto.bases.BaseSetStructure.symmetric_difference
+   .. automethod:: objetto.bases.BaseSetStructure.union
+
+.. autoclass:: objetto.bases.BaseInteractiveSetStructure
+.. autoclass:: objetto.bases.BaseMutableSetStructure
+
+Base Attribute Structure Classes
+********************************
+
+.. autoclass:: objetto.bases.BaseAttributeStructure
+   :members: _state
+
+   .. automethod:: objetto.bases.BaseAttributeStructure.__repr__
+   .. automethod:: objetto.bases.BaseAttributeStructure.__reversed__
+   .. automethod:: objetto.bases.BaseAttributeStructure.__getitem__
+   .. automethod:: objetto.bases.BaseAttributeStructure.__len__
+   .. automethod:: objetto.bases.BaseAttributeStructure.__iter__
+   .. automethod:: objetto.bases.BaseAttributeStructure.__contains__
+   .. automethod:: objetto.bases.BaseAttributeStructure._get_relationship
+   .. automethod:: objetto.bases.BaseAttributeStructure._get_attribute
+   .. automethod:: objetto.bases.BaseAttributeStructure._set
+   .. automethod:: objetto.bases.BaseAttributeStructure._delete
+   .. automethod:: objetto.bases.BaseAttributeStructure._update
+   .. automethod:: objetto.bases.BaseAttributeStructure.keys
+   .. automethod:: objetto.bases.BaseAttributeStructure.find_with_attributes
+
+.. autoclass:: objetto.bases.BaseInteractiveAttributeStructure
+
+   .. automethod:: objetto.bases.BaseInteractiveAttributeStructure.set
+   .. automethod:: objetto.bases.BaseInteractiveAttributeStructure.delete
+   .. automethod:: objetto.bases.BaseInteractiveAttributeStructure.update
+
+.. autoclass:: objetto.bases.BaseMutableAttributeStructure
+
+   .. automethod:: objetto.bases.BaseMutableAttributeStructure.__setitem__
+   .. automethod:: objetto.bases.BaseMutableAttributeStructure.__delitem__
+   .. automethod:: objetto.bases.BaseMutableAttributeStructure.delete
+   .. automethod:: objetto.bases.BaseMutableAttributeStructure.set
+   .. automethod:: objetto.bases.BaseMutableAttributeStructure.update
+
+Base Relationship Class
+-----------------------
+.. autoclass:: objetto.bases.BaseRelationship
+   :members:
+     types,
+     subtypes,
+     checked,
+     module,
+     factory,
+     serialized,
+     serializer,
+     deserializer,
+     represented,
+     passthrough,
+
+   .. automethod:: objetto.bases.BaseRelationship.__hash__
+   .. automethod:: objetto.bases.BaseRelationship.__eq__
+   .. automethod:: objetto.bases.BaseRelationship.__repr__
+   .. automethod:: objetto.bases.BaseRelationship.__str__
+   .. automethod:: objetto.bases.BaseRelationship.to_dict
+   .. automethod:: objetto.bases.BaseRelationship.get_single_exact_type
+   .. automethod:: objetto.bases.BaseRelationship.fabricate_value
+
+Base Attribute Class
+--------------------
+.. autoclass:: objetto.bases.BaseAttribute
+   :members:
+     relationship,
+     default,
+     default_factory,
+     module,
+     required,
+     changeable,
+     deletable,
+     finalized,
+     abstracted,
+     has_default,
+
+   .. automethod:: objetto.bases.BaseAttribute.__get__
+   .. automethod:: objetto.bases.BaseAttribute.__hash__
+   .. automethod:: objetto.bases.BaseAttribute.__eq__
+   .. automethod:: objetto.bases.BaseAttribute.__repr__
+   .. automethod:: objetto.bases.BaseAttribute.to_dict
+   .. automethod:: objetto.bases.BaseAttribute.get_name
+   .. automethod:: objetto.bases.BaseAttribute.get_value
+   .. automethod:: objetto.bases.BaseAttribute.fabricate_default_value
 
 Base Data Class
 ---------------

@@ -55,11 +55,26 @@ class KeyRelationship(BaseHashable):
     """
     Relationship between a dictionary auxiliary structure and their keys.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseHashable`
+
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Key factory.
+    :type factory: str or collections.abc.Callable or None
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     __slots__ = (
@@ -116,6 +131,7 @@ class KeyRelationship(BaseHashable):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         if self.__hash is None:
             self.__hash = hash(frozenset(iteritems(self.to_dict())))
@@ -127,7 +143,9 @@ class KeyRelationship(BaseHashable):
         Compare with another object for equality.
 
         :param other: Another object.
+
         :return: True if considered equal.
+        :rtype: bool
         """
         if self is other:
             return True
@@ -143,6 +161,7 @@ class KeyRelationship(BaseHashable):
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         return custom_mapping_repr(
             self.to_dict(),
@@ -159,6 +178,7 @@ class KeyRelationship(BaseHashable):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         return {
             "types": frozenset(import_types(self.types)),
@@ -174,9 +194,15 @@ class KeyRelationship(BaseHashable):
         Perform type check and run key through factory.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param factory: Whether to run value through factory.
+        :type factory: bool
+
         :param kwargs: Keyword arguments to be passed to the factory.
+
         :return: Fabricated value.
+        :type key: collections.abc.Hashable
         """
         if factory and self.factory is not None:
             key = run_factory(self.factory, args=(key,), kwargs=kwargs)
@@ -187,37 +213,61 @@ class KeyRelationship(BaseHashable):
     @property
     def types(self):
         # type: () -> LazyTypes
-        """Types."""
+        """
+        Types.
+
+        :rtype: tuple[str or type]
+        """
         return self.__types
 
     @property
     def subtypes(self):
         # type: () -> bool
-        """Whether to accept subtypes."""
+        """
+        Whether to accept subtypes.
+
+        :rtype: bool
+        """
         return self.__subtypes
 
     @property
     def checked(self):
         # type: () -> bool
-        """Whether to perform runtime type check."""
+        """
+        Whether to perform runtime type check.
+
+        :rtype: bool
+        """
         return self.__checked
 
     @property
     def module(self):
         # type: () -> Optional[str]
-        """Module path for lazy types/factories."""
+        """
+        Module path for lazy types/factories.
+
+        :rtype: str or None
+        """
         return self.__module
 
     @property
     def factory(self):
         # type: () -> LazyFactory
-        """Key factory."""
+        """
+        Key factory.
+
+        :rtype: str or collections.abc.Callable or None
+        """
         return self.__factory
 
     @property
     def passthrough(self):
         # type: () -> bool
-        """Whether does not perform type checks and has no factory."""
+        """
+        Whether does not perform type checks and has no factory.
+
+        :rtype: bool
+        """
         return (not self.types or not self.checked) and self.factory is None
 
 
@@ -251,12 +301,30 @@ class BaseDictStructure(
         BaseProtectedDict[KT, VT],
     )
 ):
-    """Base dictionary structure."""
+    """
+    Base dictionary structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryStructure`
+      - :class:`objetto.bases.BaseProtectedDict`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseInteractiveDictStructure`
+      - :class:`objetto.bases.BaseMutableDictStructure`
+      - :class:`objetto.data.DictData`
+      - :class:`objetto.objects.DictObject`
+    """
 
     __slots__ = ()
 
     _key_relationship = KeyRelationship()
-    """Relationship for the keys."""
+    """
+    **Class Attribute**
+    
+    Relationship for the keys.
+    
+    :type: objetto.objects.KeyRelationship or objetto.data.KeyRelationship
+    """
 
     @recursive_repr
     def __repr__(self):
@@ -265,6 +333,7 @@ class BaseDictStructure(
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         if type(self)._relationship.represented:
             return custom_mapping_repr(
@@ -282,6 +351,7 @@ class BaseDictStructure(
         Iterate over reversed keys.
 
         :return: Reversed keys iterator.
+        :rtype: collections.abc.Iterator[collections.abc.Hashable]
         """
         return reversed(self._state)
 
@@ -292,7 +362,10 @@ class BaseDictStructure(
         Get value for key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Value.
+
         :raises KeyError: Invalid key.
         """
         return self._state[key]
@@ -304,6 +377,7 @@ class BaseDictStructure(
         Get key count.
 
         :return: Key count.
+        :rtype: int
         """
         return len(self._state)
 
@@ -314,6 +388,7 @@ class BaseDictStructure(
         Iterate over keys.
 
         :return: Key iterator.
+        :rtype: collections.abc.Iterator[collections.abc.Hashable]
         """
         for key in self._state:
             yield key
@@ -325,7 +400,10 @@ class BaseDictStructure(
         Get whether key is present.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: True if contains.
+        :rtype: bool
         """
         return key in self._state
 
@@ -336,7 +414,10 @@ class BaseDictStructure(
         Get value for key, return fallback value if key is not present.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param fallback: Fallback value.
+
         :return: Value or fallback value.
         """
         return self._state.get(key, fallback)
@@ -345,9 +426,10 @@ class BaseDictStructure(
     def iteritems(self):
         # type: () -> Iterator[Tuple[KT, VT]]
         """
-        Iterate over keys.
+        Iterate over items.
 
-        :return: Key iterator.
+        :return: Items iterator.
+        :rtype: collections.abc.Iterator[tuple[collections.abc.Hashable, Any]]
         """
         for key, value in iteritems(self._state):
             yield key, value
@@ -359,6 +441,7 @@ class BaseDictStructure(
         Iterate over keys.
 
         :return: Keys iterator.
+        :rtype: collections.abc.Iterator[collections.abc.Hashable]
         """
         for key in iterkeys(self._state):
             yield key
@@ -370,6 +453,7 @@ class BaseDictStructure(
         Iterate over values.
 
         :return: Values iterator.
+        :rtype: collections.abc.Iterator
         """
         for value in itervalues(self._state):
             yield value
@@ -378,7 +462,13 @@ class BaseDictStructure(
     @abstractmethod
     def _state(self):
         # type: () -> DictState[KT, VT]
-        """Internal state."""
+        """
+        Internal state.
+
+        :rtype: objetto.states.DictState
+
+        :raises NotImplementedError: Abstract method not implemented.
+        """
         raise NotImplementedError()
 
 
@@ -388,7 +478,17 @@ class BaseInteractiveDictStructure(
     BaseInteractiveAuxiliaryStructure[KT],
     BaseInteractiveDict[KT, VT],
 ):
-    """Base interactive dictionary structure."""
+    """
+    Base interactive dictionary structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseDictStructure`
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryStructure`
+      - :class:`objetto.bases.BaseInteractiveDict`
+
+    Inherited By:
+      - :class:`objetto.data.InteractiveDictData`
+    """
 
     __slots__ = ()
 
@@ -399,6 +499,16 @@ class BaseMutableDictStructure(
     BaseDictStructure[KT, VT],
     BaseMutableAuxiliaryStructure[KT],
 ):
-    """Base mutable dictionary structure."""
+    """
+    Base mutable dictionary structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMutableDict`
+      - :class:`objetto.bases.BaseDictStructure`
+      - :class:`objetto.bases.BaseMutableAuxiliaryStructure`
+
+    Inherited By:
+      - :class:`objetto.objects.MutableDictObject`
+    """
 
     __slots__ = ()

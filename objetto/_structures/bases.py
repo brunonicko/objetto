@@ -192,27 +192,42 @@ class BaseRelationship(BaseHashable):
     """
     Relationship between a structure and its values.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseHashable`
+
+    Inherited by:
+      - :class:`objetto.data.DataRelationship`
+      - :class:`objetto.objects.Relationship`
+
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
-    :raises TypeError: Invalid 'module' parameter type.
-    :raises ValueError: Invalid 'types' parameter value.
-    :raises TypeError: Invalid 'types' parameter type.
-    :raises ValueError: Did not provide any 'types' but 'checked' is True.
-    :raises ValueError: Invalid 'factory' parameter value.
-    :raises TypeError: Invalid 'factory' parameter type.
-    :raises ValueError: Provided 'serializer' but 'serialized' is False.
-    :raises ValueError: Provided 'deserializer' but 'serialized' is False.
-    :raises ValueError: Invalid 'serializer' parameter value.
-    :raises TypeError: Invalid 'serializer' parameter type.
-    :raises ValueError: Invalid 'deserializer' parameter value.
-    :raises TypeError: Invalid 'deserializer' parameter type.
+    :type represented: bool
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     __slots__ = (
@@ -301,6 +316,7 @@ class BaseRelationship(BaseHashable):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         if self.__hash is None:
             self.__hash = hash(frozenset(iteritems(self.to_dict())))
@@ -313,7 +329,9 @@ class BaseRelationship(BaseHashable):
         Compare with another object for equality.
 
         :param other: Another object.
+
         :return: True if considered equal.
+        :rtype: bool
         """
         if self is other:
             return True
@@ -329,6 +347,7 @@ class BaseRelationship(BaseHashable):
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         return custom_mapping_repr(
             self.to_dict(),
@@ -345,6 +364,7 @@ class BaseRelationship(BaseHashable):
         Get string representation.
 
         :return: String representation.
+        :rtype: str
         """
         return self.__repr__()
 
@@ -354,6 +374,7 @@ class BaseRelationship(BaseHashable):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         return {
             "types": frozenset(import_types(self.types)),
@@ -374,7 +395,10 @@ class BaseRelationship(BaseHashable):
         Get single exact type from available types if possible.
 
         :param types: Base types.
+        :type types: str or type or None or tuple[str or type or None]
+
         :return: Single exact type that is a subclass of one of provided base types.
+        :rtype: type or None
         """
         if not types or self.subtypes:
             return None
@@ -395,8 +419,12 @@ class BaseRelationship(BaseHashable):
         Perform type check and run value through factory.
 
         :param value: Value.
+
         :param factory: Whether to run value through factory.
+        :type factory: bool
+
         :param kwargs: Keyword arguments to be passed to the factory.
+
         :return: Fabricated value.
         """
         if factory and self.factory is not None:
@@ -406,63 +434,113 @@ class BaseRelationship(BaseHashable):
         return value
 
     @property
+    @final
     def types(self):
         # type: () -> LazyTypesTuple
-        """Types."""
+        """
+        Types.
+
+        :rtype: tuple[str or type]
+        """
         return self.__types
 
     @property
+    @final
     def subtypes(self):
         # type: () -> bool
-        """Whether to accept subtypes."""
+        """
+        Whether to accept subtypes.
+
+        :rtype: bool
+        """
         return self.__subtypes
 
     @property
+    @final
     def checked(self):
         # type: () -> bool
-        """Whether to perform runtime type check."""
+        """
+        Whether to perform runtime type check.
+
+        :rtype: bool
+        """
         return self.__checked
 
     @property
+    @final
     def module(self):
         # type: () -> Optional[str]
-        """Module path for lazy types/factories."""
+        """
+        Module path for lazy types/factories.
+
+        :rtype: str or None
+        """
         return self.__module
 
     @property
+    @final
     def factory(self):
         # type: () -> LazyFactory
-        """Value factory."""
+        """
+        Value factory.
+
+        :rtype: str or collections.abc.Callable or None
+        """
         return self.__factory
 
     @property
+    @final
     def serialized(self):
         # type: () -> bool
-        """Whether should be serialized."""
+        """
+        Whether should be serialized.
+
+        :rtype: bool
+        """
         return self.__serialized
 
     @property
+    @final
     def serializer(self):
         # type: () -> LazyFactory
-        """Custom serializer."""
+        """
+        Custom serializer.
+
+        :rtype: str or collections.abc.Callable or None
+        """
         return self.__serializer
 
     @property
+    @final
     def deserializer(self):
         # type: () -> LazyFactory
-        """Custom deserializer."""
+        """
+        Custom deserializer.
+
+        :rtype: str or collections.abc.Callable or None
+        """
         return self.__deserializer
 
     @property
+    @final
     def represented(self):
         # type: () -> bool
-        """Whether should be represented."""
+        """
+        Whether should be represented.
+
+        :rtype: bool
+        """
         return self.__represented
 
     @property
+    @final
     def passthrough(self):
         # type: () -> bool
-        """Whether does not perform type checks and has no factory."""
+        """
+        Whether does not perform type checks and has no factory.
+
+        :rtype: bool
+        """
         return (not self.types or not self.checked) and self.factory is None
 
 
@@ -477,6 +555,9 @@ class UniqueDescriptor(Base):
     When used, the object ID will be the hash, and the equality method will compare by
     identity instead of by values.
     If accessed through an instance, the descriptor will return the object ID.
+
+    Inherits from:
+      - :class:`objetto.bases.Base`
     """
 
     __slots__ = (FINAL_METHOD_TAG,)
@@ -504,8 +585,13 @@ class UniqueDescriptor(Base):
         Get object hash when accessing from instance or this descriptor otherwise.
 
         :param instance: Instance.
+        :type instance: objetto.bases.BaseStructure or None
+
         :param owner: Owner class.
-        :return: Object hash or this descriptor.
+        :type owner: type[objetto.bases.BaseStructure] or None
+
+        :return: Object hash based on object ID or this descriptor.
+        :rtype: int or objetto.objects.UniqueDescriptor or objetto.data.UniqueDescriptor
         """
         if instance is not None:
             cls = type(instance)
@@ -538,6 +624,7 @@ def unique_descriptor():
         True
 
     :return: Unique descriptor.
+    :rtype: objetto.objects.UniqueDescriptor or objetto.data.UniqueDescriptor
     """
     return UniqueDescriptor()
 
@@ -636,6 +723,18 @@ class BaseStructure(
     """
     Base structure.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseHashable`
+      - :class:`objetto.bases.BaseProtectedCollection`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseInteractiveStructure`
+      - :class:`objetto.bases.BaseMutableStructure`
+      - :class:`objetto.bases.BaseAuxiliaryStructure`
+      - :class:`objetto.bases.BaseData`
+      - :class:`objetto.bases.BaseObject`
+
+    Features:
       - Is hashable.
       - Is a protected collection.
       - Has state.
@@ -654,6 +753,7 @@ class BaseStructure(
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         cls = type(self)
         if cls._unique_descriptor:
@@ -668,7 +768,9 @@ class BaseStructure(
         Compare with another object for equality/identity.
 
         :param other: Another object.
+
         :return: True if equal or the exact same object.
+        :rtype: bool
         """
         if self is other:
             return True
@@ -801,6 +903,7 @@ class BaseStructure(
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         raise NotImplementedError()
 
@@ -811,7 +914,9 @@ class BaseStructure(
         Compare with another object for equality.
 
         :param other: Another object.
+
         :return: True if equal.
+        :rtype: bool
         """
         raise NotImplementedError()
 
@@ -823,7 +928,11 @@ class BaseStructure(
         Get relationship at location.
 
         :param location: Location.
+        :type location: collections.abc.Hashable
+
         :return: Relationship.
+        :rtype: objetto.bases.BaseRelationship
+
         :raises KeyError: Invalid location.
         """
         raise NotImplementedError()
@@ -836,9 +945,14 @@ class BaseStructure(
         Deserialize value for location.
 
         :param serialized: Serialized value.
+
         :param location: Location.
+        :type location: collections.abc.Hashable
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized value.
+
         :raises ValueError: Keyword arguments contain reserved keys.
         :raises ValueError: Can't deserialize value.
         """
@@ -890,9 +1004,14 @@ class BaseStructure(
         Serialize value for location.
 
         :param value: Value.
+
         :param location: Location.
+        :type location: collections.abc.Hashable
+
         :param kwargs: Keyword arguments to be passed to the serializers.
+
         :return: Serialized value.
+
         :raises ValueError: Keyword arguments contain reserved keys.
         :raises ValueError: Can't serialize value.
         """
@@ -941,8 +1060,11 @@ class BaseStructure(
         Deserialize.
 
         :param serialized: Serialized.
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized.
+        :rtype: objetto.bases.BaseStructure
         """
         raise NotImplementedError()
 
@@ -953,6 +1075,7 @@ class BaseStructure(
         Serialize.
 
         :param kwargs: Keyword arguments to be passed to the serializers.
+
         :return: Serialized.
         """
         raise NotImplementedError()
@@ -961,20 +1084,50 @@ class BaseStructure(
     @abstractmethod
     def _state(self):
         # type: () -> BaseState
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.bases.BaseState
+        """
         raise NotImplementedError()
 
 
 # noinspection PyAbstractClass
 class BaseInteractiveStructure(BaseStructure[T], BaseInteractiveCollection[T]):
-    """Base interactive structure."""
+    """
+    Base interactive structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseStructure`
+      - :class:`objetto.bases.BaseInteractiveCollection`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryStructure`
+      - :class:`objetto.bases.BaseInteractiveData`
+
+    Features:
+      - Is an interactive collection/structure.
+    """
 
     __slots__ = ()
 
 
 # noinspection PyAbstractClass
 class BaseMutableStructure(BaseStructure[T], BaseMutableCollection[T]):
-    """Base mutable structure."""
+    """
+    Base mutable structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseStructure`
+      - :class:`objetto.bases.BaseMutableCollection`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseMutableAuxiliaryStructure`
+      - :class:`objetto.bases.BaseMutableObject`
+
+    Features:
+      - Is a mutable collection/structure.
+    """
 
     __slots__ = ()
 
@@ -1002,12 +1155,32 @@ class BaseAuxiliaryStructureMeta(BaseStructureMeta):
 class BaseAuxiliaryStructure(
     with_metaclass(BaseAuxiliaryStructureMeta, BaseStructure[T])
 ):
-    """Structure with a single relationship for all locations."""
+    """
+    Structure with a single relationship for all locations.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseStructure`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryStructure`
+      - :class:`objetto.bases.BaseMutableAuxiliaryStructure`
+      - :class:`objetto.bases.BaseDictStructure`
+      - :class:`objetto.bases.BaseListStructure`
+      - :class:`objetto.bases.BaseSetStructure`
+      - :class:`objetto.bases.BaseAuxiliaryData`
+      - :class:`objetto.bases.BaseAuxiliaryObject`
+    """
 
     __slots__ = ()
 
     _relationship = BaseRelationship()
-    """Relationship for all locations."""
+    """
+    **Class Attribute**
+    
+    Relationship for all locations.
+    
+    :type: objetto.bases.BaseRelationship
+    """
 
     def find_with_attributes(self, **attributes):
         # type: (Any) -> Any
@@ -1015,7 +1188,9 @@ class BaseAuxiliaryStructure(
         Find first value that matches unique attribute values.
 
         :param attributes: Attributes to match.
-        :return: Value.
+
+        :return: Value that has matching attributes.
+
         :raises ValueError: No attributes provided or no match found.
         """
         return self._state.find_with_attributes(**attributes)
@@ -1028,7 +1203,10 @@ class BaseAuxiliaryStructure(
         Get relationship.
 
         :param location: Location.
+        :type location: collections.abc.Hashable
+
         :return: Relationship.
+        :rtype: objetto.bases.BaseRelationship
         """
         return cast("BaseRelationship", cls._relationship)
 
@@ -1038,7 +1216,19 @@ class BaseInteractiveAuxiliaryStructure(
     BaseAuxiliaryStructure[T],
     BaseInteractiveStructure[T],
 ):
-    """Base interactive auxiliary structure."""
+    """
+    Base interactive auxiliary structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryStructure`
+      - :class:`objetto.bases.BaseInteractiveStructure`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryData`
+      - :class:`objetto.bases.BaseInteractiveDictStructure`
+      - :class:`objetto.bases.BaseInteractiveListStructure`
+      - :class:`objetto.bases.BaseInteractiveSetStructure`
+    """
 
     __slots__ = ()
 
@@ -1048,6 +1238,18 @@ class BaseMutableAuxiliaryStructure(
     BaseAuxiliaryStructure[T],
     BaseMutableStructure[T],
 ):
-    """Base mutable auxiliary structure."""
+    """
+    Base mutable auxiliary structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryStructure`
+      - :class:`objetto.bases.BaseMutableStructure`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseMutableAuxiliaryObject`
+      - :class:`objetto.bases.BaseMutableDictStructure`
+      - :class:`objetto.bases.BaseMutableListStructure`
+      - :class:`objetto.bases.BaseMutableSetStructure`
+    """
 
     __slots__ = ()

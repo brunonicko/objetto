@@ -360,6 +360,11 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         """
         Update multiple attribute values.
         Same parameters as :meth:`dict.update`.
+
+        :return: Transformed.
+        :rtype: objetto.data.ProtectedData
+
+        :raises AttributeError: Attribute is not changeable and already has a value.
         """
         update = dict(*args, **kwargs)
         cls = type(self)

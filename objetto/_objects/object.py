@@ -998,6 +998,9 @@ class Object(
         Update multiple attribute values.
         Same parameters as :meth:`dict.update`.
 
+        :return: Transformed.
+        :rtype: objetto.objects.Object
+
         :raises AttributeError: Attribute is not changeable and already has a value.
         """
         self.__functions__.update(self, dict(*args, **kwargs))

@@ -49,7 +49,19 @@ class BaseSetStructure(
         BaseProtectedSet[T],
     )
 ):
-    """Base set structure."""
+    """
+    Base set structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryStructure`
+      - :class:`objetto.bases.BaseProtectedSet`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseInteractiveSetStructure`
+      - :class:`objetto.bases.BaseMutableSetStructure`
+      - :class:`objetto.data.SetData`
+      - :class:`objetto.objects.SetObject`
+    """
 
     __slots__ = ()
 
@@ -60,6 +72,7 @@ class BaseSetStructure(
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         if type(self)._relationship.represented:
             return custom_iterable_repr(
@@ -79,6 +92,7 @@ class BaseSetStructure(
         Get value count.
 
         :return: Value count.
+        :rtype: int
         """
         return len(self._state)
 
@@ -89,6 +103,7 @@ class BaseSetStructure(
         Iterate over values.
 
         :return: Values iterator.
+        :rtype: collections.abc.Iterator[collections.abc.Hashable]
         """
         for value in self._state:
             yield value
@@ -100,7 +115,10 @@ class BaseSetStructure(
         Get whether value is present.
 
         :param value: Value.
+        :type value: collections.abc.Hashable
+
         :return: True if contains.
+        :rtype: bool
         """
         return value in self._state
 
@@ -110,7 +128,10 @@ class BaseSetStructure(
         Get whether is a disjoint set of an iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: True if is disjoint.
+        :rtype: bool
         """
         return self._state.isdisjoint(iterable)
 
@@ -120,7 +141,10 @@ class BaseSetStructure(
         Get whether is a subset of an iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: True if is subset.
+        :rtype: bool
         """
         return self._state.issubset(iterable)
 
@@ -130,7 +154,10 @@ class BaseSetStructure(
         Get whether is a superset of an iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: True if is superset.
+        :rtype: bool
         """
         return self._state.issuperset(iterable)
 
@@ -140,7 +167,10 @@ class BaseSetStructure(
         Get intersection.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Intersection.
+        :rtype: objetto.states.SetState
         """
         return self._state.intersection(iterable)
 
@@ -150,7 +180,10 @@ class BaseSetStructure(
         Get difference.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Difference.
+        :rtype: objetto.states.SetState
         """
         return self._state.difference(iterable)
 
@@ -160,7 +193,10 @@ class BaseSetStructure(
         Get an iterable's difference to this.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Inverse Difference.
+        :rtype: objetto.states.SetState
         """
         return self._state.inverse_difference(iterable)
 
@@ -170,7 +206,10 @@ class BaseSetStructure(
         Get symmetric difference.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Symmetric difference.
+        :rtype: objetto.states.SetState
         """
         return self._state.symmetric_difference(iterable)
 
@@ -180,7 +219,10 @@ class BaseSetStructure(
         Get union.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Union.
+        :rtype: objetto.states.SetState
         """
         return self._state.union(iterable)
 
@@ -188,7 +230,13 @@ class BaseSetStructure(
     @abstractmethod
     def _state(self):
         # type: () -> SetState[T]
-        """Internal state."""
+        """
+        Internal state.
+
+        :rtype: objetto.states.SetState
+
+        :raises NotImplementedError: Abstract method not implemented.
+        """
         raise NotImplementedError()
 
 
@@ -198,7 +246,17 @@ class BaseInteractiveSetStructure(
     BaseInteractiveAuxiliaryStructure[T],
     BaseInteractiveSet[T],
 ):
-    """Base interactive set structure."""
+    """
+    Base interactive set structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseSetStructure`
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryStructure`
+      - :class:`objetto.bases.BaseInteractiveSet`
+
+    Inherited By:
+      - :class:`objetto.data.InteractiveSetData`
+    """
 
     __slots__ = ()
 
@@ -209,6 +267,16 @@ class BaseMutableSetStructure(
     BaseSetStructure[T],
     BaseMutableAuxiliaryStructure[T],
 ):
-    """Base mutable set structure."""
+    """
+    Base mutable set structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMutableSet`
+      - :class:`objetto.bases.BaseSetStructure`
+      - :class:`objetto.bases.BaseMutableAuxiliaryStructure`
+
+    Inherited By:
+      - :class:`objetto.objects.MutableSetObject`
+    """
 
     __slots__ = ()

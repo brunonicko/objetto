@@ -83,22 +83,45 @@ _BA = TypeVar("_BA", bound="BaseAttribute")
 
 class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T])):
     """
-    Base attribute descriptor.
+    Base attribute descriptor for :class:`objetto.bases.BaseAttributeStructure` classes.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseHashable`
+      - :class:`typing.Generic`
+
+    Inherited by:
+      - :class:`objetto.data.DataAttribute`
+      - :class:`objetto.objects.Attribute`
 
     :param relationship: Relationship.
+    :type relationship: objetto.bases.BaseRelationship
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param module: Optional module path to use in case partial paths are provided.
+    :type module: str or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
-    :raises TypeError: Invalid 'relationship' parameter type.
-    :raises TypeError: Invalid 'module' parameter type.
+    :type abstracted: bool
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     :raises ValueError: Can't specify both 'default' and 'default_factory' arguments.
-    :raises TypeError: Invalid 'default_factory' parameter type.
-    :raises TypeError: Invalid 'default_factory' parameter value.
     :raises ValueError: Can't be 'required' and 'deletable' at the same time.
     :raises ValueError: Can't be 'finalized' and 'abstracted' at the same time.
     """
@@ -197,8 +220,13 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         otherwise.
 
         :param instance: Instance.
+        :type instance: objetto.bases.BaseAttributeStructure or None
+
         :param owner: Owner class.
+        :type owner: type[objetto.bases.BaseAttributeStructure]
+
         :return: Value or this descriptor.
+        :rtype: Any or objetto.bases.BaseAttribute
         """
         if instance is not None:
             attribute_type = getattr(type(instance), "_attribute_type", None)
@@ -213,6 +241,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         Get hash based on object id.
 
         :return: Hash based on object id.
+        :rtype: int
         """
         return hash(id(self))
 
@@ -223,7 +252,9 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         Compare with another object for identity.
 
         :param other: Another object.
+
         :return: True if the same object.
+        :rtype: bool
         """
         return other is self
 
@@ -235,6 +266,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         return custom_mapping_repr(
             self.to_dict(),
@@ -250,6 +282,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         return {
             "relationship": self.relationship,
@@ -269,7 +302,10 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         Get attribute name.
 
         :param instance: Instance.
+        :type instance: objetto.bases.BaseAttributeStructure
+
         :return: Attribute Name.
+        :rtype: str
         """
         cls = type(instance)
         return cls._attribute_names[self]
@@ -280,7 +316,10 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         Get attribute value.
 
         :param instance: Instance.
+        :type instance: objetto.bases.BaseAttributeStructure
+
         :return: Attribute Value.
+
         :raises AttributeError: Could not get value.
         """
         name = self.get_name(instance)
@@ -305,7 +344,9 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         Fabricate default value.
 
         :param kwargs: Keyword arguments to be passed to the factories.
+
         :return: Fabricated value.
+
         :raises ValueError: No default or default factory.
         """
         default = self.__default
@@ -319,7 +360,11 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
     @property
     def relationship(self):
         # type: () -> BaseRelationship
-        """Relationship."""
+        """
+        Relationship.
+
+        :rtype: objetto.bases.BaseRelationship
+        """
         return self.__relationship
 
     @property
@@ -331,49 +376,81 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
     @property
     def default_factory(self):
         # type: () -> LazyFactory
-        """Default value factory."""
+        """
+        Default value factory.
+
+        :rtype: str or collections.abc.Callable or None
+        """
         return self.__default_factory
 
     @property
     def module(self):
         # type: () -> Optional[str]
-        """Optional module path to use in case partial paths are provided."""
+        """
+        Optional module path to use in case partial paths are provided.
+
+        :rtype: str or None
+        """
         return self.__module
 
     @property
     def required(self):
         # type: () -> bool
-        """Whether attribute is required to have a value or not."""
+        """
+        Whether attribute is required to have a value or not.
+
+        :rtype: bool
+        """
         return self.__required
 
     @property
     def changeable(self):
         # type: () -> bool
-        """Whether attribute value can be changed."""
+        """
+        Whether attribute value can be changed.
+
+        :rtype: bool
+        """
         return self._changeable
 
     @property
     def deletable(self):
         # type: () -> bool
-        """Whether attribute value can be deleted."""
+        """
+        Whether attribute value can be deleted.
+
+        :rtype: bool
+        """
         return self._deletable
 
     @property
     def finalized(self):
         # type: () -> bool
-        """If True, attribute can't be overridden by subclasses."""
+        """
+        If True, attribute can't be overridden by subclasses.
+
+        :rtype: bool
+        """
         return self.__finalized
 
     @property
     def abstracted(self):
         # type: () -> bool
-        """If True, attribute needs to be overridden by subclasses."""
+        """
+        If True, attribute needs to be overridden by subclasses.
+
+        :rtype: bool
+        """
         return self.__abstracted
 
     @property
     def has_default(self):
         # type: () -> bool
-        """Whether attribute has a default value or a default factory."""
+        """
+        Whether attribute has a default value or a default factory.
+
+        :rtype: bool
+        """
         return self.default is not MISSING or self.default_factory is not None
 
 
@@ -446,6 +523,14 @@ class BaseAttributeStructure(
     """
     Base attribute structure.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseStructure`
+
+    Inherited by:
+      - :class:`objetto.data.ProtectedData`
+      - :class:`objetto.objects.Object`
+
+    Features:
       - Holds values in attributes defined by descriptors.
       - Can be cast into a dictionary.
     """
@@ -459,6 +544,7 @@ class BaseAttributeStructure(
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
 
         class SimplifiedAuxiliary(object):
@@ -503,6 +589,7 @@ class BaseAttributeStructure(
         Iterate over reversed attribute names.
 
         :return: Reversed attribute names iterator.
+        :rtype: collections.abc.Iterator[str]
         """
         return self._state.__reversed__()
 
@@ -513,7 +600,10 @@ class BaseAttributeStructure(
         Get value for attribute name.
 
         :param name: Attribute name.
+        :type name: str
+
         :return: Value.
+
         :raises KeyError: Attribute does not exist or has no value.
         """
         return self._state[name]
@@ -522,9 +612,10 @@ class BaseAttributeStructure(
     def __len__(self):
         # type: () -> int
         """
-        Get key count.
+        Get count of attributes with value.
 
-        :return: Key count.
+        :return: Count of attributes with value.
+        :rtype: int
         """
         return len(self._state)
 
@@ -535,6 +626,7 @@ class BaseAttributeStructure(
         Iterate over names of attributes with value.
 
         :return: Names of attributes with value.
+        :rtype: collections.abc.Iterator[str]
         """
         for name in self._state:
             yield name
@@ -546,7 +638,10 @@ class BaseAttributeStructure(
         Get whether attribute name is valid and has a value.
 
         :param name: Attribute name.
+        :type name: str
+
         :return: True if attribute name is valid and has a value.
+        :rtype: bool
         """
         return name in self._state
 
@@ -557,7 +652,11 @@ class BaseAttributeStructure(
         Get relationship at location (attribute name).
 
         :param location: Location (attribute name).
+        :type location: str
+
         :return: Relationship.
+        :rtype: objetto.bases.BaseRelationship
+
         :raises KeyError: Attribute does not exist.
         """
         return cls._get_attribute(location).relationship
@@ -569,7 +668,11 @@ class BaseAttributeStructure(
         Get attribute by name.
 
         :param name: Attribute name.
+        :type name: str
+
         :return: Attribute.
+        :rtype: objetto.bases.BaseAttribute
+
         :raises KeyError: Attribute does not exist.
         """
         return cls._attributes[name]
@@ -581,8 +684,13 @@ class BaseAttributeStructure(
         Set attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.bases.BaseAttributeStructure
+
         :raises AttributeError: Attribute is not changeable and already has a value.
         """
         raise NotImplementedError()
@@ -594,7 +702,11 @@ class BaseAttributeStructure(
         Delete attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :return: Transformed.
+        :rtype: objetto.bases.BaseAttributeStructure
+
         :raises KeyError: Attribute does not exist or has no value.
         :raises AttributeError: Attribute is not deletable.
         """
@@ -624,6 +736,9 @@ class BaseAttributeStructure(
         Update multiple attribute values.
         Same parameters as :meth:`dict.update`.
 
+        :return: Transformed.
+        :rtype: objetto.bases.BaseAttributeStructure
+
         :raises AttributeError: Attribute is not changeable and already has a value.
         """
         raise NotImplementedError()
@@ -635,6 +750,7 @@ class BaseAttributeStructure(
         Get names of the attributes with values.
 
         :return: Attribute names.
+        :rtype: objetto.states.SetState[str]
         """
         return SetState(self._state.keys())
 
@@ -645,7 +761,9 @@ class BaseAttributeStructure(
         Find first value that matches unique attribute values.
 
         :param attributes: Attributes to match.
+
         :return: Value.
+
         :raises ValueError: No attributes provided or no match found.
         """
         return self._state.find_with_attributes(**attributes)
@@ -654,7 +772,11 @@ class BaseAttributeStructure(
     @abstractmethod
     def _state(self):
         # type: () -> DictState[str, Any]
-        """Internal state."""
+        """
+        Internal state.
+
+        :rtype: objetto.states.DictState[str, Any]
+        """
         raise NotImplementedError()
 
 
@@ -662,7 +784,16 @@ class BaseAttributeStructure(
 class BaseInteractiveAttributeStructure(
     BaseAttributeStructure, BaseInteractiveStructure[str]
 ):
-    """Base interactive attribute structure."""
+    """
+    Base interactive attribute structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAttributeStructure`
+      - :class:`objetto.bases.BaseInteractiveStructure`
+
+    Inherited by:
+      - :class:`objetto.data.Data`
+    """
 
     __slots__ = ()
 
@@ -673,8 +804,13 @@ class BaseInteractiveAttributeStructure(
         Set attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.bases.BaseInteractiveAttributeStructure
+
         :raises AttributeError: Attribute is not changeable and already has a value.
         """
         return self._set(name, value)
@@ -686,7 +822,11 @@ class BaseInteractiveAttributeStructure(
         Delete attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :return: Transformed.
+        :rtype: objetto.bases.BaseInteractiveAttributeStructure
+
         :raises KeyError: Attribute does not exist or has no value.
         :raises AttributeError: Attribute is not deletable.
         """
@@ -713,6 +853,9 @@ class BaseInteractiveAttributeStructure(
         Update multiple attribute values.
         Same parameters as :meth:`dict.update`.
 
+        :return: Transformed.
+        :rtype: objetto.bases.BaseInteractiveAttributeStructure
+
         :raises AttributeError: Attribute is not changeable and already has a value.
         """
         return self._update(*args, **kwargs)
@@ -720,7 +863,16 @@ class BaseInteractiveAttributeStructure(
 
 # noinspection PyAbstractClass
 class BaseMutableAttributeStructure(BaseAttributeStructure, BaseMutableStructure[str]):
-    """Base mutable attribute structure."""
+    """
+    Base mutable attribute structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAttributeStructure`
+      - :class:`objetto.bases.BaseMutableStructure`
+
+    Inherited by:
+      - :class:`objetto.objects.Object`
+    """
 
     __slots__ = ()
 
@@ -731,7 +883,10 @@ class BaseMutableAttributeStructure(BaseAttributeStructure, BaseMutableStructure
         Set attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :return: Value.
+
         :raises KeyError: Attribute does not exist.
         """
         self._set(name, value)
@@ -743,6 +898,8 @@ class BaseMutableAttributeStructure(BaseAttributeStructure, BaseMutableStructure
         Delete attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :raises KeyError: Attribute does not exist or has no value.
         """
         self._delete(name)
@@ -754,6 +911,8 @@ class BaseMutableAttributeStructure(BaseAttributeStructure, BaseMutableStructure
         Delete attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :raises KeyError: Attribute does not exist or has no value.
         """
         self._delete(name)
@@ -765,7 +924,10 @@ class BaseMutableAttributeStructure(BaseAttributeStructure, BaseMutableStructure
         Set attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :param value: Value.
+
         :raises KeyError: Attribute does not exist.
         """
         self._set(name, value)
