@@ -407,13 +407,89 @@ Base Attribute Class
    .. automethod:: objetto.bases.BaseAttribute.get_value
    .. automethod:: objetto.bases.BaseAttribute.fabricate_default_value
 
-Base Data Class
----------------
-.. autoclass:: objetto.bases.BaseData
-
-Base Object Class
+Base Data Classes
 -----------------
+.. autoclass:: objetto.bases.BaseData
+   :members: _state
+
+   .. automethod:: objetto.bases.BaseData.__copy__
+
+.. autoclass:: objetto.bases.BaseInteractiveData
+
+.. autoclass:: objetto.bases.BaseAuxiliaryData
+   :members:
+     _relationship
+
+   .. automethod:: objetto.bases.BaseAuxiliaryData._hash
+   .. automethod:: objetto.bases.BaseAuxiliaryData._eq
+   .. automethod:: objetto.bases.BaseAuxiliaryData.find_with_attributes
+
+.. autoclass:: objetto.bases.BaseInteractiveAuxiliaryData
+
+Base Object Classes
+-------------------
 .. autoclass:: objetto.bases.BaseObject
+   :members:
+     _state,
+     _parent,
+     _is_root,
+     _children,
+     _history,
+     app,
+     data,
+
+   .. automethod:: objetto.bases.BaseObject.__copy__
+   .. automethod:: objetto.bases.BaseObject._hash
+   .. automethod:: objetto.bases.BaseObject._eq
+   .. automethod:: objetto.bases.BaseObject._locate
+   .. automethod:: objetto.bases.BaseObject._locate_data
+   .. automethod:: objetto.bases.BaseObject._in_same_application
+   .. automethod:: objetto.bases.BaseObject._batch_context
+   .. automethod:: objetto.bases.BaseObject.deserialize
+
+.. autoclass:: objetto.bases.BaseMutableObject
+
+.. autoclass:: objetto.bases.BaseAuxiliaryObject
+   :members: _relationship
+
+   .. automethod:: objetto.bases.BaseAuxiliaryObject.find_with_attributes
+
+.. autoclass:: objetto.bases.BaseMutableAuxiliaryObject
+
+Base Proxy Object Class
+-----------------------
+.. autoclass:: objetto.bases.BaseProxyObject
+   :members:
+     _obj,
+     _state,
+     _parent,
+     _is_root,
+     _children,
+     _history,
+     app,
+     data,
+
+   .. automethod:: objetto.bases.BaseProxyObject.__repr__
+   .. automethod:: objetto.bases.BaseProxyObject.__hash__
+   .. automethod:: objetto.bases.BaseProxyObject.__eq__
+   .. automethod:: objetto.bases.BaseProxyObject.__len__
+   .. automethod:: objetto.bases.BaseProxyObject.__iter__
+   .. automethod:: objetto.bases.BaseProxyObject.__contains__
+   .. automethod:: objetto.bases.BaseProxyObject._clear
+   .. automethod:: objetto.bases.BaseProxyObject.find_with_attributes
+
+Base Reaction Class
+-------------------
+.. autoclass:: objetto.bases.BaseReaction
+   :members: priority
+
+   .. automethod:: objetto.bases.BaseReaction.__call__
+   .. automethod:: objetto.bases.BaseReaction.__get__
+   .. automethod:: objetto.bases.BaseReaction.__hash__
+   .. automethod:: objetto.bases.BaseReaction.__eq__
+   .. automethod:: objetto.bases.BaseReaction.__repr__
+   .. automethod:: objetto.bases.BaseReaction.to_dict
+   .. automethod:: objetto.bases.BaseReaction.set_priority
 
 Base Change Classes
 --------------------

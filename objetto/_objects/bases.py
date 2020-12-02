@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     )
 
     from .._applications import Action, Phase, Store
+    from .._states import SetState
     from .._history import HistoryObject
     from ..utils.factoring import LazyFactory
     from ..utils.type_checking import LazyTypes
@@ -95,19 +96,50 @@ class Relationship(BaseRelationship):
     """
     Relationship between an object structure and its values.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseRelationship`
+
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param data_relationship: Data relationship (will be generated if not provided).
+    :type data_relationship: objetto.data.DataRelationship or None
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     :raises ValueError: Provided 'serialized' but 'child' is False.
     :raises ValueError: Provided 'history' but 'child' is False.
     :raises ValueError: Provided 'data' but 'child' is False.
@@ -203,6 +235,7 @@ class Relationship(BaseRelationship):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: Dict[str, Any]
         """
         dct = super(Relationship, self).to_dict()
         dct.update(
@@ -218,25 +251,41 @@ class Relationship(BaseRelationship):
     @property
     def child(self):
         # type: () -> bool
-        """Whether object values should be adopted as children."""
+        """
+        Whether object values should be adopted as children.
+
+        :rtype: bool
+        """
         return self.__child
 
     @property
     def history(self):
         # type: () -> bool
-        """Whether to propagate the history to the child object value."""
+        """
+        Whether to propagate the history to the child object value.
+
+        :rtype: bool
+        """
         return self.__history
 
     @property
     def data(self):
         # type: () -> bool
-        """Whether to generate data for the value."""
+        """
+        Whether to generate data for the value.
+
+        :rtype: bool
+        """
         return self.__data
 
     @property
     def data_relationship(self):
         # type: () -> Optional[DataRelationship]
-        """Data relationship."""
+        """
+        Data relationship.
+
+        :rtype: objetto.data.DataRelationship or None
+        """
         if self.__data and self.__data_relationship is None:
             types = set()  # type: Set[Union[Type, str]]
             for lazy, typ in zip(self.types, import_types(self.types)):
@@ -269,6 +318,15 @@ _BR = TypeVar("_BR", bound="BaseReaction")
 class BaseReaction(Base):
     """
     Base method-like that gets called whenever an action is sent through the object.
+
+    Inherits from:
+      - :class:`objetto.bases.Base`
+
+    Inherited by:
+      - :class:`objetto.reactions.CustomReaction`
+      - :class:`objetto.reactions.UniqueAttributes`
+      - :class:`objetto.reactions.LimitChildren`
+      - :class:`objetto.reactions.Limit`
     """
 
     __slots__ = ("__hash", "_priority")
@@ -283,8 +341,13 @@ class BaseReaction(Base):
         React to actions.
 
         :param obj: Object.
+        :type obj: objetto.bases.BaseObject
+
         :param action: Action.
+        :type action: objetto.objects.Action
+
         :param phase: Phase.
+        :type phase: objetto.constants.PRE or objetto.constants.POST
         """
         raise NotImplementedError()
 
@@ -309,8 +372,13 @@ class BaseReaction(Base):
         Get bound reaction method from valid instance or this descriptor otherwise.
 
         :param instance: Instance.
+        :type instance: objetto.bases.BaseObject or None
+
         :param owner: Owner class.
+        :type owner: type[objetto.bases.BaseObject]
+
         :return: Bound reaction method or this descriptor.
+        :rtype: function or objetto.bases.BaseReaction
         """
         if instance is not None:
 
@@ -335,6 +403,7 @@ class BaseReaction(Base):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         if self.__hash is None:
             dct = self.to_dict()
@@ -349,7 +418,9 @@ class BaseReaction(Base):
         Compare with another object for equality.
 
         :param other: Another object.
+
         :return: True if considered equal.
+        :rtype: bool
         """
         if self is other:
             return True
@@ -374,6 +445,7 @@ class BaseReaction(Base):
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         return custom_mapping_repr(
             self.to_dict(),
@@ -389,6 +461,7 @@ class BaseReaction(Base):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         return {
             "priority": self.priority,
@@ -396,12 +469,15 @@ class BaseReaction(Base):
 
     @final
     def set_priority(self, priority):
-        # type: (_BR, int) -> _BR
+        # type: (_BR, Optional[int]) -> _BR
         """
         Set priority and return a new reaction.
 
         :param priority: Priority.
+        :type priority: int or None
+
         :return: New reaction.
+        :rtype: objetto.bases.BaseReaction
         """
 
         # 'priority'
@@ -419,7 +495,11 @@ class BaseReaction(Base):
     @final
     def priority(self):
         # type: () -> Optional[int]
-        """Priority."""
+        """
+        Priority.
+
+        :rtype: int or None
+        """
         return self._priority
 
 
@@ -434,10 +514,16 @@ class HistoryDescriptor(BaseHashable):
     When used, every instance of the object class will hold a history that will keep
     track of its changes (and the changes of its children that define a history
     relationship), allowing for easy undo/redo operations.
+
     If accessed through an instance, the descriptor will return the history object.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseHashable`
+
     :param size: How many changes to remember.
-    :raises TypeError: Invalid 'size' parameter type.
+    :type size: int or None
+
+    :raises TypeError: Invalid parameter type.
     """
 
     __slots__ = ("__size",)
@@ -472,8 +558,13 @@ class HistoryDescriptor(BaseHashable):
         Get history object when accessing from instance or this descriptor otherwise.
 
         :param instance: Instance.
+        :type instance: objetto.bases.BaseObject or None
+
         :param owner: Owner class.
+        :type owner: type[objetto.bases.BaseObject]
+
         :return: History object or this descriptor.
+        :rtype: objetto.history.HistoryObject or objetto.history.HistoryDescriptor
         """
         if instance is not None:
             cls = type(instance)
@@ -490,6 +581,7 @@ class HistoryDescriptor(BaseHashable):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         return hash(frozenset(iteritems(self.to_dict())))
 
@@ -499,7 +591,9 @@ class HistoryDescriptor(BaseHashable):
         Compare for equality.
 
         :param other: Another object.
+
         :return: True if equal.
+        :rtype: bool
         """
         if self is other:
             return True
@@ -517,6 +611,7 @@ class HistoryDescriptor(BaseHashable):
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         return custom_mapping_repr(
             self.to_dict(),
@@ -532,13 +627,18 @@ class HistoryDescriptor(BaseHashable):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         return {"size": self.size}
 
     @property
     def size(self):
         # type: () -> Optional[int]
-        """How many changes to remember."""
+        """
+        How many changes to remember.
+
+        :rtype: int or None
+        """
         return self.__size
 
 
@@ -751,9 +851,18 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     """
     Base object.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseStructure`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseMutableObject`
+      - :class:`objetto.bases.BaseAuxiliaryObject`
+
+    Features:
       - Is a protected structure.
 
     :param app: Application.
+    :type app: objetto.applications.Application
     """
 
     __slots__ = ("__weakref__", "__")
@@ -773,6 +882,7 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         Get copy by using serialization.
 
         :return: Copy.
+        :rtype: objetto.bases.BaseObject
         """
         return type(self).deserialize(self.serialize())
 
@@ -782,6 +892,7 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         Get hash based on object id.
 
         :return: Hash based on object id.
+        :rtype: int
         """
         return hash(id(self))
 
@@ -792,7 +903,9 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         Compare with another object for identity.
 
         :param other: Another object.
+
         :return: True if the same object.
+        :rtype: bool
         """
         return self is other
 
@@ -803,7 +916,11 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         Locate child object.
 
         :param child: Child object.
+        :type child: objetto.bases.BaseObject
+
         :return: Location.
+        :rtype: collections.abc.Hashable
+
         :raises ValueError: Could not locate child.
         """
         raise NotImplementedError()
@@ -815,7 +932,11 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         Locate child object's data.
 
         :param child: Child object.
+        :type child: objetto.bases.BaseObject
+
         :return: Data location.
+        :rtype: collections.abc.Hashable
+
         :raises ValueError: Could not locate child's data.
         """
         raise NotImplementedError()
@@ -827,7 +948,9 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         Get whether a value is an object and belongs to the same application as this.
 
         :param value: Any value or object.
+
         :return: True if is an object and belongs to the same application.
+        :rtype: bool
         """
         return isinstance(value, BaseObject) and self.app is value.app
 
@@ -839,8 +962,13 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         Batch context.
 
         :param name: Batch name.
+        :type name: str
+
         :param metadata: Metadata.
+
         :return: Batch context manager.
+        :rtype: contextlib.AbstractContextManager[\
+collections.abc.Iterator[objetto.changes.Batch]]
         """
         change = Batch(name=str(name), obj=self, metadata=metadata)
         with self.app.__.batch_context(self, change):
@@ -854,16 +982,25 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         Deserialize.
 
         :param serialized: Serialized.
+
         :param app: Application (required).
+        :type app: objetto.applications.Application
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized.
+        :rtype: objetto.bases.BaseObject
         """
         raise NotImplementedError()
 
     @property
     def _state(self):
         # type: () -> BaseState
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.states.BaseState
+        """
         with self.app.__.read_context(self) as read:
             return read().state
 
@@ -883,14 +1020,22 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     @final
     def _is_root(self):
         # type: () -> bool
-        """Whether object is root."""
+        """
+        Whether object is root.
+
+        :rtype: bool
+        """
         return self.__.is_root
 
     @property
     @final
     def _children(self):
-        # type: () -> Set[BaseObject]
-        """Children objects."""
+        # type: () -> SetState[BaseObject]
+        """
+        Children objects.
+
+        :rtype: objetto.states.SetState[objetto.bases.BaseObject]
+        """
         with self.app.__.read_context(self) as read:
             return read().children
 
@@ -898,7 +1043,11 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     @final
     def _history(self):
         # type: () -> Optional[HistoryObject]
-        """History or `None`."""
+        """
+        History.
+
+        :rtype: objetto.history.HistoryObject or None
+        """
         with self.app.__.read_context(self) as read:
             store = read()
             if store.history is not None:
@@ -913,13 +1062,21 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     @final
     def app(self):
         # type: () -> Application
-        """Application."""
+        """
+        Application.
+
+        :rtype: objetto.applications.Application
+        """
         return self.__.app
 
     @property
     def data(self):
         # type: () -> Optional[BaseData[T]]
-        """Data."""
+        """
+        Data.
+
+        :rtype: objetto.bases.BaseData or None
+        """
         with self.app.__.read_context(self) as read:
             return read().data
 
@@ -929,6 +1086,15 @@ class BaseMutableObject(BaseObject[T], BaseMutableStructure[T]):
     """
     Base mutable object.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseObject`
+      - :class:`objetto.bases.BaseMutableStructure`
+
+    Inherited By:
+      - :class:`objetto.objects.Object`
+      - :class:`objetto.objects.BaseMutableAuxiliaryObject`
+
+    Features:
       - Is an mutable object structure.
     """
 
@@ -1031,22 +1197,43 @@ class BaseAuxiliaryObject(
         BaseObject[T],
     )
 ):
-    """Base auxiliary object."""
+    """
+    Base auxiliary object.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryStructure`
+      - :class:`objetto.bases.BaseObject`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseMutableAuxiliaryObject`
+      - :class:`objetto.objects.DictObject`
+      - :class:`objetto.objects.ListObject`
+      - :class:`objetto.objects.SetObject`
+    """
 
     __slots__ = ()
     __functions__ = BaseAuxiliaryObjectFunctions
 
     _relationship = Relationship()
-    """Relationship for all locations."""
+    """
+    Relationship for all locations.
+    
+    :type: objetto.objects.Relationship
+    """
 
     @final
     def find_with_attributes(self, **attributes):
         # type: (Any) -> Any
         """
         Find first value that matches unique attribute values.
+        This method will be optimized if the auxiliary objects is utiling the
+        :class:`objetto.reactions.UniqueAttributes` reaction, which caches unique
+        attributes as indexes.
 
         :param attributes: Attributes to match.
+
         :return: Value.
+
         :raises ValueError: No attributes provided or no match found.
         """
         with self.app.__.read_context(self) as read:
@@ -1076,9 +1263,23 @@ class BaseAuxiliaryObject(
 
 # noinspection PyAbstractClass
 class BaseMutableAuxiliaryObject(
-    BaseAuxiliaryObject[T], BaseMutableAuxiliaryStructure[T]
+    BaseAuxiliaryObject[T], BaseMutableObject[T], BaseMutableAuxiliaryStructure[T]
 ):
-    """Base mutable auxiliary object."""
+    """
+    Base mutable auxiliary object.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryObject`
+      - :class:`objetto.bases.BaseMutableObject`
+      - :class:`objetto.bases.BaseMutableAuxiliaryStructure`
+
+    Inherited By:
+      - :class:`objetto.objects.MutableDictObject`
+      - :class:`objetto.objects.MutableListObject`
+      - :class:`objetto.objects.MutableSetObject`
+    """
+
+    __slots__ = ()
 
 
 # noinspection PyTypeChecker
@@ -1089,7 +1290,16 @@ class BaseProxyObject(BaseMutableCollection[T]):
     """
     Base auxiliary proxy object.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseMutableCollection`
+
+    Inherited By:
+      - :class:`objetto.objects.ProxyDictObject`
+      - :class:`objetto.objects.ProxyListObject`
+      - :class:`objetto.objects.ProxySetObject`
+
     :param obj: Auxiliary object.
+    :type obj: objetto.bases.BaseAuxiliaryObject
     """
 
     __slots__ = ("__obj",)
@@ -1107,6 +1317,7 @@ class BaseProxyObject(BaseMutableCollection[T]):
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         return "{}({})".format(type(self).__fullname__, self._obj)
 
@@ -1116,6 +1327,7 @@ class BaseProxyObject(BaseMutableCollection[T]):
         Get hash based on object id.
 
         :return: Hash based on object id.
+        :rtype: int
         """
         return hash(id(self))
 
@@ -1126,7 +1338,9 @@ class BaseProxyObject(BaseMutableCollection[T]):
         Compare with another object for identity.
 
         :param other: Another object.
+
         :return: True if the same object.
+        :rtype: bool
         """
         return self is other
 
@@ -1137,6 +1351,7 @@ class BaseProxyObject(BaseMutableCollection[T]):
         Get count.
 
         :return: Count.
+        :rtype: int
         """
         return self._obj.__len__()
 
@@ -1147,6 +1362,7 @@ class BaseProxyObject(BaseMutableCollection[T]):
         Iterate over.
 
         :return: Iterator.
+        :rtype: collections.abc.Iterator
         """
         for value in self._obj.__iter__():
             yield value
@@ -1158,7 +1374,9 @@ class BaseProxyObject(BaseMutableCollection[T]):
         Get whether value is present.
 
         :param value: Value.
+
         :return: True if contains.
+        :rtype: bool
         """
         return value in self._obj
 
@@ -1169,6 +1387,7 @@ class BaseProxyObject(BaseMutableCollection[T]):
         Clear.
 
         :return: Transformed.
+        :rtype: objetto.bases.BaseProxyObject
         """
         self._obj._clear()
         return self
@@ -1190,52 +1409,84 @@ class BaseProxyObject(BaseMutableCollection[T]):
     @property
     def _obj(self):
         # type: () -> BaseAuxiliaryObject
-        """Auxiliary object."""
+        """
+        Auxiliary object.
+
+        :rtype: objetto.bases.BaseAuxiliaryObject
+        """
         return self.__obj
 
     @property
     def _state(self):
         # type: () -> BaseState
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.bases.BaseState
+        """
         return self._obj._state
 
     @property
     @final
     def _parent(self):
         # type: () -> Optional[BaseObject]
-        """Parent object or `None`."""
+        """
+        Parent object or `None`.
+
+        :rtype: objetto.bases.BaseObject or None
+        """
         return self._obj._parent
 
     @property
     @final
     def _is_root(self):
         # type: () -> bool
-        """Whether object is root."""
+        """
+        Whether object is root.
+
+        :rtype: bool
+        """
         return self._obj._is_root
 
     @property
     @final
     def _children(self):
-        # type: () -> Set[BaseObject]
-        """Children objects."""
+        # type: () -> SetState[BaseObject]
+        """
+        Children objects.
+
+        :rtype: objetto.states.SetState[objetto.bases.BaseObject]
+        """
         return self._obj._children
 
     @property
     @final
     def _history(self):
         # type: () -> Optional[HistoryObject]
-        """History or `None`."""
+        """
+        History or `None`.
+
+        :rtype: objetto.history.HistoryObject or None
+        """
         return self._obj._history
 
     @property
     @final
     def app(self):
         # type: () -> Application
-        """Application."""
+        """
+        Application.
+
+        :rtype: objetto.applications.Application
+        """
         return self._obj.app
 
     @property
     def data(self):
         # type: () -> Optional[BaseData]
-        """Data."""
+        """
+        Data.
+
+        :rtype: objetto.bases.BaseData or None
+        """
         return self._obj.data

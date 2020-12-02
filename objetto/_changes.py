@@ -45,24 +45,50 @@ __all__ = [
 class BaseChange(Data):
     """
     Base change.
+
+    Inherits from:
+      - :class:`objetto.data.Data`
+
+    Inherited By:
+      - :class:`objetto.bases.BaseAtomicChange`
+      - :class:`objetto.changes.Batch`
     """
 
     name = data_attribute(
         string_types, checked=False, abstracted=True
     )  # type: DataAttribute[str]
-    """Name describing the change."""
+    """
+    Name describing the change.
+    
+    :type: str
+    """
 
     obj = data_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False, finalized=True
     )  # type: Final[DataAttribute[BaseObject]]
-    """Object being changed."""
+    """
+    Object being changed.
+    
+    :type: objetto.bases.BaseObject
+    """
 
 
 class BaseAtomicChange(BaseChange):
     """
-    Inherits from: :class:`objetto.bases.BaseChange`
+    Base atomic change.
 
-    Base atomic object change.
+    Inherits from:
+      - :class:`objetto.bases.BaseChange`
+
+    Inherited By:
+      - :class:`objetto.changes.Update`
+      - :class:`objetto.changes.DictUpdate`
+      - :class:`objetto.changes.ListInsert`
+      - :class:`objetto.changes.ListDelete`
+      - :class:`objetto.changes.ListUpdate`
+      - :class:`objetto.changes.ListMove`
+      - :class:`objetto.changes.SetUpdate`
+      - :class:`objetto.changes.SetRemove`
     """
 
     __redo__ = data_attribute(
@@ -78,27 +104,47 @@ class BaseAtomicChange(BaseChange):
     old_state = data_attribute(
         BaseState, subtypes=True, checked=False, finalized=True
     )  # type: Final[DataAttribute[BaseState]]
-    """Object state before the change."""
+    """
+    Object state before the change.
+    
+    :type: objetto.bases.BaseState
+    """
 
     new_state = data_attribute(
         BaseState, subtypes=True, checked=False, finalized=True
     )  # type: Final[DataAttribute[BaseState]]
-    """Object state after the change."""
+    """
+    Object state after the change.
+    
+    :type: objetto.bases.BaseState
+    """
 
     old_children = data_set_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False, finalized=True
     )  # type: Final[DataAttribute[InteractiveSetData[BaseObject]]]
-    """Children objects being released."""
+    """
+    Children objects being released.
+    
+    :type: objetto.data.SetData[objetto.bases.BaseObject]
+    """
 
     new_children = data_set_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False, finalized=True
     )  # type: Final[DataAttribute[InteractiveSetData[BaseObject]]]
-    """Children objects being adopted."""
+    """
+    Children objects being adopted.
+    
+    :type: objetto.data.SetData[objetto.bases.BaseObject] 
+    """
 
     history_adopters = data_set_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False, finalized=True
     )  # type: Final[DataAttribute[InteractiveSetData[BaseObject]]]
-    """Objects adopting the history from the object being changed."""
+    """
+    Objects adopting the history from the object being changed.
+    
+    :type: objetto.data.SetData[objetto.bases.BaseObject]
+    """
 
     history = data_attribute(
         (".._history|HistoryObject", None),
@@ -107,214 +153,409 @@ class BaseAtomicChange(BaseChange):
         finalized=True,
         default=None,
     )  # type: Final[DataAttribute[Optional[HistoryObject]]]
-    """History where this changed originated from (result of an redo/undo operation)."""
+    """
+    History where this changed originated from (result of an redo/undo operation).
+    
+    :type: objetto.history.HistoryObject or None
+    """
 
 
 @final
 class Batch(BaseChange):
-    """Batch change."""
+    """
+    Batch change.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseChange`
+    """
 
     name = data_attribute(string_types, checked=False)  # type: DataAttribute[str]
-    """Name describing the change."""
+    """
+    Name describing the change.
+    
+    :type: str
+    """
 
     metadata = data_dict_attribute(
         key_types=string_types, checked=False
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
-    """Metadata."""
+    """
+    Metadata.
+    
+    :type: objetto.data.DictData[str, Any]
+    """
 
 
 @final
 class Update(BaseAtomicChange):
-    """Object's attributes have been updated."""
+    """
+    Object's attributes have been updated.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAtomicChange`
+    """
 
     name = data_attribute(
         string_types, checked=False, default="Update Attributes"
     )  # type: DataAttribute[str]
-    """Name describing the change."""
+    """
+    Name describing the change.
+    
+    :type: str
+    """
 
     old_values = data_dict_attribute(
         checked=False
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
-    """Old attribute values."""
+    """
+    Old attribute values.
+    
+    :type: objetto.data.DictData[str, Any]
+    """
 
     new_values = data_dict_attribute(
         checked=False
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
-    """New attribute values."""
+    """
+    New attribute values.
+    
+    :type: objetto.data.DictData[str, Any]
+    """
 
 
 @final
 class DictUpdate(BaseAtomicChange):
-    """Dictionary values have been updated."""
+    """
+    Dictionary values have been updated.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAtomicChange`
+    """
 
     name = data_attribute(
         string_types, checked=False, default="Update Values"
     )  # type: DataAttribute[str]
-    """Name describing the change."""
+    """
+    Name describing the change.
+    """
 
     old_values = data_dict_attribute(
         checked=False
-    )  # type: DataAttribute[InteractiveDictData[str, Any]]
-    """Old values."""
+    )  # type: DataAttribute[InteractiveDictData[Any, Any]]
+    """
+    Old values.
+    
+    :type: objetto.data.DictData[collections.abc.Hashable, Any]
+    """
 
     new_values = data_dict_attribute(
         checked=False
-    )  # type: DataAttribute[InteractiveDictData[str, Any]]
-    """New values."""
+    )  # type: DataAttribute[InteractiveDictData[Any, Any]]
+    """
+    New values.
+    
+    :type: objetto.data.DictData[collections.abc.Hashable, Any]
+    """
 
 
 @final
 class ListInsert(BaseAtomicChange):
-    """Values have been inserted into the list."""
+    """
+    Values have been inserted into the list.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAtomicChange`
+    """
 
     name = data_attribute(
         string_types, checked=False, default="Insert Values"
     )  # type: DataAttribute[str]
-    """Name describing the change."""
+    """
+    Name describing the change.
+    
+    :type: str
+    """
 
     index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
-    """Insertion index."""
+    """
+    Insertion index.
+    
+    :type: int
+    """
 
     last_index = data_attribute(
         integer_types, checked=False
     )  # type: DataAttribute[int]
-    """Last inserted value index."""
+    """
+    Last inserted value index.
+    
+    :type: int
+    """
 
     stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
-    """Stop index."""
+    """
+    Stop index.
+    
+    :type: int
+    """
 
     new_values = data_list_attribute(
         checked=False
     )  # type: DataAttribute[InteractiveListData[Any]]
-    """New values."""
+    """
+    New values.
+    
+    :type: objetto.data.ListData[Any]
+    """
 
 
 @final
 class ListDelete(BaseAtomicChange):
-    """Values have been removed from the list."""
+    """
+    Values have been removed from the list.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAtomicChange`
+    """
 
     name = data_attribute(
         string_types, checked=False, default="Remove Values"
     )  # type: DataAttribute[str]
-    """Name describing the change."""
+    """
+    Name describing the change.
+    
+    :type: str
+    """
 
     index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
-    """First removed value index."""
+    """
+    First removed value index.
+    
+    :type: int
+    """
 
     last_index = data_attribute(
         integer_types, checked=False
     )  # type: DataAttribute[int]
-    """Last removed value index."""
+    """
+    Last removed value index.
+    
+    :type: int
+    """
 
     stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
-    """Stop index."""
+    """
+    Stop index.
+    
+    :type: int
+    """
 
     old_values = data_list_attribute(
         checked=False
     )  # type: DataAttribute[InteractiveListData[Any]]
-    """Old values."""
+    """
+    Old values.
+    
+    :type: objetto.data.ListData[Any]
+    """
 
 
 @final
 class ListUpdate(BaseAtomicChange):
-    """List values have been updated."""
+    """
+    List values have been updated.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAtomicChange`
+    """
 
     name = data_attribute(
         string_types, checked=False, default="Update values"
     )  # type: DataAttribute[str]
-    """Name describing the change."""
+    """
+    Name describing the change.
+    
+    :type: str
+    """
 
     index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
-    """First updated value index."""
+    """
+    First updated value index.
+    
+    :type: int
+    """
 
     last_index = data_attribute(
         integer_types, checked=False
     )  # type: DataAttribute[int]
-    """Last updated value index."""
+    """
+    Last updated value index.
+    
+    :type: int
+    """
 
     stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
-    """Stop index."""
+    """
+    Stop index.
+    
+    :type: int
+    """
 
     old_values = data_list_attribute(
         checked=False
     )  # type: DataAttribute[InteractiveListData[Any]]
-    """Old values."""
+    """
+    Old values.
+    
+    :type: objetto.data.ListData[Any]
+    """
 
     new_values = data_list_attribute(
         checked=False
     )  # type: DataAttribute[InteractiveListData[Any]]
-    """New values."""
+    """
+    New values.
+    
+    :type: objetto.data.ListData[Any]
+    """
 
 
 @final
 class ListMove(BaseAtomicChange):
-    """List values have been moved internally."""
+    """
+    List values have been moved internally.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAtomicChange`
+    """
 
     name = data_attribute(
         string_types, checked=False, default="Move values"
     )  # type: DataAttribute[str]
-    """Name describing the change."""
+    """
+    Name describing the change.
+    
+    :type: str
+    """
 
     index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
-    """First moved value index."""
+    """
+    First moved value index.
+    
+    :type: int
+    """
 
     last_index = data_attribute(
         integer_types, checked=False
     )  # type: DataAttribute[int]
-    """Last moved value index."""
+    """
+    Last moved value index.
+    
+    :type: int
+    """
 
     stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
-    """Stop index."""
+    """
+    Stop index.
+    
+    :type: int
+    """
 
     target_index = data_attribute(
         integer_types, checked=False
     )  # type: DataAttribute[int]
-    """Index where values are being moved to."""
+    """
+    Index where values are being moved to.
+    
+    :type: int
+    """
 
     post_index = data_attribute(
         integer_types, checked=False
     )  # type: DataAttribute[int]
-    """First moved value index after the move."""
+    """
+    First moved value index after the move.
+    
+    :type: int
+    """
 
     post_last_index = data_attribute(
         integer_types, checked=False
     )  # type: DataAttribute[int]
-    """Last moved value index after the move."""
+    """
+    Last moved value index after the move.
+    
+    :type: int
+    """
 
     post_stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
-    """Stop index after the move."""
+    """
+    Stop index after the move.
+    
+    :type: int
+    """
 
     values = data_list_attribute(
         checked=False
     )  # type: DataAttribute[InteractiveListData[Any]]
-    """Values being moved."""
+    """
+    Values being moved.
+    
+    :type: objetto.data.ListData[Any]
+    """
 
 
 @final
 class SetUpdate(BaseAtomicChange):
-    """Values have been added to the set."""
+    """
+    Values have been added to the set.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAtomicChange`
+    """
 
     name = data_attribute(
         string_types, checked=False, default="Add values"
     )  # type: DataAttribute[str]
-    """Name describing the change."""
+    """
+    Name describing the change.
+    
+    :type: str
+    """
 
     new_values = data_set_attribute(
         checked=False
     )  # type: DataAttribute[InteractiveSetData[Any]]
-    """Values being added to the set."""
+    """
+    Values being added to the set.
+    
+    :type: objetto.data.SetData[collections.abc.Hashable]
+    """
 
 
 @final
 class SetRemove(BaseAtomicChange):
-    """Values have been removed from the set."""
+    """
+    Values have been removed from the set.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAtomicChange`
+    """
 
     name = data_attribute(
         string_types, checked=False, default="Remove values"
     )  # type: DataAttribute[str]
-    """Name describing the change."""
+    """
+    Name describing the change.
+    
+    :type: str
+    """
 
     old_values = data_set_attribute(
         checked=False
     )  # type: DataAttribute[InteractiveSetData[Any]]
-    """Values being removed from the set."""
+    """
+    Values being removed from the set.
+    
+    :type: objetto.data.SetData[collections.abc.Hashable]
+    """

@@ -756,7 +756,7 @@ class BaseHashable(Base, SlottedHashable):
       - :class:`objetto.bases.BaseRelationship`
       - :class:`objetto.bases.KeyRelationship`
       - :class:`objetto.bases.BaseAttribute`
-      - :class:`objetto.objects.HistoryDescriptor`
+      - :class:`objetto.history.HistoryDescriptor`
 
     Features:
       - Forces implementation of `__hash__` method.

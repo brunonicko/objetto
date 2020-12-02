@@ -45,16 +45,41 @@ class DataRelationship(BaseRelationship):
     """
     Relationship between a data structure and its values.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseRelationship`
+
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     __slots__ = ("__compared",)
@@ -92,6 +117,7 @@ class DataRelationship(BaseRelationship):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         dct = super(DataRelationship, self).to_dict()
         dct.update(
@@ -104,7 +130,11 @@ class DataRelationship(BaseRelationship):
     @property
     def compared(self):
         # type: () -> bool
-        """Whether the value should be leverage when comparing."""
+        """
+        Whether the value should be leverage when comparing.
+
+        :rtype: bool
+        """
         return self.__compared
 
 
@@ -142,6 +172,15 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
     """
     Base data.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseStructure`
+
+    Inherited by:
+      - :class:`objetto.bases.BaseInteractiveData`
+      - :class:`objetto.bases.BaseAuxiliaryData`
+      - :class:`objetto.data.ProtectedData`
+
+    Features:
       - Is an immutable protected structure.
     """
 
@@ -154,6 +193,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
         Get copy.
 
         :return: Copy.
+        :rtype: objetto.bases.BaseData
         """
         return self
 
@@ -164,7 +204,10 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
         Make a new data.
 
         :param state: Internal state.
+        :type state: objetto.bases.BaseState
+
         :return: New data.
+        :rtype: objetto.bases.BaseData
         """
         self = cast("_BD", cls.__new__(cls))
         self._init_state(state)
@@ -177,6 +220,8 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
         Initialize internal state.
 
         :param state: Internal state.
+        :type state: objetto.bases.BaseState
+
         :raises RuntimeError: State already initialized.
         """
         try:
@@ -191,7 +236,11 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
     @property
     def _state(self):
         # type: () -> BaseState
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.bases.BaseState
+        """
         return self.__state
 
 
@@ -200,6 +249,15 @@ class BaseInteractiveData(BaseData[T], BaseInteractiveStructure[T]):
     """
     Base interactive data.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseData`
+      - :class:`objetto.bases.BaseInteractiveStructure`
+
+    Inherited by:
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryData`
+      - :class:`objetto.data.Data`
+
+    Features:
       - Is an immutable interactive data structure.
     """
 
@@ -225,12 +283,28 @@ class BaseAuxiliaryData(
         BaseData[T],
     )
 ):
-    """Base auxiliary data."""
+    """
+    Base auxiliary data.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryStructure`
+      - :class:`objetto.bases.BaseData`
+
+    Inherited by:
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryData`
+      - :class:`objetto.data.InteractiveDictData`
+      - :class:`objetto.data.InteractiveListData`
+      - :class:`objetto.data.InteractiveSetData`
+    """
 
     __slots__ = ("__hash",)
 
     _relationship = DataRelationship()
-    """Relationship for all locations."""
+    """
+    Relationship for all locations.
+    
+    :type: objetto.data.DataRelationship
+    """
 
     @final
     def _hash(self):
@@ -239,6 +313,7 @@ class BaseAuxiliaryData(
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         try:
             return self.__hash  # type: ignore
@@ -256,7 +331,9 @@ class BaseAuxiliaryData(
         Compare with another object for equality.
 
         :param other: Another object.
+
         :return: True if equal.
+        :rtype: bool
         """
         if self is other:
             return True
@@ -288,7 +365,9 @@ class BaseAuxiliaryData(
         Find first value that matches unique attribute values.
 
         :param attributes: Attributes to match.
+
         :return: Value.
+
         :raises ValueError: No attributes provided or no match found.
         """
         return super(BaseAuxiliaryData, self).find_with_attributes(**attributes)
@@ -300,6 +379,18 @@ class BaseInteractiveAuxiliaryData(
     BaseInteractiveData[T],
     BaseInteractiveAuxiliaryStructure[T],
 ):
-    """Base interactive auxiliary data."""
+    """
+    Base interactive auxiliary data.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryData`
+      - :class:`objetto.bases.BaseInteractiveData`
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryStructure`
+
+    Inherited by:
+      - :class:`objetto.data.InteractiveDictData`
+      - :class:`objetto.data.InteractiveListData`
+      - :class:`objetto.data.InteractiveSetData`
+    """
 
     __slots__ = ()
