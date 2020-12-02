@@ -3,6 +3,9 @@ Bases
 
 Base Classes
 ------------
+
+Base Class
+**********
 .. autoclass:: objetto.bases.Base
    :members: _initializing
 
@@ -11,55 +14,87 @@ Base Classes
    .. automethod:: objetto.bases.Base.__ne__
    .. automethod:: objetto.bases.Base.__dir__
 
+Base Hashable Class
+*******************
 .. autoclass:: objetto.bases.BaseHashable
 
    .. automethod:: objetto.bases.BaseHashable.__hash__
 
+Base Sized Class
+****************
 .. autoclass:: objetto.bases.BaseSized
 
    .. automethod:: objetto.bases.BaseSized.__len__
 
+Base Iterable Class
+*******************
 .. autoclass:: objetto.bases.BaseIterable
 
    .. automethod:: objetto.bases.BaseIterable.__iter__
 
+Base Container Class
+********************
 .. autoclass:: objetto.bases.BaseContainer
 
    .. automethod:: objetto.bases.BaseContainer.__contains__
 
 Base Decorators
 ---------------
-.. autofunction:: objetto.bases.final
-.. autofunction:: objetto.bases.init
+
+Final Decorator
+***************
+.. autodecorator:: objetto.bases.final
+
+Init Decorator
+**************
+.. autodecorator:: objetto.bases.init
 
 Base Context Managers
 ---------------------
+
+Init Context Manager
+********************
 .. autofunction:: objetto.bases.init_context
 
 Base Abstract Member
 --------------------
+
+Base Abstract Member Function
+*****************************
 .. autofunction:: objetto.bases.abstract_member
 
 Base Collection Classes
 -----------------------
+
+Base Collection Class
+*********************
 .. autoclass:: objetto.bases.BaseCollection
 
    .. automethod:: objetto.bases.BaseCollection.find_with_attributes
 
+Base Protected Collection Class
+*******************************
 .. autoclass:: objetto.bases.BaseProtectedCollection
 
    .. automethod:: objetto.bases.BaseProtectedCollection._clear
 
+Base Interactive Collection Class
+*********************************
 .. autoclass:: objetto.bases.BaseInteractiveCollection
 
    .. automethod:: objetto.bases.BaseInteractiveCollection.clear
 
+Base Mutable Collection Class
+*****************************
 .. autoclass:: objetto.bases.BaseMutableCollection
 
    .. automethod:: objetto.bases.BaseMutableCollection.clear
 
 Base Dictionary Classes
 ***********************
+
+Base Dictionary Class
+^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseDict
 
    .. automethod:: objetto.bases.BaseDict.__eq__
@@ -73,6 +108,8 @@ Base Dictionary Classes
    .. automethod:: objetto.bases.BaseDict.keys
    .. automethod:: objetto.bases.BaseDict.values
 
+Base Protected Dictionary Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseProtectedDict
 
    .. automethod:: objetto.bases.BaseProtectedDict._discard
@@ -80,6 +117,8 @@ Base Dictionary Classes
    .. automethod:: objetto.bases.BaseProtectedDict._set
    .. automethod:: objetto.bases.BaseProtectedDict._update
 
+Base Interactive Dictionary Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseInteractiveDict
 
    .. automethod:: objetto.bases.BaseInteractiveDict.discard
@@ -87,6 +126,8 @@ Base Dictionary Classes
    .. automethod:: objetto.bases.BaseInteractiveDict.set
    .. automethod:: objetto.bases.BaseInteractiveDict.update
 
+Base Mutable Dictionary Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseMutableDict
 
    .. automethod:: objetto.bases.BaseMutableDict.__setitem__
@@ -102,6 +143,9 @@ Base Dictionary Classes
 
 Base List Classes
 *****************
+
+Base List Class
+^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseList
 
    .. automethod:: objetto.bases.BaseList.__eq__
@@ -112,6 +156,8 @@ Base List Classes
    .. automethod:: objetto.bases.BaseList.resolve_index
    .. automethod:: objetto.bases.BaseList.resolve_continuous_slice
 
+Base Protected List Class
+^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseProtectedList
 
    .. automethod:: objetto.bases.BaseProtectedList._insert
@@ -123,6 +169,8 @@ Base List Classes
    .. automethod:: objetto.bases.BaseProtectedList._delete
    .. automethod:: objetto.bases.BaseProtectedList._update
 
+Base Interactive List Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseInteractiveList
 
    .. automethod:: objetto.bases.BaseInteractiveList.insert
@@ -134,6 +182,8 @@ Base List Classes
    .. automethod:: objetto.bases.BaseInteractiveList.delete
    .. automethod:: objetto.bases.BaseInteractiveList.update
 
+Base Mutable List Class
+^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseMutableList
 
    .. automethod:: objetto.bases.BaseMutableList.__iadd__
@@ -153,6 +203,9 @@ Base List Classes
 
 Base Set Classes
 *****************
+
+Base Set Class
+^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseSet
 
    .. automethod:: objetto.bases.BaseSet.__le__
@@ -179,6 +232,8 @@ Base Set Classes
    .. automethod:: objetto.bases.BaseSet.difference
    .. automethod:: objetto.bases.BaseSet.inverse_difference
 
+Base Protected Set Class
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseProtectedSet
 
    .. automethod:: objetto.bases.BaseProtectedSet._add
@@ -187,6 +242,8 @@ Base Set Classes
    .. automethod:: objetto.bases.BaseProtectedSet._replace
    .. automethod:: objetto.bases.BaseProtectedSet._update
 
+Base Interactive Set Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseInteractiveSet
 
    .. automethod:: objetto.bases.BaseInteractiveSet.add
@@ -195,6 +252,8 @@ Base Set Classes
    .. automethod:: objetto.bases.BaseInteractiveSet.replace
    .. automethod:: objetto.bases.BaseInteractiveSet.update
 
+Base Mutable Set Class
+^^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: objetto.bases.BaseMutableSet
 
    .. automethod:: objetto.bases.BaseMutableSet.__iand__
