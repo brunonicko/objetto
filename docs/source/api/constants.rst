@@ -1,11 +1,7 @@
 Constants
 =========
 
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-
-   self
-
-.. automodule:: objetto.constants
-   :members: PRE, POST
+Action Execution Phases
+-----------------------
+.. autodata:: objetto.constants.PRE
+.. autodata:: objetto.constants.POST

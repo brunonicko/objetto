@@ -3,6 +3,11 @@
 import copy
 import pickle
 
+try:
+    import collections.abc as collections_abc
+except ImportError:
+    import collections as collections_abc  # type: ignore
+
 import pytest
 import six
 import slotted
@@ -450,6 +455,7 @@ def test_inheritance():
     assert not issubclass(BaseInteractiveCollection, BaseMutableCollection)
 
     assert issubclass(BaseDict, BaseCollection)
+    assert not issubclass(BaseDict, collections_abc.Hashable)
     assert issubclass(BaseDict, slotted.SlottedMapping)
     assert issubclass(BaseProtectedDict, BaseProtectedCollection)
     assert issubclass(BaseInteractiveDict, BaseInteractiveCollection)
@@ -463,6 +469,7 @@ def test_inheritance():
     assert not issubclass(BaseInteractiveDict, BaseMutableDict)
 
     assert issubclass(BaseList, BaseCollection)
+    assert not issubclass(BaseList, collections_abc.Hashable)
     assert issubclass(BaseList, slotted.SlottedSequence)
     assert issubclass(BaseProtectedList, BaseProtectedCollection)
     assert issubclass(BaseInteractiveList, BaseInteractiveCollection)
@@ -476,6 +483,7 @@ def test_inheritance():
     assert not issubclass(BaseInteractiveList, BaseMutableList)
 
     assert issubclass(BaseSet, BaseCollection)
+    assert not issubclass(BaseSet, collections_abc.Hashable)
     assert issubclass(BaseSet, slotted.SlottedSet)
     assert issubclass(BaseProtectedSet, BaseProtectedCollection)
     assert issubclass(BaseInteractiveSet, BaseInteractiveCollection)

@@ -12,7 +12,7 @@ except ImportError:
 from six import iteritems, iterkeys, itervalues, string_types, with_metaclass
 
 from .._bases import (
-    Base,
+    BaseHashable,
     BaseInteractiveDict,
     BaseMutableDict,
     BaseProtectedDict,
@@ -51,7 +51,7 @@ VT = TypeVar("VT")  # Value type.
 
 
 @final
-class KeyRelationship(Base):
+class KeyRelationship(BaseHashable):
     """
     Relationship between a dictionary auxiliary structure and their keys.
 

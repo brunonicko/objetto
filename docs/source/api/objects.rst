@@ -25,4 +25,3 @@ Attribute Descriptors
 Action Class
 ------------
 .. autoclass:: objetto.objects.Action
-   :members:

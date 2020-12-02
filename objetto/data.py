@@ -17,6 +17,8 @@ if TYPE_CHECKING:
     from .utils.factoring import LazyFactory
 
 __all__ = [
+    "DataRelationship",
+    "KeyRelationship",
     "Data",
     "DataAttribute",
     "data_attribute",

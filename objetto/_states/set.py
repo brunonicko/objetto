@@ -309,7 +309,9 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Find first value that matches unique attribute values.
 
         :param attributes: Attributes to match.
-        :return: Value.
+
+        :return: Value that has matching attributes.
+
         :raises ValueError: No attributes provided or no match found.
         """
         if not attributes:
@@ -335,5 +337,5 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
     @property
     def _internal(self):
         # type: () -> PSet[T]
-        """Internal state."""
+        """Internal values."""
         return cast("PSet[T]", super(SetState, self)._internal)

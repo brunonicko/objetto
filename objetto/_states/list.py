@@ -298,7 +298,10 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         """
         Count number of occurrences of a value.
 
+        :param value: Value.
+
         :return: Number of occurrences.
+        :rtype: int
         """
         return self._internal.count(value)
 
@@ -353,7 +356,9 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Find first value that matches unique attribute values.
 
         :param attributes: Attributes to match.
-        :return: Value.
+
+        :return: Value that has matching attributes.
+
         :raises ValueError: No attributes provided or no match found.
         """
         if not attributes:
@@ -379,5 +384,5 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
     @property
     def _internal(self):
         # type: () -> PVector[T]
-        """Internal state."""
+        """Internal values."""
         return cast("PVector[T]", super(ListState, self)._internal)

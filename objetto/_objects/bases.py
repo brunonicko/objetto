@@ -15,7 +15,7 @@ except ImportError:
 from six import integer_types, iteritems, itervalues, string_types, with_metaclass
 
 from .._applications import Application
-from .._bases import Base, BaseMutableCollection, final
+from .._bases import Base, BaseHashable, BaseMutableCollection, final
 from .._changes import Batch
 from .._data import BaseAuxiliaryData, BaseData, DataRelationship
 from .._states import BaseState, DictState
@@ -428,7 +428,7 @@ _HD = TypeVar("_HD", bound="HistoryDescriptor")
 
 
 @final
-class HistoryDescriptor(Base):
+class HistoryDescriptor(BaseHashable):
     """
     Descriptor to be used when declaring an :class:`objetto.objects.Object` class.
     When used, every instance of the object class will hold a history that will keep
@@ -1180,7 +1180,9 @@ class BaseProxyObject(BaseMutableCollection[T]):
         Find first value that matches unique attribute values.
 
         :param attributes: Attributes to match.
-        :return: Value.
+
+        :return: Value that has matching attributes.
+
         :raises ValueError: No attributes provided or no match found.
         """
         return self._obj.find_with_attributes(**attributes)

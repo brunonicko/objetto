@@ -17,7 +17,7 @@ from .._bases import (
     ABSTRACT_TAG,
     FINAL_METHOD_TAG,
     MISSING,
-    Base,
+    BaseHashable,
     BaseDict,
     BaseList,
     BaseMeta,
@@ -81,7 +81,7 @@ class BaseAttributeMeta(BaseMeta):
 _BA = TypeVar("_BA", bound="BaseAttribute")
 
 
-class BaseAttribute(with_metaclass(BaseAttributeMeta, Base, Generic[T])):
+class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T])):
     """
     Base attribute descriptor.
 

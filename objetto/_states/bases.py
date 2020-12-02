@@ -32,7 +32,18 @@ class BaseState(BaseHashable, BaseInteractiveCollection[T]):
     """
     Base immutable state.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseHashable`
+      - :class:`objetto.bases.BaseInteractiveCollection`
+
+    Inherited By:
+      - :class:`objetto.states.DictState`
+      - :class:`objetto.states.ListState`
+      - :class:`objetto.states.SetState`
+
     :param initial: Initial values.
+
+    :raises NotImplementedError: Abstract methods not implemented.
     """
 
     __slots__ = ("__hash", "__internal")
@@ -45,7 +56,9 @@ class BaseState(BaseHashable, BaseInteractiveCollection[T]):
         Make new state by directly setting the internal state.
 
         :param internal: Internal state.
+
         :return: State.
+        :rtype: objetto.bases.BaseState
         """
         self = cast("_BS", cls.__new__(cls))
         self.__internal = internal
@@ -75,6 +88,7 @@ class BaseState(BaseHashable, BaseInteractiveCollection[T]):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         if self.__hash is None:
             self.__hash = hash(self._internal)
@@ -87,7 +101,11 @@ class BaseState(BaseHashable, BaseInteractiveCollection[T]):
         Compare for equality.
 
         :param other: Another object.
+
         :return: True if equal.
+        :rtype: bool
+
+        :raises NotImplementedError: Abstract method not implemented.
         """
         raise NotImplementedError()
 
@@ -98,6 +116,7 @@ class BaseState(BaseHashable, BaseInteractiveCollection[T]):
         Get copy.
 
         :return: Copy.
+        :rtype: objetto.bases.BaseState
         """
         return self
 
@@ -108,6 +127,9 @@ class BaseState(BaseHashable, BaseInteractiveCollection[T]):
         Get representation.
 
         :return: Representation.
+        :rtype: str
+
+        :raises NotImplementedError: Abstract method not implemented.
         """
         raise NotImplementedError()
 
@@ -117,6 +139,7 @@ class BaseState(BaseHashable, BaseInteractiveCollection[T]):
         Get string representation.
 
         :return: String representation.
+        :rtype: str
         """
         return self.__repr__()
 
@@ -124,5 +147,5 @@ class BaseState(BaseHashable, BaseInteractiveCollection[T]):
     @abstractmethod
     def _internal(self):
         # type: () -> Union[PMap, PVector, PSet]
-        """Internal state."""
+        """Internal values."""
         return self.__internal

@@ -261,7 +261,9 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Find first value that matches unique attribute values.
 
         :param attributes: Attributes to match.
-        :return: Value.
+
+        :return: Value that has matching attributes.
+
         :raises ValueError: No attributes provided or no match found.
         """
         if not attributes:
@@ -287,5 +289,5 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
     @property
     def _internal(self):
         # type: () -> PMap[KT, VT]
-        """Internal state."""
+        """Internal values."""
         return cast("PMap[KT, VT]", super(DictState, self)._internal)

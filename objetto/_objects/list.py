@@ -1125,7 +1125,10 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         """
         Count number of occurrences of a value.
 
+        :param value: Value.
+
         :return: Number of occurrences.
+        :rtype: int
         """
         return self._obj.count(value)
 

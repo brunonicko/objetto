@@ -25,7 +25,9 @@ extensions = [
 # Intersphinx configuration.
 intersphinx_mapping = {
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
-    "python": ("https://docs.python.org/3", None)
+    "python": ("https://docs.python.org/3.8", None),
+    "pyrsistent": ("https://pyrsistent.readthedocs.io/en/stable/", None),
+    # TODO: Slotted
 }
 
 # Autodoc configuration.

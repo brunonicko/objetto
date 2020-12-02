@@ -188,7 +188,7 @@ def make_auxiliary_cls(
     )
 
 
-class BaseRelationship(Base):
+class BaseRelationship(BaseHashable):
     """
     Relationship between a structure and its values.
 

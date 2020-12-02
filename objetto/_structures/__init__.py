@@ -46,8 +46,8 @@ from .structure import (
 __all__ = [
     "make_auxiliary_cls",
     "unique_descriptor",
-    "BaseRelationship",
     "UniqueDescriptor",
+    "BaseRelationship",
     "BaseStructureMeta",
     "BaseStructure",
     "BaseInteractiveStructure",
