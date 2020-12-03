@@ -25,3 +25,15 @@ Attribute Descriptors
 Action Class
 ------------
 .. autoclass:: objetto.objects.Action
+
+   .. autoattribute:: objetto.objects.Action.sender
+      :annotation: :  Data Attribute
+
+   .. autoattribute:: objetto.objects.Action.receiver
+      :annotation: :  Data Attribute
+
+   .. autoattribute:: objetto.objects.Action.locations
+      :annotation: :  Data Attribute
+
+   .. autoattribute:: objetto.objects.Action.change
+      :annotation: :  Data Attribute

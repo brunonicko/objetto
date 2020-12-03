@@ -501,15 +501,29 @@ Base Factory Class
 Base Change Classes
 -------------------
 .. autoclass:: objetto.bases.BaseChange
-   :members:
-     name,
-     obj,
+
+   .. autoattribute:: objetto.bases.BaseChange.name
+      :annotation: :  Data Attribute
+
+   .. autoattribute:: objetto.bases.BaseChange.obj
+      :annotation: :  Data Attribute
 
 .. autoclass:: objetto.bases.BaseAtomicChange
-   :members:
-     old_state,
-     new_state,
-     old_children,
-     new_children,
-     history_adopters,
-     history,
+
+   .. autoattribute:: objetto.bases.BaseAtomicChange.old_state
+      :annotation: :  Data Attribute
+
+   .. autoattribute:: objetto.bases.BaseAtomicChange.new_state
+      :annotation: :  Data Attribute
+
+   .. autoattribute:: objetto.bases.BaseAtomicChange.old_children
+      :annotation: :  Data Attribute
+
+   .. autoattribute:: objetto.bases.BaseAtomicChange.new_children
+      :annotation: :  Data Attribute
+
+   .. autoattribute:: objetto.bases.BaseAtomicChange.history_adopters
+      :annotation: :  Data Attribute
+
+   .. autoattribute:: objetto.bases.BaseAtomicChange.history
+      :annotation: :  Data Attribute

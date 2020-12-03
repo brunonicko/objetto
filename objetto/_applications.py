@@ -328,7 +328,12 @@ class Store(InteractiveData):
 
 @final
 class Action(Data):
-    """Carries information about a change and where it happened in the hierarchy."""
+    """
+    Carries information about a change and where it happened in the hierarchy.
+
+    Inherits from:
+      - :class:`objetto.data.Data`
+    """
 
     sender = data_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False

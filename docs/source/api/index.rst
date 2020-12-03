@@ -5,6 +5,7 @@ API Reference
 
    applications
    objects
+   changes
    data
    constants
    observers
