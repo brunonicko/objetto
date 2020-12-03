@@ -22,7 +22,7 @@ from .utils.caller_module import get_caller_module
 from .utils.reraise_context import ReraiseContext
 
 if TYPE_CHECKING:
-    from typing import Any, Iterable, Optional, Type, Union
+    from typing import Any, Iterable, Optional, Type, Union, Dict
 
     from .utils.factoring import LazyFactory
 
@@ -58,6 +58,12 @@ VT = TypeVar("VT")  # Any value type.
 
 if TYPE_CHECKING:
     NT = Union[Type[None], None]
+    InteractiveDictAttribute = DataAttribute[InteractiveDictData[KT, VT]]
+    InteractiveListAttribute = DataAttribute[InteractiveListData[T]]
+    InteractiveSetAttribute = DataAttribute[InteractiveSetData[T]]
+    DictAttribute = DataAttribute[DictData[KT, VT]]
+    ListAttribute = DataAttribute[ListData[T]]
+    SetAttribute = DataAttribute[SetData[T]]
 
 
 def data_attribute(
@@ -84,23 +90,61 @@ def data_attribute(
     Make data attribute.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
+    :param module: Optional module path to use in case partial paths are provided.
+    :type module: str or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :return: Data attribute.
+    :rtype: objetto.data.DataAttribute
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -155,14 +199,31 @@ def data_constant_attribute(
     Make constant data attribute.
 
     :param value: Constant value.
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :return: Constant data attribute.
+    :rtype: objetto.data.DataAttribute
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -219,34 +280,84 @@ def data_dict_attribute(
     abstracted=False,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
+    interactive=True,  # type: bool
 ):
-    # type: (...) -> DataAttribute[InteractiveDictData[KT, VT]]
+    # type: (...) -> Union[InteractiveDictAttribute[KT, VT], DictAttribute[KT, VT]]
     """
     Make dictionary data attribute.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
     :param key_types: Key types.
+    :type key_types: str or type or None or tuple[str or type or None]
+
     :param key_subtypes: Whether to accept subtypes for the keys.
+    :type key_subtypes: bool
+
     :param key_factory: Key factory.
+    :type key_factory: str or collections.abc.Callable or None
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param interactive: Whether generated class should be interactive.
+    :type interactive: bool
+
     :return: Dictionary data attribute.
+    :rtype: objetto.data.DataAttribute[objetto.data.InteractiveDictData or \
+objetto.data.DictData]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -272,7 +383,8 @@ def data_dict_attribute(
             key_factory=key_factory,
             qual_name=qual_name,
             unique=unique,
-        )  # type: Type[InteractiveDictData[KT, VT]]
+            interactive=interactive,
+        )  # type: Union[Type[DictData[KT, VT]], Type[InteractiveDictData[KT, VT]]]
 
     # Factory that forces the dictionary type.
     def dict_factory(initial=()):
@@ -302,7 +414,7 @@ def data_dict_attribute(
 
     # Attribute.
     with ReraiseContext((TypeError, ValueError), "defining 'data_dict_attribute'"):
-        return DataAttribute(
+        attribute_ = DataAttribute(
             relationship=relationship,
             default=default,
             default_factory=default_factory,
@@ -312,7 +424,9 @@ def data_dict_attribute(
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
-        )
+        )  # type: DataAttribute[InteractiveDictData[KT, VT]]
+
+    return attribute_
 
 
 def data_list_attribute(
@@ -335,32 +449,75 @@ def data_list_attribute(
     abstracted=False,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
-    # TODO: interactive=True
+    interactive=True,  # type: bool
 ):
-    # type: (...) -> DataAttribute[InteractiveListData[T]]
+    # type: (...) -> Union[InteractiveListAttribute[T], ListAttribute[T]]
     """
-    Make dictionary list attribute.
+    Make list data attribute.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param interactive: Whether generated class should be interactive.
+    :type interactive: bool
+
     :return: List data attribute.
+    :rtype: objetto.data.DataAttribute[objetto.data.InteractiveListData or \
+objetto.data.ListData]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -383,7 +540,8 @@ def data_list_attribute(
             compared=compared,
             qual_name=qual_name,
             unique=unique,
-        )  # type: Type[InteractiveListData[T]]
+            interactive=interactive,
+        )  # type: Union[Type[ListData[T]], Type[InteractiveListData[T]]]
 
     # Factory that forces the list type.
     def list_factory(initial=()):
@@ -413,7 +571,7 @@ def data_list_attribute(
 
     # Attribute.
     with ReraiseContext((TypeError, ValueError), "defining 'data_list_attribute'"):
-        return DataAttribute(
+        attribute_ = DataAttribute(
             relationship=relationship,
             default=default,
             default_factory=default_factory,
@@ -423,7 +581,9 @@ def data_list_attribute(
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
-        )
+        )  # type: DataAttribute[InteractiveListData[T]]
+
+    return attribute_
 
 
 def data_set_attribute(
@@ -446,31 +606,75 @@ def data_set_attribute(
     abstracted=False,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
+    interactive=True,  # type: bool
 ):
-    # type: (...) -> DataAttribute[InteractiveSetData[T]]
+    # type: (...) -> Union[InteractiveSetAttribute[T], SetAttribute[T]]
     """
-    Make dictionary set attribute.
+    Make set data attribute.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param interactive: Whether generated class should be interactive.
+    :type interactive: bool
+
     :return: Set data attribute.
+    :rtype: objetto.data.DataAttribute[objetto.data.InteractiveSetData or \
+objetto.data.SetData]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -493,7 +697,8 @@ def data_set_attribute(
             compared=compared,
             qual_name=qual_name,
             unique=unique,
-        )  # type: Type[InteractiveSetData[T]]
+            interactive=interactive,
+        )  # type: Union[Type[SetData[T]], Type[InteractiveSetData[T]]]
 
     # Factory that forces the set type.
     def set_factory(initial=()):
@@ -523,7 +728,7 @@ def data_set_attribute(
 
     # Attribute.
     with ReraiseContext((TypeError, ValueError), "defining 'data_set_attribute'"):
-        return DataAttribute(
+        attribute_ = DataAttribute(
             relationship=relationship,
             default=default,
             default_factory=default_factory,
@@ -533,7 +738,9 @@ def data_set_attribute(
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
-        )
+        )  # type: DataAttribute[InteractiveSetData[T]]
+
+    return attribute_
 
 
 def data_dict_cls(
@@ -552,27 +759,63 @@ def data_dict_cls(
     key_factory=None,  # type: LazyFactory
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
+    interactive=True,  # type: bool
 ):
-    # type: (...) -> Type[InteractiveDictData[KT, VT]]
+    # type: (...) -> Union[Type[InteractiveDictData[KT, VT]], Type[DictData[KT, VT]]]
     """
     Make auxiliary dictionary data class.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
     :param key_types: Key types.
+    :type key_types: str or type or None or tuple[str or type or None]
+
     :param key_subtypes: Whether to accept subtypes for the keys.
+    :type key_subtypes: bool
+
     :param key_factory: Key factory.
+    :type key_factory: str or collections.abc.Callable or None
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param interactive: Whether generated class should be interactive.
+    :type interactive: bool
+
     :return: Dictionary data class.
+    :type: type[objetto.data.DictData or objetto.data.InteractiveDictData]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -607,18 +850,22 @@ def data_dict_cls(
         dct = {"_key_relationship": key_relationship}
 
     # Make class.
-    base = InteractiveDictData  # type: Type[InteractiveDictData[KT, VT]]
+    cls_kwargs = dict(
+        relationship=relationship,
+        qual_name=qual_name,
+        module=module,
+        unique_descriptor_name="unique_hash" if unique else None,
+        dct=dct,
+    )  # type: Dict[str, Any]
     with ReraiseContext(TypeError, "defining 'data_dict_cls'"):
-        cls = make_auxiliary_cls(
-            base,
-            relationship,
-            qual_name=qual_name,
-            module=module,
-            unique_descriptor_name="unique_hash" if unique else None,
-            dct=dct,
-        )
-
-    return cls
+        if interactive:
+            interactive_base = (
+                InteractiveDictData
+            )  # type: Type[InteractiveDictData[KT, VT]]
+            return make_auxiliary_cls(interactive_base, **cls_kwargs)
+        else:
+            base = DictData  # type: Type[DictData[KT, VT]]
+            return make_auxiliary_cls(base, **cls_kwargs)
 
 
 def data_list_cls(
@@ -634,24 +881,54 @@ def data_list_cls(
     compared=True,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
+    interactive=True,  # type: bool
 ):
-    # type: (...) -> Type[InteractiveListData[T]]
+    # type: (...) -> Union[Type[InteractiveListData[T]], Type[ListData[T]]]
     """
     Make auxiliary list data class.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param interactive: Whether generated class should be interactive.
+    :type interactive: bool
+
     :return: List data class.
+    :type: type[objetto.data.ListData or objetto.data.InteractiveListData]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -675,17 +952,19 @@ def data_list_cls(
         )
 
     # Make class.
-    base = InteractiveListData  # type: Type[InteractiveListData[T]]
+    cls_kwargs = dict(
+        relationship=relationship,
+        qual_name=qual_name,
+        module=module,
+        unique_descriptor_name="unique_hash" if unique else None,
+    )  # type: Dict[str, Any]
     with ReraiseContext(TypeError, "defining 'data_list_cls'"):
-        cls = make_auxiliary_cls(
-            base,
-            relationship,
-            qual_name=qual_name,
-            module=module,
-            unique_descriptor_name="unique_hash" if unique else None,
-        )
-
-    return cls
+        if interactive:
+            interactive_base = InteractiveListData  # type: Type[InteractiveListData[T]]
+            return make_auxiliary_cls(interactive_base, **cls_kwargs)
+        else:
+            base = ListData  # type: Type[ListData[T]]
+            return make_auxiliary_cls(base, **cls_kwargs)
 
 
 def data_set_cls(
@@ -701,24 +980,54 @@ def data_set_cls(
     compared=True,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
+    interactive=True,  # type: bool
 ):
-    # type: (...) -> Type[InteractiveSetData[T]]
+    # type: (...) -> Union[Type[InteractiveSetData[T]], Type[SetData[T]]]
     """
     Make auxiliary set data class.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param interactive: Whether generated class should be interactive.
+    :type interactive: bool
+
     :return: Set data class.
+    :type: type[objetto.data.SetData or objetto.data.InteractiveSetData]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -742,14 +1051,16 @@ def data_set_cls(
         )
 
     # Make class.
-    base = InteractiveSetData  # type: Type[InteractiveSetData[T]]
+    cls_kwargs = dict(
+        relationship=relationship,
+        qual_name=qual_name,
+        module=module,
+        unique_descriptor_name="unique_hash" if unique else None,
+    )  # type: Dict[str, Any]
     with ReraiseContext(TypeError, "defining 'data_set_cls'"):
-        cls = make_auxiliary_cls(
-            base,
-            relationship,
-            qual_name=qual_name,
-            module=module,
-            unique_descriptor_name="unique_hash" if unique else None,
-        )
-
-    return cls
+        if interactive:
+            interactive_base = InteractiveSetData  # type: Type[InteractiveSetData[T]]
+            return make_auxiliary_cls(interactive_base, **cls_kwargs)
+        else:
+            base = SetData  # type: Type[SetData[T]]
+            return make_auxiliary_cls(base, **cls_kwargs)

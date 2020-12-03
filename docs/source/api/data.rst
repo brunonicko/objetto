@@ -19,20 +19,22 @@ Data Classes
 
 .. autoclass:: objetto.data.InteractiveData
 
-Attribute Descriptors
----------------------
+Data Attributes
+---------------
 .. autofunction:: objetto.data.data_attribute
 .. autofunction:: objetto.data.data_constant_attribute
 .. autofunction:: objetto.data.data_dict_attribute
 .. autofunction:: objetto.data.data_list_attribute
 .. autofunction:: objetto.data.data_set_attribute
+
+Auxiliary Data Class Factories
+------------------------------
 .. autofunction:: objetto.data.data_dict_cls
 .. autofunction:: objetto.data.data_list_cls
 .. autofunction:: objetto.data.data_set_cls
 
-
 Auxiliary Data Classes
-------------------------
+----------------------
 
 Dictionary Classes
 ******************
