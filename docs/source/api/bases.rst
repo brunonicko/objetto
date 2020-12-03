@@ -491,6 +491,13 @@ Base Reaction Class
    .. automethod:: objetto.bases.BaseReaction.to_dict
    .. automethod:: objetto.bases.BaseReaction.set_priority
 
+Base Factory Class
+------------------
+.. autoclass:: objetto.bases.BaseFactory
+
+   .. automethod:: __call__
+   .. automethod:: __add__
+
 Base Change Classes
 -------------------
 .. autoclass:: objetto.bases.BaseChange

@@ -35,18 +35,46 @@ __all__ = [
 
 
 class BaseFactory(Base):
-    """Base callable factory object."""
+    """
+    Base callable factory object.
+
+    Inherits from:
+      - :class:`objetto.bases.Base`
+
+    Inherited By:
+      - :class:`objetto.factories.MultiFactory`
+      - :class:`objetto.factories.Integer`
+      - :class:`objetto.factories.FloatingPoint`
+      - :class:`objetto.factories.RegexMatch`
+      - :class:`objetto.factories.RegexSub`
+      - :class:`objetto.factories.String`
+      - :class:`objetto.factories.Curated`
+    """
 
     __slots__ = ("__factories",)
 
     @abstractmethod
     def __call__(self, value, **kwargs):
         # type: (Any, Any) -> Any
+        """
+        Call with input value and optional keyword arguments.
+
+        :param value: Input value.
+
+        :param kwargs: Keyword arguments.
+
+        :return: Output value.
+        """
         raise NotImplementedError()
 
     def __add__(self, other):
         # type: (Union[BaseFactory, FactoryType, LazyFactory]) -> MultiFactory
-        """Add with another factory."""
+        """
+        Add with another factory.
+
+        :return: Multi factory with added factories.
+        :rtype: objetto.factories.MultiFactory
+        """
         with ReraiseContext(TypeError, "adding factories together"):
             if not isinstance(other, string_types):
                 assert_is_callable(other)
