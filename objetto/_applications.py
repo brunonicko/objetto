@@ -21,6 +21,8 @@ from ._states import BaseState, DictState
 from .data import (
     Data,
     InteractiveData,
+    DictData,
+    ListData,
     data_attribute,
     data_dict_attribute,
     data_list_attribute,
@@ -49,6 +51,7 @@ if TYPE_CHECKING:
         Mapping,
         MutableMapping,
         Optional,
+        Final,
         Set,
         Tuple,
         Type,
@@ -56,7 +59,7 @@ if TYPE_CHECKING:
     )
 
     from ._changes import BaseAtomicChange, Batch
-    from ._data import InteractiveListData, InteractiveSetData
+    from ._data import InteractiveSetData
     from ._history import HistoryObject
     from ._objects import BaseObject, Relationship
     from ._observers import InternalObserver, ActionObserverExceptionInfo
@@ -280,8 +283,11 @@ class Store(InteractiveData):
     )  # type: DataAttribute[Optional[BaseData]]
     """Data."""
 
-    metadata = data_dict_attribute(
-        key_types=string_types, checked=False
+    metadata = cast(
+        "DataAttribute[InteractiveDictData[str, Any]]",
+        data_dict_attribute(
+            key_types=string_types, checked=False
+        )
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
     """Metadata."""
 
@@ -311,8 +317,11 @@ class Store(InteractiveData):
     )  # type: DataAttribute[HistoryObject]
     """History object."""
 
-    children = data_set_attribute(
-        ".._objects|BaseObject", subtypes=True, checked=False
+    children = cast(
+        "DataAttribute[InteractiveSetData[BaseObject]]",
+        data_set_attribute(
+            ".._objects|BaseObject", subtypes=True, checked=False
+        )
     )  # type: DataAttribute[InteractiveSetData[BaseObject]]
     """Children."""
 
@@ -339,9 +348,12 @@ class Action(Data):
     :type: objetto.bases.BaseObject
     """
 
-    locations = data_list_attribute(
-        checked=False,  # TODO: interactive=False
-    )  # type: DataAttribute[InteractiveListData[Any]]
+    locations = cast(
+        "DataAttribute[ListData[Any]]",
+        data_list_attribute(
+            checked=False, interactive=False
+        )
+    )  # type: DataAttribute[ListData[Any]]
     """
     List of relative locations from the receiver to the sender.
     
@@ -361,17 +373,28 @@ class Action(Data):
 class Commit(Data):
     """Holds unmerged, modified stores."""
 
-    actions = data_list_attribute(
-        Action, checked=False
-    )  # type: DataAttribute[InteractiveListData[Action]]
+    actions = cast(
+        "DataAttribute[ListData[Action]]",
+        data_list_attribute(
+            Action, checked=False, finalized=True, interactive=False
+        )
+    )  # type: Final[DataAttribute[ListData[Action]]]
     """Actions."""
 
-    stores = data_dict_attribute(
-        Store, checked=False, key_types=".._objects|BaseObject", key_subtypes=True
-    )  # type: DataAttribute[InteractiveDictData[BaseObject, Store]]
+    stores = cast(
+        "DataAttribute[DictData[BaseObject, Store]]",
+        data_dict_attribute(
+            Store,
+            checked=False,
+            key_types=".._objects|BaseObject",
+            key_subtypes=True,
+            interactive=False,
+        )
+    )  # type: Final[DataAttribute[DictData[BaseObject, Store]]]
     """Modified stores."""
 
 
+@final
 class BatchCommit(Commit):
     """Batch commit."""
 
@@ -843,7 +866,7 @@ class ApplicationInternals(Base):
                         child_store = self.__read(old_child).set(
                             "parent_ref", WeakReference()
                         )
-                        stores = stores.set(old_child, child_store)
+                        stores = stores._set(old_child, child_store)
 
                     # noinspection PyTypeChecker
                     for new_child in change.new_children:
@@ -855,9 +878,9 @@ class ApplicationInternals(Base):
                             child_store = child_store.set(
                                 "last_parent_history_ref", WeakReference(history)
                             )
-                        stores = stores.set(new_child, child_store)
+                        stores = stores._set(new_child, child_store)
                     store = store.set("children", children)
-                stores = stores.set(obj, store)
+                stores = stores._set(obj, store)
 
                 # History propagation.
                 for adopter in filtered_history_adopters:
@@ -868,7 +891,7 @@ class ApplicationInternals(Base):
                     adopter_store = adopter_store.set(
                         "history_provider_ref", WeakReference(obj)
                     )
-                    stores = stores.set(adopter, adopter_store)
+                    stores = stores._set(adopter, adopter_store)
 
                 # Upstream data changes.
                 if data is not old_data:
@@ -903,7 +926,7 @@ class ApplicationInternals(Base):
                         )
                         if parent_new_store is parent_old_store:
                             break
-                        stores = stores.set(parent, parent_new_store)
+                        stores = stores._set(parent, parent_new_store)
 
                         child = parent
                         child_data = parent_new_store.data
@@ -949,7 +972,7 @@ class ApplicationInternals(Base):
         store = self.__read(obj)
         old_metadata = store.metadata
         store = store.update({"metadata": old_metadata.update(update)})
-        stores = stores.set(obj, store)
+        stores = stores._set(obj, store)
 
         # Commit!
         commit = Commit(actions=(), stores=stores)
@@ -1126,7 +1149,7 @@ class ApplicationInternals(Base):
                 data = None
 
             # Commit!
-            stores = stores.set(obj, Store(state=state, data=data, **kwargs))
+            stores = stores._set(obj, Store(state=state, data=data, **kwargs))
             commit = Commit(stores=stores)
             self.__commits.append(commit)
 

@@ -118,6 +118,5 @@ Relationship Classes
 Unique Descriptor Class
 -----------------------
 .. autoclass:: objetto.data.UniqueDescriptor
-   :members: relationship
 
    .. automethod:: objetto.data.UniqueDescriptor.__get__
