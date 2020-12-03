@@ -60,7 +60,7 @@ T = TypeVar("T")  # Any type.
 
 @final
 class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
-    """Static functions for :class:`ListObject`."""
+    """Static functions for `ListObject`."""
 
     __slots__ = ()
 
@@ -511,7 +511,7 @@ type.__setattr__(cast(type, ListObjectFunctions), FINAL_METHOD_TAG, True)
 
 
 class ListObjectMeta(BaseAuxiliaryObjectMeta, BaseListStructureMeta):
-    """Metaclass for :class:`ListObject`."""
+    """Metaclass for `ListObject`."""
 
     def __init__(cls, name, bases, dct):
         # type: (str, Tuple[Type, ...], Dict[str, Any]) -> None

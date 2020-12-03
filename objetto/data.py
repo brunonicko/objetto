@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, TypeVar
 
 from ._bases import MISSING
 from ._data import DataAttribute, DataRelationship
-from ._data import Data as ProtectedData
-from ._data import InteractiveData as Data
 from ._data import (
+    Data,
+    InteractiveData,
     DictData,
     InteractiveDictData,
     ListData,
@@ -15,7 +15,9 @@ from ._data import (
     SetData,
     InteractiveSetData,
 )
-from ._structures import UniqueDescriptor, KeyRelationship, make_auxiliary_cls
+from ._structures import (
+    UniqueDescriptor, KeyRelationship, make_auxiliary_cls, unique_descriptor
+)
 from .utils.caller_module import get_caller_module
 from .utils.reraise_context import ReraiseContext
 
@@ -28,8 +30,8 @@ __all__ = [
     "DataRelationship",
     "KeyRelationship",
     "UniqueDescriptor",
-    "ProtectedData",
     "Data",
+    "InteractiveData",
     "DictData",
     "InteractiveDictData",
     "ListData",
@@ -37,6 +39,7 @@ __all__ = [
     "SetData",
     "InteractiveSetData",
     "DataAttribute",
+    "unique_descriptor",
     "data_attribute",
     "data_constant_attribute",
     "data_dict_attribute",
@@ -332,6 +335,7 @@ def data_list_attribute(
     abstracted=False,  # type: bool
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
+    # TODO: interactive=True
 ):
     # type: (...) -> DataAttribute[InteractiveListData[T]]
     """

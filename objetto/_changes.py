@@ -47,7 +47,7 @@ class BaseChange(Data):
     Base change.
 
     Inherits from:
-      - :class:`objetto.data.Data`
+      - :class:`objetto.data.InteractiveData`
 
     Inherited By:
       - :class:`objetto.bases.BaseAtomicChange`

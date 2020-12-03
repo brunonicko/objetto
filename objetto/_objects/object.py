@@ -75,7 +75,7 @@ _A = TypeVar("_A", bound="Attribute")
 
 
 class AttributeMeta(BaseAttributeMeta):
-    """Metaclass for :class:`Attribute`."""
+    """Metaclass for `Attribute`."""
 
     @property
     @final
@@ -415,7 +415,7 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
 
 @final
 class Functions(BaseObjectFunctions):
-    """Static functions for :class:`Object`."""
+    """Static functions for `Object`."""
 
     __slots__ = ()
 
@@ -699,7 +699,7 @@ type.__setattr__(cast(type, Functions), FINAL_METHOD_TAG, True)
 
 class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
     """
-    Metaclass for :class:`Object`.
+    Metaclass for `Object`.
 
     :raises TypeError: Attribute is delegated but no delegates were defined.
     :raises TypeError: Attribute declares a dependency which is not available.
@@ -1157,7 +1157,7 @@ class Object(
 @final
 class IntermediaryObjectInternals(Base):
     """
-    Internals for :class:`IntermediaryObject`.
+    Internals for `IntermediaryObject`.
 
     :param iobj: Internal object.
     :param app: Application.

@@ -273,7 +273,7 @@ class KeyRelationship(BaseHashable):
 
 # noinspection PyAbstractClass
 class BaseDictStructureMeta(BaseAuxiliaryStructureMeta):
-    """Metaclass for :class:`DictStructure`."""
+    """Metaclass for `DictStructure`."""
 
     def __init__(cls, name, bases, dct):
         super(BaseDictStructureMeta, cls).__init__(name, bases, dct)

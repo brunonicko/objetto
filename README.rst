@@ -578,12 +578,12 @@ methods that return a new version of the data.
 
 .. code:: python
 
-    >>> from objetto.data import Data, data_attribute
+    >>> from objetto.data import InteractiveData, data_attribute
 
-    >>> class HobbyData(Data):  # inherit from Data
+    >>> class HobbyData(InteractiveData):  # inherit from InteractiveData
     ...     description = data_attribute(str)  # use data attributes
     ...
-    >>> class PersonData(Data):
+    >>> class PersonData(InteractiveData):
     ...     hobby = data_attribute((HobbyData, None))  # specify data types
     ...
     >>> hobby_data = HobbyData(description="biking")

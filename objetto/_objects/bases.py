@@ -81,7 +81,8 @@ T = TypeVar("T")  # Any type.
 DELETED = object()
 """
 Special marker that represents a deleted value.
-Can be used when updating :class:`Object` attributes or :class:`DictObject` values. 
+Can be used when updating :class:`objetto.objects.Object` attributes or 
+:class:`objetto.objects.DictObject` values. 
 """
 
 UNIQUE_ATTRIBUTES_METADATA_KEY = "unique_attributes"
@@ -643,7 +644,7 @@ class HistoryDescriptor(BaseHashable):
 
 
 class BaseObjectFunctions(Base):
-    """Base static functions for :class:`BaseObject`."""
+    """Base static functions for `BaseObject`."""
 
     __slots__ = ()
 
@@ -665,7 +666,7 @@ class BaseObjectFunctions(Base):
 
 class BaseObjectInternals(Base):
     """
-    Internals for :class:`BaseObject`.
+    Internals for `BaseObject`.
 
     :param obj: Object.
     :param app: Application.
@@ -712,7 +713,7 @@ class BaseObjectInternals(Base):
 
 class BaseObjectMeta(BaseStructureMeta):
     """
-    Metaclass for :class:`BaseObject`.
+    Metaclass for `BaseObject`.
 
     :raises TypeError: Class has multiple history descriptors.
     """
@@ -1103,7 +1104,7 @@ class BaseMutableObject(BaseObject[T], BaseMutableStructure[T]):
 
 # noinspection PyAbstractClass
 class BaseAuxiliaryObjectFunctions(BaseObjectFunctions):
-    """Base static functions for :class:`BaseAuxiliaryObject`."""
+    """Base static functions for `BaseAuxiliaryObject`."""
 
     __slots__ = ()
 
@@ -1120,7 +1121,7 @@ class BaseAuxiliaryObjectFunctions(BaseObjectFunctions):
 
 
 class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryStructureMeta):
-    """Metaclass for :class:`BaseAuxiliaryObject`."""
+    """Metaclass for `BaseAuxiliaryObject`."""
 
     __data_type = WeakKeyDictionary(
         {}

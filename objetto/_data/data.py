@@ -34,7 +34,7 @@ T = TypeVar("T")  # Any type.
 
 
 class DataAttributeMeta(BaseAttributeMeta):
-    """Metaclass for :class:`DataAttribute`."""
+    """Metaclass for `DataAttribute`."""
 
     @property
     @final
@@ -121,7 +121,7 @@ class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
 
 
 class DataMeta(BaseAttributeStructureMeta, BaseDataMeta):
-    """Metaclass for :class:`Data`."""
+    """Metaclass for `Data`."""
 
     @property
     @final
@@ -160,7 +160,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
       - :class:`objetto.bases.BaseData`
 
     Inherited by:
-      - :class:`objetto.data.Data`
+      - :class:`objetto.data.InteractiveData`
 
     :param initial: Initial values.
     """
@@ -328,7 +328,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Clear deletable attribute values.
 
         :return: Transformed.
-        :rtype: objetto.data.ProtectedData
+        :rtype: objetto.data.Data
 
         :raises AttributeError: No deletable attributes.
         """
@@ -360,7 +360,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         :param value: Value.
 
         :return: Transformed.
-        :rtype: objetto.data.ProtectedData
+        :rtype: objetto.data.Data
 
         :raises AttributeError: Attribute is not changeable and already has a value.
         """
@@ -382,7 +382,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         :type name: str
 
         :return: Transformed.
-        :rtype: objetto.data.ProtectedData
+        :rtype: objetto.data.Data
 
         :raises KeyError: Attribute does not exist or has no value.
         :raises AttributeError: Attribute is not deletable.
@@ -416,7 +416,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Same parameters as :meth:`dict.update`.
 
         :return: Transformed.
-        :rtype: objetto.data.ProtectedData
+        :rtype: objetto.data.Data
 
         :raises AttributeError: Attribute is not changeable and already has a value.
         """
@@ -445,7 +445,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         :param kwargs: Keyword arguments to be passed to the deserializers.
 
         :return: Deserialized.
-        :rtype: objetto.data.ProtectedData
+        :rtype: objetto.data.Data
         """
         input_values = dict(
             (n, cls.deserialize_value(v, n, **kwargs)) for n, v in iteritems(serialized)
@@ -489,7 +489,7 @@ class InteractiveData(
     Interactive data.
 
     Inherits from:
-      - :class:`objetto.data.ProtectedData`
+      - :class:`objetto.data.Data`
       - :class:`objetto.bases.BaseInteractiveAttributeStructure`
       - :class:`objetto.bases.BaseInteractiveData`
     """

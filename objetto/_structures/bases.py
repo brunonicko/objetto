@@ -551,7 +551,7 @@ _UD = TypeVar("_UD", bound="UniqueDescriptor")
 @final
 class UniqueDescriptor(Base):
     """
-    Descriptor to be used on :class:`BaseStructure` classes.
+    Descriptor to be used on :class:`objetto.bases.BaseStructure` classes.
     When used, the object ID will be the hash, and the equality method will compare by
     identity instead of by values.
     If accessed through an instance, the descriptor will return the object ID.
@@ -605,7 +605,7 @@ def unique_descriptor():
     # type: () -> UniqueDescriptor
     """
     Descriptor to be used when declaring an :class:`objetto.objects.Object` or a
-    :class:`objetto.data.Data` container class.
+    :class:`objetto.data.InteractiveData` container class.
     When used, the hash for the container will be the object ID, and the equality method
     will compare by identity instead of values.
     If accessed through an instance, the descriptor will return the unique hash based
@@ -630,7 +630,7 @@ def unique_descriptor():
 
 
 class BaseStructureMeta(BaseMeta):
-    """Metaclass for :class:`BaseStructure`."""
+    """Metaclass for `BaseStructure`."""
 
     __unique_descriptor_name = WeakKeyDictionary(
         {}
@@ -1133,7 +1133,7 @@ class BaseMutableStructure(BaseStructure[T], BaseMutableCollection[T]):
 
 
 class BaseAuxiliaryStructureMeta(BaseStructureMeta):
-    """Metaclass for :class:`BaseAuxiliaryStructure`."""
+    """Metaclass for `BaseAuxiliaryStructure`."""
 
     def __init__(cls, name, bases, dct):
         super(BaseAuxiliaryStructureMeta, cls).__init__(name, bases, dct)

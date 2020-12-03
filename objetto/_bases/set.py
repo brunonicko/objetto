@@ -518,6 +518,7 @@ class BaseProtectedSet(BaseSet[T], BaseProtectedCollection[T]):
         Discard value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
 
         :return: Transformed.
         :rtype: objetto.bases.BaseProtectedSet
@@ -534,6 +535,7 @@ class BaseProtectedSet(BaseSet[T], BaseProtectedCollection[T]):
         Remove existing value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
 
         :return: Transformed.
         :rtype: objetto.bases.BaseProtectedSet
@@ -569,7 +571,7 @@ class BaseProtectedSet(BaseSet[T], BaseProtectedCollection[T]):
         Update with iterable.
 
         :param iterable: Iterable.
-        :type iterable: collections.abc.Iterable
+        :type iterable: collections.abc.Iterable[collections.abc.Hashable]
 
         :return: Transformed.
         :rtype: objetto.bases.BaseProtectedSet
@@ -619,6 +621,7 @@ class BaseInteractiveSet(BaseProtectedSet[T], BaseInteractiveCollection[T]):
         Discard value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
 
         :return: Transformed.
         :rtype: objetto.bases.BaseInteractiveSet
@@ -634,6 +637,7 @@ class BaseInteractiveSet(BaseProtectedSet[T], BaseInteractiveCollection[T]):
         Remove existing value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
 
         :return: Transformed.
         :rtype: objetto.bases.BaseInteractiveSet
@@ -825,6 +829,7 @@ class BaseMutableSet(SlottedMutableSet, BaseProtectedSet[T], BaseMutableCollecti
         Discard value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
 
         :raises ValueError: No values provided.
         """
@@ -837,6 +842,7 @@ class BaseMutableSet(SlottedMutableSet, BaseProtectedSet[T], BaseMutableCollecti
         Remove existing value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
 
         :raises ValueError: No values provided.
         :raises KeyError: Value is not present.

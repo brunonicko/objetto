@@ -139,7 +139,7 @@ class DataRelationship(BaseRelationship):
 
 
 class BaseDataMeta(BaseStructureMeta):
-    """Metaclass for :class:`BaseData`."""
+    """Metaclass for `BaseData`."""
 
     @property
     @final
@@ -178,7 +178,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
     Inherited by:
       - :class:`objetto.bases.BaseInteractiveData`
       - :class:`objetto.bases.BaseAuxiliaryData`
-      - :class:`objetto.data.ProtectedData`
+      - :class:`objetto.data.Data`
 
     Features:
       - Is an immutable protected structure.
@@ -255,7 +255,7 @@ class BaseInteractiveData(BaseData[T], BaseInteractiveStructure[T]):
 
     Inherited by:
       - :class:`objetto.bases.BaseInteractiveAuxiliaryData`
-      - :class:`objetto.data.Data`
+      - :class:`objetto.data.InteractiveData`
 
     Features:
       - Is an immutable interactive data structure.
@@ -265,7 +265,7 @@ class BaseInteractiveData(BaseData[T], BaseInteractiveStructure[T]):
 
 
 class BaseAuxiliaryDataMeta(BaseDataMeta, BaseAuxiliaryStructureMeta):
-    """Metaclass for :class:`BaseAuxiliaryData`."""
+    """Metaclass for `BaseAuxiliaryData`."""
 
     @property
     @abstractmethod

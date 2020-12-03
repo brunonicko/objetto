@@ -67,7 +67,7 @@ T = TypeVar("T")  # Any type.
 
 
 class BaseAttributeMeta(BaseMeta):
-    """Metaclass for :class:`BaseAttribute`."""
+    """Metaclass for `BaseAttribute`."""
 
     @property
     @abstractmethod
@@ -455,7 +455,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
 
 
 class BaseAttributeStructureMeta(BaseStructureMeta):
-    """Metaclass for :class:`BaseAttributeStructure`."""
+    """Metaclass for `BaseAttributeStructure`."""
 
     __attributes = WeakKeyDictionary(
         {}
@@ -527,7 +527,7 @@ class BaseAttributeStructure(
       - :class:`objetto.bases.BaseStructure`
 
     Inherited by:
-      - :class:`objetto.data.ProtectedData`
+      - :class:`objetto.data.Data`
       - :class:`objetto.objects.Object`
 
     Features:
@@ -792,7 +792,7 @@ class BaseInteractiveAttributeStructure(
       - :class:`objetto.bases.BaseInteractiveStructure`
 
     Inherited by:
-      - :class:`objetto.data.Data`
+      - :class:`objetto.data.InteractiveData`
     """
 
     __slots__ = ()

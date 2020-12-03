@@ -34,7 +34,7 @@ T = TypeVar("T")  # Any type.
 
 
 class SetDataMeta(BaseAuxiliaryDataMeta, BaseSetStructureMeta):
-    """Metaclass for :class:`SetData`."""
+    """Metaclass for `SetData`."""
 
     @property
     @final
@@ -57,6 +57,13 @@ class SetData(
 ):
     """
     Set data.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseSetStructure`
+      - :class:`objetto.bases.BaseAuxiliaryData`
+
+    Inherited by:
+      - :class:`objetto.data.InteractiveSetData`
 
     :param initial: Initial values.
     """
@@ -83,7 +90,10 @@ class SetData(
         Make set state from iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Set data.
+        :rtype: objetto.data.SetData
         """
         return SetState(iterable)
 
@@ -119,6 +129,7 @@ class SetData(
         Clear all values.
 
         :return: Transformed.
+        :rtype: objetto.data.SetData
         """
         return type(self).__make__()
 
@@ -129,7 +140,10 @@ class SetData(
         Add value.
 
         :param value: Value.
+        :type value: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.data.SetData
         """
         cls = type(self)
         fabricated_value = cls._relationship.fabricate_value(value)
@@ -142,7 +156,11 @@ class SetData(
         Discard value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.data.SetData
+
         :raises ValueError: No values provided.
         """
         return type(self).__make__(self._state.discard(*values))
@@ -154,7 +172,11 @@ class SetData(
         Remove existing value(s).
 
         :param values: Value(s).
+        :type value: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.data.SetData
+
         :raises ValueError: No values provided.
         :raises KeyError: Value is not present.
         """
@@ -167,8 +189,14 @@ class SetData(
         Replace existing value with a new one.
 
         :param value: Existing value.
+        :type value: collections.abc.Hashable
+
         :param new_value: New value.
+        :type value: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.data.SetData
+
         :raises KeyError: Value is not present.
         """
         cls = type(self)
@@ -182,7 +210,10 @@ class SetData(
         Update with iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable[collections.abc.Hashable]
+
         :return: Transformed.
+        :rtype: objetto.data.SetData
         """
         cls = type(self)
         if not cls._relationship.passthrough:
@@ -201,8 +232,13 @@ class SetData(
         Deserialize.
 
         :param serialized: Serialized.
+        :type serialized: list
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized.
+        :rtype: objetto.data.SetData
+
         :raises RuntimeError: Not deserializable.
         """
         if not cls._relationship.serialized:
@@ -220,7 +256,10 @@ class SetData(
         Serialize.
 
         :param kwargs: Keyword arguments to be passed to the serializers.
+
         :return: Serialized.
+        :rtype: list
+
         :raises RuntimeError: Not serializable.
         """
         if not type(self)._relationship.serialized:
@@ -235,7 +274,11 @@ class SetData(
     @final
     def _state(self):
         # type: () -> SetState[T]
-        """Internal state."""
+        """
+        Internal state.
+
+        :rtype: objetto.states.SetState
+        """
         return cast("SetState", super(BaseSetStructure, self)._state)
 
 
@@ -244,6 +287,13 @@ class InteractiveSetData(
     BaseInteractiveSetStructure[T],
     BaseInteractiveAuxiliaryData[T],
 ):
-    """Interactive set data."""
+    """
+    Interactive set data.
+
+    Inherits from:
+      - :class:`objetto.data.SetData`
+      - :class:`objetto.bases.BaseInteractiveSetStructure`
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryData`
+    """
 
     __slots__ = ()

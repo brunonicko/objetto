@@ -58,7 +58,7 @@ DATA_MAP_METADATA_KEY = "data_map"
 
 @final
 class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
-    """Static functions for :class:`SetObject`."""
+    """Static functions for `SetObject`."""
 
     __slots__ = ()
 
@@ -302,7 +302,7 @@ type.__setattr__(cast(type, SetObjectFunctions), FINAL_METHOD_TAG, True)
 
 
 class SetObjectMeta(BaseAuxiliaryObjectMeta, BaseSetStructureMeta):
-    """Metaclass for :class:`SetObject`."""
+    """Metaclass for `SetObject`."""
 
     @property
     @final
@@ -759,6 +759,8 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Update with iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable[collections.abc.Hashable]
+
         :return: Transformed.
         """
         self._obj._update(iterable)

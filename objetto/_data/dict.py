@@ -37,7 +37,7 @@ VT = TypeVar("VT")  # Value type.
 
 
 class DictDataMeta(BaseAuxiliaryDataMeta, BaseDictStructureMeta):
-    """Metaclass for :class:`DictData`."""
+    """Metaclass for `DictData`."""
 
     @property
     @final

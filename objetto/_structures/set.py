@@ -39,7 +39,7 @@ T = TypeVar("T")  # Any type.
 
 # noinspection PyAbstractClass
 class BaseSetStructureMeta(BaseAuxiliaryStructureMeta):
-    """Metaclass for :class:`SetStructure`."""
+    """Metaclass for `SetStructure`."""
 
 
 class BaseSetStructure(

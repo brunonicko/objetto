@@ -58,7 +58,7 @@ VT = TypeVar("VT")  # Value type.
 
 @final
 class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
-    """Static functions for :class:`DictObject`."""
+    """Static functions for `DictObject`."""
 
     __slots__ = ()
 
@@ -272,7 +272,7 @@ type.__setattr__(cast(type, DictObjectFunctions), FINAL_METHOD_TAG, True)
 
 
 class DictObjectMeta(BaseAuxiliaryObjectMeta, BaseDictStructureMeta):
-    """Metaclass for :class:`DictObject`."""
+    """Metaclass for `DictObject`."""
 
     @property
     @final

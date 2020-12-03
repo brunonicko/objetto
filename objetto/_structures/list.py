@@ -39,7 +39,7 @@ T = TypeVar("T")  # Any type.
 
 # noinspection PyAbstractClass
 class BaseListStructureMeta(BaseAuxiliaryStructureMeta):
-    """Metaclass for :class:`ListStructure`."""
+    """Metaclass for `ListStructure`."""
 
 
 class BaseListStructure(

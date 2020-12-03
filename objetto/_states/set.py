@@ -178,6 +178,8 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Discard value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
+
         :return: Transformed.
         :raises ValueError: No values provided.
         """
@@ -192,6 +194,8 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Remove existing value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
+
         :return: Transformed.
         :raises ValueError: No values provided.
         :raises KeyError: Value is not present.

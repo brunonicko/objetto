@@ -34,7 +34,7 @@ T = TypeVar("T")  # Any type.
 
 
 class ListDataMeta(BaseAuxiliaryDataMeta, BaseListStructureMeta):
-    """Metaclass for :class:`ListData`."""
+    """Metaclass for `ListData`."""
 
     @property
     @final
@@ -57,6 +57,13 @@ class ListData(
 ):
     """
     List data.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseListStructure`
+      - :class:`objetto.bases.BaseAuxiliaryData`
+
+    Inherited by:
+      - :class:`objetto.data.InteractiveListData`
 
     :param initial: Initial values.
     """
@@ -96,7 +103,10 @@ class ListData(
         Get value/values at index/from slice.
 
         :param index: Index/slice.
+        :type index: int or slice
+
         :return: Value/values.
+        :rtype: Any or objetto.states.ListState
         """
         return self._state[index]
 
@@ -127,6 +137,7 @@ class ListData(
         Clear all values.
 
         :return: Transformed.
+        :rtype: objetto.data.ListData
         """
         return type(self).__make__()
 
@@ -137,8 +148,14 @@ class ListData(
         Insert value(s) at index.
 
         :param index: Index.
+        :type index: int
+
         :param values: Value(s).
+        :type values: collections.abc.Iterable
+
         :return: Transformed.
+        :rtype: objetto.data.ListData
+
         :raises ValueError: No values provided.
         """
         cls = type(self)
@@ -155,7 +172,9 @@ class ListData(
         Append value at the end.
 
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.data.ListData
         """
         cls = type(self)
         fabricated_value = cls._relationship.fabricate_value(value)
@@ -168,7 +187,10 @@ class ListData(
         Extend at the end with iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Transformed.
+        :rtype: objetto.data.ListData
         """
         cls = type(self)
         if not cls._relationship.passthrough:
@@ -186,7 +208,10 @@ class ListData(
         Remove first occurrence of value.
 
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.data.ListData
+
         :raises ValueError: Value is not present.
         """
         return type(self).__make__(self._state.remove(value))
@@ -198,6 +223,7 @@ class ListData(
         Reverse values.
 
         :return: Transformed.
+        :rtype: objetto.data.ListData
         """
         return type(self).__make__(self._state.reverse())
 
@@ -208,8 +234,13 @@ class ListData(
         Move values internally.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :param target_index: Target index.
+        :type target_index: int
+
         :return: Transformed.
+        :rtype: objetto.data.ListData
         """
         return type(self).__make__(self._state.move(item, target_index))
 
@@ -220,7 +251,10 @@ class ListData(
         Delete values at index/slice.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :return: Transformed.
+        :rtype: objetto.data.ListData
         """
         return type(self).__make__(self._state.delete(item))
 
@@ -231,8 +265,13 @@ class ListData(
         Update value(s) starting at index.
 
         :param index: Index.
+        :type index: int
+
         :param values: Value(s).
+
         :return: Transformed.
+        :rtype: objetto.data.ListData
+
         :raises ValueError: No values provided.
         """
         cls = type(self)
@@ -250,8 +289,13 @@ class ListData(
         Deserialize.
 
         :param serialized: Serialized.
+        :type: serialized: list
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized.
+        :rtype: objetto.data.ListData
+
         :raises RuntimeError: Not deserializable.
         """
         if not cls._relationship.serialized:
@@ -269,7 +313,10 @@ class ListData(
         Serialize.
 
         :param kwargs: Keyword arguments to be passed to the serializers.
+
         :return: Serialized.
+        :rtype: list
+
         :raises RuntimeError: Not serializable.
         """
         if not type(self)._relationship.serialized:
@@ -283,7 +330,11 @@ class ListData(
     @final
     def _state(self):
         # type: () -> ListState[T]
-        """Internal state."""
+        """
+        Internal state.
+
+        :rtype: objetto.states.ListState
+        """
         return cast("ListState", super(BaseListStructure, self)._state)
 
 
@@ -292,6 +343,13 @@ class InteractiveListData(
     BaseInteractiveListStructure[T],
     BaseInteractiveAuxiliaryData[T],
 ):
-    """Interactive list data."""
+    """
+    Interactive list data.
+
+    Inherits from:
+      - :class:`objetto.data.ListData`
+      - :class:`objetto.bases.BaseInteractiveListStructure`
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryData`
+    """
 
     __slots__ = ()

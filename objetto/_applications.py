@@ -20,6 +20,7 @@ from ._exceptions import BaseObjettoException
 from ._states import BaseState, DictState
 from .data import (
     Data,
+    InteractiveData,
     data_attribute,
     data_dict_attribute,
     data_list_attribute,
@@ -266,7 +267,7 @@ class ApplicationStorage(WeakKeyDictionary):
         return type(self), (dict(self),)
 
 
-class Store(Data):
+class Store(InteractiveData):
     """Holds an object's state, data, metadata, hierarchy, and history information."""
 
     state = data_attribute(
@@ -339,7 +340,7 @@ class Action(Data):
     """
 
     locations = data_list_attribute(
-        checked=False
+        checked=False,  # TODO: interactive=False
     )  # type: DataAttribute[InteractiveListData[Any]]
     """
     List of relative locations from the receiver to the sender.
@@ -511,7 +512,7 @@ class ApplicationRoot(Base, Generic[BO]):
 
 
 class ApplicationInternals(Base):
-    """Internals for :class:`Application`."""
+    """Internals for `Application`."""
 
     __slots__ = (
         "__app_ref",
@@ -1385,7 +1386,7 @@ class ApplicationInternals(Base):
 
 
 class ApplicationMeta(BaseMeta):
-    """Metaclass for :class:`Application`."""
+    """Metaclass for `Application`."""
 
     __roots = WeakKeyDictionary(
         {}

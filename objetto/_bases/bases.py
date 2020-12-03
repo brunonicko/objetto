@@ -423,7 +423,7 @@ class BaseMeta(SlottedABCMeta):
 
     @staticmethod
     def __new__(mcs, name, bases, dct):
-        """Make :class:`BaseMeta` class."""
+        """Make `BaseMeta` class."""
         dct = dict(dct)
 
         # Force '__hash__' to be declared if '__eq__' is declared.
@@ -672,11 +672,11 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
 
 @final
 class AbstractMemberMeta(BaseMeta):
-    """Metaclass for :class:`AbstractMember`."""
+    """Metaclass for `AbstractMember`."""
 
     @staticmethod
     def __new__(mcs, name, bases, dct):
-        """Make :class:`AbstractMember` class."""
+        """Make `AbstractMember` class."""
         dct[ABSTRACT_TAG] = True
         return super(AbstractMemberMeta, mcs).__new__(mcs, name, bases, dct)
 
