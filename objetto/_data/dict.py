@@ -61,12 +61,24 @@ class DictData(
     """
     Dictionary data.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseDictStructure`
+      - :class:`objetto.bases.BaseAuxiliaryData`
+
+    Inherited by:
+      - :class:`objetto.data.InteractiveDictData`
+
     :param initial: Initial values.
     """
 
     __slots__ = ()
+
     _key_relationship = KeyRelationship()
-    """Relationship for dictionary keys."""
+    """
+    Relationship for dictionary keys.
+    
+    :type: objetto.data.KeyRelationship 
+    """
 
     @classmethod
     @final
@@ -115,6 +127,7 @@ class DictData(
         Clear all keys and values.
 
         :return: Transformed.
+        :rtype: objetto.data.DictData
         """
         return type(self).__make__()
 
@@ -125,8 +138,12 @@ class DictData(
         Set value for key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.data.DictData
         """
         cls = type(self)
         key = cls._key_relationship.fabricate_key(key)
@@ -140,7 +157,10 @@ class DictData(
         Discard key if it exists.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.data.DictData
         """
         return type(self).__make__(self._state.discard(key))
 
@@ -151,7 +171,10 @@ class DictData(
         Delete existing key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.data.DictData
         """
         return type(self).__make__(self._state.remove(key))
 
@@ -175,6 +198,9 @@ class DictData(
         """
         Update keys and values.
         Same parameters as :meth:`dict.update`.
+
+        :return: Transformed.
+        :rtype: objetto.data.DictData
         """
         update = dict(*args, **kwargs)
         cls = type(self)
@@ -198,8 +224,13 @@ class DictData(
         Deserialize.
 
         :param serialized: Serialized.
+        :type serialized: dict
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized.
+        :rtype: objetto.data.DictData
+
         :raises RuntimeError: Not deserializable.
         """
         if not cls._relationship.serialized:
@@ -221,7 +252,10 @@ class DictData(
         Serialize.
 
         :param kwargs: Keyword arguments to be passed to the serializers.
+
         :return: Serialized.
+        :rtype: dict
+
         :raises RuntimeError: Not serializable.
         """
         if not type(self)._relationship.serialized:
@@ -236,7 +270,11 @@ class DictData(
     @final
     def _state(self):
         # type: () -> DictState[KT, VT]
-        """Internal state."""
+        """
+        Internal state.
+
+        :rtype: objetto.states.DictState
+        """
         return cast("DictState", super(BaseDictStructure, self)._state)
 
 
@@ -245,6 +283,13 @@ class InteractiveDictData(
     BaseInteractiveDictStructure[KT, VT],
     BaseInteractiveAuxiliaryData[KT],
 ):
-    """Interactive dictionary data."""
+    """
+    Interactive dictionary data.
+
+    Inherits from:
+      - :class:`objetto.data.DictData`
+      - :class:`objetto.bases.BaseInteractiveDictStructure`
+      - :class:`objetto.bases.BaseInteractiveAuxiliaryData`
+    """
 
     __slots__ = ()

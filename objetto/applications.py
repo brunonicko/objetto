@@ -17,8 +17,16 @@ def root(obj_type, priority=None, **kwargs):
     Describes a root object that gets initialized with the application.
 
     :param obj_type: Object type.
+    :type obj_type: type[objetto.bases.BaseObject]
+
     :param priority: Initialization priority.
+    :type priority: int or None
+
     :param kwargs: Keyword arguments to be passed to the object's `__init__`.
+
+    :return: Application root descriptor.
+    :rtype: objetto.applications.ApplicationRoot
+
     :raises ValueError: Used reserved keyword argument.
     :raises TypeError: Invalid object type.
     """

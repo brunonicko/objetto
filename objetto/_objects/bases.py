@@ -347,7 +347,7 @@ class BaseReaction(Base):
         :type action: objetto.objects.Action
 
         :param phase: Phase.
-        :type phase: objetto.constants.PRE or objetto.constants.POST
+        :type phase: :data:`objetto.constants.PRE` or :data:`objetto.constants.POST`
         """
         raise NotImplementedError()
 

@@ -18,7 +18,6 @@ from .._structures import (
     BaseAttributeStructure,
     BaseAttributeStructureMeta,
     BaseInteractiveAttributeStructure,
-    BaseRelationship,
 )
 from ..utils.type_checking import assert_is_instance
 from .bases import BaseData, BaseDataMeta, BaseInteractiveData, DataRelationship
@@ -48,24 +47,46 @@ class DataAttributeMeta(BaseAttributeMeta):
 @final
 class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
     """
-    Data attribute descriptor.
+    Attribute descriptor for :class:`objetto.data.Data` classes.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAttribute`
 
     :param relationship: Relationship.
+    :type relationship: objetto.data.DataRelationship
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param module: Optional module path to use in case partial paths are provided.
+    :type module: str or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     """
 
     __slots__ = ()
 
     def __init__(
         self,
-        relationship=BaseRelationship(),  # type: BaseRelationship
+        relationship=DataRelationship(),  # type: DataRelationship
         default=MISSING,  # type: Any
         default_factory=None,  # type: LazyFactory
         module=None,  # type: Optional[str]
@@ -91,7 +112,11 @@ class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
     @property
     def relationship(self):
         # type: () -> DataRelationship
-        """Relationship."""
+        """
+        Relationship.
+
+        :rtype: objetto.data.DataRelationship
+        """
         return cast("DataRelationship", super(DataAttribute, self).relationship)
 
 
@@ -129,6 +154,13 @@ _D = TypeVar("_D", bound="Data")
 class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
     """
     Data.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAttributeStructure`
+      - :class:`objetto.bases.BaseData`
+
+    Inherited by:
+      - :class:`objetto.data.Data`
 
     :param initial: Initial values.
     """
@@ -202,7 +234,11 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Get relationship at location (attribute name).
 
         :param location: Location (attribute name).
+        :type location: str
+
         :return: Relationship.
+        :rtype: objetto.data.DataRelationship
+
         :raises KeyError: Attribute does not exist.
         """
         return cast("DataRelationship", cls._get_attribute(location).relationship)
@@ -215,7 +251,11 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Get attribute by name.
 
         :param name: Attribute name.
+        :type name: str
+
         :return: Attribute.
+        :rtype: objetto.data.DataAttribute
+
         :raises KeyError: Attribute does not exist.
         """
         return cast("DataAttribute", cls._attributes[name])
@@ -227,6 +267,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         try:
             return self.__hash  # type: ignore
@@ -250,7 +291,9 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Compare with another data for equality.
 
         :param other: Another data.
+
         :return: True if equal.
+        :rtype: bool
         """
         if self is other:
             return True
@@ -285,6 +328,8 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Clear deletable attribute values.
 
         :return: Transformed.
+        :rtype: objetto.data.ProtectedData
+
         :raises AttributeError: No deletable attributes.
         """
         cls = type(self)
@@ -310,8 +355,13 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Set attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.data.ProtectedData
+
         :raises AttributeError: Attribute is not changeable and already has a value.
         """
         cls = type(self)
@@ -329,7 +379,11 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Delete attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :return: Transformed.
+        :rtype: objetto.data.ProtectedData
+
         :raises KeyError: Attribute does not exist or has no value.
         :raises AttributeError: Attribute is not deletable.
         """
@@ -387,8 +441,11 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Deserialize.
 
         :param serialized: Serialized.
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized.
+        :rtype: objetto.data.ProtectedData
         """
         input_values = dict(
             (n, cls.deserialize_value(v, n, **kwargs)) for n, v in iteritems(serialized)
@@ -403,7 +460,9 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         Serialize.
 
         :param kwargs: Keyword arguments to be passed to the serializers.
+
         :return: Serialized.
+        :rtype: dict[str, Any]
         """
         return dict(
             (n, self.serialize_value(v, n, **kwargs))
@@ -415,13 +474,24 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
     @final
     def _state(self):
         # type: () -> DictState[str, Any]
-        """Internal state."""
+        """
+        Internal state.
+
+        :rtype: objetto.states.DictState[str, Any]
+        """
         return cast("DictState", super(BaseAttributeStructure, self)._state)
 
 
 class InteractiveData(
     Data, BaseInteractiveAttributeStructure, BaseInteractiveData[str]
 ):
-    """Interactive data."""
+    """
+    Interactive data.
+
+    Inherits from:
+      - :class:`objetto.data.ProtectedData`
+      - :class:`objetto.bases.BaseInteractiveAttributeStructure`
+      - :class:`objetto.bases.BaseInteractiveData`
+    """
 
     __slots__ = ()

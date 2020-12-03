@@ -82,7 +82,7 @@ class ActionObserver(object):
         :type action: objetto.objects.Action
 
         :param phase: Phase.
-        :type phase: objetto.constants.PRE or objetto.constants.POST
+        :type phase: :data:`objetto.constants.PRE` or :data:`objetto.constants.POST`
 
         :raises NotImplementedError: Abstract method not implemented.
         """
@@ -228,7 +228,7 @@ class ActionObserverExceptionInfo(
     :type action: objetto.objects.Action
 
     :param phase: Phase.
-    :type phase: objetto.constants.PRE or objetto.constants.POST
+    :type phase: :data:`objetto.constants.PRE` or :data:`objetto.constants.POST`
 
     :param exception_type: Exception type.
     :type exception_type: type[Exception]

@@ -444,7 +444,7 @@ Base Object Classes
    .. automethod:: objetto.bases.BaseObject._locate
    .. automethod:: objetto.bases.BaseObject._locate_data
    .. automethod:: objetto.bases.BaseObject._in_same_application
-   .. automethod:: objetto.bases.BaseObject._batch_context
+   .. automethod:: objetto.bases.BaseObject._batch_context()
    .. automethod:: objetto.bases.BaseObject.deserialize
 
 .. autoclass:: objetto.bases.BaseMutableObject

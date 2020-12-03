@@ -1432,6 +1432,10 @@ class Application(with_metaclass(ApplicationMeta, Base)):
     """
     Application.
 
+    Inherits from:
+      - :class:`objetto.bases.Base`
+
+    Features:
       - Manages multiple :class:`objetto.bases.BaseObject` under the same hierarchy.
       - Offers contexts for reading/writing/batch.
       - Reverts changes when an error occurs.
