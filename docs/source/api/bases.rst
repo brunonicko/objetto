@@ -492,7 +492,7 @@ Base Reaction Class
    .. automethod:: objetto.bases.BaseReaction.set_priority
 
 Base Change Classes
---------------------
+-------------------
 .. autoclass:: objetto.bases.BaseChange
    :members:
      name,
