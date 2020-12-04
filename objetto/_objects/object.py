@@ -88,27 +88,54 @@ class AttributeMeta(BaseAttributeMeta):
 @final
 class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
     """
-    Object attribute.
+    Attribute descriptor for :class:`objetto.objects.Object` classes.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAttribute`
 
     :param relationship: Relationship.
+    :type relationship: objetto.objects.Relationship
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param module: Optional module path to use in case partial paths are provided.
+    :type module: str or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param delegated: Whether attribute allows for delegates to be defined.
+    :type delegated: bool
+
     :param dependencies: Attributes needed by the getter delegate.
+    :type dependencies: collections.abc.Iterable[objetto.objects.Attribute] or \
+objetto.objects.Attribute or None
+
     :param deserialize_to: Non-serialized attribute to deserialize this into.
-    :raises TypeError: Invalid 'dependencies' parameter type.
+    :type deserialize_to: objetto.objects.Attribute or None
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
     :raises ValueError: Can't declare same dependency more than once.
     :raises ValueError: Provided 'changeable' but 'delegated' is True.
     :raises ValueError: Provided 'deletable' but 'delegated' is True.
     :raises ValueError: Provided 'dependencies' but 'delegated' is False.
     :raises ValueError: Provided 'deserialize_to' but 'serialized' is False.
-    :raises TypeError: Invalid 'deserialize_to' parameter type.
     :raises ValueError: Can't provide a serialized attribute to 'deserialize_to'.
     """
 
@@ -222,6 +249,8 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
         Set attribute value.
 
         :param instance: Object instance.
+        :type instance: objetto.objects.Object
+
         :param value: Value.
         """
         self.set_value(instance, value)
@@ -232,6 +261,7 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
         Delete attribute value.
 
         :param instance: Object instance.
+        :type instance: objetto.objects.Object
         """
         self.delete_value(instance)
 
@@ -241,6 +271,7 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         dct = super(Attribute, self).to_dict()
         dct.update(
@@ -261,6 +292,8 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
         Set attribute value.
 
         :param instance: Object instance.
+        :type instance: objetto.objects.Object
+
         :param value: Value.
         """
         instance[self.get_name(instance)] = value
@@ -271,6 +304,7 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
         Delete attribute value.
 
         :param instance: Object instance.
+        :type instance: objetto.objects.Object
         """
         del instance[self.get_name(instance)]
 
@@ -280,7 +314,11 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
         Define a getter delegate method.
 
         :param func: Delegate function.
+        :type func: function
+
         :return: This attribute.
+        :rtype: objetto.objects.Attribute
+
         :raises ValueError: Cannot define a getter for a non-delegated attribute.
         :raises ValueError: Getter delegate already defined.
         :raises TypeError: Invalid delegate type.
@@ -302,7 +340,11 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
         Define a setter delegate method.
 
         :param func: Delegate function.
+        :type func: function
+
         :return: This attribute.
+        :rtype: objetto.objects.Attribute
+
         :raises ValueError: Cannot define a setter for a non-delegated attribute.
         :raises ValueError: Need to define a getter before defining a setter.
         :raises ValueError: Setter delegate already defined.
@@ -329,7 +371,11 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
         Define a deleter delegate method.
 
         :param func: Delegate function.
+        :type func: function
+
         :return: This attribute.
+        :rtype: objetto.objects.Attribute
+
         :raises ValueError: Cannot define a deleter for a non-delegated attribute.
         :raises ValueError: Need to define a getter before defining a deleter.
         :raises ValueError: Deleter delegate already defined.
@@ -353,49 +399,81 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
     @property
     def relationship(self):
         # type: () -> Relationship
-        """Relationship."""
+        """
+        Relationship.
+
+        :rtype: objetto.objects.Relationship
+        """
         return cast("Relationship", super(Attribute, self).relationship)
 
     @property
     def delegated(self):
         # type: () -> bool
-        """Whether attribute allows for delegates to be defined."""
+        """
+        Whether attribute allows for delegates to be defined.
+
+        :rtype: bool
+        """
         return self.__delegated
 
     @property
     def dependencies(self):
         # type: () -> Tuple[Attribute, ...]
-        """Attributes needed by the getter delegate."""
+        """
+        Attributes needed by the getter delegate.
+
+        :rtype: tuple[objetto.objects.Attribute]
+        """
         return self.__dependencies
 
     @property
     def deserialize_to(self):
         # type: () -> Optional[Attribute]
-        """Non-serialized attribute to deserialize this into."""
+        """
+        Non-serialized attribute to deserialize this into.
+
+        :rtype: objetto.objects.Attribute or None
+        """
         return self.__deserialize_to
 
     @property
     def fget(self):
         # type: () -> Optional[Callable]
-        """Getter delegate."""
+        """
+        Getter delegate.
+
+        :rtype: function or None
+        """
         return self.__fget
 
     @property
     def fset(self):
         # type: () -> Optional[Callable]
-        """Setter delegate."""
+        """
+        Setter delegate.
+
+        :rtype: function or None
+        """
         return self.__fset
 
     @property
     def fdel(self):
         # type: () -> Optional[Callable]
-        """Deleter delegate."""
+        """
+        Deleter delegate.
+
+        :rtype: function or None
+        """
         return self.__fdel
 
     @property
     def data_attribute(self):
         # type: () -> Optional[DataAttribute]
-        """Data attribute."""
+        """
+        Data attribute.
+
+        :rtype: objetto.data.DataAttribute or None
+        """
         if self.__data_attribute is None:
             data_relationship = self.relationship.data_relationship
             if data_relationship is not None:
@@ -908,7 +986,17 @@ class Object(
     """
     Object.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseMutableObject`
+      - :class:`objetto.bases.BaseMutableAttributeStructure`
+
+    Inherited by:
+      - :class:`objetto.history.HistoryObject`
+      - :class:`objetto.history.BatchChanges`
+
     :param app: Application.
+    :type app: objetto.applications.Application
+
     :param initial: Initial values.
     """
 
@@ -935,7 +1023,11 @@ class Object(
         Get relationship at location (attribute name).
 
         :param location: Location (attribute name).
+        :type location: str
+
         :return: Relationship.
+        :rtype: objetto.objects.Relationship
+
         :raises KeyError: Attribute does not exist.
         """
         return cast("Relationship", cls._get_attribute(location).relationship)
@@ -948,7 +1040,11 @@ class Object(
         Get attribute by name.
 
         :param name: Attribute name.
+        :type name: str
+
         :return: Attribute.
+        :rtype: objetto.objects.Attribute
+
         :raises KeyError: Attribute does not exist.
         """
         return cast("Attribute", cls._attributes[name])
@@ -960,6 +1056,8 @@ class Object(
         Clear deletable attribute values.
 
         :return: Transformed.
+        :rtype: objetto.objects.Object
+
         :raises AttributeError: No deletable attributes.
         """
         with self.app.write_context():
@@ -1013,8 +1111,13 @@ class Object(
         Set attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.objects.Object
+
         :raises AttributeError: Attribute is not changeable and already has a value.
         """
         self.__functions__.update(self, {name: value})
@@ -1027,7 +1130,11 @@ class Object(
         Delete attribute value.
 
         :param name: Attribute name.
+        :type name: str
+
         :return: Transformed.
+        :rtype: objetto.objects.Object
+
         :raises KeyError: Attribute does not exist or has no value.
         :raises AttributeError: Attribute is not deletable.
         """
@@ -1041,7 +1148,11 @@ class Object(
         Locate child object.
 
         :param child: Child object.
+        :type child: objetto.bases.BaseObject
+
         :return: Location.
+        :rtype: str
+
         :raises ValueError: Could not locate child.
         """
         with self.app.__.read_context(self) as read:
@@ -1061,7 +1172,11 @@ class Object(
         Locate child object's data.
 
         :param child: Child object.
+        :type child: objetto.bases.BaseObject
+
         :return: Data location.
+        :rtype: str
+
         :raises ValueError: Could not locate child's data.
         """
         return self._locate(child)
@@ -1074,9 +1189,15 @@ class Object(
         Deserialize.
 
         :param serialized: Serialized.
+        :type serialized: dict[str, Any]
+
         :param app: Application (required).
+        :type app: objetto.applications.Application
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized.
+        :rtype: objetto.objects.Object
         """
         if app is None:
             error = (
@@ -1130,7 +1251,9 @@ class Object(
         Serialize.
 
         :param kwargs: Keyword arguments to be passed to the serializers.
+
         :return: Serialized.
+        :rtype: dict[str, Any]
         """
         with self.app.read_context():
             return dict(
@@ -1143,14 +1266,22 @@ class Object(
     @final
     def _state(self):
         # type: () -> DictState[str, Any]
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.states.DictState[str, Any]
+        """
         return cast("DictState", super(Object, self)._state)
 
     @property
     @final
     def data(self):
         # type: () -> Data
-        """Data."""
+        """
+        Data.
+
+        :rtype: objetto.data.Data
+        """
         return cast("Data", super(Object, self).data)
 
 

@@ -61,6 +61,7 @@ __all__ = [
     "ProxyListObject",
     "ProxySetObject",
     "Relationship",
+    "Attribute",
     "KeyRelationship",
     "UniqueDescriptor",
     "Action",
@@ -349,6 +350,12 @@ objetto.objects.Attribute or None
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
+    :raises ValueError: Can't declare same dependency more than once.
+    :raises ValueError: Provided 'changeable' but 'delegated' is True.
+    :raises ValueError: Provided 'deletable' but 'delegated' is True.
+    :raises ValueError: Provided 'dependencies' but 'delegated' is False.
+    :raises ValueError: Provided 'deserialize_to' but 'serialized' is False.
+    :raises ValueError: Can't provide a serialized attribute to 'deserialize_to'.
     """
 
     # Get module from caller if not provided.

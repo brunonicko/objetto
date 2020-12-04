@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     PSA = Attribute[ProxySetObject[T]]
     CT = Union[BaseAtomicChange, "BatchChanges"]
 
-__all__ = ["HistoryError", "HistoryObject"]
+__all__ = ["HistoryError", "BatchChanges", "HistoryObject"]
 
 
 class HistoryError(BaseObjettoException):

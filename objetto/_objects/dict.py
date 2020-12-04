@@ -310,8 +310,19 @@ class DictObject(
     """
     Dictionary object.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryObject`
+      - :class:`objetto.bases.BaseDictStructure`
+
+    Inherited by:
+      - :class:`objetto.objects.MutableDictObject`
+
     :param app: Application.
+    :type app: objetto.applications.Application
+
     :param initial: Initial values.
+    :type initial: collections.abc.Mapping or collections.abc.Iterable[\
+tuple[collections.abc.Hashable, Any]]
     """
 
     __slots__ = ()
@@ -333,6 +344,8 @@ class DictObject(
         Clear.
 
         :return: Transformed.
+        :rtype: objetto.objects.DictObject
+
         :raises AttributeError: No deletable attributes.
         """
         with self.app.write_context():
@@ -361,6 +374,7 @@ class DictObject(
         Same parameters as :meth:`dict.update`.
 
         :return: Transformed.
+        :rtype: objetto.objects.DictObject
         """
         self.__functions__.update(self, dict(*args, **kwargs))
         return self
@@ -372,8 +386,12 @@ class DictObject(
         Set value for key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.objects.DictObject
         """
         self.__functions__.update(self, {key: value})
         return self
@@ -385,7 +403,10 @@ class DictObject(
         Discard key if it exists.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.DictObject
         """
         with self.app.write_context():
             if key in self._state:
@@ -399,7 +420,11 @@ class DictObject(
         Delete existing key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.DictObject
+
         :raises KeyError: Key is not present.
         """
         self.__functions__.update(self, {key: DELETED})
@@ -412,7 +437,11 @@ class DictObject(
         Locate child object.
 
         :param child: Child object.
+        :type child: objetto.bases.BaseObject
+
         :return: Location.
+        :rtype: collections.abc.Hashable
+
         :raises ValueError: Could not locate child.
         """
         with self.app.__.read_context(self) as read:
@@ -432,7 +461,11 @@ class DictObject(
         Locate child object's data.
 
         :param child: Child object.
+        :type child: objetto.bases.BaseObject
+
         :return: Data location.
+        :rtype: collections.abc.Hashable
+
         :raises ValueError: Could not locate child's data.
         """
         return self._locate(child)
@@ -445,9 +478,15 @@ class DictObject(
         Deserialize.
 
         :param serialized: Serialized.
+        :type serialized: dict
+
         :param app: Application (required).
+        :type app: objetto.applications.Application
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized.
+        :rtype: objetto.objects.DictObject
         """
         if app is None:
             error = (
@@ -475,7 +514,9 @@ class DictObject(
         Serialize.
 
         :param kwargs: Keyword arguments to be passed to serializer functions.
+
         :return: Serialized.
+        :rtype: dict
         """
         with self.app.read_context():
             return dict(
@@ -488,14 +529,22 @@ class DictObject(
     @final
     def _state(self):
         # type: () -> DictState[KT, VT]
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.states.DictState
+        """
         return cast("DictState[KT, VT]", super(BaseDictStructure, self)._state)
 
     @property
     @final
     def data(self):
         # type: () -> DictData[KT, VT]
-        """Data."""
+        """
+        Data.
+
+        :rtype: objetto.data.DictData
+        """
         return cast("DictData[KT, VT]", super(BaseDictStructure, self).data)
 
 
@@ -503,7 +552,14 @@ class DictObject(
 class MutableDictObject(
     BaseMutableDictStructure[KT, VT], DictObject[KT, VT], BaseMutableAuxiliaryObject[KT]
 ):
-    """Mutable dictionary object."""
+    """
+    Mutable dictionary object.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMutableDictStructure`
+      - :class:`objetto.bases.DictObject`
+      - :class:`objetto.bases.BaseMutableAuxiliaryObject`
+    """
 
     __slots__ = ()
 
@@ -514,8 +570,12 @@ class MutableDictObject(
         Get value for key and remove it, return fallback value if key is not present.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param fallback: Fallback value.
+
         :return: Value or fallback value.
+
         :raises KeyError: Key is not present and fallback value not provided.
         """
         with self.app.write_context():
@@ -536,6 +596,8 @@ class MutableDictObject(
         Get item and discard key.
 
         :return: Item.
+        :rype: tuple[collections.abc.Hashable, Any]
+
         :raises KeyError: Dictionary is empty.
         """
         with self.app.write_context():
@@ -552,7 +614,10 @@ class MutableDictObject(
         Get the value for the specified key, insert key with default if not present.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param default: Default value.
+
         :return: Existing or default value.
         """
         with self.app.write_context():
@@ -569,7 +634,13 @@ _PDO = TypeVar("_PDO", bound="ProxyDictObject")
 
 @final
 class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
-    """Mutable proxy dictionary."""
+    """
+    Mutable proxy dictionary.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseProxyObject`
+      - :class:`objetto.bases.BaseMutableDict`
+    """
 
     __slots__ = ()
 
@@ -579,6 +650,7 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Iterate over reversed keys.
 
         :return: Reversed keys iterator.
+        :rtype: collections.abc.Iterator[collections.abc.Hashable]
         """
         return reversed(self._state)
 
@@ -588,7 +660,10 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Get value for key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Value.
+
         :raises KeyError: Invalid key.
         """
         return self._obj.__getitem__(key)
@@ -614,6 +689,7 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Same parameters as :meth:`dict.update`.
 
         :return: Transformed.
+        :rtype: objetto.objects.ProxyDictObject
         """
         self._obj._update(*args, **kwargs)
         return self
@@ -624,8 +700,12 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Set value for key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxyDictObject
         """
         self._obj._set(key, value)
         return self
@@ -636,7 +716,10 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Discard key if it exists.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxyDictObject
         """
         self._obj._remove(key)
         return self
@@ -647,7 +730,11 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Delete existing key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxyDictObject
+
         :raises KeyError: Key is not present.
         """
         self._obj._remove(key)
@@ -659,7 +746,10 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Get value for key, return fallback value if key is not present.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param fallback: Fallback value.
+
         :return: Value or fallback value.
         """
         return self._obj.get(key, fallback)
@@ -667,9 +757,10 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
     def iteritems(self):
         # type: () -> Iterator[Tuple[KT, VT]]
         """
-        Iterate over keys.
+        Iterate over items.
 
-        :return: Key iterator.
+        :return: Item iterator.
+        :rtype: collections.abc.Iterator[tuple[collections.abc.Hashable, Any]]
         """
         for key, value in iteritems(self._state):
             yield key, value
@@ -680,6 +771,7 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Iterate over keys.
 
         :return: Keys iterator.
+        :rtype: collections.abc.Iterator[collections.abc.Hashable]
         """
         for key in iterkeys(self._state):
             yield key
@@ -690,6 +782,7 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Iterate over values.
 
         :return: Values iterator.
+        :rtype: collections.abc.Iterator
         """
         for value in itervalues(self._state):
             yield value
@@ -700,8 +793,12 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Get value for key and remove it, return fallback value if key is not present.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param fallback: Fallback value.
+
         :return: Value or fallback value.
+
         :raises KeyError: Key is not present and fallback value not provided.
         """
         with self.app.write_context():
@@ -721,6 +818,8 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Get item and discard key.
 
         :return: Item.
+        :rtype: tuple[collections.abc.Hashable, Any]
+
         :raises KeyError: Dictionary is empty.
         """
         with self.app.write_context():
@@ -736,7 +835,10 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
         Get the value for the specified key, insert key with default if not present.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param default: Default value.
+
         :return: Existing or default value.
         """
         with self.app.write_context():
@@ -749,17 +851,29 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
     @property
     def _obj(self):
         # type: () -> DictObject[KT, VT]
-        """Dict object."""
+        """
+        Dict obje
+
+        :rtype: objetto.objects.DictObject
+        """
         return cast("DictObject[KT, VT]", super(ProxyDictObject, self)._obj)
 
     @property
     def _state(self):
         # type: () -> DictState[KT, VT]
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.states.DictState
+        """
         return cast("DictState[KT, VT]", super(ProxyDictObject, self)._state)
 
     @property
     def data(self):
         # type: () -> DictData[KT, VT]
-        """Data."""
+        """
+        Data.
+
+        :rtype: objetto.data.DictData
+        """
         return cast("DictData[KT, VT]", super(ProxyDictObject, self).data)

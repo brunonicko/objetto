@@ -161,6 +161,8 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
 
     Inherited by:
       - :class:`objetto.data.InteractiveData`
+      - :class:`objetto.bases.BaseChange`
+      - :class:`objetto.objects.Action`
 
     :param initial: Initial values.
     """
