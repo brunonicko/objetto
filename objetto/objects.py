@@ -11,8 +11,8 @@ except ImportError:
 from decorator import decorator
 from six import string_types
 
-from ._bases import MISSING
 from ._applications import Action
+from ._bases import MISSING
 from ._data import DataRelationship
 from ._objects import (
     DATA_METHOD_TAG,
@@ -33,7 +33,10 @@ from ._objects import (
 )
 from ._reactions import reaction
 from ._structures import (
-    UniqueDescriptor, KeyRelationship, make_auxiliary_cls, unique_descriptor
+    KeyRelationship,
+    UniqueDescriptor,
+    make_auxiliary_cls,
+    unique_descriptor,
 )
 from .utils.caller_module import get_caller_module
 from .utils.factoring import import_factory
@@ -1851,9 +1854,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
     )  # type: Dict[str, Any]
     with ReraiseContext(TypeError, "defining 'dict_cls'"):
         if mutable:
-            mutable_base = (
-                MutableDictObject
-            )  # type: Type[MutableDictObject[KT, VT]]
+            mutable_base = MutableDictObject  # type: Type[MutableDictObject[KT, VT]]
             return make_auxiliary_cls(mutable_base, **cls_kwargs)
         else:
             base = DictObject  # type: Type[DictObject[KT, VT]]

@@ -20,8 +20,8 @@ from ._exceptions import BaseObjettoException
 from ._states import BaseState, DictState
 from .data import (
     Data,
-    InteractiveData,
     DictData,
+    InteractiveData,
     ListData,
     data_attribute,
     data_dict_attribute,
@@ -46,12 +46,12 @@ if TYPE_CHECKING:
         Callable,
         Counter,
         Dict,
+        Final,
         Iterator,
         List,
         Mapping,
         MutableMapping,
         Optional,
-        Final,
         Set,
         Tuple,
         Type,
@@ -62,7 +62,7 @@ if TYPE_CHECKING:
     from ._data import InteractiveSetData
     from ._history import HistoryObject
     from ._objects import BaseObject, Relationship
-    from ._observers import InternalObserver, ActionObserverExceptionInfo
+    from ._observers import ActionObserverExceptionInfo, InternalObserver
     from .utils.subject_observer import ObserverExceptionInfo
 
     assert Relationship
@@ -285,9 +285,7 @@ class Store(InteractiveData):
 
     metadata = cast(
         "DataAttribute[InteractiveDictData[str, Any]]",
-        data_dict_attribute(
-            key_types=string_types, checked=False
-        )
+        data_dict_attribute(key_types=string_types, checked=False),
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
     """Metadata."""
 
@@ -319,9 +317,7 @@ class Store(InteractiveData):
 
     children = cast(
         "DataAttribute[InteractiveSetData[BaseObject]]",
-        data_set_attribute(
-            ".._objects|BaseObject", subtypes=True, checked=False
-        )
+        data_set_attribute(".._objects|BaseObject", subtypes=True, checked=False),
     )  # type: DataAttribute[InteractiveSetData[BaseObject]]
     """Children."""
 
@@ -355,9 +351,7 @@ class Action(Data):
 
     locations = cast(
         "DataAttribute[ListData[Any]]",
-        data_list_attribute(
-            checked=False, interactive=False
-        )
+        data_list_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[ListData[Any]]
     """
     List of relative locations from the receiver to the sender.
@@ -380,9 +374,7 @@ class Commit(Data):
 
     actions = cast(
         "DataAttribute[ListData[Action]]",
-        data_list_attribute(
-            Action, checked=False, finalized=True, interactive=False
-        )
+        data_list_attribute(Action, checked=False, finalized=True, interactive=False),
     )  # type: Final[DataAttribute[ListData[Action]]]
     """Actions."""
 
@@ -394,7 +386,7 @@ class Commit(Data):
             key_types=".._objects|BaseObject",
             key_subtypes=True,
             interactive=False,
-        )
+        ),
     )  # type: Final[DataAttribute[DictData[BaseObject, Store]]]
     """Modified stores."""
 

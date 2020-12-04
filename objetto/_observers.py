@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Observer mixin class."""
 
-from types import TracebackType
 from abc import abstractmethod
-from typing import TYPE_CHECKING, NamedTuple, Type, Optional, cast
+from types import TracebackType
+from typing import TYPE_CHECKING, NamedTuple, Optional, Type, cast
 from weakref import ref
 
 from ._objects import BaseObject
@@ -114,7 +114,7 @@ class ActionObserver(object):
         obj.__.subject.register_observer(self.__observer)
         action_observer_token = cast(
             "ActionObserverToken",
-            ActionObserverToken.__make__(obj.__.subject, self.__observer)
+            ActionObserverToken.__make__(obj.__.subject, self.__observer),
         )
         return action_observer_token
 
@@ -187,6 +187,7 @@ class ActionObserverToken(ObserverToken):
         >>> observed_names  # note how A will always observe the change before B does
         ['A Einstein', 'B Einstein']
     """
+
     __slots__ = ()
 
     @property

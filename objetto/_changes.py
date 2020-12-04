@@ -122,7 +122,7 @@ class BaseAtomicChange(BaseChange):
             checked=False,
             finalized=True,
             interactive=False,
-        )
+        ),
     )  # type: Final[DataAttribute[SetData[BaseObject]]]
     """
     Children objects being released.
@@ -138,7 +138,7 @@ class BaseAtomicChange(BaseChange):
             checked=False,
             finalized=True,
             interactive=False,
-        )
+        ),
     )  # type: Final[DataAttribute[SetData[BaseObject]]]
     """
     Children objects being adopted.
@@ -154,7 +154,7 @@ class BaseAtomicChange(BaseChange):
             checked=False,
             finalized=True,
             interactive=False,
-        )
+        ),
     )  # type: Final[DataAttribute[SetData[BaseObject]]]
     """
     Objects adopting the history from the object being changed.
@@ -194,9 +194,7 @@ class Batch(BaseChange):
 
     metadata = cast(
         "DataAttribute[DictData[str, Any]]",
-        data_dict_attribute(
-            key_types=string_types, checked=False, interactive=False
-        )
+        data_dict_attribute(key_types=string_types, checked=False, interactive=False),
     )  # type: DataAttribute[DictData[str, Any]]
     """
     Metadata.
@@ -225,9 +223,7 @@ class Update(BaseAtomicChange):
 
     old_values = cast(
         "DataAttribute[DictData[str, Any]]",
-        data_dict_attribute(
-            checked=False, interactive=False
-        )
+        data_dict_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[DictData[str, Any]]
     """
     Old attribute values.
@@ -237,9 +233,7 @@ class Update(BaseAtomicChange):
 
     new_values = cast(
         "DataAttribute[DictData[str, Any]]",
-        data_dict_attribute(
-            checked=False, interactive=False
-        )
+        data_dict_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[DictData[str, Any]]
     """
     New attribute values.
@@ -266,9 +260,7 @@ class DictUpdate(BaseAtomicChange):
 
     old_values = cast(
         "DataAttribute[DictData[Any, Any]]",
-        data_dict_attribute(
-            checked=False, interactive=False
-        )
+        data_dict_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[DictData[Any, Any]]
     """
     Old values.
@@ -278,9 +270,7 @@ class DictUpdate(BaseAtomicChange):
 
     new_values = cast(
         "DataAttribute[DictData[Any, Any]]",
-        data_dict_attribute(
-            checked=False, interactive=False
-        )
+        data_dict_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[DictData[Any, Any]]
     """
     New values.
@@ -332,9 +322,7 @@ class ListInsert(BaseAtomicChange):
 
     new_values = cast(
         "DataAttribute[ListData[Any]]",
-        data_list_attribute(
-            checked=False, interactive=False
-        )
+        data_list_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[ListData[Any]]
     """
     New values.
@@ -386,9 +374,7 @@ class ListDelete(BaseAtomicChange):
 
     old_values = cast(
         "DataAttribute[ListData[Any]]",
-        data_list_attribute(
-            checked=False, interactive=False
-        )
+        data_list_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[ListData[Any]]
     """
     Old values.
@@ -440,9 +426,7 @@ class ListUpdate(BaseAtomicChange):
 
     old_values = cast(
         "DataAttribute[ListData[Any]]",
-        data_list_attribute(
-            checked=False, interactive=False
-        )
+        data_list_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[ListData[Any]]
     """
     Old values.
@@ -452,9 +436,7 @@ class ListUpdate(BaseAtomicChange):
 
     new_values = cast(
         "DataAttribute[ListData[Any]]",
-        data_list_attribute(
-            checked=False, interactive=False
-        )
+        data_list_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[ListData[Any]]
     """
     New values.
@@ -540,9 +522,7 @@ class ListMove(BaseAtomicChange):
 
     values = cast(
         "DataAttribute[ListData[Any]]",
-        data_list_attribute(
-            checked=False, interactive=False
-        )
+        data_list_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[ListData[Any]]
     """
     Values being moved.
@@ -571,9 +551,7 @@ class SetUpdate(BaseAtomicChange):
 
     new_values = cast(
         "DataAttribute[SetData[Any]]",
-        data_set_attribute(
-            checked=False, interactive=False
-        )
+        data_set_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[SetData[Any]]
     """
     Values being added to the set.
@@ -602,9 +580,7 @@ class SetRemove(BaseAtomicChange):
 
     old_values = cast(
         "DataAttribute[SetData[Any]]",
-        data_set_attribute(
-            checked=False, interactive=False
-        )
+        data_set_attribute(checked=False, interactive=False),
     )  # type: DataAttribute[SetData[Any]]
     """
     Values being removed from the set.

@@ -52,8 +52,8 @@ if TYPE_CHECKING:
     )
 
     from .._applications import Action, Phase, Store
-    from .._states import SetState
     from .._history import HistoryObject
+    from .._states import SetState
     from ..utils.factoring import LazyFactory
     from ..utils.type_checking import LazyTypes
 

@@ -4,25 +4,29 @@
 from typing import TYPE_CHECKING, TypeVar
 
 from ._bases import MISSING
-from ._data import DataAttribute, DataRelationship
 from ._data import (
     Data,
-    InteractiveData,
+    DataAttribute,
+    DataRelationship,
     DictData,
+    InteractiveData,
     InteractiveDictData,
-    ListData,
     InteractiveListData,
-    SetData,
     InteractiveSetData,
+    ListData,
+    SetData,
 )
 from ._structures import (
-    UniqueDescriptor, KeyRelationship, make_auxiliary_cls, unique_descriptor
+    KeyRelationship,
+    UniqueDescriptor,
+    make_auxiliary_cls,
+    unique_descriptor,
 )
 from .utils.caller_module import get_caller_module
 from .utils.reraise_context import ReraiseContext
 
 if TYPE_CHECKING:
-    from typing import Any, Iterable, Optional, Type, Union, Dict
+    from typing import Any, Dict, Iterable, Optional, Type, Union
 
     from .utils.factoring import LazyFactory
 

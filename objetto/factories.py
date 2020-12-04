@@ -2,13 +2,13 @@
 """Factories."""
 
 from ._factories import (
-    MultiFactory,
-    Integer,
+    Curated,
     FloatingPoint,
+    Integer,
+    MultiFactory,
     RegexMatch,
     RegexSub,
     String,
-    Curated,
 )
 
 __all__ = [

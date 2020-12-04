@@ -4,15 +4,7 @@
 from abc import abstractmethod
 from contextlib import contextmanager
 from inspect import getmro
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Generic,
-    Type,
-    TypeVar,
-    cast,
-    final,
-)
+from typing import TYPE_CHECKING, Callable, Generic, Type, TypeVar, cast, final
 from uuid import uuid4
 from weakref import WeakKeyDictionary, WeakValueDictionary
 

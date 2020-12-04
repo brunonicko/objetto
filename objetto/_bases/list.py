@@ -2,72 +2,33 @@
 """Base list classes."""
 
 from abc import abstractmethod
-from contextlib import contextmanager
-from inspect import getmro
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Generic,
-    Type,
-    TypeVar,
-    cast,
-    final,
-    overload,
-)
-from uuid import uuid4
-from weakref import WeakKeyDictionary, WeakValueDictionary
+from typing import TYPE_CHECKING, TypeVar, final, overload
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from decorator import decorator
 from qualname import qualname  # type: ignore
-from six import iteritems, with_metaclass
-from slotted import (
-    SlottedABC,
-    SlottedABCMeta,
-    SlottedContainer,
-    SlottedHashable,
-    SlottedIterable,
-    SlottedMapping,
-    SlottedMutableMapping,
-    SlottedMutableSequence,
-    SlottedMutableSet,
-    SlottedSequence,
-    SlottedSet,
-    SlottedSized,
-)
+from slotted import SlottedMutableSequence, SlottedSequence
 
 from .bases import (
-    MISSING,
     BaseCollection,
-    BaseProtectedCollection,
     BaseInteractiveCollection,
     BaseMutableCollection,
+    BaseProtectedCollection,
 )
 
 if TYPE_CHECKING:
     from typing import (
-        AbstractSet,
         Any,
-        Dict,
-        FrozenSet,
-        ItemsView,
         Iterable,
         Iterator,
-        KeysView,
-        List,
-        Mapping,
-        MutableMapping,
         MutableSequence,
         Optional,
         Sequence,
-        Set,
         Tuple,
         Union,
-        ValuesView,
     )
 
 __all__ = [
