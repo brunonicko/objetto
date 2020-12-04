@@ -3,13 +3,13 @@
 
 from abc import abstractmethod
 from types import TracebackType
-from typing import TYPE_CHECKING, NamedTuple, Optional, Type, cast
+from typing import TYPE_CHECKING, Optional, Type, cast
 from weakref import ref
 
-from .data import Data, data_attribute
 from ._applications import Action, Phase
 from ._bases import final
 from ._objects import BaseObject
+from .data import Data, data_attribute
 from .utils.reraise_context import ReraiseContext
 from .utils.subject_observer import Observer, ObserverToken
 from .utils.type_checking import assert_is_instance
@@ -229,18 +229,14 @@ class ActionObserverExceptionData(Data):
     :type: objetto.observers.ActionObserver
     """
 
-    action = data_attribute(
-        Action, checked=False
-    )  # type: DataAttribute[Action]
+    action = data_attribute(Action, checked=False)  # type: DataAttribute[Action]
     """
     Action.
     
     :type: objetto.objects.Action
     """
 
-    phase = data_attribute(
-        Phase, checked=False
-    )  # type: DataAttribute[Phase]
+    phase = data_attribute(Phase, checked=False)  # type: DataAttribute[Phase]
     """
     Phase.
     

@@ -10,6 +10,7 @@
 # TODO: release to pypi!
 
 # DONE
+# double check if all the doctests in README.rst are running
 # states documentation
 # history documentation
 # factories documentation

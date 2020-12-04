@@ -31,7 +31,6 @@ from .data import (
 from .utils.custom_repr import custom_mapping_repr
 from .utils.recursive_repr import recursive_repr
 from .utils.reraise_context import ReraiseContext
-from .utils.subject_observer import Subject
 from .utils.type_checking import (
     assert_is_callable,
     assert_is_instance,

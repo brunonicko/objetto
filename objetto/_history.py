@@ -55,7 +55,6 @@ class HistoryError(BaseObjettoException):
     Inherits from:
       - :class:`objetto.bases.BaseObjettoException`
     """
-    pass
 
 
 # noinspection PyAbstractClass
@@ -70,18 +69,14 @@ class BatchChanges(Object):
 
     __slots__ = ()
 
-    change = attribute(
-        Batch, checked=False, changeable=False
-    )  # type: Attribute[Batch]
+    change = attribute(Batch, checked=False, changeable=False)  # type: Attribute[Batch]
     """
     Batch change with name and metadata.
     
     :type: objetto.changes.Batch
     """
 
-    name = attribute(
-        str, checked=False, changeable=False
-    )  # type: Attribute[str]
+    name = attribute(str, checked=False, changeable=False)  # type: Attribute[str]
     """
     The batch change name.
     
