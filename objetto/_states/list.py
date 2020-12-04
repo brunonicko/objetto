@@ -35,6 +35,17 @@ _LS = TypeVar("_LS", bound="ListState")
 
 @final
 class ListState(BaseState[T], BaseInteractiveList[T]):
+    """
+    Immutable list state.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseState`
+      - :class:`objetto.bases.BaseInteractiveList`
+
+    :param initial: Initial values.
+    :type initial: collections.abc.Iterable
+    """
+
     __slots__ = ()
 
     @classmethod
@@ -68,6 +79,7 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         return super(ListState, self).__hash__()
 
@@ -77,7 +89,9 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Compare for equality.
 
         :param other: Another object.
+
         :return: True if equal.
+        :rtype: bool
         """
         if self is other:
             return True
@@ -93,7 +107,9 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Get whether value is present.
 
         :param value: Value.
+
         :return: True if contains.
+        :rtype: bool
         """
         return value in self._internal
 
@@ -103,6 +119,7 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Iterate over values.
 
         :return: Values iterator.
+        :rtype: collections.abc.Iterator
         """
         for value in self._internal:
             yield value
@@ -113,6 +130,7 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Get value count.
 
         :return: Value count.
+        :rtype: int
         """
         return len(self._internal)
 
@@ -123,6 +141,7 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         return custom_iterable_repr(
             self._internal,
@@ -136,6 +155,7 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Iterate over reversed values.
 
         :return: Reversed values iterator.
+        :rtype: collections.abc.Iterator
         """
         return reversed(self._internal)
 
@@ -154,7 +174,10 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Get value/values at index/from slice.
 
         :param index: Index/slice.
+        :type index: int or slice
+
         :return: Value/values.
+        :rtype: Any or objetto.states.ListState
         """
         if isinstance(index, slice):
             return self._make(self._internal[index])
@@ -167,6 +190,7 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Clear.
 
         :return: Transformed.
+        :rtype: objetto.states.ListState
         """
         return self._make()
 
@@ -176,8 +200,13 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Insert value(s) at index.
 
         :param index: Index.
+        :type index: int
+
         :param values: Value(s).
+
         :return: Transformed.
+        :rtype: objetto.states.ListState
+
         :raises ValueError: No values provided.
         """
         if not values:
@@ -199,7 +228,9 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Append value at the end.
 
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.states.ListState
         """
         return self._make(self._internal.append(value))
 
@@ -209,7 +240,10 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Extend at the end with iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Transformed.
+        :rtype: objetto.states.ListState
         """
         return self._make(self._internal.extend(iterable))
 
@@ -219,7 +253,10 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Remove first occurrence of value.
 
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.states.ListState
+
         :raises ValueError: Value is not present.
         """
         return self._make(self._internal.remove(value))
@@ -230,6 +267,7 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Reverse values.
 
         :return: Transformed.
+        :rtype: objetto.states.ListState
         """
         return self._make(pvector(reversed(self._internal)))
 
@@ -239,8 +277,13 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Move values internally.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :param target_index: Target index.
+        :type target_index: int
+
         :return: Transformed.
+        :rtype: objetto.states.ListState
         """
         result = pre_move(len(self._internal), item, target_index)
         if result is None:
@@ -265,7 +308,10 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Delete values at index/slice.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :return: Transformed.
+        :rtype: objetto.states.ListState
         """
         if isinstance(item, slice):
             index, stop = self.resolve_continuous_slice(item)
@@ -280,8 +326,13 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Update value(s) starting at index.
 
         :param index: Index.
+        :type index: int
+
         :param values: Value(s).
+
         :return: Transformed.
+        :rtype: objetto.states.ListState
+
         :raises ValueError: No values provided.
         """
         if not values:
@@ -311,9 +362,16 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Get index of a value.
 
         :param value: Value.
+
         :param start: Start index.
+        :type start: int or None
+
         :param stop: Stop index.
+        :type stop: int or None
+
         :return: Index of value.
+        :rtype: int
+
         :raises ValueError: Provided stop but did not provide start.
         """
         if start is None and stop is None:
@@ -333,8 +391,14 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Resolve index to a positive number.
 
         :param index: Input index.
+        :type index: int
+
         :param clamp: Whether to clamp between zero and the length.
+        :type clamp: bool
+
         :return: Resolved index.
+        :rtype: int
+
         :raises IndexError: Index out of range.
         """
         return resolve_index(len(self._internal), index, clamp=clamp)
@@ -345,7 +409,11 @@ class ListState(BaseState[T], BaseInteractiveList[T]):
         Resolve continuous slice according to length.
 
         :param slc: Continuous slice.
+        :type slc: slice
+
         :return: Index and stop.
+        :rtype: tuple[int, int]
+
         :raises IndexError: Slice is noncontinuous.
         """
         return resolve_continuous_slice(len(self._internal), slc)

@@ -61,25 +61,51 @@ class HistoryError(BaseObjettoException):
 # noinspection PyAbstractClass
 @final
 class BatchChanges(Object):
-    """Batch changes."""
+    """
+    Batch changes.
+
+    Inherits from:
+      - :class:`objetto.objects.Object`
+    """
 
     __slots__ = ()
 
-    change = attribute(Batch, checked=False, changeable=False)  # type: Attribute[Batch]
-    """Batch change with name and metadata."""
+    change = attribute(
+        Batch, checked=False, changeable=False
+    )  # type: Attribute[Batch]
+    """
+    Batch change with name and metadata.
+    
+    :type: objetto.changes.Batch
+    """
 
-    name = attribute(str, checked=False, changeable=False)  # type: Attribute[str]
-    """The batch change name."""
+    name = attribute(
+        str, checked=False, changeable=False
+    )  # type: Attribute[str]
+    """
+    The batch change name.
+    
+    :type: str
+    """
 
     _changes, changes = protected_list_attribute_pair(
         (BaseAtomicChange, "BatchChanges"), subtypes=True, checked=False
     )  # type: PLA[CT], LA[CT]
-    """Changes executed during the batch."""
+    """
+    Changes executed during the batch.
+    
+    :type: objetto.objects.ListObject[objetto.history.BatchChanges or \
+ objetto.bases.BaseAtomicChange]
+    """
 
     _closed, closed = protected_attribute_pair(
         bool, checked=False, default=False
     )  # type: Attribute[bool], Attribute[bool]
-    """Whether the batch has already completed or is still running."""
+    """
+    Whether the batch has already completed or is still running.
+    
+    :type: bool
+    """
 
     def format_changes(self):
         # type: () -> str
@@ -87,6 +113,7 @@ class BatchChanges(Object):
         Format changes into readable string.
 
         :return: Formatted changes.
+        :rtype: str
         """
         with self.app.read_context():
             parts = []
@@ -124,7 +151,12 @@ class BatchChanges(Object):
 # noinspection PyAbstractClass
 @final
 class HistoryObject(Object):
-    """History object."""
+    """
+    History object.
+
+    Inherits from:
+      - :class:`objetto.objects.Object`
+    """
 
     __slots__ = ()
 
@@ -135,41 +167,70 @@ class HistoryObject(Object):
         factory=Integer(minimum=0, accepts_none=True),
         changeable=False,
     )  # type: Attribute[int]
-    """How many changes to remember."""
+    """
+    How many changes to remember.
+    
+    :type: int
+    """
 
     __executing, executing = protected_attribute_pair(
         bool, default=False
     )  # type: Attribute[bool], Attribute[bool]
-    """Whether the history is undoing or redoing."""
+    """
+    Whether the history is undoing or redoing.
+    
+    :type: bool
+    """
 
     __undoing, undoing = protected_attribute_pair(
         bool, default=False
     )  # type: Attribute[bool], Attribute[bool]
-    """Whether the history is undoing."""
+    """
+    Whether the history is undoing.
+    
+    :type: bool
+    """
 
     __redoing, redoing = protected_attribute_pair(
         bool, default=False
     )  # type: Attribute[bool], Attribute[bool]
-    """Whether the history is redoing."""
+    """
+    Whether the history is redoing.
+    
+    :type: bool
+    """
 
     __index, index = protected_attribute_pair(
         int, default=0
     )  # type: Attribute[int], Attribute[int]
-    """The index of the current change."""
+    """
+    The index of the current change.
+    
+    :type: int
+    """
 
     __changes, changes = protected_list_attribute_pair(
         (BaseAtomicChange, BatchChanges, None),
         subtypes=True,
         default=(None,),
     )  # type: PLA[Optional[CT]], LA[Optional[CT]]
-    """List of changes."""
+    """
+    List of changes.
+    
+    :type: objetto.objects.ListObject[None or \
+ objetto.history.BatchChanges or objetto.bases.BaseAtomicChange]
+    """
 
     _current_batches, current_batches = protected_list_attribute_pair(
         BatchChanges,
         subtypes=False,
         child=False,
     )  # type: PLA[BatchChanges], LA[BatchChanges]
-    """Current opened batch."""
+    """
+    Current opened batch.
+    
+    :type: objetto.objects.ListObject[objetto.history.BatchChanges]
+    """
 
     def set_index(self, index):
         # type: (int) -> None
@@ -177,6 +238,9 @@ class HistoryObject(Object):
         Undo/redo until we reach the desired index.
 
         :param index: Index.
+        :type index: int
+
+        :raise IndexError: Invalid index.
         """
         with self.app.write_context():
             if self.__executing:
@@ -197,7 +261,11 @@ class HistoryObject(Object):
 
     def undo_all(self):
         # type: () -> None
-        """Undo all."""
+        """
+        Undo all.
+
+        :raises HistoryError: Can't undo all while executing.
+        """
         with self.app.write_context():
             if self.__executing:
                 error = "can't undo all while executing"
@@ -208,7 +276,11 @@ class HistoryObject(Object):
 
     def redo_all(self):
         # type: () -> None
-        """Redo all."""
+        """
+        Redo all.
+
+        :raises HistoryError: Can't redo all while executing.
+        """
         with self.app.write_context():
             if self.__executing:
                 error = "can't redo all while executing"
@@ -220,7 +292,11 @@ class HistoryObject(Object):
     # noinspection PyTypeChecker
     def redo(self):
         # type: () -> None
-        """Redo."""
+        """
+        Redo.
+
+        :raises HistoryError: Can't redo while executing.
+        """
         with self.app.write_context():
             if self.__executing:
                 error = "can't redo while executing"
@@ -244,7 +320,11 @@ class HistoryObject(Object):
     # noinspection PyTypeChecker
     def undo(self):
         # type: () -> None
-        """Undo."""
+        """
+        Undo.
+
+        :raises HistoryError: Can't undo while executing.
+        """
         with self.app.write_context():
             if self.__executing:
                 error = "can't undo while executing"
@@ -305,6 +385,8 @@ class HistoryObject(Object):
         Get whether history is currently in an open batch.
 
         :return: True if currently in an open batch.
+        :rtype: bool
+
         :raises HistoryError: Can't check while executing.
         """
         with self.app.read_context():
@@ -323,6 +405,7 @@ class HistoryObject(Object):
         Format changes into readable string.
 
         :return: Formatted changes.
+        :rtype: str
         """
         with self.app.read_context():
             parts = ["--- <-" if self.index == 0 else "---"]

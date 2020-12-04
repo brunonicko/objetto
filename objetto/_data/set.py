@@ -66,6 +66,7 @@ class SetData(
       - :class:`objetto.data.InteractiveSetData`
 
     :param initial: Initial values.
+    :type initial: collections.abc.Iterable
     """
 
     __slots__ = ()
@@ -92,8 +93,8 @@ class SetData(
         :param iterable: Iterable.
         :type iterable: collections.abc.Iterable
 
-        :return: Set data.
-        :rtype: objetto.data.SetData
+        :return: Set state.
+        :rtype: objetto.states.SetState
         """
         return SetState(iterable)
 

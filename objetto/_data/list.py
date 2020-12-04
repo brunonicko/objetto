@@ -66,6 +66,7 @@ class ListData(
       - :class:`objetto.data.InteractiveListData`
 
     :param initial: Initial values.
+    :type initial: collections.abc.Iterable
     """
 
     __slots__ = ()

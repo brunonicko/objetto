@@ -8,7 +8,9 @@ API Reference
    changes
    factories
    reactions
+   history
    data
+   states
    constants
    observers
    exceptions

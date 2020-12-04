@@ -34,6 +34,18 @@ _DS = TypeVar("_DS", bound="DictState")
 
 @final
 class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
+    """
+    Immutable dictionary state.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseState`
+      - :class:`objetto.bases.BaseInteractiveDict`
+
+    :param initial: Initial values.
+    :type initial: collections.abc.Mapping or collections.abc.Iterable[\
+tuple[collections.abc.Hashable, Any]]
+    """
+
     __slots__ = ()
 
     @classmethod
@@ -67,6 +79,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         return super(DictState, self).__hash__()
 
@@ -76,7 +89,9 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Compare for equality.
 
         :param other: Another object.
+
         :return: True if equal.
+        :rtype: bool
         """
         if self is other:
             return True
@@ -92,7 +107,10 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Get whether key is present.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: True if contains.
+        :rtype: bool
         """
         return key in self._internal
 
@@ -102,6 +120,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Iterate over keys.
 
         :return: Keys iterator.
+        :rtype: collections.abc.Iterator[collections.abc.Hashable]
         """
         for key in iterkeys(self._internal):
             yield key
@@ -112,6 +131,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Get key count.
 
         :return: Key count.
+        :rtype: int
         """
         return len(self._internal)
 
@@ -122,6 +142,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         return custom_mapping_repr(
             self._internal,
@@ -137,6 +158,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Iterate over reversed keys.
 
         :return: Reversed keys iterator.
+        :rtype: collections.abc.Iterator[collections.abc.Hashable]
         """
         return reversed(list(self.__iter__()))
 
@@ -146,7 +168,10 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Get value for key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Value.
+
         :raises KeyError: Key is not present.
         """
         return self._internal[key]
@@ -157,6 +182,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Clear.
 
         :return: Transformed.
+        :rtype: objetto.states.DictState
         """
         return self._make()
 
@@ -166,7 +192,10 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Discard key if it exists.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.states.DictState
         """
         return self._make(self._internal.discard(key))
 
@@ -176,7 +205,11 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Delete existing key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.states.DictState
+
         :raises KeyError: Key is not present.
         """
         return self._make(self._internal.remove(key))
@@ -187,8 +220,12 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Set value for key.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.states.DictState
         """
         return self._make(self._internal.set(key, value))
 
@@ -211,6 +248,9 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         """
         Update keys and values.
         Same parameters as :meth:`dict.update`.
+
+        :return: Transformed.
+        :rtype: objetto.states.DictState
         """
         return self._make(self._internal.update(dict(*args, **kwargs)))
 
@@ -220,7 +260,10 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Get value for key, return fallback value if key is not present.
 
         :param key: Key.
+        :type key: collections.abc.Hashable
+
         :param fallback: Fallback value.
+
         :return: Value or fallback value.
         """
         return self._internal.get(key, fallback)
@@ -231,6 +274,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Iterate over items.
 
         :return: Items iterator.
+        :rtype: collections.abc.Iterator[tuple[collections.abc.Hashable, Any]]
         """
         for key, value in iteritems(self._internal):
             yield key, value
@@ -241,6 +285,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Iterate over keys.
 
         :return: Keys iterator.
+        :rtype: collections.abc.Iterator[collections.abc.Hashable]
         """
         for key in iterkeys(self._internal):
             yield key
@@ -251,6 +296,7 @@ class DictState(BaseState[KT], BaseInteractiveDict[KT, VT]):
         Iterate over values.
 
         :return: Values iterator.
+        :rtype: collections.abc.Iterator
         """
         for value in itervalues(self._internal):
             yield value

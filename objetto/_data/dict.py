@@ -69,6 +69,8 @@ class DictData(
       - :class:`objetto.data.InteractiveDictData`
 
     :param initial: Initial values.
+    :type initial: collections.abc.Mapping or collections.abc.Iterable[\
+tuple[collections.abc.Hashable, Any]]
     """
 
     __slots__ = ()

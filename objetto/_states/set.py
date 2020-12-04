@@ -33,6 +33,17 @@ _SS = TypeVar("_SS", bound="SetState")
 
 @final
 class SetState(BaseState[T], BaseInteractiveSet[T]):
+    """
+    Immutable set state.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseState`
+      - :class:`objetto.bases.BaseInteractiveSet`
+
+    :param initial: Initial values.
+    :type initial: collections.abc.Iterable
+    """
+
     __slots__ = ()
 
     @classmethod
@@ -63,7 +74,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Make set state from iterable.
 
         :param iterable: Iterable.
-        :return: Set.
+        :type iterable: collections.abc.Iterable
+
+        :return: Set state.
+        :rtype: objetto.states.SetState
         """
         if isinstance(iterable, type(pset())):
             return SetState._make(iterable)
@@ -80,6 +94,7 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         return super(SetState, self).__hash__()
 
@@ -89,7 +104,9 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Compare for equality.
 
         :param other: Another object.
+
         :return: True if equal.
+        :rtype: bool
         """
         if self is other:
             return True
@@ -105,7 +122,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get whether value is present.
 
         :param value: Value.
+        :type value: collections.abc.Hashable
+
         :return: True if contains.
+        :rtype: bool
         """
         return value in self._internal
 
@@ -115,6 +135,7 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Iterate over values.
 
         :return: Values iterator.
+        :rtype: collections.abc.Iterator[collections.abc.Hashable]
         """
         for key in self._internal:
             yield key
@@ -125,6 +146,7 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get value count.
 
         :return: Value count.
+        :rtype: int
         """
         return len(self._internal)
 
@@ -135,6 +157,7 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         return custom_iterable_repr(
             self._internal,
@@ -150,6 +173,7 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         return hash(self)
 
@@ -159,6 +183,7 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Clear.
 
         :return: Transformed.
+        :rtype: objetto.states.SetState
         """
         return self._make()
 
@@ -168,7 +193,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Add value.
 
         :param value: Value.
+        :type value: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.states.SetState
         """
         return self._make(self._internal.add(value))
 
@@ -181,6 +209,8 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         :type values: collections.abc.Hashable
 
         :return: Transformed.
+        :rtype: objetto.states.SetState
+
         :raises ValueError: No values provided.
         """
         if not values:
@@ -197,6 +227,8 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         :type values: collections.abc.Hashable
 
         :return: Transformed.
+        :rtype: objetto.states.SetState
+
         :raises ValueError: No values provided.
         :raises KeyError: Value is not present.
         """
@@ -211,8 +243,14 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Replace existing value with a new one.
 
         :param old_value: Existing value.
+        :type old_value: collections.abc.Hashable
+
         :param new_value: New value.
+        :type new_value: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.states.SetState
+
         :raises KeyError: Value is not present.
         """
         return self._make(self._internal.remove(old_value).add(new_value))
@@ -223,7 +261,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Update with iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable[collections.abc.Hashable]
+
         :return: Transformed.
+        :rtype: objetto.states.SetState
         """
         return self._make(self._internal.update(iterable))
 
@@ -233,7 +274,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get whether is a disjoint set of an iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: True if is disjoint.
+        :rtype: bool
         """
         return self._internal.isdisjoint(iterable)
 
@@ -243,7 +287,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get whether is a subset of an iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: True if is subset.
+        :rtype: bool
         """
         return self._internal.issubset(iterable)
 
@@ -253,7 +300,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get whether is a superset of an iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: True if is superset.
+        :rtype: bool
         """
         return self._internal.issuperset(iterable)
 
@@ -263,7 +313,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get intersection.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Intersection.
+        :rtype: objetto.states.SetState
         """
         return SetState._make(self._internal.intersection(iterable))
 
@@ -273,7 +326,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get difference.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Difference.
+        :rtype: objetto.states.SetState
         """
         return SetState._make(self._internal.difference(iterable))
 
@@ -283,7 +339,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get an iterable's difference to this.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Inverse Difference.
+        :rtype: objetto.states.SetState
         """
         return SetState._make(pset(iterable).difference(self._internal))
 
@@ -293,7 +352,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get symmetric difference.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Symmetric difference.
+        :rtype: objetto.states.SetState
         """
         return SetState._make(self._internal.symmetric_difference(iterable))
 
@@ -303,7 +365,10 @@ class SetState(BaseState[T], BaseInteractiveSet[T]):
         Get union.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Union.
+        :rtype: objetto.states.SetState
         """
         return SetState._make(self._internal.union(iterable))
 
