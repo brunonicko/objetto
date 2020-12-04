@@ -74,8 +74,13 @@ def reaction(
         LAST - Update Attributes Phase.POST
 
     :param func: Method to be decorated or `None`.
+    :type func: function
+
     :param priority: Priority.
+    :type priority: int or None
+
     :return: Decorated custom reaction method or decorator.
+    :rtype: objetto.reactions.CustomReaction
     """
 
     def _reaction(func_):
@@ -103,8 +108,14 @@ class CustomReaction(BaseReaction):
     """
     Custom method-like that gets called whenever an action is sent through the object.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseReaction`
+
     :param func: Function.
+    :type func: function
+
     :param priority: Priority.
+    :type priority: int or None
     """
 
     __slots__ = ("__func", "__priority")
@@ -130,8 +141,13 @@ class CustomReaction(BaseReaction):
         Run function.
 
         :param obj: Object.
+        :type obj: objetto.bases.BaseObject
+
         :param action: Action.
+        :type action: objetto.objects.Action
+
         :param phase: Phase.
+        :type phase: `objetto.constants.PRE` or :data:`objetto.constants.POST`
         """
         self.func(obj, action, phase)
 
@@ -141,6 +157,7 @@ class CustomReaction(BaseReaction):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         dct = super(CustomReaction, self).to_dict()
         dct.update(
@@ -153,7 +170,11 @@ class CustomReaction(BaseReaction):
     @property
     def func(self):
         # type: () -> Callable[[BaseObject, Action, Phase], None]
-        """Function."""
+        """
+        Function.
+
+        :rtype: function
+        """
         return self.__func
 
 
@@ -161,6 +182,15 @@ class UniqueAttributes(BaseReaction):
     """
     Asserts that children have unique attributes within a collection.
     Initialize with attribute names and optional incrementer functions.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseReaction`
+
+    :param names: Attribute names.
+    :type names: str
+
+    :param incrementers: Incrementer functions.
+    :type incrementers: function
     """
 
     __slots__ = ("__names", "__incrementers")
@@ -199,8 +229,13 @@ class UniqueAttributes(BaseReaction):
         React to new children or children's attribute changes.
 
         :param obj: Object.
+        :type obj: objetto.bases.BaseObject
+
         :param action: Action.
+        :type action: objetto.objects.Action
+
         :param phase: Phase.
+        :type phase: `objetto.constants.PRE` or :data:`objetto.constants.POST`
         """
 
         # Ignore non-atomic changes.
@@ -448,6 +483,7 @@ class UniqueAttributes(BaseReaction):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         dct = super(UniqueAttributes, self).to_dict()
         dct.update(
@@ -461,18 +497,37 @@ class UniqueAttributes(BaseReaction):
     @property
     def names(self):
         # type: () -> FrozenSet[str]
-        """Names."""
+        """
+        Names.
+
+        :rtype: tuple[str]
+        """
         return self.__names
 
     @property
     def incrementers(self):
         # type: () -> DictState[str, Callable]
-        """Incrementer functions."""
+        """
+        Incrementer functions.
+
+        :rtype: objetto.states.DictState[str, function]
+        """
         return self.__incrementers
 
 
 class LimitChildren(BaseReaction):
-    """Limit the number of children."""
+    """
+    Limit the number of children.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseReaction`
+
+    :param minimum: Minimum.
+    :type minimum: int or None
+
+    :param maximum: Maximum.
+    :type maximum: int or None
+    """
 
     __slots__ = ("__minimum", "__maximum")
 
@@ -497,8 +552,13 @@ class LimitChildren(BaseReaction):
         React to atomic changes.
 
         :param obj: Object.
+        :type obj: objetto.bases.BaseObject
+
         :param action: Action.
+        :type action: objetto.objects.Action
+
         :param phase: Phase.
+        :type phase: `objetto.constants.PRE` or :data:`objetto.constants.POST`
         """
 
         # Ignore non-atomic changes.
@@ -537,6 +597,7 @@ class LimitChildren(BaseReaction):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         dct = super(LimitChildren, self).to_dict()
         dct.update(
@@ -550,16 +611,37 @@ class LimitChildren(BaseReaction):
     @property
     def minimum(self):
         # type: () -> Optional[int]
+        """
+        Minimum.
+
+        :rtype: int or None
+        """
         return self.__minimum
 
     @property
     def maximum(self):
         # type: () -> Optional[int]
+        """
+        Maximum.
+
+        :rtype: int or None
+        """
         return self.__maximum
 
 
 class Limit(BaseReaction):
-    """Limit the number of values."""
+    """
+    Limit the number of values.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseReaction`
+
+    :param minimum: Minimum.
+    :type minimum: int or None
+
+    :param maximum: Maximum.
+    :type maximum: int or None
+    """
 
     __slots__ = ("__minimum", "__maximum")
 
@@ -620,6 +702,7 @@ class Limit(BaseReaction):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         dct = super(Limit, self).to_dict()
         dct.update(
@@ -633,9 +716,19 @@ class Limit(BaseReaction):
     @property
     def minimum(self):
         # type: () -> Optional[int]
+        """
+        Minimum.
+
+        :rtype: int or None
+        """
         return self.__minimum
 
     @property
     def maximum(self):
         # type: () -> Optional[int]
+        """
+        Maximum.
+
+        :rtype: int or None
+        """
         return self.__maximum

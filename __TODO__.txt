@@ -1,8 +1,7 @@
 # TODO
-# TODO: factories documentation
-# TODO: reactions documentation
 # TODO: history documentation
 # TODO: states documentation
+# TODO: add 'automodule' directive
 # TODO: refine documentation with examples and stuff
 # TODO: double check if all the doctests in README.rst are running
 # TODO: double check inhertied .bases.(non-Base) doc classes
@@ -13,6 +12,8 @@
 # TODO: release to pypi!
 
 # DONE
+# factories documentation
+# reactions documentation
 # exceptions documentation
 # observers documentation
 # utils documentation

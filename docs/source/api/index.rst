@@ -6,6 +6,8 @@ API Reference
    applications
    objects
    changes
+   factories
+   reactions
    data
    constants
    observers

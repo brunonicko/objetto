@@ -3,10 +3,10 @@ Exceptions
 
 .. automodule:: objetto.exceptions
 
-   .. autoclass:: objetto.exceptions.ActionObserversFailedError
+   .. autoexception:: objetto.exceptions.ActionObserversFailedError
       :members: exception_infos
 
-   .. autoclass:: objetto.exceptions.RejectChangeException
+   .. autoexception:: objetto.exceptions.RejectChangeException
       :members: change, callback
 
-   .. autoclass:: objetto.exceptions.HistoryError
+   .. autoexception:: objetto.exceptions.HistoryError

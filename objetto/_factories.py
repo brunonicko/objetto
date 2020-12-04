@@ -72,6 +72,9 @@ class BaseFactory(Base):
         """
         Add with another factory.
 
+        :param other: Another factory.
+        :type other: objetto.bases.BaseFactoryor str or collections.abc.Callable or None
+
         :return: Multi factory with added factories.
         :rtype: objetto.factories.MultiFactory
         """
@@ -82,7 +85,16 @@ class BaseFactory(Base):
 
 
 class MultiFactory(BaseFactory):
-    """Adds multiple factories together."""
+    """
+    Adds multiple factories together.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseFactory`
+
+    :param factories: Factories to be added together.
+    :type factories: collections.abc.Iterable[objetto.bases.BaseFactory or \
+ collections.abc.Callable or function or str or None]
+    """
 
     __slots__ = ("__factories",)
 
@@ -92,17 +104,36 @@ class MultiFactory(BaseFactory):
         module=None,  # type: Optional[str]
     ):
         # type: (...) -> None
-        self.__factories = tuple(format_factory(r, module=module) for r in factories)
+        self.__factories = tuple(
+            format_factory(r, module=module) for r in factories if r is not None
+        )
 
     def __call__(self, value, **kwargs):
         # type: (Any, Any) -> Any
+        """
+        Call with input value and optional keyword arguments.
+
+        :param value: Input value.
+
+        :param kwargs: Keyword arguments.
+
+        :return: Output value.
+        """
         for factory in self.factories:
             value = run_factory(factory, args=(value,), kwargs=kwargs)
         return value
 
     def __add__(self, other):
         # type: (Union[BaseFactory, FactoryType, LazyFactory]) -> MultiFactory
-        """Add with another factory."""
+        """
+        Add with another factory.
+
+        :param other: Another factory.
+        :type other: objetto.bases.BaseFactoryor str or collections.abc.Callable or None
+
+        :return: Multi factory with added factories.
+        :rtype: objetto.factories.MultiFactory
+        """
         if isinstance(other, MultiFactory):
             return MultiFactory(self.__factories + other.__factories)
         else:
@@ -111,11 +142,39 @@ class MultiFactory(BaseFactory):
     @property
     def factories(self):
         # type: () -> Tuple[Union[BaseFactory, FactoryType, LazyFactory], ...]
+        """
+        Factories.
+
+        :return: tuple[objetto.bases.BaseFactory or \
+ collections.abc.Callable or function or str]
+        """
         return self.__factories
 
 
 class Integer(BaseFactory):
-    """Integer factory."""
+    """
+    Integer factory.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseFactory`
+
+    :param minimum: Minimum.
+    :type minimum: int or None
+
+    :param maximum: Maximum.
+    :type maximum: int or None
+
+    :param clamp_minimum: Whether to clamp to minimum value instead of erroring.
+    :type clamp_minimum: bool
+
+    :param clamp_maximum: Whether to clamp to maximum value instead of erroring.
+    :type clamp_maximum: bool
+
+    :param accepts_none: Whether to accept None as a value.
+    :type accepts_none: bool
+
+    :raises ValueError: Invalid parameter value.
+    """
 
     __slots__ = (
         "__minimum",
@@ -154,6 +213,19 @@ class Integer(BaseFactory):
 
     def __call__(self, value, **kwargs):
         # type: (Any, Any) -> Any
+        """
+        Call with input value and optional keyword arguments.
+
+        :param value: Input value.
+        :type value: int or None
+
+        :param kwargs: Keyword arguments.
+
+        :return: Output value.
+        :rtype: int or None
+
+        :raises ValueError: Value out of bounds.
+        """
         if value is None and self.__accepts_none:
             return value
         value = int(value)
@@ -173,27 +245,79 @@ class Integer(BaseFactory):
 
     @property
     def minimum(self):
+        # type: () -> Optional[int]
+        """
+        Minimum.
+
+        :rtype: int or None
+        """
         return self.__minimum
 
     @property
     def maximum(self):
+        # type: () -> Optional[int]
+        """
+        Maximum.
+
+        :rtype: int or None
+        """
         return self.__maximum
 
     @property
     def clamp_minimum(self):
+        # type: () -> bool
+        """
+        Whether to clamp to minimum value instead of erroring.
+
+        :rtype: bool
+        """
         return self.__clamp_minimum
 
     @property
     def clamp_maximum(self):
+        # type: () -> bool
+        """
+        Whether to clamp to maximum value instead of erroring.
+
+        :rtype: bool
+        """
         return self.__clamp_maximum
 
     @property
     def accepts_none(self):
+        # type: () -> bool
+        """
+        Whether to accept None as a value.
+
+        :rtype: bool
+        """
         return self.__accepts_none
 
 
 class FloatingPoint(BaseFactory):
-    """Floating point factory."""
+    """
+    Floating point factory.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseFactory`
+
+    :param minimum: Minimum.
+    :type minimum: float or None
+
+    :param maximum: Maximum.
+    :type maximum: float or None
+
+    :param clamp_minimum: Whether to clamp to minimum value instead of erroring.
+    :type clamp_minimum: bool
+
+    :param clamp_maximum: Whether to clamp to maximum value instead of erroring.
+    :type clamp_maximum: bool
+
+    :param accepts_none: Whether to accept None as a value.
+    :type accepts_none: bool
+
+    :raises ValueError: Invalid parameter value.
+    """
 
     __slots__ = (
         "__minimum",
@@ -232,6 +356,19 @@ class FloatingPoint(BaseFactory):
 
     def __call__(self, value, **kwargs):
         # type: (Any, Any) -> Any
+        """
+        Call with input value and optional keyword arguments.
+
+        :param value: Input value.
+        :type value: float or None
+
+        :param kwargs: Keyword arguments.
+
+        :return: Output value.
+        :rtype: float or None
+
+        :raises ValueError: Value out of bounds.
+        """
         if value is None and self.__accepts_none:
             return value
         value = float(value)
@@ -251,22 +388,52 @@ class FloatingPoint(BaseFactory):
 
     @property
     def minimum(self):
+        # type: () -> Optional[float]
+        """
+        Minimum.
+
+        :rtype: float or None
+        """
         return self.__minimum
 
     @property
     def maximum(self):
+        # type: () -> Optional[float]
+        """
+        Maximum.
+
+        :rtype: float or None
+        """
         return self.__maximum
 
     @property
     def clamp_minimum(self):
+        # type: () -> bool
+        """
+        Whether to clamp to minimum value instead of erroring.
+
+        :rtype: bool
+        """
         return self.__clamp_minimum
 
     @property
     def clamp_maximum(self):
+        # type: () -> bool
+        """
+        Whether to clamp to maximum value instead of erroring.
+
+        :rtype: bool
+        """
         return self.__clamp_maximum
 
     @property
     def accepts_none(self):
+        # type: () -> bool
+        """
+        Whether to accept None as a value.
+
+        :rtype: bool
+        """
         return self.__accepts_none
 
 
@@ -274,7 +441,11 @@ class String(BaseFactory):
     """
     String factory.
 
-    :param accepts_none: Whether accepts None.
+    Inherits from:
+      - :class:`objetto.bases.BaseFactory`
+
+    :param accepts_none: Whether to accept None.
+    :type accepts_none: bool
     """
 
     __slots__ = ("__accepts_none",)
@@ -284,7 +455,19 @@ class String(BaseFactory):
         self.__accepts_none = bool(accepts_none)
 
     def __call__(self, value, **kwargs):
-        # type: (Any, Any) -> Any
+        """
+        Call with input value and optional keyword arguments.
+
+        :param value: Input value.
+        :type value: str or None
+
+        :param kwargs: Keyword arguments.
+
+        :return: Output value.
+        :rtype: str or None
+
+        :raises ValueError: Value out of bounds.
+        """
         if value is None and self.__accepts_none:
             return value
         if not isinstance(value, string_types):
@@ -295,7 +478,11 @@ class String(BaseFactory):
     @property
     def accepts_none(self):
         # type: () -> bool
-        """Whether accepts None."""
+        """
+        Whether to accept None.
+
+        :rtype: bool
+        """
         return self.__accepts_none
 
 
@@ -303,8 +490,14 @@ class RegexMatch(String):
     """
     Regex match check factory.
 
+    Inherits from:
+      - :class:`objetto.factories.String`
+
     :param pattern: Regex pattern.
-    :param accepts_none: Whether accepts None.
+    :type pattern: str
+
+    :param accepts_none: Whether to accept None.
+    :type accepts_none: bool
     """
 
     __slots__ = ("__pattern", "__compiled_pattern")
@@ -317,6 +510,19 @@ class RegexMatch(String):
 
     def __call__(self, value, **kwargs):
         # type: (Any, Any) -> Any
+        """
+        Call with input value and optional keyword arguments.
+
+        :param value: Input value.
+        :type value: str or None
+
+        :param kwargs: Keyword arguments.
+
+        :return: Output value.
+        :rtype: str or None
+
+        :raises ValueError: Value out of bounds.
+        """
         value = super(RegexMatch, self).__call__(value, **kwargs)
         if value is None:
             return value
@@ -330,18 +536,40 @@ class RegexMatch(String):
     @property
     def pattern(self):
         # type: () -> "Union[str, bytes]"
-        """Regex pattern."""
+        """
+        Regex pattern.
+
+        :rtype: str
+        """
         return self.__pattern
 
     @property
     def compiled_pattern(self):
         # type: () -> Pattern
-        """Compiled regex pattern."""
+        """
+        Compiled regex pattern.
+
+        :rtype: re.Pattern
+        """
         return self.__compiled_pattern
 
 
 class RegexSub(String):
-    """Regex substitution factory."""
+    """
+    Regex substitution factory.
+
+    Inherits from:
+      - :class:`objetto.factories.String`
+
+    :param pattern: Regex pattern.
+    :type pattern: str
+
+    :param repl: Substitution.
+    :type repl: str
+
+    :param accepts_none: Whether to accept None.
+    :type accepts_none: bool
+    """
 
     __slots__ = ("__pattern", "__compiled_pattern", "__repl", "__accepts_none")
 
@@ -358,24 +586,61 @@ class RegexSub(String):
 
     def __call__(self, value, **kwargs):
         # type: (Any, Any) -> Any
+        """
+        Call with input value and optional keyword arguments.
+
+        :param value: Input value.
+        :type value: str or None
+
+        :param kwargs: Keyword arguments.
+
+        :return: Output value.
+        :rtype: str or None
+
+        :raises ValueError: Value out of bounds.
+        """
         value = super(RegexSub, self).__call__(value, **kwargs)
         return re_sub(self.compiled_pattern, self.repl, value)
 
     @property
     def pattern(self):
+        # type: () -> "Union[str, bytes]"
+        """
+        Regex pattern.
+
+        :rtype: str
+        """
         return self.__pattern
 
     @property
     def compiled_pattern(self):
+        # type: () -> Pattern
+        """
+        Compiled regex pattern.
+
+        :rtype: re.Pattern
+        """
         return self.__compiled_pattern
 
     @property
     def repl(self):
+        """
+        Substitution.
+
+        :rtype: str
+        """
         return self.__repl
 
 
 class Curated(BaseFactory):
-    """Curated values factory."""
+    """
+    Curated values factory.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseFactory`
+
+    :param values: Accepted values.
+    """
 
     __slots__ = ("__values",)
 
@@ -385,6 +650,15 @@ class Curated(BaseFactory):
 
     def __call__(self, value, **kwargs):
         # type: (Any, Any) -> Any
+        """
+        Call with input value and optional keyword arguments.
+
+        :param value: Input value.
+
+        :param kwargs: Keyword arguments.
+
+        :return: Output value.
+        """
         if value not in self.values:
             error = "expected one of {}, got {}".format(self.values, repr(value))
             raise ValueError(error)
@@ -392,4 +666,9 @@ class Curated(BaseFactory):
 
     @property
     def values(self):
+        """
+        Accepted values.
+
+        :rtype: tuple
+        """
         return self.__values
