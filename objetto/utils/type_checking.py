@@ -55,8 +55,14 @@ def format_types(types, module=None):
         ('itertools|chain',)
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param module: Module to prefix lazy paths without one.
+    :type module: str or None
+
     :return: Formatted types.
+    :rtype: tuple[str or type or None]
+
     :raises ValueError: Invalid type path/no module provided.
     :raises TypeError: Did not provide valid types.
     """
@@ -86,7 +92,10 @@ def get_type_names(types):
         ('int', 'chain')
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :return: Type names.
+    :rtype: tuple[str]
     """
     return tuple(
         t.split("|")[-1].split(".")[-1]
@@ -111,7 +120,11 @@ def flatten_types(types):
         (<class 'int'>,)
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :return: Flattened types.
+    :rtype: tuple[str or type]
+
     :raises TypeError: Invalid types.
     """
     if types is None:
@@ -141,7 +154,10 @@ def import_types(types):
         (<class 'itertools.chain'>, <class 'int'>)
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :return: Imported types.
+    :rtype: tuple[type]
     """
     return tuple(
         cast(type, import_path(t)) if isinstance(t, string_types) else t
@@ -176,9 +192,16 @@ def is_instance(obj, types, subtypes=True):
         False
 
     :param obj: Object.
+    :type obj: object
+
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :return: True if it is an instance.
+    :rtype: bool
     """
     imported_types = import_types(types)
     if subtypes:
@@ -214,9 +237,17 @@ def is_subclass(cls, types, subtypes=True):
         False
 
     :param cls: Class.
+    :type cls: type
+
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :return: True if it is a subclass.
+    :rtype: bool
+
     :raises TypeError: Did not provide a class.
     """
     if not isinstance(cls, type):
@@ -258,8 +289,14 @@ subclasses
 subclasses are not accepted)
 
     :param obj: Object.
+    :type obj: object
+
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :raises ValueError: No types were provided.
     :raises TypeError: Object is not an instance of provided types.
     """
@@ -305,8 +342,14 @@ def assert_is_subclass(cls, types, subtypes=True):
         TypeError: got 'SubChain', expected class 'chain' (subclasses are not accepted)
 
     :param cls: Class.
+    :type cls: type
+
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :raises ValueError: No types were provided.
     :raises TypeError: Class is not a subclass of provided types.
     """
@@ -355,6 +398,7 @@ def assert_is_callable(value):
         TypeError: got non-callable 'int' object, expected a callable
 
     :param value: Value.
+
     :raises TypeError: Value is not a match.
     """
     if not callable(value):

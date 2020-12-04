@@ -46,6 +46,7 @@ class Subject(object):
         Get a new subject, does not copy registered observers.
 
         :return: New subject.
+        :rtype: objetto.utils.subject_observer.Subject
         """
         if memo is None:
             memo = {}
@@ -61,6 +62,7 @@ class Subject(object):
         Get a new subject, does not copy registered observers.
 
         :return: New subject.
+        :rtype: objetto.utils.subject_observer.Subject
         """
         return type(self)()
 
@@ -70,6 +72,7 @@ class Subject(object):
         Reduce for pickling purposes.
 
         :return: Subject class, no arguments.
+        :rtype: tuple[type[objetto.utils.subject_observer.Subject], tuple]
         """
         return type(self), ()
 
@@ -79,6 +82,8 @@ class Subject(object):
         Wait for the token's observer to receive the payload before continuing.
 
         :param token: Observer token.
+        :type token: objetto.utils.subject_observer.ObserverToken
+
         :raises ValueError: Token does not belong to this subject.
         :raises RuntimeError: Token cycle detected.
         :raises RuntimeError: Can't wait for failed observer.
@@ -125,7 +130,10 @@ class Subject(object):
         Send payload to all observers.
 
         :param payload: Payload.
+
         :return: Exception infos (for exceptions raised during observers' responses).
+        :rtype: tuple[objetto.utils.subject_observer.ObserverExceptionInfo]
+
         :raises RuntimeError: Already sending.
         """
         if self.__payload is not None:
@@ -170,7 +178,10 @@ class Subject(object):
         Register an observer and get its token.
 
         :param observer: Observer.
+        :type observer: objetto.utils.subject_observer.Observer
+
         :return: Observer token.
+        :rtype: objetto.utils.subject_observer.ObserverToken
         """
         try:
             token = self.__observers[observer]
@@ -184,6 +195,7 @@ class Subject(object):
         De-register an observer.
 
         :param observer: Observer.
+        :type observer: objetto.utils.subject_observer.Observer
         """
         self.__observers.pop(observer, None)
 
@@ -193,7 +205,11 @@ class Subject(object):
         Get token for already registered observer.
 
         :param observer: Observer.
+        :type observer: objetto.utils.subject_observer.Observer
+
         :return: Observer token.
+        :rtype: objetto.utils.subject_observer.ObserverToken
+
         :raises ValueError: Observer is not registered.
         """
         try:
@@ -231,6 +247,7 @@ class Observer(object):
         Receive a payload sent from a subject and react to it.
 
         :param payload: Payload.
+
         :raises NotImplementedError: Abstract method not implemented.
         """
         error = (
@@ -245,7 +262,10 @@ class Observer(object):
         Start observing a subject.
 
         :param subject: Subject.
+        :type subject: objetto.utils.subject_observer.Subject
+
         :return: Observer token.
+        :rtype: objetto.utils.subject_observer.ObserverToken
         """
         return subject.register_observer(self)
 
@@ -255,6 +275,7 @@ class Observer(object):
         Stop observing a subject.
 
         :param subject: Subject.
+        :type subject: objetto.utils.subject_observer.Subject
         """
         subject.deregister_observer(self)
 
@@ -335,7 +356,11 @@ class ObserverToken(object):
 
     @property
     def observer(self):
-        """Observer."""
+        """
+        Observer.
+
+        :rtype: objetto.utils.subject_observer.Observer or None
+        """
         return self._observer_ref()
 
 
@@ -356,10 +381,19 @@ class ObserverExceptionInfo(
     Describes an exception raised by an observer receiving a payload.
 
     :param observer: Observer.
+    :type observer: objetto.utils.subject_observer.Observer
+
     :param payload: Payload.
+    :type payload: tuple
+
     :param exception_type: Exception type.
+    :type exception_type: type[BaseException] or None
+
     :param exception: Exception.
+    :type exception: BaseException or None
+
     :param traceback: Traceback.
+    :type traceback: types.TracebackType or None
     """
 
     __slots__ = ()

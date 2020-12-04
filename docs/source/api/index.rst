@@ -9,4 +9,6 @@ API Reference
    data
    constants
    observers
+   exceptions
    bases
+   utils

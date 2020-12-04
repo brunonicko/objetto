@@ -163,6 +163,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
       - :class:`objetto.data.InteractiveData`
       - :class:`objetto.bases.BaseChange`
       - :class:`objetto.objects.Action`
+      - :class:`objetto.observers.ActionObserverExceptionData`
 
     :param initial: Initial values.
     """

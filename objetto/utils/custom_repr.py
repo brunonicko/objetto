@@ -36,16 +36,37 @@ def custom_mapping_repr(
         "<'a'=1, 'b'=2>"
 
     :param mapping: Mapping.
+    :type mapping: collections.abc.Mapping
+
     :param prefix: Prefix.
+    :type prefix: str
+
     :param template: Item format template ({key} and {value}).
+    :type template: str
+
     :param separator: Separator.
+    :type separator: str
+
     :param suffix: Suffix.
+    :type suffix: str
+
     :param sorting: Whether to sort keys.
+    :type sorting: bool
+
     :param sort_key: Sorting key.
+    :type sort_key: function or None
+
     :param reverse: Reverse sorting.
+    :type reverse: bool
+
     :param key_repr: Key representation function.
+    :type key_repr: function
+
     :param value_repr: Value representation function.
+    :type value_repr: function
+
     :return: Custom representation.
+    :rtype: str
     """
     parts = []
     iterable = iteritems(mapping)  # type: Iterable[Tuple[Hashable, Any]]
@@ -81,15 +102,34 @@ def custom_iterable_repr(
         '<a, b, c, 1, 2, 3>'
 
     :param iterable: Iterable.
+    :type iterable: collections.abc.Iterable
+
     :param prefix: Prefix.
+    :type prefix: str
+
     :param template: Item format template ({key} and {value}).
+    :type template: str
+
     :param separator: Separator.
+    :type separator: str
+
     :param suffix: Suffix.
+    :type suffix: str
+
     :param sorting: Whether to sort the iterable or not.
+    :type sorting: bool
+
     :param sort_key: Sorting key.
+    :type sort_key: function
+
     :param reverse: Reverse sorting.
+    :type reverse: bool
+
     :param value_repr: Value representation function.
+    :type value_repr: function
+
     :return: Custom representation.
+    :rtype: str
     """
     parts = []
     if sorting:

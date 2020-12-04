@@ -38,7 +38,10 @@ def get_factory_name(factory):
         'int'
 
     :param factory: Factory.
+    :type factory: str or function or collections.abc.Callable or None
+
     :return: Factory name.
+    :rtype: str
     """
     if isinstance(factory, string_types):
         return factory.split("|")[-1].split(".")[-1]
@@ -63,8 +66,14 @@ def format_factory(factory, module=None):
         <class 'int'>
 
     :param factory: Factory.
+    :type factory: str or function or collections.abc.Callable or None
+
     :param module: Module to prefix lazy paths without one.
+    :type module: str or None
+
     :return: Formatted factory.
+    :rtype: str or function or collections.abc.Callable or None
+
     :raises ValueError: Invalid import path to factory.
     :raises TypeError: Did not provide valid factory.
     """
@@ -93,7 +102,11 @@ def import_factory(factory):
         <function match at ...>
 
     :param factory: Lazy factory.
+    :type factory: str or function or collections.abc.Callable or None
+
     :return: Imported factory.
+    :rtype: function or collections.abc.Callable or None
+
     :raises TypeError: Invalid factory.
     """
     if factory is None or callable(factory):
@@ -121,8 +134,12 @@ def run_factory(
         True
 
     :param factory: Lazy factory.
+    :type factory: str or function or collections.abc.Callable or None
+
     :param args: Arguments to be passed to the factory function.
+
     :param kwargs: Keyword arguments to be passed to the factory function.
+
     :return: Result from factory.
     """
     factory = import_factory(factory)

@@ -6,6 +6,9 @@ from types import TracebackType
 from typing import TYPE_CHECKING, NamedTuple, Optional, Type, cast
 from weakref import ref
 
+from .data import Data, data_attribute
+from ._applications import Action, Phase
+from ._bases import final
 from ._objects import BaseObject
 from .utils.reraise_context import ReraiseContext
 from .utils.subject_observer import Observer, ObserverToken
@@ -14,9 +17,9 @@ from .utils.type_checking import assert_is_instance
 if TYPE_CHECKING:
     from typing import Any
 
-    from ._applications import Action, Phase
+    from .data import DataAttribute
 
-__all__ = ["ActionObserver", "ActionObserverToken", "ActionObserverExceptionInfo"]
+__all__ = ["ActionObserver", "ActionObserverToken", "ActionObserverExceptionData"]
 
 
 class InternalObserver(Observer):
@@ -146,6 +149,9 @@ class ActionObserverToken(ObserverToken):
     """
     Allows control over observers' order/priority.
 
+    Inherits from:
+      - :class:`objetto.utils.subject_observer.ObserverToken`
+
     .. note::
         This class can't be instantiated directly. A token should be retrieved when an
         action observer starts observing an object.
@@ -196,7 +202,7 @@ class ActionObserverToken(ObserverToken):
         """
         Action observer.
 
-        :rtype: objetto.observers.ActionObserver
+        :rtype: objetto.observers.ActionObserver or None
         """
         internal_observer = self._observer_ref()
         if internal_observer is None:
@@ -205,40 +211,65 @@ class ActionObserverToken(ObserverToken):
             return cast("InternalObserver", internal_observer).action_observer_ref()
 
 
-# noinspection PyUnresolvedReferences
-class ActionObserverExceptionInfo(
-    NamedTuple(
-        "ObserverExceptionInfo",
-        (
-            ("observer", ActionObserver),
-            ("action", "Action"),
-            ("phase", "Phase"),
-            ("exception_type", Optional[Type[BaseException]]),
-            ("exception", Optional[BaseException]),
-            ("traceback", Optional[TracebackType]),
-        ),
-    )
-):
+@final
+class ActionObserverExceptionData(Data):
     """
     Describes an exception raised by an observer while observing an action.
 
-    :param observer: Action observer.
-    :type observer: objetto.observers.ActionObserver
-
-    :param action: Action.
-    :type action: objetto.objects.Action
-
-    :param phase: Phase.
-    :type phase: :data:`objetto.constants.PRE` or :data:`objetto.constants.POST`
-
-    :param exception_type: Exception type.
-    :type exception_type: type[Exception]
-
-    :param exception: Exception.
-    :type exception: Exception
-
-    :param traceback: Traceback.
-    :type traceback: types.TracebackType
+    Inherits from:
+      - :class:`objetto.data.Data`
     """
 
-    __slots__ = ()
+    observer = data_attribute(
+        ActionObserver, checked=False
+    )  # type: DataAttribute[ActionObserver]
+    """
+    Action observer.
+    
+    :type: objetto.observers.ActionObserver
+    """
+
+    action = data_attribute(
+        Action, checked=False
+    )  # type: DataAttribute[Action]
+    """
+    Action.
+    
+    :type: objetto.objects.Action
+    """
+
+    phase = data_attribute(
+        Phase, checked=False
+    )  # type: DataAttribute[Phase]
+    """
+    Phase.
+    
+    :type: :data:`objetto.constants.PRE` or :data:`objetto.constants.POST`
+    """
+
+    exception_type = data_attribute(
+        (type(BaseException), None), checked=False
+    )  # type: DataAttribute[Optional[Type[BaseException]]]
+    """
+    Exception type.
+    
+    :type: type[BaseException] or None
+    """
+
+    exception = data_attribute(
+        (BaseException, None), checked=False
+    )  # type: DataAttribute[Optional[BaseException]]
+    """
+    Exception.
+    
+    :type: BaseException or None
+    """
+
+    traceback = data_attribute(
+        (TracebackType, None), checked=False
+    )  # type: DataAttribute[Optional[TracebackType]]
+    """
+    Traceback.
+    
+    :type: types.TracebackType or None
+    """

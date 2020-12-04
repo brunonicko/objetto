@@ -49,7 +49,13 @@ __all__ = ["HistoryError", "BatchChanges", "HistoryObject"]
 
 
 class HistoryError(BaseObjettoException):
-    """History failed to execute."""
+    """
+    History failed to execute.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseObjettoException`
+    """
+    pass
 
 
 # noinspection PyAbstractClass

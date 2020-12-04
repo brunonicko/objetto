@@ -62,7 +62,7 @@ if TYPE_CHECKING:
     from ._data import InteractiveSetData
     from ._history import HistoryObject
     from ._objects import BaseObject, Relationship
-    from ._observers import ActionObserverExceptionInfo, InternalObserver
+    from ._observers import ActionObserverExceptionData, InternalObserver
     from .utils.subject_observer import ObserverExceptionInfo
 
     assert Relationship
@@ -103,11 +103,15 @@ class ActionObserversFailedError(BaseObjettoException):
     """
     Action observers failed while observing action.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseObjettoException`
+
     :param exception_infos: Observer exception infos.
+    :type exception_infos: tuple[objetto.observers.ActionObserverExceptionData]
     """
 
     def __init__(self, message, exception_infos):
-        # type: (str, Tuple[ActionObserverExceptionInfo, ...]) -> None
+        # type: (str, Tuple[ActionObserverExceptionData, ...]) -> None
         message = (
             (
                 message
@@ -138,8 +142,12 @@ class ActionObserversFailedError(BaseObjettoException):
 
     @property
     def exception_infos(self):
-        # type: () -> Tuple[ActionObserverExceptionInfo, ...]
-        """Observer exception infos."""
+        # type: () -> Tuple[ActionObserverExceptionData, ...]
+        """
+        Observer exception infos.
+
+        :rtype: tuple[objetto.observers.ActionObserverExceptionData]
+        """
         return self.__exception_infos
 
 
@@ -148,8 +156,14 @@ class RejectChangeException(BaseObjettoException):
     Exception to be raised from within a reaction. This will cause the change to be
     reverted and and the custom callback function to run after that.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseObjettoException`
+
     :param change: Change to reject.
+    :type change: objetto.bases.BaseChange
+
     :param callback: Callback to run after change is rewound.
+    :type callback: function or collections.abc.Callable
     """
 
     def __init__(self, message, change, callback):
@@ -173,13 +187,21 @@ class RejectChangeException(BaseObjettoException):
     @property
     def change(self):
         # type: () -> BaseChange
-        """Change to reject."""
+        """
+        Change to reject.
+
+        :rtype: objetto.bases.BaseChange
+        """
         return self.__change
 
     @property
     def callback(self):
         # type: () -> Callable[[], None]
-        """Callback to run after change is rewound."""
+        """
+        Callback to run after change is rewound.
+
+        :rtype: function or collections.abc.Callable
+        """
         return self.__callback
 
 
@@ -545,8 +567,6 @@ class ApplicationInternals(Base):
         "__reading",
         "__writing",
         "__roots",
-        "__subject",
-        "__roots",
     )
 
     def __init__(self, app):
@@ -561,7 +581,6 @@ class ApplicationInternals(Base):
         self.__reading = []  # type: List[Optional[BaseObject]]
         self.__writing = []  # type: List[Optional[BaseObject]]
         self.__roots = {}  # type: Dict[ApplicationRoot, BaseObject]
-        self.__subject = Subject()
 
     def __deepcopy__(self, memo=None):
         # type: (Optional[Dict[int, Any]]) -> ApplicationInternals
@@ -991,7 +1010,7 @@ class ApplicationInternals(Base):
             commits = self.__commits
             self.__commits = []
 
-            action_exception_infos = []  # type: List[ActionObserverExceptionInfo]
+            action_exception_infos = []  # type: List[ActionObserverExceptionData]
 
             def ingest_action_exception_infos(result):
                 # type: (Tuple[ObserverExceptionInfo, ...]) -> None
@@ -1006,7 +1025,7 @@ class ApplicationInternals(Base):
                     )
                     action_observer = internal_observer.action_observer_ref()
                     if action_observer is not None:
-                        action_exception_info = ActionObserverExceptionInfo(
+                        action_exception_info = ActionObserverExceptionData(
                             observer=action_observer,
                             action=cast("Action", exception_info.payload[0]),
                             phase=cast("Phase", exception_info.payload[1]),

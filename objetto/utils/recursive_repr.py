@@ -48,9 +48,16 @@ def recursive_repr(
         'MyClass<...>'
 
     :param func: The '__repr__' and/or '__str__' method/function.
+    :type func: function
+
     :param max_depth: Maximum recursion depth before returning fill value.
+    :type max_depth: int
+
     :param max_global_depth: Maximum global depth before returning fill value.
+    :type max_global_depth: int
+
     :return: Decorated method function.
+    :rtype: function
     """
     self = args[0]
     self_id = id(self)

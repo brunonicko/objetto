@@ -19,6 +19,9 @@ class WeakReference(Generic[T], object):
     """
     Weak reference object that supports pickling.
 
+    Inherits from:
+      - :class:`typing.Generic`
+
     .. code:: python
 
         >>> from objetto.utils.weak_reference import WeakReference
@@ -35,6 +38,7 @@ class WeakReference(Generic[T], object):
         True
 
     :param obj: Object to reference.
+    :type obj: object
     """
 
     __slots__ = ("__weakref__", "__ref")
@@ -53,6 +57,7 @@ class WeakReference(Generic[T], object):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         return hash(self.__ref)
 
@@ -62,7 +67,9 @@ class WeakReference(Generic[T], object):
         Compare for equality.
 
         :param other: Other.
+
         :return: True if equal.
+        :rtype: bool or NotImplemented
         """
         if self is other:
             return True
@@ -76,7 +83,9 @@ class WeakReference(Generic[T], object):
         Compare for inequality.
 
         :param other: Other.
+
         :return: True if not equal.
+        :rtype: bool or NotImplemented
         """
         result = self.__eq__(other)
         if result is NotImplemented:
@@ -90,6 +99,7 @@ class WeakReference(Generic[T], object):
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         obj = self()
         return "<{} object at {}; {}>".format(
@@ -109,6 +119,7 @@ class WeakReference(Generic[T], object):
         Get string representation.
 
         :return: String representation.
+        :rtype: str
         """
         return self.__repr__()
 
@@ -118,6 +129,7 @@ class WeakReference(Generic[T], object):
         Get strong reference to the object or None if no longer alive.
 
         :return: Strong reference or `None`.
+        :rtype: object or None
         """
         return self.__ref()
 
@@ -127,5 +139,6 @@ class WeakReference(Generic[T], object):
         Reduce for pickling.
 
         :return: Class and strong reference to object.
+        :rtype: tuple[type[objetto.utils.weak_reference.WeakReference], tuple[object]]
         """
         return type(self), (self(),)

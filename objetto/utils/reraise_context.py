@@ -34,7 +34,10 @@ class ReraiseContext(object):
         ValueError: oops; something is wrong
 
     :param exc_type: Exception type(s) to catch.
+    :type exc_type: type[Exception] or tuple[type[Exception]]
+
     :param message: Optional additional custom message.
+    :type message: str
     """
 
     __slots__ = ("__exc_type", "__message")
@@ -68,11 +71,19 @@ class ReraiseContext(object):
     @property
     def exc_type(self):
         # type: () -> Union[Type[Exception], Tuple[Type[Exception], ...]]
-        """Exception type(s) to catch."""
+        """
+        Exception type(s) to catch.
+
+        :rtype: type[Exception] or tuple[type[Exception]]
+        """
         return self.__exc_type
 
     @property
     def message(self):
         # type: () -> Optional[str]
-        """Optional additional custom message."""
+        """
+        Optional additional custom message.
+
+        :rtype: str or None
+        """
         return self.__message

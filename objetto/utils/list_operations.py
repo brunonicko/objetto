@@ -15,9 +15,17 @@ def resolve_index(length, index, clamp=False):
     Resolve index to a positive number.
 
     :param length: Length of the list.
+    :type length: int
+
     :param index: Input index.
+    :type index: int
+
     :param clamp: Whether to clamp between zero and the length.
+    :type clamp: bool
+
     :return: Resolved index.
+    :rtype: int
+
     :raises IndexError: Index out of range.
     """
     if index < 0:
@@ -39,8 +47,14 @@ def resolve_continuous_slice(length, slc):
     Resolve continuous slice according to length.
 
     :param length: Length of the list.
+    :type length: int
+
     :param slc: Continuous slice.
+    :type slc: slice
+
     :return: Index and stop.
+    :rtype: tuple[int, int]
+
     :raises IndexError: Slice is noncontinuous.
     """
     index, stop, step = slc.indices(length)
@@ -56,9 +70,16 @@ def pre_move(length, item, target_index):
     Perform checks before moving values internally.
 
     :param length: Length of the list.
+    :type length: int
+
     :param item: Index/slice.
+    :type item: int or slice
+
     :param target_index: Target index.
+    :type target_index: int
+
     :return: None or (index, stop, target index, post index).
+    :rtype: None or tuple[int, int, int, int]
     """
 
     # Resolve slice/index.

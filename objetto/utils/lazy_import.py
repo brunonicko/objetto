@@ -44,7 +44,10 @@ def import_path(path):
         <function abstractmethod at ...>
 
     :param path: Import path.
+    :type path: str
+
     :return: Imported object.
+
     :raises ValueError: Invalid or empty path.
     :raises AttributeError: No object with the provided name.
     """
@@ -91,7 +94,10 @@ def get_path(obj):
         'abc|abstractmethod'
 
     :param obj: Object.
+
     :return: Import path.
+    :rtype: str
+
     :raises ValueError: Can't determine consistent import path.
     """
     module = obj.__module__
@@ -137,8 +143,14 @@ def decorate_path(path, module=None):
         'abc|abstractmethod'
 
     :param path: Import path (partial or full)
+    :type path: str
+
     :param module: Optional module path.
+    :type module: str or None
+
     :return: Full import path.
+    :rtype: str
+
     :raises ValueError: Invalid path or no module provided.
     """
     if not path:
