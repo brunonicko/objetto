@@ -557,7 +557,7 @@ class MutableDictObject(
 
     Inherits from:
       - :class:`objetto.bases.BaseMutableDictStructure`
-      - :class:`objetto.bases.DictObject`
+      - :class:`objetto.objects.DictObject`
       - :class:`objetto.bases.BaseMutableAuxiliaryObject`
     """
 
@@ -870,10 +870,10 @@ class ProxyDictObject(BaseProxyObject[KT], BaseMutableDict[KT, VT]):
 
     @property
     def data(self):
-        # type: () -> DictData[KT, VT]
+        # type: () -> Optional[DictData[KT, VT]]
         """
         Data.
 
-        :rtype: objetto.data.DictData
+        :rtype: objetto.data.DictData or None
         """
-        return cast("DictData[KT, VT]", super(ProxyDictObject, self).data)
+        return cast("Optional[DictData[KT, VT]]", super(ProxyDictObject, self).data)

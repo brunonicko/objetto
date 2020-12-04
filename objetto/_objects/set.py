@@ -340,8 +340,18 @@ class SetObject(
     """
     Set object.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryObject`
+      - :class:`objetto.bases.BaseSetStructure`
+
+    Inherited by:
+      - :class:`objetto.objects.MutableSetObject`
+
     :param app: Application.
+    :type app: objetto.applications.Application
+
     :param initial: Initial values.
+    :type initial: collections.abc.Iterable[collections.abc.Hashable]
     """
 
     __slots__ = ()
@@ -355,7 +365,10 @@ class SetObject(
         Make set state from iterable.
 
         :param iterable: Iterable.
-        :return: Set data.
+        :type iterable: collections.abc.Iterable[collections.abc.Hashable]
+
+        :return: Set state.
+        :rtype: objetto.objects.SetObject
         """
         return SetState(iterable)
 
@@ -375,6 +388,7 @@ class SetObject(
         Clear all values.
 
         :return: Transformed.
+        :rtype: objetto.objects.SetObject
         """
         self.__functions__.remove(self, self._state)
         return self
@@ -386,7 +400,10 @@ class SetObject(
         Add value.
 
         :param value: Value.
+        :type value: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.SetObject
         """
         self.__functions__.update(self, {value})
         return self
@@ -398,7 +415,11 @@ class SetObject(
         Discard value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.SetObject
+
         :raises ValueError: No values provided.
         """
         with self.app.write_context():
@@ -415,7 +436,11 @@ class SetObject(
         Remove existing value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.SetObject
+
         :raises ValueError: No values provided.
         :raises KeyError: Value is not present.
         """
@@ -429,8 +454,14 @@ class SetObject(
         Replace existing value with a new one.
 
         :param old_value: Existing value.
+        :type old_value: collections.abc.Hashable
+
         :param new_value: New value.
+        :type new_value: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.SetObject
+
         :raises KeyError: Value is not present.
         """
         metadata = dict(old_value=old_value, new_value=new_value)
@@ -446,7 +477,10 @@ class SetObject(
         Update with iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable[collections.abc.Hashable]
+
         :return: Transformed.
+        :rtype: objetto.objects.SetObject
         """
         self.__functions__.update(self, iterable)
         return self
@@ -458,7 +492,11 @@ class SetObject(
         Locate child object.
 
         :param child: Child object.
+        :type child: objetto.bases.BaseObject
+
         :return: Location (the child object itself).
+        :rtype: objetto.bases.BaseObject
+
         :raises ValueError: Could not locate child.
         """
         with self.app.__.read_context(self) as read:
@@ -474,7 +512,11 @@ class SetObject(
         Locate child object's data.
 
         :param child: Child object.
+        :type child: objetto.bases.BaseObject
+
         :return: Data location (the child data itself).
+        :rtype: objetto.bases.BaseData
+
         :raises ValueError: Could not locate child's data.
         """
         with self.app.__.read_context(self) as read:
@@ -497,9 +539,15 @@ class SetObject(
         Deserialize.
 
         :param serialized: Serialized.
+        :type serialized: list
+
         :param app: Application (required).
+        :type app: objetto.applications.Application
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized.
+        :rtype: objetto.objects.SetObject
         """
         assert isinstance(serialized, list)
 
@@ -529,7 +577,9 @@ class SetObject(
         Serialize.
 
         :param kwargs: Keyword arguments to be passed to the serializers.
+
         :return: Serialized.
+        :rtype: list
         """
         with self.app.read_context():
             return list(
@@ -542,14 +592,22 @@ class SetObject(
     @final
     def _state(self):
         # type: () -> SetState[T]
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.states.LSettate
+        """
         return cast("SetState[T]", super(BaseSetStructure, self)._state)
 
     @property
     @final
     def data(self):
         # type: () -> SetData[T]
-        """Data."""
+        """
+        Data.
+
+        :rtype: objetto.data.SetData
+        """
         return cast("SetData[T]", super(BaseSetStructure, self).data)
 
 
@@ -557,7 +615,14 @@ class SetObject(
 class MutableSetObject(
     BaseMutableSetStructure[T], SetObject[T], BaseMutableAuxiliaryObject[T]
 ):
-    """Mutable set object."""
+    """
+    Mutable set object.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMutableSetStructure`
+      - :class:`objetto.objects.SetObject`
+      - :class:`objetto.bases.BaseMutableAuxiliaryObject`
+    """
 
     __slots__ = ()
 
@@ -568,6 +633,8 @@ class MutableSetObject(
         Pop value.
 
         :return: Value.
+        :rtype: collections.abc.Hashable
+
         :raises KeyError: Empty set.
         """
         with self.app.write_context():
@@ -586,6 +653,7 @@ class MutableSetObject(
         Intersect.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
         """
         with self.app.write_context():
             difference = self.difference(iterable)
@@ -599,6 +667,7 @@ class MutableSetObject(
         Symmetric difference.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
         """
         with self.app.write_context():
             inverse_difference = self.inverse_difference(iterable)
@@ -613,6 +682,7 @@ class MutableSetObject(
         Difference.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
         """
         with self.app.write_context():
             intersection = self.intersection(iterable)
@@ -626,7 +696,13 @@ _PSO = TypeVar("_PSO", bound="ProxySetObject")
 
 @final
 class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
-    """Mutable proxy set."""
+    """
+    Mutable proxy set.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseProxyObject`
+      - :class:`objetto.bases.BaseMutableSet`
+    """
 
     __slots__ = ()
 
@@ -636,6 +712,8 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Pop value.
 
         :return: Value.
+        :rtype: collections.abc.Hashable
+
         :raises KeyError: Empty set.
         """
         with self.app.write_context():
@@ -653,6 +731,7 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Intersect.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
         """
         with self.app.write_context():
             difference = self.difference(iterable)
@@ -665,6 +744,7 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Symmetric difference.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
         """
         with self.app.write_context():
             inverse_difference = self.inverse_difference(iterable)
@@ -678,6 +758,7 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Difference.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
         """
         with self.app.write_context():
             intersection = self.intersection(iterable)
@@ -691,7 +772,10 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Make set state from iterable.
 
         :param iterable: Iterable.
-        :return: Set data.
+        :type iterable: collections.abc.Iterable[collections.abc.Hashable]
+
+        :return: Set state.
+        :rtype: objetto.objects.SetObject
         """
         return SetState(iterable)
 
@@ -701,6 +785,7 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Get hash.
 
         :return: Hash.
+        :rtype: int
         """
         return self._obj._hash()
 
@@ -710,7 +795,10 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Add value.
 
         :param value: Value.
+        :type value: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxySetObject
         """
         self._obj._add(value)
         return self
@@ -721,7 +809,11 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Discard value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxySetObject
+
         :raises ValueError: No values provided.
         """
         self._obj._discard(*values)
@@ -733,7 +825,11 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Remove existing value(s).
 
         :param values: Value(s).
+        :type values: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxySetObject
+
         :raises ValueError: No values provided.
         :raises KeyError: Value is not present.
         """
@@ -746,8 +842,14 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Replace existing value with a new one.
 
         :param old_value: Existing value.
+        :type old_value: collections.abc.Hashable
+
         :param new_value: New value.
+        :type old_value: collections.abc.Hashable
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxySetObject
+
         :raises KeyError: Value is not present.
         """
         self._obj._replace(old_value, new_value)
@@ -762,6 +864,7 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         :type iterable: collections.abc.Iterable[collections.abc.Hashable]
 
         :return: Transformed.
+        :rtype: objetto.objects.ProxySetObject
         """
         self._obj._update(iterable)
         return self
@@ -772,6 +875,8 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Get whether is a disjoint set of an iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: True if is disjoint.
         """
         return self._obj.isdisjoint(iterable)
@@ -782,6 +887,8 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Get whether is a subset of an iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: True if is subset.
         """
         return self._obj.issubset(iterable)
@@ -792,6 +899,8 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Get whether is a superset of an iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: True if is superset.
         """
         return self._obj.issuperset(iterable)
@@ -802,6 +911,8 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Get intersection.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Intersection.
         """
         return self._obj.intersection(iterable)
@@ -812,6 +923,8 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Get difference.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Difference.
         """
         return self._obj.difference(iterable)
@@ -822,6 +935,8 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Get an iterable's difference to this.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Inverse Difference.
         """
         return self._obj.inverse_difference(iterable)
@@ -832,6 +947,8 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Get symmetric difference.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Symmetric difference.
         """
         return self._obj.symmetric_difference(iterable)
@@ -842,6 +959,8 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
         Get union.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Union.
         """
         return self._obj.union(iterable)
@@ -849,17 +968,29 @@ class ProxySetObject(BaseProxyObject[T], BaseMutableSet[T]):
     @property
     def _obj(self):
         # type: () -> SetObject[T]
-        """Set object."""
+        """
+        Set object.
+
+        :rtype: objetto.objects.SetObject
+        """
         return cast("SetObject[T]", super(ProxySetObject, self)._obj)
 
     @property
     def _state(self):
         # type: () -> SetState[T]
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.states.SetState
+        """
         return cast("SetState[T]", super(ProxySetObject, self)._state)
 
     @property
     def data(self):
-        # type: () -> SetData[T]
-        """Data."""
-        return cast("SetData[T]", super(ProxySetObject, self).data)
+        # type: () -> Optional[SetData[T]]
+        """
+        Data.
+
+        :rtype: objetto.data.SetData or None
+        """
+        return cast("Optional[SetData[T]]", super(ProxySetObject, self).data)

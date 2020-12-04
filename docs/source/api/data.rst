@@ -33,6 +33,10 @@ Auxiliary Data Class Factories
 .. autofunction:: objetto.data.data_list_cls
 .. autofunction:: objetto.data.data_set_cls
 
+Unique Descriptor
+-----------------
+.. autofunction:: objetto.data.unique_descriptor
+
 Auxiliary Data Classes
 ----------------------
 

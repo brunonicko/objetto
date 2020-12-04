@@ -565,8 +565,18 @@ class ListObject(
     """
     List object.
 
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryObject`
+      - :class:`objetto.bases.BaseListStructure`
+
+    Inherited by:
+      - :class:`objetto.objects.MutableListObject`
+
     :param app: Application.
+    :type app: objetto.applications.Application
+
     :param initial: Initial values.
+    :type initial: collections.abc.Iterable
     """
 
     __slots__ = ()
@@ -593,7 +603,10 @@ class ListObject(
         Get value/values at index/from slice.
 
         :param index: Index/slice.
+        :type index: int or slice
+
         :return: Value/values.
+        :rtype: Any or objetto.states.ListState
         """
         return self._state[index]
 
@@ -604,6 +617,7 @@ class ListObject(
         Clear all values.
 
         :return: Transformed.
+        :rtype: objetto.objects.ListObject
         """
         with self.app.write_context():
             state_length = len(self._state)
@@ -618,8 +632,13 @@ class ListObject(
         Insert value(s) at index.
 
         :param index: Index.
+        :type index: int
+
         :param values: Value(s).
+
         :return: Transformed.
+        :rtype: objetto.objects.ListObject
+
         :raises ValueError: No values provided.
         """
         if not values:
@@ -635,7 +654,9 @@ class ListObject(
         Append value at the end.
 
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.objects.ListObject
         """
         self.__functions__.insert(self, len(self._state), (value,))
         return self
@@ -647,7 +668,10 @@ class ListObject(
         Extend at the end with iterable.
 
         :param iterable: Iterable.
+        :type iterable: collections.abc.Iterable
+
         :return: Transformed.
+        :rtype: objetto.objects.ListObject
         """
         self.__functions__.insert(self, len(self._state), iterable)
         return self
@@ -659,7 +683,10 @@ class ListObject(
         Remove first occurrence of value.
 
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.objects.ListObject
+
         :raises ValueError: Value is not present.
         """
         with self.app.write_context():
@@ -674,6 +701,7 @@ class ListObject(
         Reverse values.
 
         :return: Transformed.
+        :rtype: objetto.objects.ListObject
         """
         with self.app.write_context():
             if self._state:
@@ -690,8 +718,13 @@ class ListObject(
         Move values internally.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :param target_index: Target index.
+        :type target_index: int
+
         :return: Transformed.
+        :rtype: objetto.objects.ListObject
         """
         self.__functions__.move(self, item, target_index)
         return self
@@ -703,7 +736,10 @@ class ListObject(
         Delete values at index/slice.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :return: Transformed.
+        :rtype: objetto.objects.ListObject
         """
         self.__functions__.delete(self, item)
         return self
@@ -715,8 +751,13 @@ class ListObject(
         Update value(s) starting at index.
 
         :param index: Index.
+        :type index: int
+
         :param values: Value(s).
+
         :return: Transformed.
+        :rtype: objetto.objects.ListObject
+
         :raises ValueError: No values provided.
         """
         if not values:
@@ -732,7 +773,11 @@ class ListObject(
         Locate child object.
 
         :param child: Child object.
+        :type child: objetto.bases.BaseObject
+
         :return: Location.
+        :rtype: int
+
         :raises ValueError: Could not locate child.
         """
         with self.app.__.read_context(self) as read:
@@ -755,7 +800,11 @@ class ListObject(
         Locate child object's data.
 
         :param child: Child object.
+        :type child: objetto.bases.BaseObject
+
         :return: Data location.
+        :rtype: int
+
         :raises ValueError: Could not locate child's data.
         """
         return self._locate(child)
@@ -768,9 +817,15 @@ class ListObject(
         Deserialize.
 
         :param serialized: Serialized.
+        :type serialized: list
+
         :param app: Application (required).
+        :type app: objetto.applications.Application
+
         :param kwargs: Keyword arguments to be passed to the deserializers.
+
         :return: Deserialized.
+        :rtype: objetto.objects.ListObject
         """
         if app is None:
             error = (
@@ -798,7 +853,9 @@ class ListObject(
         Serialize.
 
         :param kwargs: Keyword arguments to be passed to the serializers.
+
         :return: Serialized.
+        :rtype: list
         """
         with self.app.read_context():
             return list(
@@ -811,14 +868,22 @@ class ListObject(
     @final
     def _state(self):
         # type: () -> ListState[T]
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.states.ListState
+        """
         return cast("ListState[T]", super(BaseListStructure, self)._state)
 
     @property
     @final
     def data(self):
         # type: () -> ListData[T]
-        """Data."""
+        """
+        Data.
+
+        :rtype: objetto.data.ListData
+        """
         return cast("ListData[T]", super(BaseListStructure, self).data)
 
 
@@ -826,7 +891,14 @@ class ListObject(
 class MutableListObject(
     BaseMutableListStructure[T], ListObject[T], BaseMutableAuxiliaryObject[T]
 ):
-    """Mutable dictionary object."""
+    """
+    Mutable list object.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMutableListStructure`
+      - :class:`objetto.objects.ListObject`
+      - :class:`objetto.bases.BaseMutableAuxiliaryObject`
+    """
 
     __slots__ = ()
 
@@ -846,7 +918,10 @@ class MutableListObject(
         Get value/values at index/from slice.
 
         :param index: Index/slice.
+        :type index: int or slice
+
         :return: Value/values.
+        :rtype: Any or list
         """
         if isinstance(index, slice):
             return list(self._state[index])
@@ -870,7 +945,11 @@ class MutableListObject(
         Set value/values at index/slice.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :param value: Value/values.
+        :type value: Any or collections.abc.Iterable
+
         :raises IndexError: Slice is noncontinuous.
         :raises ValueError: Values length does not fit in slice.
         """
@@ -904,6 +983,8 @@ class MutableListObject(
         Delete value/values at index/slice.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :raises IndexError: Slice is noncontinuous.
         """
         self._delete(item)
@@ -915,6 +996,8 @@ class MutableListObject(
         Pop value from index.
 
         :param index: Index.
+        :type index: int
+
         :return: Value.
         """
         with self.app.write_context():
@@ -929,7 +1012,13 @@ _PLO = TypeVar("_PLO", bound="ProxyListObject")
 
 @final
 class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
-    """Mutable proxy list."""
+    """
+    Mutable proxy list.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseProxyObject`
+      - :class:`objetto.bases.BaseMutableList`
+    """
 
     __slots__ = ()
 
@@ -949,7 +1038,11 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Set value/values at index/slice.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :param value: Value/values.
+        :type value: Any or collections.abc.Iterable
+
         :raises IndexError: Slice is noncontinuous.
         :raises ValueError: Values length does not fit in slice.
         """
@@ -982,6 +1075,8 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Delete value/values at index/slice.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :raises IndexError: Slice is noncontinuous.
         """
         self._delete(item)
@@ -992,6 +1087,7 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Iterate over reversed values.
 
         :return: Reversed values iterator.
+        :rtype: collections.abc.Iterator
         """
         return reversed(self._state)
 
@@ -1010,9 +1106,15 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Get value/values at index/from slice.
 
         :param index: Index/slice.
+        :type index: int or slice
+
         :return: Value/values.
+        :rtype: list
         """
-        return self._obj[index]
+        if isinstance(index, slice):
+            return list(self._state[index])
+        else:
+            return self._obj[index]
 
     def _insert(self, index, *values):
         # type: (_PLO, int, T) -> _PLO
@@ -1020,8 +1122,13 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Insert value(s) at index.
 
         :param index: Index.
+        :type index: int
+
         :param values: Value(s).
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxyListObject
+
         :raises ValueError: No values provided.
         """
         self._obj._insert(index, *values)
@@ -1033,7 +1140,9 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Append value at the end.
 
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxyListObject
         """
         self._obj._append(value)
         return self
@@ -1044,7 +1153,9 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Extend at the end with iterable.
 
         :param iterable: Iterable.
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxyListObject
         """
         self._obj._extend(iterable)
         return self
@@ -1055,7 +1166,10 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Remove first occurrence of value.
 
         :param value: Value.
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxyListObject
+
         :raises ValueError: Value is not present.
         """
         self._obj._remove(value)
@@ -1067,6 +1181,7 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Reverse values.
 
         :return: Transformed.
+        :rtype: objetto.objects.ProxyListObject
         """
         self._obj._reverse()
         return self
@@ -1077,8 +1192,13 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Move values internally.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :param target_index: Target index.
+        :type target_index: int
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxyListObject
         """
         self._obj._move(item, target_index)
         return self
@@ -1089,7 +1209,10 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Delete values at index/slice.
 
         :param item: Index/slice.
+        :type item: int or slice
+
         :return: Transformed.
+        :rtype: objetto.objects.ProxyListObject
         """
         self._obj._delete(item)
         return self
@@ -1100,7 +1223,10 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Update value(s) starting at index.
 
         :param index: Index.
+        :type index: int
+
         :param values: Value(s).
+
         :return: Transformed.
         :raises ValueError: No values provided.
         """
@@ -1113,6 +1239,8 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Pop value from index.
 
         :param index: Index.
+        :type index: int
+
         :return: Value.
         """
         with self.app.write_context():
@@ -1138,9 +1266,16 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Get index of a value.
 
         :param value: Value.
+
         :param start: Start index.
+        :type start: int or None
+
         :param stop: Stop index.
+        :type stop: int or None
+
         :return: Index of value.
+        :rtype: int
+
         :raises ValueError: Provided stop but did not provide start.
         """
         return self._obj.index(value, start=start, stop=stop)
@@ -1151,8 +1286,14 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Resolve index to a positive number.
 
         :param index: Input index.
+        :type index: int
+
         :param clamp: Whether to clamp between zero and the length.
+        :type clamp: bool
+
         :return: Resolved index.
+        :rtype: int
+
         :raises IndexError: Index out of range.
         """
         return self._obj.resolve_index(index, clamp=clamp)
@@ -1163,7 +1304,11 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
         Resolve continuous slice according to length.
 
         :param slc: Continuous slice.
+        :type slc: slice
+
         :return: Index and stop.
+        :rtype: tuple[int, int]
+
         :raises IndexError: Slice is noncontinuous.
         """
         return self._obj.resolve_continuous_slice(slc)
@@ -1171,17 +1316,29 @@ class ProxyListObject(BaseProxyObject[T], BaseMutableList[T]):
     @property
     def _obj(self):
         # type: () -> ListObject[T]
-        """List object."""
+        """
+        List object.
+
+        :rtype: objetto.objects.ListObject
+        """
         return cast("ListObject[T]", super(ProxyListObject, self)._obj)
 
     @property
     def _state(self):
         # type: () -> ListState[T]
-        """State."""
+        """
+        State.
+
+        :rtype: objetto.states.ListState
+        """
         return cast("ListState[T]", super(ProxyListObject, self)._state)
 
     @property
     def data(self):
-        # type: () -> ListData[T]
-        """Data."""
-        return cast("ListData[T]", super(ProxyListObject, self).data)
+        # type: () -> Optional[ListData[T]]
+        """
+        Data.
+
+        :rtype: objetto.data.ListData or None
+        """
+        return cast("Optional[ListData[T]]", super(ProxyListObject, self).data)
