@@ -1,8 +1,15 @@
 # TODO
+# TODO: utils documentation
+# TODO: exceptions documentation
+# TODO: factories documentation
+# TODO: reactions documentation
+# TODO: history documentation
+# TODO: observers documentation
+# TODO: states documentation
+# TODO: refine documentation with examples and stuff
 # TODO: double check if all the doctests in README.rst are running
 # TODO: double check inhertied .bases.(non-Base) doc classes
 # TODO: double check 'list' in 'set' files and so on
-# TODO: documentation
 # TODO: rename NonInteractiveData and Data
 # TODO: bases public module
 # TODO: tests
