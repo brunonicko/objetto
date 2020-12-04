@@ -124,9 +124,6 @@ def data_attribute(
     :param default_factory: Default value factory.
     :type default_factory: str or collections.abc.Callable or None
 
-    :param module: Optional module path to use in case partial paths are provided.
-    :type module: str or None
-
     :param required: Whether attribute is required to have a value or not.
     :type required: bool
 

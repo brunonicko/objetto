@@ -129,7 +129,10 @@ def data_method(func):
         84
 
     :param func: The method function.
+    :type func: function
+
     :return: Decorated method function.
+    :rtype: function
     """
 
     @decorator
@@ -159,16 +162,38 @@ def data_relationship(
     Make custom relationship between a data structure and its values.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool or None
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
     :return: Custom data relationship.
+    :rtype: objetto.data.DataRelationship
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -191,6 +216,7 @@ def history_descriptor(size=None):
     # type: (Optional[int]) -> HistoryDescriptor
     """
     Descriptor to be used when declaring an :class:`objetto.objects.Object` class.
+
     When used, every instance of the object class will hold a history that will keep
     track of its changes (and the changes of its children that define a history
     relationship), allowing for easy undo/redo operations.
@@ -212,7 +238,10 @@ def history_descriptor(size=None):
         'Albert'
 
     :param size: How many changes to remember.
+    :type size: int or None
+
     :return: History descriptor.
+    :rtype: objetto.history.HistoryDescriptor
     """
     return HistoryDescriptor(size=size)
 
@@ -247,29 +276,77 @@ def attribute(
     Make attribute.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param delegated: Whether attribute allows for delegates to be defined.
+    :type delegated: bool
+
     :param dependencies: Attributes needed by the getter delegate.
+    :type dependencies: collections.abc.Iterable[objetto.objects.Attribute] or \
+objetto.objects.Attribute or None
+
     :param deserialize_to: Non-serialized attribute to deserialize this into.
+    :type deserialize_to: objetto.objects.Attribute or None
+
     :return: Attribute.
+    :rtype: objetto.objects.Attribute
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -334,14 +411,31 @@ def constant_attribute(
     Make constant attribute.
 
     :param value: Constant value.
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :return: Constant attribute.
+    :rtype: objetto.objects.Attribute
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -404,25 +498,64 @@ def protected_attribute_pair(
     Make protected-public attribute pair.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
-    :param changeable: Whether protected attribute value can be changed.
-    :param deletable: Whether protected attribute value can be deleted.
+    :type default_factory: str or collections.abc.Callable or None
+
+    :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
+    :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :return: Protected-public attribute pair.
+    :rtype: tuple[objetto.objects.Attribute, objetto.objects.Attribute]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -508,40 +641,97 @@ def dict_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    interactive=True,  # type: bool
+    mutable=True,  # type: bool
 ):
     # type: (...) -> Union[MutableDictAttribute[KT, VT], DictAttribute[KT, VT]]
     """
     Make dictionary attribute.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
     :param key_types: Key types.
+    :type key_types: str or type or None or tuple[str or type or None]
+
     :param key_subtypes: Whether to accept subtypes for the keys.
+    :type key_subtypes: bool
+
     :param key_factory: Key factory.
+    :type key_factory: str or collections.abc.Callable or None
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
     :param reactions: Reaction functions ordered by priority.
-    :param interactive: Whether generated class should be interactive.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :param mutable: Whether generated class should have public mutable interface.
+    :type mutable: bool
+
     :return: Dictionary attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.MutableDictObject or \
+objetto.objects.DictObject]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -571,7 +761,7 @@ def dict_attribute(
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            interactive=interactive,
+            mutable=mutable,
         )  # type: Union[Type[MutableDictObject[KT, VT]], Type[DictObject[KT, VT]]]
 
     # Factory for dict object relationship.
@@ -654,29 +844,78 @@ def protected_dict_attribute_pair(
     Make protected-public dictionary attribute pair.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
     :param key_types: Key types.
+    :type key_types: str or type or None or tuple[str or type or None]
+
     :param key_subtypes: Whether to accept subtypes for the keys.
+    :type key_subtypes: bool
+
     :param key_factory: Key factory.
+    :type key_factory: str or collections.abc.Callable or None
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
     :param reactions: Reaction functions ordered by priority.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
     :return: Protected-public dictionary attribute pair.
+    :rtype: tuple[objetto.objects.Attribute[objetto.objects.ProxyDictObject], \
+objetto.objects.Attribute[objetto.objects.DictObject]]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -717,7 +956,7 @@ def protected_dict_attribute_pair(
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            interactive=False,
+            mutable=False,
         ),
     )
 
@@ -773,37 +1012,88 @@ def list_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    interactive=True,  # type: bool
+    mutable=True,  # type: bool
 ):
     # type: (...) -> Union[MutableListAttribute[T], ListAttribute[T]]
     """
     Make list attribute.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
     :param reactions: Reaction functions ordered by priority.
-    :param interactive: Whether generated class should be interactive.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :param mutable: Whether generated class should have public mutable interface.
+    :type mutable: bool
+
     :return: List attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.MutableListObject or \
+objetto.objects.ListObject]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -830,7 +1120,7 @@ def list_attribute(
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            interactive=interactive,
+            mutable=mutable,
         )  # type: Union[Type[MutableListObject[T]], Type[ListObject[T]]]
 
     # Factory for list object relationship.
@@ -910,26 +1200,69 @@ def protected_list_attribute_pair(
     Make protected-public list attribute pair.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
     :param reactions: Reaction functions ordered by priority.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
     :return: Protected-public list attribute pair.
+    :rtype: tuple[objetto.objects.Attribute[objetto.objects.ProxyListObject], \
+objetto.objects.Attribute[objetto.objects.ListObject]]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -967,7 +1300,7 @@ def protected_list_attribute_pair(
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            interactive=False,
+            mutable=False,
         ),
     )
 
@@ -1023,37 +1356,88 @@ def set_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    interactive=True,  # type: bool
+    mutable=True,  # type: bool
 ):
     # type: (...) -> Union[MutableSetAttribute[T], SetAttribute[T]]
     """
     Make set attribute.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
     :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
     :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
     :param reactions: Reaction functions ordered by priority.
-    :param interactive: Whether generated class should be interactive.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :param mutable: Whether generated class should have public mutable interface.
+    :type mutable: bool
+
     :return: Set attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.MutableSetObject or \
+objetto.objects.SetObject]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -1080,7 +1464,7 @@ def set_attribute(
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            interactive=interactive,
+            mutable=mutable,
         )  # type: Union[Type[MutableSetObject[T]], Type[SetObject[T]]]
 
     # Factory for set object relationship.
@@ -1160,26 +1544,69 @@ def protected_set_attribute_pair(
     Make protected-public set attribute pair.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
     :param default: Default value.
+
     :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
     :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
     :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
     :param reactions: Reaction functions ordered by priority.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
     :return: Protected-public set attribute pair.
+    :rtype: tuple[objetto.objects.Attribute[objetto.objects.ProxySetObject], \
+objetto.objects.Attribute[objetto.objects.SetObject]]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -1217,7 +1644,7 @@ def protected_set_attribute_pair(
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            interactive=False,
+            mutable=False,
         ),
     )
 
@@ -1297,33 +1724,76 @@ def dict_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    interactive=True,  # type: bool
+    mutable=True,  # type: bool
 ):
     # type: (...) -> Union[Type[MutableDictObject[KT, VT]], Type[DictObject[KT, VT]]]
     """
     Make auxiliary dictionary object class.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
-    :param key_types: Key types.
-    :param key_subtypes: Whether to accept subtypes for the keys.
-    :param key_factory: Key factory.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
+    :param key_types: Key types.
+    :type key_types: str or type or None or tuple[str or type or None]
+
+    :param key_subtypes: Whether to accept subtypes for the keys.
+    :type key_subtypes: bool
+
+    :param key_factory: Key factory.
+    :type key_factory: str or collections.abc.Callable or None
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
     :param reactions: Reaction functions ordered by priority.
-    :param interactive: Whether generated class should be interactive.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :param mutable: Whether generated class should have public mutable interface.
+    :type mutable: bool
+
     :return: Dictionary object class.
+    :rtype: type[objetto.objects.DictObject or objetto.objects.MutableDictObject]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -1373,11 +1843,11 @@ def dict_cls(
         dct=dct,
     )  # type: Dict[str, Any]
     with ReraiseContext(TypeError, "defining 'dict_cls'"):
-        if interactive:
-            interactive_base = (
+        if mutable:
+            mutable_base = (
                 MutableDictObject
             )  # type: Type[MutableDictObject[KT, VT]]
-            return make_auxiliary_cls(interactive_base, **cls_kwargs)
+            return make_auxiliary_cls(mutable_base, **cls_kwargs)
         else:
             base = DictObject  # type: Type[DictObject[KT, VT]]
             return make_auxiliary_cls(base, **cls_kwargs)
@@ -1400,30 +1870,67 @@ def list_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    interactive=True,  # type: bool
+    mutable=True,  # type: bool
 ):
     # type: (...) -> Union[Type[MutableListObject[T]], Type[ListObject[T]]]
     """
     Make auxiliary list object class.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
     :param reactions: Reaction functions ordered by priority.
-    :param interactive: Whether generated class should be interactive.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :param mutable: Whether generated class should have public mutable interface.
+    :type mutable: bool
+
     :return: List object class.
+    :rtype: type[objetto.objects.ListObject or objetto.objects.MutableListObject]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -1462,9 +1969,9 @@ def list_cls(
         dct=dct,
     )  # type: Dict[str, Any]
     with ReraiseContext(TypeError, "defining 'list_cls'"):
-        if interactive:
-            interactive_base = MutableListObject  # type: Type[MutableListObject[T]]
-            return make_auxiliary_cls(interactive_base, **cls_kwargs)
+        if mutable:
+            mutable_base = MutableListObject  # type: Type[MutableListObject[T]]
+            return make_auxiliary_cls(mutable_base, **cls_kwargs)
         else:
             base = ListObject  # type: Type[ListObject[T]]
             return make_auxiliary_cls(base, **cls_kwargs)
@@ -1487,30 +1994,67 @@ def set_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    interactive=True,  # type: bool
+    mutable=True,  # type: bool
 ):
     # type: (...) -> Union[Type[MutableSetObject[T]], Type[SetObject[T]]]
     """
     Make auxiliary set object class.
 
     :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
     :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
     :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
     :param module: Module path for lazy types/factories.
+    :type module: str or None
+
     :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
     :param serialized: Whether should be serialized.
+    :type serialized: bool
+
     :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
     :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
     :param represented: Whether should be represented.
+    :type represented: bool
+
     :param child: Whether object values should be adopted as children.
+    :type child: bool
+
     :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
     :param data: Whether to generate data for the value.
+    :type data: bool
+
     :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
     :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
     :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
     :param reactions: Reaction functions ordered by priority.
-    :param interactive: Whether generated class should be interactive.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :param mutable: Whether generated class should have public mutable interface.
+    :type mutable: bool
+
     :return: Set object class.
+    :rtype: type[objetto.objects.SetObject or objetto.objects.MutableSetObject]
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -1549,9 +2093,9 @@ def set_cls(
         dct=dct,
     )  # type: Dict[str, Any]
     with ReraiseContext(TypeError, "defining 'set_cls'"):
-        if interactive:
-            interactive_base = MutableSetObject  # type: Type[MutableSetObject[T]]
-            return make_auxiliary_cls(interactive_base, **cls_kwargs)
+        if mutable:
+            mutable_base = MutableSetObject  # type: Type[MutableSetObject[T]]
+            return make_auxiliary_cls(mutable_base, **cls_kwargs)
         else:
             base = SetObject  # type: Type[SetObject[T]]
             return make_auxiliary_cls(base, **cls_kwargs)

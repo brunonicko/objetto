@@ -22,6 +22,8 @@ Attribute Descriptors
 .. autofunction:: objetto.objects.list_attribute
 .. autofunction:: objetto.objects.set_attribute
 
+.. autofunction:: objetto.objects.protected_dict_attribute_pair
+
 Action Class
 ------------
 .. autoclass:: objetto.objects.Action
