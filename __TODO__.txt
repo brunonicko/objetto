@@ -1,16 +1,15 @@
 # TODO
-# TODO: add 'automodule' directive
 # TODO: refine documentation with examples and stuff
-# TODO: double check if all the doctests in README.rst are running
-# TODO: double check inhertied .bases.(non-Base) doc classes
-# TODO: double check 'list' in 'set' files and so on
 # TODO: tests
 # TODO: squash commits, merge branch
 # TODO: github actions
 # TODO: release to pypi!
 
 # DONE
+# double check inhertied .bases.(non-Base) doc classes
+# add 'automodule' directive
 # double check if all the doctests in README.rst are running
+# double check 'list' in 'set' files and so on
 # states documentation
 # history documentation
 # factories documentation

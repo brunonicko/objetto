@@ -1,6 +1,8 @@
 Utils
 =====
 
+.. automodule:: objetto.utils
+
 Caller Module
 -------------
 .. automodule:: objetto.utils.caller_module

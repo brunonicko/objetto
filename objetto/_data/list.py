@@ -79,7 +79,7 @@ class ListData(
         Make a new list data.
 
         :param state: Internal state.
-        :return: New dictionary data.
+        :return: New list data.
         """
         return super(ListData, cls).__make__(state)
 

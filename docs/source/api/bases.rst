@@ -1,6 +1,8 @@
 Bases
 =====
 
+.. automodule:: objetto.bases
+
 Base Classes
 ------------
 

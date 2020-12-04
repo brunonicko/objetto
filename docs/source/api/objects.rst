@@ -1,6 +1,8 @@
 Objects
 =======
 
+.. automodule:: objetto.objects
+
 Object Class
 ------------
 .. autoclass:: objetto.objects.Object

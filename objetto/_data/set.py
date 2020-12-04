@@ -79,7 +79,7 @@ class SetData(
         Make a new set data.
 
         :param state: Internal state.
-        :return: New dictionary data.
+        :return: New set data.
         """
         return super(SetData, cls).__make__(state)
 

@@ -1,6 +1,8 @@
 Applications
 ============
 
+.. automodule:: objetto.applications
+
 Application Class
 -----------------
 .. autoclass:: objetto.applications.Application

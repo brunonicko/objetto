@@ -1,6 +1,8 @@
 Changes
 =======
 
+.. automodule:: objetto.changes
+
 Batch Change
 ------------
 .. autoclass:: objetto.changes.Batch

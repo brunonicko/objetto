@@ -1,6 +1,8 @@
 Data
 ====
 
+.. automodule:: objetto.data
+
 Data Classes
 ------------
 .. autoclass:: objetto.data.Data

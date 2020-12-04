@@ -1,6 +1,8 @@
 Constants
 =========
 
+.. automodule:: objetto.constants
+
 Action Execution Phases
 -----------------------
 .. autodata:: objetto.constants.PRE

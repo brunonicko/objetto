@@ -1,6 +1,8 @@
 Observers
 =========
 
+.. automodule:: objetto.observers
+
 Action Observer Class
 ---------------------
 .. autoclass:: objetto.observers.ActionObserver
