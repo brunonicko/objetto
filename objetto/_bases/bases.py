@@ -94,6 +94,33 @@ __final = final
 __base_cls_cache = WeakValueDictionary()  # type: MutableMapping[str, Type[Base]]
 
 
+class _GenericMeta(SlottedABCMeta):
+    """Workaround for 'Generic' class having a metaclass in older versions of typing."""
+    def __getitem__(cls, _):
+        return cls
+
+
+type.__setattr__(_GenericMeta, "__name__", "SlottedABCMeta")
+if hasattr(SlottedABCMeta, "__qualname__"):
+    type.__setattr__(_GenericMeta, "__qualname__", "SlottedABCMeta")
+type.__setattr__(_GenericMeta, "__module__", SlottedABCMeta.__module__)
+type.__setattr__(_GenericMeta, "__doc__", SlottedABCMeta.__doc__)
+
+
+class _Generic(with_metaclass(_GenericMeta, SlottedABC)):
+    pass
+
+
+type.__setattr__(_Generic, "__name__", "Generic")
+if hasattr(Generic, "__qualname__"):
+    type.__setattr__(_Generic, "__qualname__", "Generic")
+type.__setattr__(_Generic, "__module__", Generic.__module__)
+type.__setattr__(_Generic, "__doc__", Generic.__doc__)
+
+globals()["SlottedABCMeta"] = _GenericMeta
+globals()["Generic"] = _Generic
+
+
 def _final(obj):
     # type: (F) -> F
     """
@@ -425,30 +452,6 @@ def make_base_cls(
     return _make_base_cls(base, qual_name, module, dct=dct)
 
 
-# Workaround for 'Generic' class having a metaclass in older versions of typing.
-try:
-
-    class _Dummy(SlottedABC, Generic[T]):
-        pass
-
-
-except TypeError:
-
-    class _GenericMeta(SlottedABCMeta):
-        def __getitem__(cls, _):
-            return cls
-
-    class _Generic(with_metaclass(_GenericMeta, SlottedABC)):
-        pass
-
-    type.__setattr__(_Generic, "__name__", "Generic")
-    type.__setattr__(_Generic, "__module__", Generic.__module__)
-    type.__setattr__(_Generic, "__doc__", Generic.__doc__)
-
-    globals()["SlottedABCMeta"] = _GenericMeta
-    globals()["Generic"] = _Generic
-
-
 class BaseMeta(SlottedABCMeta):
     """
     Metaclass for :class:`objetto.bases.Base`.
@@ -775,7 +778,7 @@ def abstract_member():
         >>> obj = AbstractClass()
         Traceback (most recent call last):
         TypeError: Can't instantiate abstract class AbstractClass with abstract \
-methods some_attribute
+method...
 
         >>> class ConcreteClass(AbstractClass):
         ...     some_attribute = (1, 2, 3)  # concrete

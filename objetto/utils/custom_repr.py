@@ -32,7 +32,9 @@ def custom_mapping_repr(
         >>> from objetto.utils.custom_repr import custom_mapping_repr
 
         >>> dct = {"a": 1, "b": 2}
-        >>> custom_mapping_repr(dct, prefix="<", suffix=">", template="{key}={value}")
+        >>> custom_mapping_repr(
+        ...     dct, prefix="<", suffix=">", template="{key}={value}", sorting=True
+        ... )
         "<'a'=1, 'b'=2>"
 
     :param mapping: Mapping.
@@ -70,6 +72,8 @@ def custom_mapping_repr(
     """
     parts = []
     iterable = iteritems(mapping)  # type: Iterable[Tuple[Hashable, Any]]
+    if sort_key is None:
+        sort_key = lambda item: item[0]
     if sorting:
         iterable = sorted(iterable, key=sort_key, reverse=reverse)
     for key, value in iterable:
