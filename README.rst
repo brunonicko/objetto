@@ -9,6 +9,9 @@ Objetto
 .. image:: https://github.com/brunonicko/objetto/workflows/Tests/badge.svg
     :target: https://github.com/brunonicko/objetto/actions?query=workflow%3ATests
 
+.. image:: https://readthedocs.org/projects/objetto/badge/?version=latest
+    :target: https://objetto.readthedocs.io/en/latest/
+
 .. image:: https://badge.fury.io/py/objetto.svg
     :target: https://pypi.org/project/objetto/
 
