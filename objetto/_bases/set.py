@@ -2,7 +2,7 @@
 """Base set classes."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar, final
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 try:
     import collections.abc as collections_abc
@@ -13,6 +13,7 @@ from qualname import qualname  # type: ignore
 from slotted import SlottedMutableSet, SlottedSet
 
 from .bases import (
+    final,
     BaseCollection,
     BaseInteractiveCollection,
     BaseMutableCollection,

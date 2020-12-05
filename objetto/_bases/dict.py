@@ -2,7 +2,7 @@
 """Base dictionary classes."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar, final, overload
+from typing import TYPE_CHECKING, Generic, TypeVar, overload
 
 try:
     import collections.abc as collections_abc
@@ -14,6 +14,7 @@ from slotted import SlottedMapping, SlottedMutableMapping
 
 from .bases import (
     MISSING,
+    final,
     BaseCollection,
     BaseInteractiveCollection,
     BaseMutableCollection,

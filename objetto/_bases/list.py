@@ -2,7 +2,7 @@
 """Base list classes."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, TypeVar, final, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 
 try:
     import collections.abc as collections_abc
@@ -13,6 +13,7 @@ from qualname import qualname  # type: ignore
 from slotted import SlottedMutableSequence, SlottedSequence
 
 from .bases import (
+    final,
     BaseCollection,
     BaseInteractiveCollection,
     BaseMutableCollection,
