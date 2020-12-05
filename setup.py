@@ -34,5 +34,5 @@ setuptools.setup(
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: Implementation :: PyPy",
     ],
-    python_requires=">=2.7",
+    python_requires=">=2.7, <3.10",
 )
