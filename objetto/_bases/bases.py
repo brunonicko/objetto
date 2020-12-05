@@ -104,7 +104,10 @@ type.__setattr__(_GenericMeta, "__name__", "SlottedABCMeta")
 if hasattr(SlottedABCMeta, "__qualname__"):
     type.__setattr__(_GenericMeta, "__qualname__", "SlottedABCMeta")
 type.__setattr__(_GenericMeta, "__module__", SlottedABCMeta.__module__)
-type.__setattr__(_GenericMeta, "__doc__", SlottedABCMeta.__doc__)
+try:
+    type.__setattr__(_GenericMeta, "__doc__", SlottedABCMeta.__doc__)
+except AttributeError:
+    pass
 
 
 class _Generic(with_metaclass(_GenericMeta, SlottedABC)):
@@ -115,7 +118,10 @@ type.__setattr__(_Generic, "__name__", "Generic")
 if hasattr(Generic, "__qualname__"):
     type.__setattr__(_Generic, "__qualname__", "Generic")
 type.__setattr__(_Generic, "__module__", Generic.__module__)
-type.__setattr__(_Generic, "__doc__", Generic.__doc__)
+try:
+    type.__setattr__(_Generic, "__doc__", Generic.__doc__)
+except AttributeError:
+    pass
 
 globals()["SlottedABCMeta"] = _GenericMeta
 globals()["Generic"] = _Generic
