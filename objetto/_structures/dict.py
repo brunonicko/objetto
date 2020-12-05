@@ -320,9 +320,9 @@ class BaseDictStructure(
     _key_relationship = KeyRelationship()
     """
     **Class Attribute**
-    
+
     Relationship for the keys.
-    
+
     :type: objetto.objects.KeyRelationship or objetto.data.KeyRelationship
     """
 

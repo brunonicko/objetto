@@ -225,21 +225,21 @@ class ActionObserverExceptionData(Data):
     )  # type: DataAttribute[ActionObserver]
     """
     Action observer.
-    
+
     :type: objetto.observers.ActionObserver
     """
 
     action = data_attribute(Action, checked=False)  # type: DataAttribute[Action]
     """
     Action.
-    
+
     :type: objetto.objects.Action
     """
 
     phase = data_attribute(Phase, checked=False)  # type: DataAttribute[Phase]
     """
     Phase.
-    
+
     :type: :data:`objetto.constants.PRE` or :data:`objetto.constants.POST`
     """
 
@@ -248,7 +248,7 @@ class ActionObserverExceptionData(Data):
     )  # type: DataAttribute[Optional[Type[BaseException]]]
     """
     Exception type.
-    
+
     :type: type[BaseException] or None
     """
 
@@ -257,7 +257,7 @@ class ActionObserverExceptionData(Data):
     )  # type: DataAttribute[Optional[BaseException]]
     """
     Exception.
-    
+
     :type: BaseException or None
     """
 
@@ -266,6 +266,6 @@ class ActionObserverExceptionData(Data):
     )  # type: DataAttribute[Optional[TracebackType]]
     """
     Traceback.
-    
+
     :type: types.TracebackType or None
     """

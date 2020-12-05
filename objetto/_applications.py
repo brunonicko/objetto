@@ -357,7 +357,7 @@ class Action(Data):
     )  # type: DataAttribute[BaseObject]
     """
     Object where the action originated from (where the change happened).
-    
+
     :type: objetto.bases.BaseObject
     """
 
@@ -366,7 +366,7 @@ class Action(Data):
     )  # type: DataAttribute[BaseObject]
     """
     Object relaying the action up the hierarchy.
-    
+
     :type: objetto.bases.BaseObject
     """
 
@@ -376,7 +376,7 @@ class Action(Data):
     )  # type: DataAttribute[ListData[Any]]
     """
     List of relative locations from the receiver to the sender.
-    
+
     :type: list[str or int or collections.abc.Hashable]
     """
 
@@ -385,7 +385,7 @@ class Action(Data):
     )  # type: DataAttribute[BaseChange]
     """
     Change that happened in the sender.
-    
+
     :type: objetto.bases.BaseChange
     """
 

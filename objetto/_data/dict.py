@@ -78,8 +78,8 @@ tuple[collections.abc.Hashable, Any]]
     _key_relationship = KeyRelationship()
     """
     Relationship for dictionary keys.
-    
-    :type: objetto.data.KeyRelationship 
+
+    :type: objetto.data.KeyRelationship
     """
 
     @classmethod

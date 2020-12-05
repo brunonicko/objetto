@@ -54,7 +54,7 @@ class BaseChange(Data):
     )  # type: DataAttribute[str]
     """
     Name describing the change.
-    
+
     :type: str
     """
 
@@ -63,7 +63,7 @@ class BaseChange(Data):
     )  # type: Final[DataAttribute[BaseObject]]
     """
     Object being changed.
-    
+
     :type: objetto.bases.BaseObject
     """
 
@@ -101,7 +101,7 @@ class BaseAtomicChange(BaseChange):
     )  # type: Final[DataAttribute[BaseState]]
     """
     Object state before the change.
-    
+
     :type: objetto.bases.BaseState
     """
 
@@ -110,7 +110,7 @@ class BaseAtomicChange(BaseChange):
     )  # type: Final[DataAttribute[BaseState]]
     """
     Object state after the change.
-    
+
     :type: objetto.bases.BaseState
     """
 
@@ -126,7 +126,7 @@ class BaseAtomicChange(BaseChange):
     )  # type: Final[DataAttribute[SetData[BaseObject]]]
     """
     Children objects being released.
-    
+
     :type: objetto.data.SetData[objetto.bases.BaseObject]
     """
 
@@ -142,8 +142,8 @@ class BaseAtomicChange(BaseChange):
     )  # type: Final[DataAttribute[SetData[BaseObject]]]
     """
     Children objects being adopted.
-    
-    :type: objetto.data.SetData[objetto.bases.BaseObject] 
+
+    :type: objetto.data.SetData[objetto.bases.BaseObject]
     """
 
     history_adopters = cast(
@@ -158,7 +158,7 @@ class BaseAtomicChange(BaseChange):
     )  # type: Final[DataAttribute[SetData[BaseObject]]]
     """
     Objects adopting the history from the object being changed.
-    
+
     :type: objetto.data.SetData[objetto.bases.BaseObject]
     """
 
@@ -171,7 +171,7 @@ class BaseAtomicChange(BaseChange):
     )  # type: Final[DataAttribute[Optional[HistoryObject]]]
     """
     History where this changed originated from (result of an redo/undo operation).
-    
+
     :type: objetto.history.HistoryObject or None
     """
 
@@ -188,7 +188,7 @@ class Batch(BaseChange):
     name = data_attribute(string_types, checked=False)  # type: DataAttribute[str]
     """
     Name describing the change.
-    
+
     :type: str
     """
 
@@ -198,7 +198,7 @@ class Batch(BaseChange):
     )  # type: DataAttribute[DictData[str, Any]]
     """
     Metadata.
-    
+
     :type: objetto.data.DictData[str, Any]
     """
 
@@ -217,7 +217,7 @@ class Update(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """
     Name describing the change.
-    
+
     :type: str
     """
 
@@ -227,7 +227,7 @@ class Update(BaseAtomicChange):
     )  # type: DataAttribute[DictData[str, Any]]
     """
     Old attribute values.
-    
+
     :type: objetto.data.DictData[str, Any]
     """
 
@@ -237,7 +237,7 @@ class Update(BaseAtomicChange):
     )  # type: DataAttribute[DictData[str, Any]]
     """
     New attribute values.
-    
+
     :type: objetto.data.DictData[str, Any]
     """
 
@@ -264,7 +264,7 @@ class DictUpdate(BaseAtomicChange):
     )  # type: DataAttribute[DictData[Any, Any]]
     """
     Old values.
-    
+
     :type: objetto.data.DictData[collections.abc.Hashable, Any]
     """
 
@@ -274,7 +274,7 @@ class DictUpdate(BaseAtomicChange):
     )  # type: DataAttribute[DictData[Any, Any]]
     """
     New values.
-    
+
     :type: objetto.data.DictData[collections.abc.Hashable, Any]
     """
 
@@ -293,14 +293,14 @@ class ListInsert(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """
     Name describing the change.
-    
+
     :type: str
     """
 
     index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """
     Insertion index.
-    
+
     :type: int
     """
 
@@ -309,14 +309,14 @@ class ListInsert(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """
     Last inserted value index.
-    
+
     :type: int
     """
 
     stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """
     Stop index.
-    
+
     :type: int
     """
 
@@ -326,7 +326,7 @@ class ListInsert(BaseAtomicChange):
     )  # type: DataAttribute[ListData[Any]]
     """
     New values.
-    
+
     :type: objetto.data.ListData[Any]
     """
 
@@ -345,14 +345,14 @@ class ListDelete(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """
     Name describing the change.
-    
+
     :type: str
     """
 
     index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """
     First removed value index.
-    
+
     :type: int
     """
 
@@ -361,14 +361,14 @@ class ListDelete(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """
     Last removed value index.
-    
+
     :type: int
     """
 
     stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """
     Stop index.
-    
+
     :type: int
     """
 
@@ -378,7 +378,7 @@ class ListDelete(BaseAtomicChange):
     )  # type: DataAttribute[ListData[Any]]
     """
     Old values.
-    
+
     :type: objetto.data.ListData[Any]
     """
 
@@ -397,14 +397,14 @@ class ListUpdate(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """
     Name describing the change.
-    
+
     :type: str
     """
 
     index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """
     First updated value index.
-    
+
     :type: int
     """
 
@@ -413,14 +413,14 @@ class ListUpdate(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """
     Last updated value index.
-    
+
     :type: int
     """
 
     stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """
     Stop index.
-    
+
     :type: int
     """
 
@@ -430,7 +430,7 @@ class ListUpdate(BaseAtomicChange):
     )  # type: DataAttribute[ListData[Any]]
     """
     Old values.
-    
+
     :type: objetto.data.ListData[Any]
     """
 
@@ -440,7 +440,7 @@ class ListUpdate(BaseAtomicChange):
     )  # type: DataAttribute[ListData[Any]]
     """
     New values.
-    
+
     :type: objetto.data.ListData[Any]
     """
 
@@ -459,14 +459,14 @@ class ListMove(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """
     Name describing the change.
-    
+
     :type: str
     """
 
     index = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """
     First moved value index.
-    
+
     :type: int
     """
 
@@ -475,14 +475,14 @@ class ListMove(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """
     Last moved value index.
-    
+
     :type: int
     """
 
     stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """
     Stop index.
-    
+
     :type: int
     """
 
@@ -491,7 +491,7 @@ class ListMove(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """
     Index where values are being moved to.
-    
+
     :type: int
     """
 
@@ -500,7 +500,7 @@ class ListMove(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """
     First moved value index after the move.
-    
+
     :type: int
     """
 
@@ -509,14 +509,14 @@ class ListMove(BaseAtomicChange):
     )  # type: DataAttribute[int]
     """
     Last moved value index after the move.
-    
+
     :type: int
     """
 
     post_stop = data_attribute(integer_types, checked=False)  # type: DataAttribute[int]
     """
     Stop index after the move.
-    
+
     :type: int
     """
 
@@ -526,7 +526,7 @@ class ListMove(BaseAtomicChange):
     )  # type: DataAttribute[ListData[Any]]
     """
     Values being moved.
-    
+
     :type: objetto.data.ListData[Any]
     """
 
@@ -545,7 +545,7 @@ class SetUpdate(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """
     Name describing the change.
-    
+
     :type: str
     """
 
@@ -555,7 +555,7 @@ class SetUpdate(BaseAtomicChange):
     )  # type: DataAttribute[SetData[Any]]
     """
     Values being added to the set.
-    
+
     :type: objetto.data.SetData[collections.abc.Hashable]
     """
 
@@ -574,7 +574,7 @@ class SetRemove(BaseAtomicChange):
     )  # type: DataAttribute[str]
     """
     Name describing the change.
-    
+
     :type: str
     """
 
@@ -584,6 +584,6 @@ class SetRemove(BaseAtomicChange):
     )  # type: DataAttribute[SetData[Any]]
     """
     Values being removed from the set.
-    
+
     :type: objetto.data.SetData[collections.abc.Hashable]
     """

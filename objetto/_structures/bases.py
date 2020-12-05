@@ -1176,9 +1176,9 @@ class BaseAuxiliaryStructure(
     _relationship = BaseRelationship()
     """
     **Class Attribute**
-    
+
     Relationship for all locations.
-    
+
     :type: objetto.bases.BaseRelationship
     """
 

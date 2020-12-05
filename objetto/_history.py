@@ -23,7 +23,6 @@ if TYPE_CHECKING:
         MutableDictObject,
         MutableListObject,
         MutableSetObject,
-        Object,
         ProxyDictObject,
         ProxyListObject,
         ProxySetObject,
@@ -72,14 +71,14 @@ class BatchChanges(Object):
     change = attribute(Batch, checked=False, changeable=False)  # type: Attribute[Batch]
     """
     Batch change with name and metadata.
-    
+
     :type: objetto.changes.Batch
     """
 
     name = attribute(str, checked=False, changeable=False)  # type: Attribute[str]
     """
     The batch change name.
-    
+
     :type: str
     """
 
@@ -88,7 +87,7 @@ class BatchChanges(Object):
     )  # type: PLA[CT], LA[CT]
     """
     Changes executed during the batch.
-    
+
     :type: objetto.objects.ListObject[objetto.history.BatchChanges or \
  objetto.bases.BaseAtomicChange]
     """
@@ -98,7 +97,7 @@ class BatchChanges(Object):
     )  # type: Attribute[bool], Attribute[bool]
     """
     Whether the batch has already completed or is still running.
-    
+
     :type: bool
     """
 
@@ -164,7 +163,7 @@ class HistoryObject(Object):
     )  # type: Attribute[int]
     """
     How many changes to remember.
-    
+
     :type: int
     """
 
@@ -173,7 +172,7 @@ class HistoryObject(Object):
     )  # type: Attribute[bool], Attribute[bool]
     """
     Whether the history is undoing or redoing.
-    
+
     :type: bool
     """
 
@@ -182,7 +181,7 @@ class HistoryObject(Object):
     )  # type: Attribute[bool], Attribute[bool]
     """
     Whether the history is undoing.
-    
+
     :type: bool
     """
 
@@ -191,7 +190,7 @@ class HistoryObject(Object):
     )  # type: Attribute[bool], Attribute[bool]
     """
     Whether the history is redoing.
-    
+
     :type: bool
     """
 
@@ -200,7 +199,7 @@ class HistoryObject(Object):
     )  # type: Attribute[int], Attribute[int]
     """
     The index of the current change.
-    
+
     :type: int
     """
 
@@ -211,7 +210,7 @@ class HistoryObject(Object):
     )  # type: PLA[Optional[CT]], LA[Optional[CT]]
     """
     List of changes.
-    
+
     :type: objetto.objects.ListObject[None or \
  objetto.history.BatchChanges or objetto.bases.BaseAtomicChange]
     """
@@ -223,7 +222,7 @@ class HistoryObject(Object):
     )  # type: PLA[BatchChanges], LA[BatchChanges]
     """
     Current opened batch.
-    
+
     :type: objetto.objects.ListObject[objetto.history.BatchChanges]
     """
 

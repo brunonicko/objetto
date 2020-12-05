@@ -302,7 +302,7 @@ class BaseAuxiliaryData(
     _relationship = DataRelationship()
     """
     Relationship for all locations.
-    
+
     :type: objetto.data.DataRelationship
     """
 

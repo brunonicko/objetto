@@ -81,8 +81,8 @@ T = TypeVar("T")  # Any type.
 DELETED = object()
 """
 Special marker that represents a deleted value.
-Can be used when updating :class:`objetto.objects.Object` attributes or 
-:class:`objetto.objects.DictObject` values. 
+Can be used when updating :class:`objetto.objects.Object` attributes or
+:class:`objetto.objects.DictObject` values.
 """
 
 UNIQUE_ATTRIBUTES_METADATA_KEY = "unique_attributes"
@@ -1218,7 +1218,7 @@ class BaseAuxiliaryObject(
     _relationship = Relationship()
     """
     Relationship for all locations.
-    
+
     :type: objetto.objects.Relationship
     """
 
