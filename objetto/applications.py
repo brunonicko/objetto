@@ -40,6 +40,7 @@ def root(obj_type, priority=None, **kwargs):
         ...
         >>> app = MyApplication()  # instantiate the application
         >>> app.root_a  # access a root object
+        MyObject(name='Root A')
 
     :param obj_type: Object type.
     :type obj_type: type[objetto.bases.BaseObject]

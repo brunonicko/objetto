@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from .applications import Application, root
+from .constants import POST, PRE
 from .data import (
     Data,
     InteractiveData,
@@ -32,9 +33,8 @@ from .objects import (
     set_cls,
     unique_descriptor,
 )
-from .reactions import reaction
 from .observers import ActionObserver
-from .constants import PRE, POST
+from .reactions import reaction
 
 __all__ = [
     "PRE",
