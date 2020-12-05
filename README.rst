@@ -32,8 +32,15 @@ mutable structures referred to as `Objects <Object_>`_.
     as GUI widgets.
   - `Objects <Object_>`_ feature built-in human-readable `Serialization`_ and
     `Deserialization`_ capabilities.
-  - `Objects <Object_>`_ can be automatically tracked by a `History`_, which allows for
-    easy and selective undo/redo functionality.
+  - `Objects <Object_>`_ can be automatically tracked by a
+    `History <Undo/Redo History>`_, which allows for easy and selective undo/redo
+    functionality.
+
+How to install
+--------------
+You can install `Objetto` by using `pip <https://pypi.org/>`_:
+
+``pip install objetto``
 
 Application
 -----------
@@ -122,12 +129,6 @@ Object
 `Objects <Object_>`_ are the building blocks of an `Application`_. An `Object`_ is
 mutable, has state, and can be a parent and/or a child of another `Object`_.
 
-.. note::
-    The class `objetto.Object` is the most important `Object`_ class, and the one we
-    will probably be dealing with the most. It is curated by `Attributes <Attribute>`_
-    defined in subclasses. The other, less important types of `Objects <Object_>`_ are
-    known as `Auxiliary Objects <Auxiliary Object>`_.
-
 To define our own `Object`_, we have to inherit from `objetto.Object` and use
 `Attributes <Attribute>`_ to define its schema. You need to instantiate it by passing an
 `Application`_, which can later be accessed through the `.app` property:
@@ -146,94 +147,12 @@ To define our own `Object`_, we have to inherit from `objetto.Object` and use
     >>> hobby.app is app
     True
 
-Auxiliary Object
-****************
-Usually we don't have to deal with `Auxiliary Objects <Auxiliary Object>`_ since we
-will probably be using `Auxiliary Attributes <Auxiliary Attribute>`_ instead, but they
-can be used if advanced behavior is desired.
-
-These are special types of `Objects <Object>`_ that are used internally by `Auxiliary
-Attributes <Auxiliary Attribute>`_ to contain multiple values in different ways:
-
-  - `ListObject`
-  - `DictObject`
-  - `SetObject`
-  - `MutableListObject`
-  - `MutableDictObject`
-  - `MutableSetObject`
-
-The mutable versions of `Auxiliary Objects <Auxiliary Object>`_ expose the mutable
-methods as public, whereas the internally-mutable ones have them as protected (their
-names start with an underscore).
-
-When subclassing, the `Auxiliary Object`_ schema is defined by a `Relationship` assigned
-to the class variable `_relationship`.
-
-**Example**: Make a subclass of `MutableListObject` with a custom `Relationship`.
-
-.. code:: python
-
-    >>> from objetto import Application, attribute
-    >>> from objetto.objects import MutableListObject, Relationship
-
-    >>> class Hobby(Object):
-    ...     description = attribute(str)
-    ...
-    >>> class HobbiesList(MutableListObject):  # inherit from MutableListObject
-    ...     _relationship = Relationship(Hobby)  # define relationship with value type
-    ...
-    >>> app = Application()
-    >>> hobby_a = Hobby(app, description="biking")
-    >>> hobby_b = Hobby(app, description="gaming")
-    >>> hobbies = HobbiesList(app)  # make new instance
-    >>> hobbies.extend((hobby_a, hobby_b))  # extend list object with 'hobby' objects
-
-Batch Context
-*************
-An `Object`_ can enter a `Batch Context`_, which will group multiple `Changes <Change>`_
-happening to itself and/or to other `Objects <Object>`_ into one single entry in the
-associated `History`_.
-
-A special `Action`_ carrying the provided `Batch Change`_ and its metadata will be sent
-when entering (`PRE` `Phase`_) and when exiting the batch context (`POST` `Phase`_).
-
-**Example**: Enter a `Batch Context`_.
-
-.. code:: python
-
-    >>> from objetto import Application, Object, history_descriptor, attribute
-
-    >>> class Hobby(Object):
-    ...     description = attribute(str)
-    ...
-    >>> class Person(Object):
-    ...     history = history_descriptor()  # specify a history
-    ...     name = attribute(str)
-    ...     hobby = attribute(Hobby)  # history will propagate by default
-    ...
-    ...     def set_info(self, name, hobby_description):
-    ...         with self._batch_context("Set Person Info"):  # enter batch
-    ...             self.name = name  # single change
-    ...             self.hobby.description = hobby_description  # single change
-    ...
-    >>> app = Application()
-    >>> hobby = Hobby(app, description="sailing")
-    >>> person = Person(app, name="Albert", hobby=hobby)
-    >>> person.name, person.hobby.description
-    ('Albert', 'sailing')
-    >>> person.set_info("Einstein", "physics")  # batch change
-    >>> person.name, person.hobby.description
-    ('Einstein', 'physics')
-    >>> person.history.undo()  # single undo
-    >>> person.name, person.hobby.description
-    ('Albert', 'sailing')
-
 Attribute
 ---------
 `Attributes <Attribute>`_ describe the schema of an `Object`_. When defining one, we can
 specify relationship parameters between the `Object`_ that owns it and the value being
-stored, such as a `Value Type`_, `Hierarchy`_ settings, `History`_ propagation,
-`Serialization`_ and `Deserialization`_ options, etc.
+stored, such as a `Value Type`_, `Hierarchy`_ settings, `History <Undo/Redo History>`_
+propagation, `Serialization`_ and `Deserialization`_ options, etc.
 
 **Example**: Define custom `Objects <Object_>`_ with multiple `Attributes <Attribute>`_.
 
@@ -291,7 +210,7 @@ and they will be imported lazily during runtime. It's also possible to use multi
 
 The types are interpreted 'exactly' by default. This means they are checked and compared
 by identity, so instances of subclasses are not accepted. However that behavior can be
-changed by specifying `subtypes=False` when defining an `Attribute`_.
+changed by specifying `subtypes=True` when defining an `Attribute`_.
 
 If `None` is also accepted as a value, we can specify `None` as a valid type.
 
@@ -352,14 +271,16 @@ imported from `objetto.factories`:
 
 Auxiliary Attribute
 *******************
-These are special `Attributes <Attribute>`_ that will internally create an `Auxiliary
-Object`_ to hold multiple values instead of just one.
+These are special `Attributes <Attribute>`_ that will hold multiple values instead of
+just one.
 
-The `Auxiliary Attributes <Auxiliary Attribute>`_ are:
+The most basic `Auxiliary Attributes <Auxiliary Attribute>`_ are:
 
   - `list_attribute`
   - `dict_attribute`
   - `set_attribute`
+
+**Example**: Use `Auxiliary Attributes <Auxiliary Attribute>`_ to hold values.
 
 .. code:: python
 
@@ -384,7 +305,7 @@ Delegated Attribute
 the values of other `Attributes <Attribute>`_ in the same `Object`_.
 
 When defining delegates, you have to specify which `Attributes <Attribute>`_ they will
-read from with as `dependencies`.
+read from as `dependencies`.
 
 .. note::
     The results of delegate methods are cached, and because of that they should never
@@ -392,7 +313,8 @@ read from with as `dependencies`.
     context of the `Object`_ they belong to.
 
     If an `Attribute`_ value needs to change according to external factors,
-    `Reactions <Reaction>`_ or regular methods could be used instead of delegates.
+    `Reactions <Reaction>`_ or regular methods are encouraged to be used instead of
+    delegates.
 
 **Example**: Define a `Delegated Attribute`_ with a `getter` and a `setter`.
 
@@ -407,11 +329,11 @@ read from with as `dependencies`.
     ...         str, delegated=True, dependencies=(first_name, last_name)
     ...     )  # delegated attribute with read dependencies
     ...
-    ...     @name.getter  # define a getter
+    ...     @name.getter  # define a getter delegate
     ...     def name(self):
     ...         return self.first_name + " " + self.last_name
     ...
-    ...     @name.setter  # define a setter
+    ...     @name.setter  # define a setter delegate
     ...     def name(self, value):
     ...         self.first_name, self.last_name = value.split()
     ...
@@ -441,6 +363,29 @@ Here are some examples of `Attribute Helpers <Attribute Helper>`_:
   - `protected_dict_attribute_pair`
   - `protected_set_attribute_pair`
 
+**Example**: Define a simple `Attribute Helper`_.
+
+.. code:: python
+
+    >>> from objetto import Application, Object, protected_attribute_pair
+
+    >>> class Person(Object):
+    ...     _name, name = protected_attribute_pair(str, default="King")  # helper
+    ...
+    ...     def set_name(self, name):
+    ...         self._name = name.upper()  # set the changeable private attribute
+    ...
+    >>> app = Application()
+    >>> person = Person(app)
+    >>> person.name
+    'King'
+    >>> person.name = "bb king"  # can't set non-changeable public attribute
+    Traceback (most recent call last):
+    AttributeError: attribute 'name' is read-only
+    >>> person.set_name("bb king")  # we have to use the method instead
+    >>> person.name
+    'BB KING'
+
 Hierarchy
 ---------
 An `Object`_ can have one parent and/or multiple children.
@@ -456,8 +401,8 @@ elegant way to structure our `Application`_. It's essential for features like:
   - `Action`_ sending and subsequent `Reaction`_\ response: `Actions <Action>`_ will
     propagate from where the `Change`_ happened all the way up the hierarchy to the
     topmost grandparent, triggering `Reactions <Reaction>`_ along the way
-  - Automatic `History`_ propagation: Children can automatically be assigned to the same
-    `History`_ of the parent if desired.
+  - Automatic `History <Undo/Redo History>`_ propagation: Children can automatically be
+    assigned to the same `History <Undo/Redo History>`_ of the parent if desired.
 
 .. note::
     The hierarchical relationship can be turned off selectively at the expense of those
@@ -481,11 +426,91 @@ elegant way to structure our `Application`_. It's essential for features like:
     ...
     >>> app = Application()
     >>> hobby = Hobby(app, description="animation")
-    >>> person = Person(app, name="Hayao", hobby=hobby)
+    >>> person = Person(app, name="Hayao Miyazaki", hobby=hobby)
     >>> hobby._parent is person  # 'person' is the parent of 'hobby'
     True
     >>> hobby in person._children  # 'hobby' is a child of 'person'
     True
+
+Undo/Redo History
+-----------------
+Objetto has built-in support for a undo/redo `History <Undo/Redo History>`_. It takes
+care of managing its validity for internal changes by flushing itself automatically when
+necessary, and it is extremely easy to implement.
+
+A history can be associated with an `Object`_ by adding a `history_descriptor` to the
+class definition. Accessing that attribute from an `Object`_'s instance will give us the
+history itself.
+
+A history will be propagated to children/grandchildren of the `Object`_ which defines
+it, however it's possible to prevent that behavior by specifying `history=False` when we
+define an `Attribute`_.
+
+Undo/redo can be triggered by running the history's methods `.undo()` and `.redo()`.
+
+Histories are `Objects <Object_>`_ too, so they do send `Actions <Action>`_ that can be
+observed by `Observers <Action Observer>`_.
+
+**Example**: Associate a `History <Undo/Redo History>`_ with an `Object`_.
+
+.. code:: python
+
+    >>> from objetto import Application, Object, history_descriptor, attribute
+
+    >>> class Person(Object):
+    ...     history = history_descriptor()  # specify a history
+    ...     name = attribute(str)
+    ...
+    >>> app = Application()
+    >>> person = Person(app, name="Dave")
+    >>> person.name
+    'Dave'
+    >>> person.name = "Dave Grohl"
+    >>> person.name
+    'Dave Grohl'
+    >>> person.history.undo()  # undo the name change
+    >>> person.name
+    'Dave'
+
+Batch Context
+*************
+An `Object`_ can enter a `Batch Context`_, which will group multiple `Changes <Change>`_
+happening to itself and/or to other `Objects <Object>`_ into one single entry in the
+associated `History <Undo/Redo History>`_.
+
+A special `Action`_ carrying the the name and the metadata of the batch context will be
+sent when entering (`PRE` `Phase`_) and when exiting the context (`POST` `Phase`_).
+
+**Example**: Enter a `Batch Context`_.
+
+.. code:: python
+
+    >>> from objetto import Application, Object, history_descriptor, attribute
+
+    >>> class Hobby(Object):
+    ...     description = attribute(str)
+    ...
+    >>> class Person(Object):
+    ...     history = history_descriptor()  # specify a history
+    ...     name = attribute(str)
+    ...     hobby = attribute(Hobby)  # history will propagate by default
+    ...
+    ...     def set_info(self, name, hobby_description):
+    ...         with self._batch_context("Set Person Info"):  # enter batch
+    ...             self.name = name  # single change
+    ...             self.hobby.description = hobby_description  # single change
+    ...
+    >>> app = Application()
+    >>> hobby = Hobby(app, description="sailing")
+    >>> person = Person(app, name="Albert", hobby=hobby)
+    >>> person.name, person.hobby.description
+    ('Albert', 'sailing')
+    >>> person.set_info("Einstein", "physics")  # batch change
+    >>> person.name, person.hobby.description
+    ('Einstein', 'physics')
+    >>> person.history.undo()  # single undo will revert both changes
+    >>> person.name, person.hobby.description
+    ('Albert', 'sailing')
 
 Data
 ----
@@ -554,8 +579,7 @@ must match the schema of the `Object <Object>`_'s `Attributes <Attribute>`_.
 
 .. code:: python
 
-    >>> from objetto import Application, Object, attribute, data_method
-    >>> from objetto.data import Data, data_attribute
+    >>> from objetto import Application, Object, Data, attribute, data_attribute
 
     >>> class Hobby(Object):
     ...     description = attribute(str)
@@ -572,13 +596,14 @@ must match the schema of the `Object <Object>`_'s `Attributes <Attribute>`_.
 
 It's also possible to use `Data`_ on its own, without an encasing `Object`_. Remember
 that `Data`_ instances are immutable, so the only way to produce changes is by calling
-methods that return a new version of the data.
+methods that return a new version of the data when subclassing from an *interactive*
+`Data`_ class.
 
-**Example**: Using `Data`_ on its own.
+**Example**: Using an interactive `Data`_ on its own.
 
 .. code:: python
 
-    >>> from objetto.data import InteractiveData, data_attribute
+    >>> from objetto import InteractiveData, data_attribute
 
     >>> class HobbyData(InteractiveData):  # inherit from InteractiveData
     ...     description = data_attribute(str)  # use data attributes
@@ -600,29 +625,37 @@ Every time an `Object`_ changes, it will automatically send an `Action`_ up the
 
 The `Action`_ carries information such as:
 
-  - The description of the `Change`_
+  - The description of the `Change`_ (`change`)
   - A reference to the `Object`_ receiving the `Action`_ (`receiver`)
   - A reference to the `Object`_ where the change originated from (`sender`)
-  - A list of relative indexes/keys from the `receiver` to the `sender`
+  - A list of relative indexes/keys from the `receiver` to the `sender` (`locations`)
 
-`Objects <Object_>`_ can define `Reactions <Reaction>`_ that will get triggered once
-`Actions <Action>`_ are received.
-
-After all internal `Reactions <Reaction>`_ within an `Write Context`_ run without any
-errors, the `Actions <Action>`_ are then sent to external
-`Observers <Action Observer>`_ so they have a chance to synchronize.
+Phase
+*****
+A constant value that tells whether the change in the state is about to happen (`PRE`)
+or if the change already happened (`POST`).
 
 Change
 ******
-Describes a change in the state of an `Object`_.
+A `Change`_ describes what exactly changed in the state of an `Object`_.
 
-Batch Change
-************
-A special type of `Change`_ that carries information about a `Batch Context`_, which
-includes it's name and metadata.
+Here are some of the `Changes <Change>`_ provided by `Objects <Object>`_:
+
+  - `Batch`
+  - `Update`
+  - `DictUpdate`
+  - `ListInsert`
+  - `ListDelete`
+  - `ListUpdate`
+  - `ListMove`
+  - `SetUpdate`
+  - `SetRemove`
 
 Reaction
---------
+********
+
+`Objects <Object_>`_ can define `Reactions <Reaction>`_ that will get triggered once
+`Actions <Action>`_ are received.
 `Reactions <Reaction>`_ are special methods of `Objects <Object_>`_ that respond to
 `Actions <Action>`_ received from themselves, their children, and grandchildren.
 
@@ -639,110 +672,165 @@ Reaction
 
 .. code:: python
 
-    >>> from objetto import Application, Object, attribute, protected_set_attribute_pair
-    >>> from objetto.constants import POST
-    >>> from objetto.changes import Update
-    >>> from objetto.reactions import reaction
+    >>> from objetto import Application, Object, attribute, reaction, POST
 
-    >>> class Hobby(Object):
-    ...     description = attribute(str)
+    >>> class MyObject(Object):
+    ...     value = attribute(int, default=0)
     ...
-    >>> class Person(Object):
-    ...     name = attribute(str)
-    ...     hobby = attribute(Hobby)
-    ...     _possessions, possessions = protected_set_attribute_pair(str)
+    ...     @reaction
+    ...     def __on_received(self, action, phase):
+    ...         if not self._initializing and phase is POST:
+    ...             print("LAST -", action.change.name, phase)
     ...
-    ...     @reaction(priority=1)  # decorate reaction method, specify priority
-    ...     def __on_hobby_changed(self, action, phase):
-    ...         if (
-    ...             action.locations == [] and  # only actions from this
-    ...             phase is POST and  # after the change happened
-    ...             isinstance(action.change, Update) and  # attributes updated
-    ...             "hobby" in action.change.new_values # 'hobby' changed
-    ...         ):
-    ...             hobby_description = action.change.new_values["hobby"].description
-    ...             self.__update_possession(hobby_description)
-    ...
-    ...     @reaction  # decorate reaction method
-    ...     def __on_hobby_description_change(self, action, phase):
-    ...         if (
-    ...             action.locations == ["hobby"] and  # only actions sent from 'hobby'
-    ...             phase is POST and  # after the change happened
-    ...             isinstance(action.change, Update) and  # attributes updated
-    ...             "description" in action.change.new_values # 'description' changed
-    ...         ):
-    ...             hobby_description = action.change.new_values["description"]
-    ...             self.__update_possession(hobby_description)
-    ...
-    ...     def __update_possession(self, hobby_description):
-    ...         self._possessions.clear()
-    ...         if hobby_description == "biking":
-    ...             self._possessions.update(("bike", "helmet"))
-    ...         elif hobby_description == "gaming":
-    ...             self._possessions.update(("computer", "keyboard"))
+    ...     @reaction(priority=1)
+    ...     def __on_received_first(self, action, phase):
+    ...         if not self._initializing and phase is POST:
+    ...             print("FIRST -", action.change.name, phase)
     ...
     >>> app = Application()
-    >>> hobby = Hobby(app, description="biking")
-    >>> person = Person(app, name="Foo", hobby=hobby)
-    >>> sorted(person.possessions)
-    ['bike', 'helmet']
-    >>> hobby.description = "gaming"
-    >>> sorted(person.possessions)
-    ['computer', 'keyboard']
-    >>> hobby.description = "biking"
-    >>> sorted(person.possessions)
-    ['bike', 'helmet']
-    >>> hobby.description = "running"
-    >>> sorted(person.possessions)
-    []
+    >>> my_obj = MyObject(app)
+    >>> my_obj.value = 42
+    FIRST - Update Attributes Phase.POST
+    LAST - Update Attributes Phase.POST
+
+Action Observer
+***************
+
+After all internal `Reactions <Reaction>`_ within an `Write Context`_ run without any
+errors, the `Actions <Action>`_ are then finally sent to external
+`Action Observers <Action Observer>`_ so they have a chance to synchronize.
+
+Graphical user interface widgets are a good example of
+`Action Observers <Action Observer>`_.
+
+**Example**: Register an external `Action Observer`_.
+
+.. code:: python
+
+    >>> from objetto import Application, Object, ActionObserver, attribute
+
+    >>> class Person(Object):
+    ...     name = attribute(str, default="Nina")
+    ...
+    >>> class PersonObserver(ActionObserver):
+    ...
+    ...     def __observe__(self, action, phase):
+    ...         print(action.change.name, phase.value)
+    ...
+    >>> app = Application()
+    >>> person = Person(app)
+    >>> observer = PersonObserver()
+    >>> token = observer.start_observing(person)
+    >>> person.name = "Simone"
+    Update Attributes PRE
+    Update Attributes POST
 
 Auxiliary Attribute Reaction
 ****************************
-It is possible to specify `Reactions <Reaction>`_ methods when defining `Auxiliary
-Attributes <Auxiliary Attribute>`_.
+It is possible to specify `Reactions <Reaction>`_ methods/callables when defining
+`Auxiliary Attributes <Auxiliary Attribute>`_. `Objetto` offers configurable reactions
+that can be used for that purpose.
 
-Phase
------
-A constant value that tells whether the change in the state is about to happen (`PRE`)
-or if the change already happened (`POST`).
+Here are some of them:
 
-Observer
---------
-An external object that inherits from `objetto.observer.Observer` or
-`objetto.observer.SlottedObserver` and thus can react to `Actions <Action>`_ sent from
-`Objects <Object_>`_ to synchronize/reflect the changes in some way.
+  - `UniqueAttributes`
+  - `LimitChildren`
+  - `Limit`
 
-Graphical user interface widgets are a good example of `Observers <Action Observer>`_.
+**Example**: Ensure unique names.
 
-**Example**: Register an external `Observer`_.
+.. code:: python
+
+    >>> from objetto import Application, Object, attribute, list_attribute
+    >>> from objetto.reactions import UniqueAttributes
+
+    >>> class Person(Object):
+    ...     name = attribute(str)
+    ...
+    >>> class Band(Object):
+    ...     musicians = list_attribute(Person, reactions=UniqueAttributes("name"))
+    ...
+    >>> app = Application()
+    >>> person_a = Person(app, name="Paul")
+    >>> person_b = Person(app, name="John")
+    >>> band = Band(app, musicians=(person_a, person_b))
+    >>> person_c = Person(app, name="Paul")
+    >>> band.musicians.append(person_c)
+    Traceback (most recent call last):
+    ValueError: another object already has 'name' set to 'Paul'
 
 Serialization
 -------------
+`Objects <Object>`_ support human-readable serialization out of the box.
 
 **Example**: Serialize an `Object`_.
 
+.. code:: python
+
+    >>> from objetto import Application, Object, attribute, list_attribute
+
+    >>> class Person(Object):
+    ...     name = attribute(str)
+    ...
+    >>> class Band(Object):
+    ...     musicians = list_attribute(Person)
+    ...
+    >>> app = Application()
+    >>> person_a = Person(app, name="Oscar")
+    >>> person_b = Person(app, name="Ray")
+    >>> band = Band(app, musicians=(person_a, person_b))
+    >>> band.serialize()
+    {'musicians': [{'name': 'Oscar'}, {'name': 'Ray'}]}
+
 Deserialization
 ***************
+`Objects <Object>`_ support human-readable deserialization out of the box.
 
 **Example**: Deserialize an `Object`_.
 
-History
--------
-Objetto has built-in support for a undo/redo `History`_. It takes care of managing
-its validity for internal changes by flushing itself automatically when necessary,
-and it is extremely easy to implement.
+.. code:: python
 
-A history can be associated with an `Object`_ by adding a `history_attribute` to its
-class definition. Accessing that attribute from an `Object`_'s instance will give us the
-history itself.
+    >>> from objetto import Application, Object, attribute, list_attribute
 
-A history will be propagated to children/grandchildren of the `Object`_ which defines
-it, however it's possible to prevent that behavior by specifying `history=False` when we
-define an `Attribute`_.
+    >>> class Person(Object):
+    ...     name = attribute(str)
+    ...
+    >>> class Band(Object):
+    ...     musicians = list_attribute(Person)
+    ...
+    >>> app = Application()
+    >>> Band.deserialize({"musicians": [{"name": "Oscar"}, {"name": "Ray"}]}, app=app)
+    Band(musicians=[<Person at ...>, <Person at ...>])
 
-Undo/redo can be triggered by running the history's methods `.undo()` and `.redo()`.
+Custom Serializer/Deserializer
+******************************
+You can specify custom serializer/deserializer functions for attributes.
 
-Histories are `Objects <Object_>`_ too, so they do send `Actions <Action>`_ that can
-trigger `Reactions <Reaction>`_ and/or be observed by `Observers <Action Observer>`_.
+**Example**: Serialize an `Enum`.
 
-**Example**: Associate a `History`_ with an `Object`_.
+.. code:: python
+
+    >>> from enum import Enum
+    >>> from objetto import Application, Object, attribute
+
+    >>> class Hobby(Enum):
+    ...     GUITAR = 1
+    ...     BIKING = 2
+    ...
+    >>> class Person(Object):
+    ...     hobby = attribute(
+    ...         Hobby,
+    ...         serializer=lambda value, **_: value.name.lower(),
+    ...         deserializer=lambda value, **_: Hobby[value.upper()],
+    ...     )
+    ...
+    >>> app = Application()
+    >>> person = Person(app, hobby=Hobby.GUITAR)
+    >>> person.serialize()
+    {'hobby': 'guitar'}
+    >>> Person.deserialize({"hobby": "biking"}, app=app)
+    Person(hobby=<Hobby.BIKING: 2>)
+
+... And More!
+*************
+Take a look at the API documentation to learn more about `Objetto`.

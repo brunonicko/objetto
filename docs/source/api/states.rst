@@ -1,5 +1,5 @@
-States
-======
+States (objetto.states)
+=======================
 
 .. automodule:: objetto.states
 

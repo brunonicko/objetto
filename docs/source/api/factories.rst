@@ -1,5 +1,5 @@
-Factories
-=========
+Factories (objetto.factories)
+=============================
 
 .. automodule:: objetto.factories
 

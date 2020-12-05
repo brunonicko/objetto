@@ -1,5 +1,5 @@
-Observers
-=========
+Observers (objetto.observers)
+=============================
 
 .. automodule:: objetto.observers
 

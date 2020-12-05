@@ -1,5 +1,5 @@
-Applications
-============
+Applications (objetto.applications)
+===================================
 
 .. automodule:: objetto.applications
 
@@ -18,3 +18,10 @@ Root Descriptor
 Root Descriptor Class
 ---------------------
 .. autoclass:: objetto.applications.ApplicationRoot
+   :members: obj_type, priority, kwargs
+
+   .. automethod:: objetto.applications.ApplicationRoot.__get__
+   .. automethod:: objetto.applications.ApplicationRoot.__hash__
+   .. automethod:: objetto.applications.ApplicationRoot.__eq__
+   .. automethod:: objetto.applications.ApplicationRoot.__repr__
+   .. automethod:: objetto.applications.ApplicationRoot.to_dict

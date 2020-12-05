@@ -1,7 +1,9 @@
-History
-=======
+History (objetto.history)
+=========================
 
 .. automodule:: objetto.history
+
+   .. autofunction:: objetto.history.history_descriptor
 
    .. autoclass:: objetto.history.HistoryObject
 

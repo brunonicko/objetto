@@ -1,5 +1,5 @@
-Reactions
-=========
+Reactions (objetto.reactions)
+=============================
 
 .. automodule:: objetto.reactions
 

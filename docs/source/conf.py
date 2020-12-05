@@ -18,6 +18,7 @@ release = version  # the full version, including alpha/beta/rc tags
 # Sphinx extensions.
 extensions = [
     "sphinx.ext.intersphinx",
+    "sphinx.ext.autosectionlabel",
     "sphinx.ext.autodoc",
     "sphinx_rtd_theme",
 ]

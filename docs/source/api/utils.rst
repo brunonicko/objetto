@@ -1,5 +1,5 @@
-Utils
-=====
+Utils (objetto.utils)
+=====================
 
 .. automodule:: objetto.utils
 

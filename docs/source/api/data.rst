@@ -1,5 +1,5 @@
-Data
-====
+Data (objetto.data)
+===================
 
 .. automodule:: objetto.data
 
@@ -25,6 +25,9 @@ Data Attributes
 ---------------
 .. autofunction:: objetto.data.data_attribute
 .. autofunction:: objetto.data.data_constant_attribute
+
+Auxiliary Data Attributes
+*************************
 .. autofunction:: objetto.data.data_dict_attribute
 .. autofunction:: objetto.data.data_list_attribute
 .. autofunction:: objetto.data.data_set_attribute
@@ -35,15 +38,15 @@ Auxiliary Data Class Factories
 .. autofunction:: objetto.data.data_list_cls
 .. autofunction:: objetto.data.data_set_cls
 
-Unique Descriptor
------------------
+Unique Descriptor (for Data)
+----------------------------
 .. autofunction:: objetto.data.unique_descriptor
 
 Auxiliary Data Classes
 ----------------------
 
-Dictionary Classes
-******************
+Data Dictionary Classes
+***********************
 .. autoclass:: objetto.data.DictData
    :members: _key_relationship, _state
 
@@ -57,8 +60,8 @@ Dictionary Classes
 
 .. autoclass:: objetto.data.InteractiveDictData
 
-List Classes
-************
+Data List Classes
+*****************
 .. autoclass:: objetto.data.ListData
    :members: _state
 
@@ -77,8 +80,8 @@ List Classes
 
 .. autoclass:: objetto.data.InteractiveListData
 
-Set Classes
-************
+Data Set Classes
+*****************
 .. autoclass:: objetto.data.SetData
    :members: _state
 
@@ -94,13 +97,13 @@ Set Classes
 
 .. autoclass:: objetto.data.InteractiveSetData
 
-Attribute Descriptor Class
---------------------------
+Data Attribute Descriptor Class
+-------------------------------
 .. autoclass:: objetto.data.DataAttribute
    :members: relationship
 
-Relationship Classes
---------------------
+Data Relationship Classes
+-------------------------
 .. autoclass:: objetto.data.DataRelationship
    :members: compared
 
@@ -121,8 +124,8 @@ Relationship Classes
    .. automethod:: objetto.data.KeyRelationship.to_dict
    .. automethod:: objetto.data.KeyRelationship.fabricate_key
 
-Unique Descriptor Class
------------------------
+Unique Descriptor Class (for Data)
+----------------------------------
 .. autoclass:: objetto.data.UniqueDescriptor
 
    .. automethod:: objetto.data.UniqueDescriptor.__get__

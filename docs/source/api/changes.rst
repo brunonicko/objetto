@@ -1,5 +1,5 @@
-Changes
-=======
+Changes (objetto.changes)
+=========================
 
 .. automodule:: objetto.changes
 

@@ -432,9 +432,18 @@ class ApplicationRoot(Base, Generic[BO]):
     """
     Describes a root object that gets initialized with the application.
 
+    .. note::
+        Prefer using the :func:`objetto.applications.root` factory over
+        instantiating :class:`objetto.applications.ApplicationRoot` directly.
+
     :param obj_type: Object type.
+    :type obj_type: type[objetto.bases.BaseObject]
+
     :param priority: Initialization priority.
-    :param kwargs: Keyword arguments to be passed to object's '__init__'.
+    :type priority: int or None
+
+    :param kwargs: Keyword arguments to be passed to the object's `__init__`.
+
     :raises ValueError: Used reserved keyword argument.
     :raises TypeError: Invalid object type.
     """
@@ -478,8 +487,13 @@ class ApplicationRoot(Base, Generic[BO]):
         otherwise.
 
         :param instance: Instance.
+        :type instance: objetto.applications.Application or None
+
         :param owner: Owner class.
-        :return: Value or this descriptor.
+        :type owner: type[objetto.applications.Application]
+
+        :return: Object instance or this descriptor.
+        :rtype: objetto.bases.BaseObject or objetto.applications.ApplicationRoot
         """
         if instance is not None and isinstance(instance, Application):
             return instance.__.get_root_obj(self)
@@ -491,6 +505,7 @@ class ApplicationRoot(Base, Generic[BO]):
         Get hash based on object id.
 
         :return: Hash based on object id.
+        :rtype: int
         """
         return hash(id(self))
 
@@ -500,7 +515,9 @@ class ApplicationRoot(Base, Generic[BO]):
         Compare with another object for identity.
 
         :param other: Another object.
+
         :return: True if the same object.
+        :rtype: bool
         """
         return other is self
 
@@ -511,6 +528,7 @@ class ApplicationRoot(Base, Generic[BO]):
         Get representation.
 
         :return: Representation.
+        :rtype: str
         """
         return custom_mapping_repr(
             self.to_dict(),
@@ -526,6 +544,7 @@ class ApplicationRoot(Base, Generic[BO]):
         Convert to dictionary.
 
         :return: Dictionary.
+        :rtype: dict[str, Any]
         """
         return {
             "obj_type": self.obj_type,
@@ -536,13 +555,21 @@ class ApplicationRoot(Base, Generic[BO]):
     @property
     def obj_type(self):
         # type: () -> Type[BO]
-        """Object type."""
+        """
+        Object type.
+
+        :rtype: type[objetto.bases.BaseObject]
+        """
         return self.__obj_type
 
     @property
     def priority(self):
         # type: () -> Optional[int]
-        """Initialization priority."""
+        """
+        Initialization priority.
+
+        :rtype: int or None
+        """
         return self.__priority
 
     @property
@@ -1479,6 +1506,18 @@ class Application(with_metaclass(ApplicationMeta, Base)):
       - Offers contexts for reading/writing/batch.
       - Reverts changes when an error occurs.
       - Manages :class:`objetto.objects.Action` propagation, internally and externally.
+
+    When initializing an :class:`objetto.objects.BaseObject`, you have to pass an
+    :class:`objetto.applications.Application` as its first parameter.
+
+    .. code:: python
+
+        >>> from objetto import Application, Object
+
+        >>> app = Application()
+        >>> obj = Object(app)  # pass application as first parameter
+        >>> obj.app is app  # access it through the 'app' property
+        True
     """
 
     __slots__ = ("__weakref__", "__")

@@ -1,5 +1,5 @@
-Bases
-=====
+Bases (objetto.bases)
+=====================
 
 .. automodule:: objetto.bases
 

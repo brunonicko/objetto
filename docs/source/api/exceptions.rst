@@ -1,5 +1,5 @@
-Exceptions
-==========
+Exceptions (objetto.exceptions)
+===============================
 
 .. automodule:: objetto.exceptions
 

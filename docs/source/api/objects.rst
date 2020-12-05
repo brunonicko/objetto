@@ -1,5 +1,5 @@
-Objects
-=======
+Objects (objetto.objects)
+=========================
 
 .. automodule:: objetto.objects
 
@@ -23,6 +23,9 @@ Attributes
 ----------
 .. autofunction:: objetto.objects.attribute
 .. autofunction:: objetto.objects.constant_attribute
+
+Auxiliary Attributes
+********************
 .. autofunction:: objetto.objects.protected_attribute_pair
 .. autofunction:: objetto.objects.dict_attribute
 .. autofunction:: objetto.objects.protected_dict_attribute_pair
@@ -49,11 +52,31 @@ History Descriptor
 ------------------
 .. autofunction:: objetto.objects.history_descriptor
 
-Auxiliary and Proxy Classes
----------------------------
+Auxiliary Classes
+-----------------
+
+These are special types of objects that are used internally by :ref:`Auxiliary
+Attributes` to contain multiple values in different ways.
+
+.. note::
+    Prefer using :ref:`Auxiliary Attributes` or :ref:`Auxiliary Class Factories`
+    over :ref:`Auxiliary Classes` directly.
+
+The mutable versions of :ref:`Auxiliary Classes` expose the mutable methods as
+public, whereas the internally-mutable ones have them as protected (mutable method
+names start with an underscore).
+
+When subclassing :ref:`Auxiliary Classes`, the schema is defined by a
+:class:`objetto.objects.Relationship` assigned to the class attribute
+:attr:`objetto.bases.BaseAuxiliaryStructure._relationship`.
 
 Dictionary Classes
 ******************
+
+When subclassing a :class:`objetto.objects.DictObject`, the schema is defined by a
+:class:`objetto.objects.Relationship` assigned to the class attribute
+:attr:`objetto.bases.BaseDictStructure._key_relationship`.
+
 .. autoclass:: objetto.objects.DictObject
    :members: _state, data
 
@@ -72,23 +95,6 @@ Dictionary Classes
    .. automethod:: objetto.objects.MutableDictObject.pop
    .. automethod:: objetto.objects.MutableDictObject.popitem
    .. automethod:: objetto.objects.MutableDictObject.setdefault
-
-.. autoclass:: objetto.objects.ProxyDictObject
-   :members: _obj, _state, data
-
-   .. automethod:: objetto.objects.ProxyDictObject.__reversed__
-   .. automethod:: objetto.objects.ProxyDictObject.__getitem__
-   .. automethod:: objetto.objects.ProxyDictObject._update
-   .. automethod:: objetto.objects.ProxyDictObject._set
-   .. automethod:: objetto.objects.ProxyDictObject._discard
-   .. automethod:: objetto.objects.ProxyDictObject._remove
-   .. automethod:: objetto.objects.ProxyDictObject.get
-   .. automethod:: objetto.objects.ProxyDictObject.iteritems
-   .. automethod:: objetto.objects.ProxyDictObject.iterkeys
-   .. automethod:: objetto.objects.ProxyDictObject.itervalues
-   .. automethod:: objetto.objects.ProxyDictObject.pop
-   .. automethod:: objetto.objects.ProxyDictObject.popitem
-   .. automethod:: objetto.objects.ProxyDictObject.setdefault
 
 List Classes
 ************
@@ -117,27 +123,6 @@ List Classes
    .. automethod:: objetto.objects.MutableListObject.__delitem__
    .. automethod:: objetto.objects.MutableListObject.pop
 
-.. autoclass:: objetto.objects.ProxyListObject
-   :members: _obj, _state, data
-
-   .. automethod:: objetto.objects.ProxyListObject.__setitem__
-   .. automethod:: objetto.objects.ProxyListObject.__delitem__
-   .. automethod:: objetto.objects.ProxyListObject.__reversed__
-   .. automethod:: objetto.objects.ProxyListObject.__getitem__
-   .. automethod:: objetto.objects.ProxyListObject._insert
-   .. automethod:: objetto.objects.ProxyListObject._append
-   .. automethod:: objetto.objects.ProxyListObject._extend
-   .. automethod:: objetto.objects.ProxyListObject._remove
-   .. automethod:: objetto.objects.ProxyListObject._reverse
-   .. automethod:: objetto.objects.ProxyListObject._move
-   .. automethod:: objetto.objects.ProxyListObject._delete
-   .. automethod:: objetto.objects.ProxyListObject._update
-   .. automethod:: objetto.objects.ProxyListObject.pop
-   .. automethod:: objetto.objects.ProxyListObject.count
-   .. automethod:: objetto.objects.ProxyListObject.index
-   .. automethod:: objetto.objects.ProxyListObject.resolve_index
-   .. automethod:: objetto.objects.ProxyListObject.resolve_continuous_slice
-
 Set Classes
 ***********
 .. autoclass:: objetto.objects.SetObject
@@ -162,6 +147,53 @@ Set Classes
    .. automethod:: objetto.objects.MutableSetObject.symmetric_difference_update
    .. automethod:: objetto.objects.MutableSetObject.difference_update
 
+Proxy Classes
+-------------
+
+Proxy Dictionary Class
+**********************
+.. autoclass:: objetto.objects.ProxyDictObject
+   :members: _obj, _state, data
+
+   .. automethod:: objetto.objects.ProxyDictObject.__reversed__
+   .. automethod:: objetto.objects.ProxyDictObject.__getitem__
+   .. automethod:: objetto.objects.ProxyDictObject._update
+   .. automethod:: objetto.objects.ProxyDictObject._set
+   .. automethod:: objetto.objects.ProxyDictObject._discard
+   .. automethod:: objetto.objects.ProxyDictObject._remove
+   .. automethod:: objetto.objects.ProxyDictObject.get
+   .. automethod:: objetto.objects.ProxyDictObject.iteritems
+   .. automethod:: objetto.objects.ProxyDictObject.iterkeys
+   .. automethod:: objetto.objects.ProxyDictObject.itervalues
+   .. automethod:: objetto.objects.ProxyDictObject.pop
+   .. automethod:: objetto.objects.ProxyDictObject.popitem
+   .. automethod:: objetto.objects.ProxyDictObject.setdefault
+
+Proxy List Class
+****************
+.. autoclass:: objetto.objects.ProxyListObject
+   :members: _obj, _state, data
+
+   .. automethod:: objetto.objects.ProxyListObject.__setitem__
+   .. automethod:: objetto.objects.ProxyListObject.__delitem__
+   .. automethod:: objetto.objects.ProxyListObject.__reversed__
+   .. automethod:: objetto.objects.ProxyListObject.__getitem__
+   .. automethod:: objetto.objects.ProxyListObject._insert
+   .. automethod:: objetto.objects.ProxyListObject._append
+   .. automethod:: objetto.objects.ProxyListObject._extend
+   .. automethod:: objetto.objects.ProxyListObject._remove
+   .. automethod:: objetto.objects.ProxyListObject._reverse
+   .. automethod:: objetto.objects.ProxyListObject._move
+   .. automethod:: objetto.objects.ProxyListObject._delete
+   .. automethod:: objetto.objects.ProxyListObject._update
+   .. automethod:: objetto.objects.ProxyListObject.pop
+   .. automethod:: objetto.objects.ProxyListObject.count
+   .. automethod:: objetto.objects.ProxyListObject.index
+   .. automethod:: objetto.objects.ProxyListObject.resolve_index
+   .. automethod:: objetto.objects.ProxyListObject.resolve_continuous_slice
+
+Proxy Set Class
+***************
 .. autoclass:: objetto.objects.ProxySetObject
    :members: _obj, _state, data
 
@@ -184,6 +216,7 @@ Set Classes
    .. automethod:: objetto.objects.ProxySetObject.inverse_difference
    .. automethod:: objetto.objects.ProxySetObject.symmetric_difference
    .. automethod:: objetto.objects.ProxySetObject.union
+
 
 Attribute Descriptor Class
 --------------------------

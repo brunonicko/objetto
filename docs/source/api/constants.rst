@@ -1,5 +1,5 @@
-Constants
-=========
+Constants (objetto.constants)
+=============================
 
 .. automodule:: objetto.constants
 

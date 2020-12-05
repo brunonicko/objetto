@@ -898,6 +898,23 @@ class MutableListObject(
       - :class:`objetto.bases.BaseMutableListStructure`
       - :class:`objetto.objects.ListObject`
       - :class:`objetto.bases.BaseMutableAuxiliaryObject`
+
+    .. code:: python
+
+        >>> from objetto import Application, Object, attribute
+        >>> from objetto.objects import MutableListObject, Relationship
+
+        >>> class Hobby(Object):
+        ...     description = attribute(str)
+        ...
+        >>> class HobbiesList(MutableListObject):  # inherit from MutableListObject
+        ...     _relationship = Relationship(Hobby)  # define relationship with type
+        ...
+        >>> app = Application()
+        >>> hobby_a = Hobby(app, description="biking")
+        >>> hobby_b = Hobby(app, description="gaming")
+        >>> hobbies = HobbiesList(app)  # make new instance
+        >>> hobbies.extend((hobby_a, hobby_b))  # extend list with 'hobby' objects
     """
 
     __slots__ = ()
