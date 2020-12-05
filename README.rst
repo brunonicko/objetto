@@ -680,18 +680,18 @@ Reaction
     ...     @reaction
     ...     def __on_received(self, action, phase):
     ...         if not self._initializing and phase is POST:
-    ...             print("LAST -", action.change.name, phase)
+    ...             print(("LAST -", action.change.name, phase))
     ...
     ...     @reaction(priority=1)
     ...     def __on_received_first(self, action, phase):
     ...         if not self._initializing and phase is POST:
-    ...             print("FIRST -", action.change.name, phase)
+    ...             print(("FIRST -", action.change.name, phase))
     ...
     >>> app = Application()
     >>> my_obj = MyObject(app)
     >>> my_obj.value = 42
-    FIRST - Update Attributes Phase.POST
-    LAST - Update Attributes Phase.POST
+    ('FIRST -', 'Update Attributes', <Phase.POST: 'POST'>)
+    ('LAST -', 'Update Attributes', <Phase.POST: 'POST'>)
 
 Action Observer
 ***************
@@ -715,15 +715,15 @@ Graphical user interface widgets are a good example of
     >>> class PersonObserver(ActionObserver):
     ...
     ...     def __observe__(self, action, phase):
-    ...         print(action.change.name, phase.value)
+    ...         print((action.change.name, phase.value))
     ...
     >>> app = Application()
     >>> person = Person(app)
     >>> observer = PersonObserver()
     >>> token = observer.start_observing(person)
     >>> person.name = "Simone"
-    Update Attributes PRE
-    Update Attributes POST
+    ('Update Attributes', 'PRE')
+    ('Update Attributes', 'POST')
 
 Auxiliary Attribute Reaction
 ****************************

@@ -58,20 +58,20 @@ def reaction(
         ...     @reaction
         ...     def __on_received(self, action, phase):
         ...         if not self._initializing:
-        ...             print("LAST -", action.change.name, phase)
+        ...             print(("LAST -", action.change.name, phase))
         ...
         ...     @reaction(priority=1)
         ...     def __on_received_first(self, action, phase):
         ...         if not self._initializing:
-        ...             print("FIRST -", action.change.name, phase)
+        ...             print(("FIRST -", action.change.name, phase))
         ...
         >>> app = Application()
         >>> my_obj = MyObject(app)
         >>> my_obj.value = 42
-        FIRST - Update Attributes Phase.PRE
-        LAST - Update Attributes Phase.PRE
-        FIRST - Update Attributes Phase.POST
-        LAST - Update Attributes Phase.POST
+        ('FIRST -', 'Update Attributes', <Phase.PRE: 'PRE'>)
+        ('LAST -', 'Update Attributes', <Phase.PRE: 'PRE'>)
+        ('FIRST -', 'Update Attributes', <Phase.POST: 'POST'>)
+        ('LAST -', 'Update Attributes', <Phase.POST: 'POST'>)
 
     :param func: Method to be decorated or `None`.
     :type func: function

@@ -60,6 +60,7 @@ __all__ = [
     "BaseMeta",
     "Base",
     "abstract_member",
+    "Generic",
     "BaseHashable",
     "BaseSized",
     "BaseIterable",
@@ -402,6 +403,30 @@ def make_base_cls(
     return _make_base_cls(base, qual_name, module, dct=dct)
 
 
+# Workaround for 'Generic' class having a metaclass in older versions of typing.
+try:
+
+    class _Dummy(SlottedABC, Generic[T]):
+        pass
+
+
+except TypeError:
+
+    class _GenericMeta(SlottedABCMeta):
+        def __getitem__(cls, _):
+            return cls
+
+    class _Generic(with_metaclass(_GenericMeta, SlottedABC)):
+        pass
+
+    type.__setattr__(_Generic, "__name__", "Generic")
+    type.__setattr__(_Generic, "__module__", Generic.__module__)
+    type.__setattr__(_Generic, "__doc__", Generic.__doc__)
+
+    globals()["SlottedABCMeta"] = _GenericMeta
+    globals()["Generic"] = _Generic
+
+
 class BaseMeta(SlottedABCMeta):
     """
     Metaclass for :class:`objetto.bases.Base`.
@@ -624,7 +649,6 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
         """
         return "<{} at {}>".format(type(self).__fullname__, hex(id(self)))
 
-    @final
     def __ne__(self, other):
         # type: (object) -> bool
         """

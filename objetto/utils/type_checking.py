@@ -45,14 +45,14 @@ def format_types(types, module=None):
 
     .. code:: python
 
-        >>> from objetto.utils.type_checking import format_types
+        >>> from objetto.utils.type_checking import format_types, get_type_names
 
-        >>> format_types((int, "chain"), module="itertools")
-        (<class 'int'>, 'itertools|chain')
-        >>> format_types(float)
-        (<class 'float'>,)
-        >>> format_types("itertools|chain")
-        ('itertools|chain',)
+        >>> get_type_names(format_types((int, "chain"), module="itertools"))
+        ('int', 'chain')
+        >>> get_type_names(format_types(float))
+        ('float',)
+        >>> get_type_names(format_types("itertools|chain"))
+        ('chain',)
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -112,12 +112,12 @@ def flatten_types(types):
 
     .. code:: python
 
-        >>> from objetto.utils.type_checking import flatten_types
+        >>> from objetto.utils.type_checking import flatten_types, get_type_names
 
-        >>> flatten_types((int, ("itertools|chain", float, (str,))))
-        (<class 'int'>, 'itertools|chain', <class 'float'>, <class 'str'>)
-        >>> flatten_types(int)
-        (<class 'int'>,)
+        >>> get_type_names(flatten_types((int, ("itertools|chain", float, (str,)))))
+        ('int', 'chain', 'float', 'str')
+        >>> get_type_names(flatten_types(int))
+        ('int',)
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -144,14 +144,14 @@ def import_types(types):
 
     .. code:: python
 
-        >>> from objetto.utils.type_checking import import_types
+        >>> from objetto.utils.type_checking import import_types, get_type_names
 
-        >>> import_types("itertools|chain")
-        (<class 'itertools.chain'>,)
-        >>> import_types(("itertools|chain", "itertools|compress"))
-        (<class 'itertools.chain'>, <class 'itertools.compress'>)
-        >>> import_types(("itertools|chain", int))
-        (<class 'itertools.chain'>, <class 'int'>)
+        >>> get_type_names(import_types("itertools|chain"))
+        ('chain',)
+        >>> get_type_names(import_types(("itertools|chain", "itertools|compress")))
+        ('chain', 'compress')
+        >>> get_type_names(import_types(("itertools|chain", int)))
+        ('chain', 'int')
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]

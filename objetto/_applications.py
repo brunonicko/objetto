@@ -8,12 +8,12 @@ from enum import Enum, unique
 from inspect import getmro
 from threading import RLock
 from traceback import format_exception
-from typing import TYPE_CHECKING, Generic, TypeVar, cast, overload
+from typing import TYPE_CHECKING, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
 
 from six import iteritems, itervalues, string_types, with_metaclass
 
-from ._bases import Base, BaseMeta, final
+from ._bases import Base, BaseMeta, Generic, final
 from ._changes import BaseChange
 from ._data import BaseData, DataAttribute, InteractiveDictData
 from ._exceptions import BaseObjettoException

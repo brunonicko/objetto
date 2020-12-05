@@ -13,11 +13,11 @@ from qualname import qualname  # type: ignore
 from slotted import SlottedMutableSequence, SlottedSequence
 
 from .bases import (
-    final,
     BaseCollection,
     BaseInteractiveCollection,
     BaseMutableCollection,
     BaseProtectedCollection,
+    final,
 )
 
 if TYPE_CHECKING:

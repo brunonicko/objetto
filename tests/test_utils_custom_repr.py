@@ -13,6 +13,7 @@ def test_custom_mapping_repr():
             template="{key}=={value}",
             separator="; ",
             suffix=">",
+            sorting=True,
             sort_key=lambda i: str(i[1]),
             reverse=True,
             key_repr=lambda k: repr("K" + str(k)),
@@ -30,11 +31,12 @@ def test_custom_iterable_repr():
             template="> {value} <",
             separator="-",
             suffix="-",
+            sorting=True,
             sort_key=lambda v: str(v),
             reverse=True,
             value_repr=lambda v: str("V" + str(v)),
         )
-        == "Iterable -> Va <-> V1 <-> V2.0 <-> V3.0 <-> V4 <-> VNone <-"
+        == "Iterable -> Va <-> VNone <-> V4 <-> V3.0 <-> V2.0 <-> V1 <-"
     )
 
 

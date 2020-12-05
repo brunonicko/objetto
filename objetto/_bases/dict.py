@@ -2,23 +2,23 @@
 """Base dictionary classes."""
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from qualname import qualname  # type: ignore
 from slotted import SlottedMapping, SlottedMutableMapping
 
 from .bases import (
     MISSING,
-    final,
     BaseCollection,
     BaseInteractiveCollection,
     BaseMutableCollection,
     BaseProtectedCollection,
+    Generic,
+    final,
 )
 
 if TYPE_CHECKING:

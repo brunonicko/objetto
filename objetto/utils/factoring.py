@@ -62,8 +62,8 @@ def format_factory(factory, module=None):
 
         >>> format_factory("Class.method", module="module.submodule")
         'module.submodule|Class.method'
-        >>> format_factory(int, module="module.submodule")
-        <class 'int'>
+        >>> format_factory(int, module="module.submodule").__name__
+        'int'
 
     :param factory: Factory.
     :type factory: str or function or collections.abc.Callable or None

@@ -37,6 +37,3 @@ jobs:
     - name: Readme tests
       run: |
         python -m pytest README.rst --doctest-glob="*.rst"
-    - name: Docs tests
-      run: |
-        python -m pytest docs --doctest-glob="*.rst"

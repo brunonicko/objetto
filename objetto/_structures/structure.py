@@ -3,7 +3,7 @@
 
 from abc import abstractmethod
 from inspect import getmro
-from typing import TYPE_CHECKING, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, TypeVar, overload
 from weakref import WeakKeyDictionary
 
 try:
@@ -22,6 +22,7 @@ from .._bases import (
     BaseList,
     BaseMeta,
     BaseSet,
+    Generic,
     final,
 )
 from .._states import DictState, SetState

@@ -384,10 +384,13 @@ def test_required_overrides():
     def check_base(base, slotted_base):
         assert issubclass(slotted_base, slotted.SlottedABC)
         exclude = {
+            "__weakref__",
+            "__metaclass__",
             "__setstate__",
             "__getstate__",
             "__slots__",
             "_MutableMapping__marker",
+            "_abc_negative_cache_version",
         }
         assert issubclass(base, Base)
         assert issubclass(base, slotted_base)

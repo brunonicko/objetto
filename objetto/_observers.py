@@ -62,15 +62,15 @@ class ActionObserver(object):
         >>> class PersonObserver(ActionObserver):
         ...
         ...     def __observe__(self, action, phase):
-        ...         print(action.change.name, phase.value)
+        ...         print((action.change.name, phase.value))
         ...
         >>> app = Application()
         >>> person = Person(app)
         >>> observer = PersonObserver()
         >>> token = observer.start_observing(person)
         >>> person.name = "Einstein"
-        Update Attributes PRE
-        Update Attributes POST
+        ('Update Attributes', 'PRE')
+        ('Update Attributes', 'POST')
     """
 
     __internal_observer = None  # type: Optional[InternalObserver]
