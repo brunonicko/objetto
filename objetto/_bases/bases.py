@@ -7,6 +7,11 @@ from inspect import getmro
 from typing import TYPE_CHECKING, Callable, Generic, Type, TypeVar, cast
 
 try:
+    from types import new_class
+except ImportError:
+    new_class = None  # type: ignore
+
+try:
     from typing import final
 except ImportError:
     final = lambda f: f  # type: ignore
@@ -319,7 +324,24 @@ def _make_base_cls(
     cls_dct.update(cls_dct_update)
 
     # Make new subclass and cache it by UUID.
-    cls = __base_cls_cache[uuid] = cast("BaseMeta", mcs)(name, (_base,), cls_dct)
+    if new_class is not None:
+
+        def exec_body(ns):
+            for k, v in iteritems(cls_dct):
+                ns[k] = v
+            return ns
+
+        cls = cast(
+            "BaseMeta",
+            new_class(
+                name, (_base,), {"metaclass": BaseMeta}, exec_body
+            )
+        )
+    else:
+        cls = mcs(name, (_base,), cls_dct)
+
+    __base_cls_cache[uuid] = cls
+
     return cls
 
 
