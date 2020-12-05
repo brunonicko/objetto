@@ -332,7 +332,7 @@ def _make_base_cls(
             return ns
 
         cls = cast(
-            "BaseMeta",
+            "Type[_B]",
             new_class(
                 name, (_base,), {"metaclass": BaseMeta}, exec_body
             )
