@@ -896,29 +896,39 @@ class BaseStructure(
 
         return value
 
-    @abstractmethod
+    # @abstractmethod (commented out due to a PyCharm bug)
     def _hash(self):
         # type: () -> int
         """
+        **Abstract**
+
         Get hash.
 
         :return: Hash.
         :rtype: int
-        """
-        raise NotImplementedError()
 
-    @abstractmethod
+        :raises RuntimeError: Abstract method not implemented by subclasses.
+        """
+        # raise NotImplementedError
+        raise RuntimeError()
+
+    # @abstractmethod (commented out due to a PyCharm bug)
     def _eq(self, other):
         # type: (Any) -> bool
         """
+        **Abstract**
+
         Compare with another object for equality.
 
         :param other: Another object.
 
         :return: True if equal.
         :rtype: bool
+
+        :raises RuntimeError: Abstract method not implemented by subclasses.
         """
-        raise NotImplementedError()
+        # raise NotImplementedError
+        raise RuntimeError()
 
     @classmethod
     @abstractmethod
