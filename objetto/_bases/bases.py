@@ -96,6 +96,7 @@ __base_cls_cache = WeakValueDictionary()  # type: MutableMapping[str, Type[Base]
 
 class _GenericMeta(SlottedABCMeta):
     """Workaround for 'Generic' class having a metaclass in older versions of typing."""
+
     def __getitem__(cls, _):
         return cls
 
@@ -365,10 +366,7 @@ def _make_base_cls(
             return ns
 
         cls = cast(
-            "Type[_B]",
-            new_class(
-                name, (_base,), {"metaclass": BaseMeta}, exec_body
-            )
+            "Type[_B]", new_class(name, (_base,), {"metaclass": BaseMeta}, exec_body)
         )
     else:
         cls = mcs(name, (_base,), cls_dct)
