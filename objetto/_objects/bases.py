@@ -991,6 +991,9 @@ collections.abc.Iterator[objetto.changes.Batch]]
 
         :return: Deserialized.
         :rtype: objetto.bases.BaseObject
+
+        :raises ValueError: Missing required 'app' attribute.
+        :raises objetto.exceptions.SerializationError: Can't deserialize.
         """
         raise NotImplementedError()
 

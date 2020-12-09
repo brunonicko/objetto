@@ -1198,6 +1198,8 @@ class Object(
 
         :return: Deserialized.
         :rtype: objetto.objects.Object
+
+        :raises ValueError: Missing required 'app' attribute.
         """
         if app is None:
             error = (

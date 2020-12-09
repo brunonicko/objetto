@@ -20,6 +20,7 @@ from .._structures import (
     BaseListStructure,
     BaseListStructureMeta,
     BaseMutableListStructure,
+    SerializationError,
 )
 from ..utils.list_operations import pre_move, resolve_continuous_slice, resolve_index
 from .bases import (
@@ -826,6 +827,8 @@ class ListObject(
 
         :return: Deserialized.
         :rtype: objetto.objects.ListObject
+
+        :raises objetto.exceptions.SerializationError: Can't deserialize.
         """
         if app is None:
             error = (
@@ -833,6 +836,10 @@ class ListObject(
             ).format(cls.__fullname__)
             raise ValueError(error)
         kwargs["app"] = app
+
+        if not cls._relationship.serialized:
+            error = "'{}' is not deserializable".format(cls.__name__)
+            raise SerializationError(error)
 
         with app.write_context():
             self = cast("_LO", cls.__new__(cls))
@@ -856,8 +863,15 @@ class ListObject(
 
         :return: Serialized.
         :rtype: list
+
+        :raises objetto.exceptions.SerializationError: Can't serialize.
         """
         with self.app.read_context():
+
+            if not type(self)._relationship.serialized:
+                error = "'{}' is not serializable".format(type(self).__fullname__)
+                raise SerializationError(error)
+
             return list(
                 self.serialize_value(v, None, **kwargs)
                 for v in self._state

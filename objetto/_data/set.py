@@ -16,6 +16,7 @@ from .._structures import (
     BaseInteractiveSetStructure,
     BaseSetStructure,
     BaseSetStructureMeta,
+    SerializationError,
 )
 from .bases import (
     BaseAuxiliaryData,
@@ -240,11 +241,11 @@ class SetData(
         :return: Deserialized.
         :rtype: objetto.data.SetData
 
-        :raises RuntimeError: Not deserializable.
+        :raises objetto.exceptions.SerializationError: Can't deserialize.
         """
         if not cls._relationship.serialized:
             error = "'{}' is not deserializable".format(cls.__name__)
-            raise RuntimeError(error)
+            raise SerializationError(error)
         state = SetState(
             cls.deserialize_value(v, location=None, **kwargs) for v in serialized
         )
@@ -261,11 +262,11 @@ class SetData(
         :return: Serialized.
         :rtype: list
 
-        :raises RuntimeError: Not serializable.
+        :raises objetto.exceptions.SerializationError: Can't serialize.
         """
         if not type(self)._relationship.serialized:
             error = "'{}' is not serializable".format(type(self).__fullname__)
-            raise RuntimeError(error)
+            raise SerializationError(error)
         return sorted(
             (self.serialize_value(v, location=None, **kwargs) for v in self._state),
             key=lambda v: hash(v),
