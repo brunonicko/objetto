@@ -20,6 +20,7 @@ from .._structures import (
     BaseDictStructure,
     BaseDictStructureMeta,
     BaseMutableDictStructure,
+    SerializationError,
 )
 from .bases import (
     DELETED,
@@ -487,6 +488,8 @@ tuple[collections.abc.Hashable, Any]]
 
         :return: Deserialized.
         :rtype: objetto.objects.DictObject
+
+        :raises objetto.exceptions.SerializationError: Can't deserialize.
         """
         if app is None:
             error = (
@@ -494,6 +497,10 @@ tuple[collections.abc.Hashable, Any]]
             ).format(cls.__fullname__)
             raise ValueError(error)
         kwargs["app"] = app
+
+        if not cls._relationship.serialized:
+            error = "'{}' is not deserializable".format(cls.__name__)
+            raise SerializationError(error)
 
         with app.write_context():
             self = cast("_DO", cls.__new__(cls))
@@ -517,8 +524,14 @@ tuple[collections.abc.Hashable, Any]]
 
         :return: Serialized.
         :rtype: dict
+
+        :raises objetto.exceptions.SerializationError: Can't serialize.
         """
         with self.app.read_context():
+            if not type(self)._relationship.serialized:
+                error = "'{}' is not serializable".format(type(self).__fullname__)
+                raise SerializationError(error)
+
             return dict(
                 (k, self.serialize_value(v, None, **kwargs))
                 for (k, v) in iteritems(self._state)

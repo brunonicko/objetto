@@ -20,6 +20,7 @@ from .._structures import (
     BaseMutableSetStructure,
     BaseSetStructure,
     BaseSetStructureMeta,
+    SerializationError,
 )
 from .bases import (
     BaseAuxiliaryObject,
@@ -548,6 +549,8 @@ class SetObject(
 
         :return: Deserialized.
         :rtype: objetto.objects.SetObject
+
+        :raises objetto.exceptions.SerializationError: Can't deserialize.
         """
         assert isinstance(serialized, list)
 
@@ -557,6 +560,10 @@ class SetObject(
             ).format(cls.__fullname__)
             raise ValueError(error)
         kwargs["app"] = app
+
+        if not cls._relationship.serialized:
+            error = "'{}' is not deserializable".format(cls.__name__)
+            raise SerializationError(error)
 
         with app.write_context():
             self = cast("_SO", cls.__new__(cls))
@@ -580,8 +587,14 @@ class SetObject(
 
         :return: Serialized.
         :rtype: list
+
+        :raises objetto.exceptions.SerializationError: Can't serialize.
         """
         with self.app.read_context():
+            if not type(self)._relationship.serialized:
+                error = "'{}' is not serializable".format(type(self).__fullname__)
+                raise SerializationError(error)
+
             return list(
                 self.serialize_value(v, None, **kwargs)
                 for v in self._state

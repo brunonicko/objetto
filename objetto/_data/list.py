@@ -16,6 +16,7 @@ from .._structures import (
     BaseInteractiveListStructure,
     BaseListStructure,
     BaseListStructureMeta,
+    SerializationError,
 )
 from .bases import (
     BaseAuxiliaryData,
@@ -297,11 +298,11 @@ class ListData(
         :return: Deserialized.
         :rtype: objetto.data.ListData
 
-        :raises RuntimeError: Not deserializable.
+        :raises objetto.exceptions.SerializationError: Can't deserialize.
         """
         if not cls._relationship.serialized:
             error = "'{}' is not deserializable".format(cls.__name__)
-            raise RuntimeError(error)
+            raise SerializationError(error)
         state = ListState(
             cls.deserialize_value(v, location=None, **kwargs) for v in serialized
         )
@@ -318,11 +319,11 @@ class ListData(
         :return: Serialized.
         :rtype: list
 
-        :raises RuntimeError: Not serializable.
+        :raises objetto.exceptions.SerializationError: Can't serialize.
         """
         if not type(self)._relationship.serialized:
             error = "'{}' is not serializable".format(type(self).__fullname__)
-            raise RuntimeError(error)
+            raise SerializationError(error)
         return list(
             self.serialize_value(v, location=None, **kwargs) for v in self._state
         )

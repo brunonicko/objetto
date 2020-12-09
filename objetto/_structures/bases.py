@@ -25,6 +25,7 @@ from .._bases import (
     final,
     make_base_cls,
 )
+from .._exceptions import BaseObjettoException
 from .._states import BaseState
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.factoring import format_factory, import_factory, run_factory
@@ -56,6 +57,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "make_auxiliary_cls",
+    "SerializationError",
     "BaseRelationship",
     "UniqueDescriptor",
     "unique_descriptor",
@@ -186,6 +188,15 @@ def make_auxiliary_cls(
             dct=dct_copy,
         ),
     )
+
+
+class SerializationError(BaseObjettoException):
+    """
+    Failed to serialize/deserialize structure.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseObjettoException`
+    """
 
 
 class BaseRelationship(BaseHashable):
@@ -963,8 +974,8 @@ class BaseStructure(
 
         :return: Deserialized value.
 
+        :raises objetto.exceptions.SerializationError: Can't deserialize value.
         :raises ValueError: Keyword arguments contain reserved keys.
-        :raises ValueError: Can't deserialize value.
         """
 
         # Get relationship.
@@ -978,7 +989,7 @@ class BaseStructure(
                 cls.__fullname__,
                 " at location {}".format(location) if location is not None else "",
             )
-            raise ValueError(error)
+            raise SerializationError(error)
 
         # Built-in deserializer.
         deserializer = lambda: cls.__deserialize_value(
@@ -1022,8 +1033,8 @@ class BaseStructure(
 
         :return: Serialized value.
 
+        :raises objetto.exceptions.SerializationError: Can't serialize value.
         :raises ValueError: Keyword arguments contain reserved keys.
-        :raises ValueError: Can't serialize value.
         """
 
         # Get relationship.
@@ -1038,7 +1049,7 @@ class BaseStructure(
                 cls.__fullname__,
                 " at location {}".format(location) if location is not None else "",
             )
-            raise ValueError(error)
+            raise SerializationError(error)
 
         # Built-in serializer
         serializer = lambda: self.__serialize_value(
@@ -1075,6 +1086,8 @@ class BaseStructure(
 
         :return: Deserialized.
         :rtype: objetto.bases.BaseStructure
+
+        :raises objetto.exceptions.SerializationError: Can't deserialize.
         """
         raise NotImplementedError()
 
@@ -1087,6 +1100,8 @@ class BaseStructure(
         :param kwargs: Keyword arguments to be passed to the serializers.
 
         :return: Serialized.
+
+        :raises objetto.exceptions.SerializationError: Can't serialize.
         """
         raise NotImplementedError()
 

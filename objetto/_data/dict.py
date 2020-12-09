@@ -17,6 +17,7 @@ from .._structures import (
     BaseDictStructureMeta,
     BaseInteractiveDictStructure,
     KeyRelationship,
+    SerializationError,
 )
 from .bases import (
     BaseAuxiliaryData,
@@ -233,11 +234,11 @@ tuple[collections.abc.Hashable, Any]]
         :return: Deserialized.
         :rtype: objetto.data.DictData
 
-        :raises RuntimeError: Not deserializable.
+        :raises objetto.exceptions.SerializationError: Can't deserialize.
         """
         if not cls._relationship.serialized:
             error = "'{}' is not deserializable".format(cls.__name__)
-            raise RuntimeError(error)
+            raise SerializationError(error)
         state = DictState(
             (
                 cls._key_relationship.fabricate_key(k, factory=False),
@@ -258,11 +259,11 @@ tuple[collections.abc.Hashable, Any]]
         :return: Serialized.
         :rtype: dict
 
-        :raises RuntimeError: Not serializable.
+        :raises objetto.exceptions.SerializationError: Can't serialize.
         """
         if not type(self)._relationship.serialized:
             error = "'{}' is not serializable".format(type(self).__fullname__)
-            raise RuntimeError(error)
+            raise SerializationError(error)
         return dict(
             (k, self.serialize_value(v, location=None, **kwargs))
             for k, v in iteritems(self._state)

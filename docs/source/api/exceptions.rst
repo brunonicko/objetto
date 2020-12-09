@@ -10,3 +10,5 @@ Exceptions (objetto.exceptions)
       :members: change, callback
 
    .. autoexception:: objetto.exceptions.HistoryError
+
+   .. autoexception:: objetto.exceptions.SerializationError
