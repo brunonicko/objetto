@@ -529,3 +529,8 @@ Base Change Classes
 
    .. autoattribute:: objetto.bases.BaseAtomicChange.history
       :annotation: :  Data Attribute
+
+Base Phase Enum
+---------------
+.. autoclass:: objetto.bases.Phase
+   :members: PRE, POST

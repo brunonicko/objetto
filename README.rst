@@ -130,7 +130,7 @@ arguments.
 Object
 ------
 `Objects <Object_>`_ are the building blocks of an `Application`_. An `Object`_ is
-mutable, has state, and can be a parent and/or a child of another `Object`_.
+mutable, has state, and can be a parent/child of another `Object`_.
 
 To define our own `Object`_, we have to inherit from `objetto.Object` and use
 `Attributes <Attribute>`_ to define its schema. You need to instantiate it by passing an
@@ -225,9 +225,9 @@ If `None` is also accepted as a value, we can specify `None` as a valid type.
 
     >>> class Person(Object):
     ...     name = attribute(str)  # single exact value type
-    ...     child = attribute(("__main__|Person", None))  # import path, accepts None
-    ...     job = attribute("package.job|Job") # import path string with module path
-    ...     money = attribute((int, float))  # multiple basic types
+    ...     friend = attribute(("__main__|Person", None))  # import path, accepts None
+    ...     hobby = attribute("module.hobby|Hobby") # import path with module path
+    ...     points = attribute((int, float))  # multiple basic types
     ...     _status = attribute(serialized=False)  # no value type, not serialized
     ...     _pet = attribute(
     ...         "pets|AbstractPet", subtypes=True
