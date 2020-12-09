@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Base types."""
 
+from ._applications import Phase
 from ._bases import (
     Base,
     BaseCollection,
@@ -128,6 +129,7 @@ __all__ = [
     "BaseMutableAuxiliaryObject",
     "BaseProxyObject",
     "BaseChange",
+    "Phase",
     "BaseAtomicChange",
     "BaseFactory",
 ]

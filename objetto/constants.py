@@ -20,7 +20,17 @@ __all__ = [
 
 
 PRE = Phase.PRE
-"""Phase before the changes are applied."""
+"""
+Phase before the changes are applied.
+
+Inherits from:
+  - :class:`objetto.bases.Phase`
+"""
 
 POST = Phase.POST
-"""Phase after the changes are applied."""
+"""
+Phase after the changes are applied.
+
+Inherits from:
+  - :class:`objetto.bases.Phase`
+"""
