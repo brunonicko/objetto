@@ -17,7 +17,7 @@ Factories (objetto.factories)
         clamp_maximum,
         accepts_none,
 
-      .. automethod:: objetto.factories.MultiFactory.__call__
+      .. automethod:: objetto.factories.Integer.__call__
 
    .. autoclass:: objetto.factories.FloatingPoint
       :members:
@@ -27,24 +27,28 @@ Factories (objetto.factories)
         clamp_maximum,
         accepts_none,
 
-      .. automethod:: objetto.factories.MultiFactory.__call__
+      .. automethod:: objetto.factories.FloatingPoint.__call__
 
    .. autoclass:: objetto.factories.String
       :members: accepts_none
 
-      .. automethod:: objetto.factories.MultiFactory.__call__
+      .. automethod:: objetto.factories.String.__call__
 
    .. autoclass:: objetto.factories.RegexMatch
       :members: pattern, compiled_pattern
 
-      .. automethod:: objetto.factories.MultiFactory.__call__
+      .. automethod:: objetto.factories.RegexMatch.__call__
 
    .. autoclass:: objetto.factories.RegexSub
       :members: pattern, compiled_pattern, repl
 
-      .. automethod:: objetto.factories.MultiFactory.__call__
+      .. automethod:: objetto.factories.RegexSub.__call__
 
    .. autoclass:: objetto.factories.Curated
       :members: values
 
+      .. automethod:: objetto.factories.Curated.__call__
+
    .. autoclass:: objetto.factories.Boolean
+
+      .. automethod:: objetto.factories.Boolean.__call__
