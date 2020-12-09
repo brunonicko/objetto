@@ -46,3 +46,5 @@ Factories (objetto.factories)
 
    .. autoclass:: objetto.factories.Curated
       :members: values
+
+   .. autoclass:: objetto.factories.Boolean

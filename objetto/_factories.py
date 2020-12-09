@@ -31,6 +31,7 @@ __all__ = [
     "RegexSub",
     "String",
     "Curated",
+    "Boolean",
 ]
 
 
@@ -49,6 +50,7 @@ class BaseFactory(Base):
       - :class:`objetto.factories.RegexSub`
       - :class:`objetto.factories.String`
       - :class:`objetto.factories.Curated`
+      - :class:`objetto.factories.Boolean`
     """
 
     __slots__ = ("__factories",)
@@ -672,3 +674,28 @@ class Curated(BaseFactory):
         :rtype: tuple
         """
         return self.__values
+
+
+class Boolean(BaseFactory):
+    """
+    Boolean factory.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseFactory`
+    """
+
+    __slots__ = ()
+
+    def __call__(self, value, **kwargs):
+        # type: (Any, Any) -> bool
+        """
+        Call with input value and optional keyword arguments.
+
+        :param value: Input value.
+
+        :param kwargs: Keyword arguments.
+
+        :return: Output value (True or False).
+        :rtype: bool
+        """
+        return bool(value)

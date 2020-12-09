@@ -258,19 +258,21 @@ imported from `objetto.factories`:
   - `RegexSub`
   - `String`
   - `Curated`
+  - `Boolean`
 
 **Example**: Use `Value Factories <Value Factory>`_ to conform/verify attribute values.
 
 .. code:: python
 
     >>> from objetto import Object, attribute
-    >>> from objetto.factories import RegexMatch, Integer, Curated, String
+    >>> from objetto.factories import RegexMatch, Integer, Curated, String, Boolean
 
     >>> class Person(Object):
     ...     name = attribute(str, factory=RegexMatch(r"^[a-z ,.'-]+$"))  # regex match
     ...     age = attribute(int, factory=Integer(minimum=1))  # minimum integer
     ...     pet = attribute(str, factory=Curated(("cat", "dog"))) # curated values
     ...     job = attribute(str, factory=String())  # force string
+    ...     happy = attribute(bool, factory=Boolean(), default=True)  # force boolean
 
 Auxiliary Attribute
 *******************
