@@ -2,6 +2,7 @@
 """Factories."""
 
 from ._factories import (
+    Boolean,
     Curated,
     FloatingPoint,
     Integer,
@@ -19,4 +20,5 @@ __all__ = [
     "RegexSub",
     "String",
     "Curated",
+    "Boolean",
 ]
