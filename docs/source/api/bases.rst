@@ -36,6 +36,12 @@ Base Decorators
 .. autodecorator:: objetto.bases.final
 .. autodecorator:: objetto.bases.init
 
+Base Functions
+--------------
+
+.. autofunction:: objetto.bases.simplify_member_names
+.. autofunction:: objetto.bases.make_base_cls
+
 Base Context Managers
 ---------------------
 

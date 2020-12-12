@@ -179,7 +179,10 @@ def simplify_member_names(names):
     Iterate over member names and only yield the simplified ones.
 
     :param names: Input names.
+    :type names: str
+
     :return: Simplified names iterator.
+    :rtype: collections.abc.Iterator[str]
     """
     return (n for n in names if not ("__" in n and n.startswith("_")))
 
@@ -448,10 +451,19 @@ def make_base_cls(
     Make a subclass of :class:`objetto.bases.Base` on the fly.
 
     :param base: Base class.
+    :type base: type[objetto.bases.Base]
+
     :param qual_name: Qualified name.
+    :type qual_name: str or None
+
     :param module: Module.
+    :type module: str or None
+
     :param dct: Members dictionary.
+    :param dct: dict[str, Any] or None
+
     :return: Generated subclass.
+    :rtype: type[objetto.bases.Base]
     """
     return _make_base_cls(base, qual_name, module, dct=dct)
 
