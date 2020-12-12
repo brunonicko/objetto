@@ -28,8 +28,8 @@ from ._bases import (
     final,
     init,
     init_context,
-    simplify_member_names,
     make_base_cls,
+    simplify_member_names,
 )
 from ._changes import BaseAtomicChange, BaseChange
 from ._data import (
