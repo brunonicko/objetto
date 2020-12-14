@@ -15,8 +15,7 @@ Objetto
 .. image:: https://img.shields.io/github/license/brunonicko/objetto?color=light-green
    :target: https://github.com/brunonicko/objetto/blob/master/LICENSE
 
-.. image:: https://static.pepy.tech/personalized-badge/objetto?period=total&units=inter\
-national_system&left_color=grey&right_color=brightgreen&left_text=Downloads
+.. image:: https://static.pepy.tech/personalized-badge/objetto?period=total&units=international_system&left_color=grey&right_color=brightgreen&left_text=Downloads
    :target: https://pepy.tech/project/objetto
 
 .. image:: https://img.shields.io/pypi/pyversions/objetto?color=light-green&style=flat
