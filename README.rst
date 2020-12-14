@@ -1,19 +1,29 @@
 Objetto
 =======
 .. image:: https://github.com/brunonicko/objetto/workflows/MyPy/badge.svg
-    :target: https://github.com/brunonicko/objetto/actions?query=workflow%3AMyPy
+   :target: https://github.com/brunonicko/objetto/actions?query=workflow%3AMyPy
 
 .. image:: https://github.com/brunonicko/objetto/workflows/Lint/badge.svg
-    :target: https://github.com/brunonicko/objetto/actions?query=workflow%3ALint
+   :target: https://github.com/brunonicko/objetto/actions?query=workflow%3ALint
 
 .. image:: https://github.com/brunonicko/objetto/workflows/Tests/badge.svg
-    :target: https://github.com/brunonicko/objetto/actions?query=workflow%3ATests
+   :target: https://github.com/brunonicko/objetto/actions?query=workflow%3ATests
 
-.. image:: https://readthedocs.org/projects/objetto/badge/?version=latest
-    :target: https://objetto.readthedocs.io/en/latest/
+.. image:: https://readthedocs.org/projects/objetto/badge/?version=stable
+   :target: https://objetto.readthedocs.io/en/latest/
+
+.. image:: https://img.shields.io/github/license/brunonicko/objetto?color=light-green
+   :target: https://github.com/brunonicko/objetto/blob/master/LICENSE
+
+.. image:: https://static.pepy.tech/personalized-badge/objetto?period=total&units=inter\
+national_system&left_color=grey&right_color=brightgreen&left_text=Downloads
+   :target: https://pepy.tech/project/objetto
+
+.. image:: https://img.shields.io/pypi/pyversions/objetto?color=light-green&style=flat
+   :target: https://pypi.org/project/objetto/
 
 .. image:: https://badge.fury.io/py/objetto.svg
-    :target: https://pypi.org/project/objetto/
+   :target: https://pypi.org/project/objetto/
 
 `Objetto` is an object-oriented framework for building smart applications and APIs.
 

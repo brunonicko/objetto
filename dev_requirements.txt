@@ -6,3 +6,4 @@ mypy
 pytest
 sphinx
 sphinx-rtd-theme
+tox

@@ -12,8 +12,6 @@ sys.path.insert(0, root_path)
 project = "Objetto"
 copyright = "2020, Bruno Nicko"
 author = "Bruno Nicko"
-version = "1.0.0"  # the short X.Y version
-release = version  # the full version, including alpha/beta/rc tags
 
 # Sphinx extensions.
 extensions = [
@@ -28,7 +26,8 @@ intersphinx_mapping = {
     "sphinx": ("https://www.sphinx-doc.org/en/master/", None),
     "python": ("https://docs.python.org/3.8", None),
     "pyrsistent": ("https://pyrsistent.readthedocs.io/en/stable/", None),
-    # "slotted": ("https://slotted.readthedocs.io/en/stable/", None),
+    "six": ("https://six.readthedocs.io/", None),
+    "slotted": ("https://slotted.readthedocs.io/en/stable/", None),
 }
 
 # Autodoc configuration.
