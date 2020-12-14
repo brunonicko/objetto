@@ -1,7 +1,7 @@
 .PHONY: clean environment tests mypy format lint docs
 
 clean:
-	rm -rf ./docs/build .mypy_cache .pytest_cache dist
+	rm -rf ./docs/build .mypy_cache .pytest_cache .tox build dist objetto.egg-info
 	find . -name '*.pyc' -delete
 environment:
 	python -m pip install --upgrade pip

@@ -28,7 +28,10 @@ IF "%1" == "" (
 rmdir /s /q .\docs\build 2>nul
 rmdir /s /q .\.mypy_cache 2>nul
 rmdir /s /q .\.pytest_cache 2>nul
+rmdir /s /q .\.tox 2>nul
+rmdir /s /q .\build 2>nul
 rmdir /s /q .\dist 2>nul
+rmdir /s /q .\objetto.egg-info 2>nul
 del /S *.pyc >nul 2>&1
 goto end
 
