@@ -10,7 +10,7 @@ Objetto
    :target: https://github.com/brunonicko/objetto/actions?query=workflow%3ATests
 
 .. image:: https://readthedocs.org/projects/objetto/badge/?version=stable
-   :target: https://objetto.readthedocs.io/en/latest/
+   :target: https://objetto.readthedocs.io/en/stable/
 
 .. image:: https://img.shields.io/github/license/brunonicko/objetto?color=light-green
    :target: https://github.com/brunonicko/objetto/blob/master/LICENSE
