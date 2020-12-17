@@ -249,9 +249,8 @@ class HistoryObject(Object):
                     with self._batch_context("Multiple Undo"):
                         while index < self.__index:
                             self.undo()
-                else:
-                    return
-            raise IndexError(index)
+            else:
+                raise IndexError(index)
 
     def undo_all(self):
         # type: () -> None
