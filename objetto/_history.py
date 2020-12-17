@@ -240,7 +240,7 @@ class HistoryObject(Object):
             if self.__executing:
                 error = "can't set index while executing"
                 raise HistoryError(error)
-            if 0 <= index < len(self.changes) - 1:
+            if 0 <= index <= len(self.changes) - 1:
                 if index > self.__index:
                     with self._batch_context("Multiple Redo"):
                         while index > self.__index:
