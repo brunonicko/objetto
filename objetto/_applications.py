@@ -1051,6 +1051,8 @@ class ApplicationInternals(Base):
                     )
                     action_observer = internal_observer.action_observer_ref()
                     if action_observer is not None:
+                        from objetto._observers import ActionObserverExceptionData
+
                         action_exception_info = ActionObserverExceptionData(
                             observer=action_observer,
                             action=cast("Action", exception_info.payload[0]),
