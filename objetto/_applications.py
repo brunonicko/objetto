@@ -803,7 +803,9 @@ class ApplicationInternals(Base):
                     from ._changes import Batch
 
                     atomic_batch_change = Batch(
-                        name=change.name, obj=obj, metadata={"atomic_change": change}
+                        name=change.name,
+                        obj=obj,
+                        metadata={"atomic_change": change, "is_atomic": True},
                     )
                     history.__enter_batch__(atomic_batch_change)
 

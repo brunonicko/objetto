@@ -168,7 +168,7 @@ class HistoryObject(Object):
     """
 
     __executing, executing = protected_attribute_pair(
-        bool, default=False
+        bool, checked=False, default=False
     )  # type: Attribute[bool], Attribute[bool]
     """
     Whether the history is undoing or redoing.
@@ -177,7 +177,7 @@ class HistoryObject(Object):
     """
 
     __undoing, undoing = protected_attribute_pair(
-        bool, default=False
+        bool, checked=False, default=False
     )  # type: Attribute[bool], Attribute[bool]
     """
     Whether the history is undoing.
@@ -186,7 +186,7 @@ class HistoryObject(Object):
     """
 
     __redoing, redoing = protected_attribute_pair(
-        bool, default=False
+        bool, checked=False, default=False
     )  # type: Attribute[bool], Attribute[bool]
     """
     Whether the history is redoing.
@@ -195,7 +195,7 @@ class HistoryObject(Object):
     """
 
     __index, index = protected_attribute_pair(
-        int, default=0
+        int, checked=False, default=0
     )  # type: Attribute[int], Attribute[int]
     """
     The index of the current change.
@@ -204,24 +204,25 @@ class HistoryObject(Object):
     """
 
     __changes, changes = protected_list_attribute_pair(
-        (BaseAtomicChange, BatchChanges, None),
+        (BatchChanges, None),
         subtypes=True,
+        checked=False,
         default=(None,),
-    )  # type: PLA[Optional[CT]], LA[Optional[CT]]
+    )  # type: PLA[Optional[BatchChanges]], LA[Optional[BatchChanges]]
     """
-    List of changes.
+    List of batch changes. The first one is always `None`.
 
-    :type: objetto.objects.ListObject[None or \
- objetto.history.BatchChanges or objetto.bases.BaseAtomicChange]
+    :type: objetto.objects.ListObject[objetto.history.BatchChanges or None]
     """
 
     _current_batches, current_batches = protected_list_attribute_pair(
         BatchChanges,
         subtypes=False,
+        checked=False,
         child=False,
     )  # type: PLA[BatchChanges], LA[BatchChanges]
     """
-    Current opened batch.
+    Open batches.
 
     :type: objetto.objects.ListObject[objetto.history.BatchChanges]
     """
@@ -468,17 +469,13 @@ class HistoryObject(Object):
                     raise RuntimeError(error)
                 return
 
+            # We should always be in a batch (the application should make sure of it).
+            assert self._current_batches
+
+            # Add to batch.
             with self._batch_context("Push Change", change=change):
                 self.flush_redo()
-                topmost = not self._current_batches
-                if topmost:
-                    self.__changes.append(change)
-                    if self.size is not None and len(self.changes) > self.size + 1:
-                        del self.__changes[1:2]
-                    else:
-                        self.__index += 1
-                else:
-                    self._current_batches[-1]._changes.append(change)
+                self._current_batches[-1]._changes.append(change)
 
     def __exit_batch__(self, batch):
         # type: (Batch) -> None
