@@ -450,6 +450,8 @@ def test_inheritance():
     assert issubclass(BaseCollection, BaseContainer)
     assert issubclass(BaseCollection, BaseSized)
     assert issubclass(BaseCollection, BaseIterable)
+    if slotted.SlottedCollection is not None:
+        assert issubclass(BaseCollection, slotted.SlottedCollection)
 
     assert issubclass(BaseProtectedCollection, BaseCollection)
     assert issubclass(BaseInteractiveCollection, BaseProtectedCollection)

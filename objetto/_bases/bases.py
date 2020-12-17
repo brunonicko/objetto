@@ -30,6 +30,7 @@ from six import iteritems, with_metaclass
 from slotted import (
     SlottedABC,
     SlottedABCMeta,
+    SlottedCollection,
     SlottedContainer,
     SlottedHashable,
     SlottedIterable,
@@ -938,7 +939,15 @@ class BaseContainer(Base, SlottedContainer, Generic[T_co]):
         raise NotImplementedError()
 
 
-class BaseCollection(BaseSized, BaseIterable[T_co], BaseContainer[T_co]):
+# Trick mypy.
+_SlottedCollection = SlottedCollection
+if _SlottedCollection is None:
+    globals()["_SlottedCollection"] = object
+
+
+class BaseCollection(
+    BaseSized, BaseIterable[T_co], BaseContainer[T_co], _SlottedCollection
+):
     """
     Base collection.
 
@@ -946,6 +955,7 @@ class BaseCollection(BaseSized, BaseIterable[T_co], BaseContainer[T_co]):
       - :class:`objetto.bases.BaseSized`
       - :class:`objetto.bases.BaseIterable`
       - :class:`objetto.bases.BaseContainer`
+      - :class:`slotted.SlottedCollection`
 
     Inherited By:
       - :class:`objetto.bases.BaseProtectedCollection`
