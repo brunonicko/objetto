@@ -467,6 +467,16 @@ objetto.objects.Attribute or None
         return self.__fdel
 
     @property
+    def constant(self):
+        # type: () -> bool
+        """
+        Whether attribute is constant.
+
+        :rtype: bool
+        """
+        return super(Attribute, self).constant and not self.delegated
+
+    @property
     def data_attribute(self):
         # type: () -> Optional[DataAttribute]
         """
