@@ -39,6 +39,9 @@ Auxiliary Class Factories
 .. autofunction:: objetto.objects.dict_cls
 .. autofunction:: objetto.objects.list_cls
 .. autofunction:: objetto.objects.set_cls
+.. autofunction:: objetto.objects.protected_dict_cls
+.. autofunction:: objetto.objects.protected_list_cls
+.. autofunction:: objetto.objects.protected_set_cls
 
 Data Method Decorator
 ---------------------
