@@ -50,6 +50,7 @@ if TYPE_CHECKING:
         Optional,
         Tuple,
         Type,
+        Union,
     )
 
     from ..utils.factoring import LazyFactory
@@ -202,7 +203,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
 
     @overload
     def __get__(self, instance, owner):
-        # type: (_BA, None, Type[BaseAttributeStructure]) -> _BA
+        # type: (_BA, None, Type[BaseAttributeStructure]) -> Union[_BA, T]
         pass
 
     @overload
@@ -217,8 +218,8 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
 
     def __get__(self, instance, owner):
         """
-        Get attribute value when accessing from valid instance or this descriptor
-        otherwise.
+        Get attribute value when accessing from valid instance or when attribute is
+        constant. Get this descriptor otherwise.
 
         :param instance: Instance.
         :type instance: objetto.bases.BaseAttributeStructure or None
@@ -233,7 +234,10 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
             attribute_type = getattr(type(instance), "_attribute_type", None)
             if attribute_type is not None and isinstance(self, attribute_type):
                 return self.get_value(instance)
-        return self
+        elif self.constant:
+            return self.relationship.fabricate_value(self.default)
+        else:
+            return self
 
     @final
     def __hash__(self):
@@ -453,6 +457,16 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         :rtype: bool
         """
         return self.default is not MISSING or self.default_factory is not None
+
+    @property
+    def constant(self):
+        # type: () -> bool
+        """
+        Whether attribute is constant.
+
+        :rtype: bool
+        """
+        return self.default is not MISSING and not self.changeable
 
 
 class BaseAttributeStructureMeta(BaseStructureMeta):

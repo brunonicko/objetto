@@ -405,6 +405,7 @@ Base Attribute Class
      finalized,
      abstracted,
      has_default,
+     constant,
 
    .. automethod:: objetto.bases.BaseAttribute.__get__
    .. automethod:: objetto.bases.BaseAttribute.__hash__

@@ -229,6 +229,7 @@ Attribute Descriptor Class
      fget,
      fset,
      fdel,
+     constant,
      data_attribute,
 
    .. automethod:: objetto.objects.Attribute.__set__
