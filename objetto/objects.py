@@ -654,11 +654,10 @@ def dict_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    mutable=True,  # type: bool
 ):
-    # type: (...) -> Union[MutableDictAttribute[KT, VT], DictAttribute[KT, VT]]
+    # type: (...) -> MutableDictAttribute[KT, VT]
     """
-    Make dictionary attribute.
+    Make mutable dictionary attribute.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -738,12 +737,8 @@ def dict_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
-    :param mutable: Whether generated class should have public mutable interface.
-    :type mutable: bool
-
-    :return: Dictionary attribute.
-    :rtype: objetto.objects.Attribute[objetto.objects.MutableDictObject or \
-objetto.objects.DictObject]
+    :return: Mutable dictionary attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.MutableDictObject]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -774,8 +769,7 @@ objetto.objects.DictObject]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            mutable=mutable,
-        )  # type: Union[Type[MutableDictObject[KT, VT]], Type[DictObject[KT, VT]]]
+        )  # type: Type[MutableDictObject[KT, VT]]
 
     # Factory for dict object relationship.
     def dict_factory(initial=(), app=None, **_):
@@ -790,7 +784,7 @@ objetto.objects.DictObject]
         default = ()
 
     # Relationship.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'dict_attribute'"):
         relationship = Relationship(
             types=dict_type,
             subtypes=False,
@@ -808,7 +802,7 @@ objetto.objects.DictObject]
         )
 
     # Make attribute.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'dict_attribute'"):
         attribute_ = Attribute(
             relationship=relationship,
             default=default,
@@ -1025,11 +1019,10 @@ def list_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    mutable=True,  # type: bool
 ):
-    # type: (...) -> Union[MutableListAttribute[T], ListAttribute[T]]
+    # type: (...) -> MutableListAttribute[T]
     """
-    Make list attribute.
+    Make mutable list attribute.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -1100,12 +1093,8 @@ def list_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
-    :param mutable: Whether generated class should have public mutable interface.
-    :type mutable: bool
-
-    :return: List attribute.
-    :rtype: objetto.objects.Attribute[objetto.objects.MutableListObject or \
-objetto.objects.ListObject]
+    :return: Mutable list attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.MutableListObject]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -1133,8 +1122,7 @@ objetto.objects.ListObject]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            mutable=mutable,
-        )  # type: Union[Type[MutableListObject[T]], Type[ListObject[T]]]
+        )  # type: Type[MutableListObject[T]]
 
     # Factory for list object relationship.
     def list_factory(initial=(), app=None, **_):
@@ -1149,7 +1137,7 @@ objetto.objects.ListObject]
         default = ()
 
     # Relationship.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'list_attribute'"):
         relationship = Relationship(
             types=list_type,
             subtypes=False,
@@ -1167,7 +1155,7 @@ objetto.objects.ListObject]
         )
 
     # Make attribute.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'list_attribute'"):
         attribute_ = Attribute(
             relationship=relationship,
             default=default,
@@ -1369,11 +1357,10 @@ def set_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    mutable=True,  # type: bool
 ):
-    # type: (...) -> Union[MutableSetAttribute[T], SetAttribute[T]]
+    # type: (...) -> MutableSetAttribute[T]
     """
-    Make set attribute.
+    Make mutable set attribute.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -1444,12 +1431,8 @@ def set_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
-    :param mutable: Whether generated class should have public mutable interface.
-    :type mutable: bool
-
-    :return: Set attribute.
-    :rtype: objetto.objects.Attribute[objetto.objects.MutableSetObject or \
-objetto.objects.SetObject]
+    :return: Mutable set attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.MutableSetObject]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -1477,8 +1460,7 @@ objetto.objects.SetObject]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            mutable=mutable,
-        )  # type: Union[Type[MutableSetObject[T]], Type[SetObject[T]]]
+        )  # type: Type[MutableSetObject[T]]
 
     # Factory for set object relationship.
     def set_factory(initial=(), app=None, **_):
@@ -1493,7 +1475,7 @@ objetto.objects.SetObject]
         default = ()
 
     # Relationship.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'set_attribute'"):
         relationship = Relationship(
             types=set_type,
             subtypes=False,
@@ -1511,7 +1493,7 @@ objetto.objects.SetObject]
         )
 
     # Make attribute.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'set_attribute'"):
         attribute_ = Attribute(
             relationship=relationship,
             default=default,
