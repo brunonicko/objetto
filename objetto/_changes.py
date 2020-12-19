@@ -213,7 +213,9 @@ class Update(BaseAtomicChange):
     """
 
     old_values = data_protected_dict_attribute(
-        checked=False, key_types=string_types, key_subtypes=True,
+        checked=False,
+        key_types=string_types,
+        key_subtypes=True,
     )  # type: DataAttribute[DictData[str, Any]]
     """
     Old attribute values.
@@ -222,7 +224,9 @@ class Update(BaseAtomicChange):
     """
 
     new_values = data_protected_dict_attribute(
-        checked=False, key_types=string_types, key_subtypes=True,
+        checked=False,
+        key_types=string_types,
+        key_subtypes=True,
     )  # type: DataAttribute[DictData[str, Any]]
     """
     New attribute values.

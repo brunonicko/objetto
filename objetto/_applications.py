@@ -305,9 +305,8 @@ class Store(InteractiveData):
     )  # type: DataAttribute[Optional[BaseData]]
     """Data."""
 
-    metadata = cast(
-        "DataAttribute[InteractiveDictData[str, Any]]",
-        data_dict_attribute(key_types=string_types, checked=False),
+    metadata = data_dict_attribute(
+        key_types=string_types, checked=False
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
     """Metadata."""
 

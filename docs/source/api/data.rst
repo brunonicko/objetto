@@ -33,7 +33,7 @@ Auxiliary Data Attributes
 .. autofunction:: objetto.data.data_list_attribute
 .. autofunction:: objetto.data.data_protected_list_attribute
 .. autofunction:: objetto.data.data_set_attribute
-.. autofunction:: objetto.data.dataprotected__set_attribute
+.. autofunction:: objetto.data.data_protected_set_attribute
 
 Auxiliary Data Class Factories
 ------------------------------
