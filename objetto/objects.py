@@ -1547,7 +1547,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
 
 
 def protected_list_attribute_pair(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -2060,7 +2060,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
 
 
 def protected_set_attribute_pair(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
