@@ -28,19 +28,22 @@ Auxiliary Attributes
 ********************
 .. autofunction:: objetto.objects.protected_attribute_pair
 .. autofunction:: objetto.objects.dict_attribute
+.. autofunction:: objetto.objects.protected_dict_attribute
 .. autofunction:: objetto.objects.protected_dict_attribute_pair
 .. autofunction:: objetto.objects.list_attribute
+.. autofunction:: objetto.objects.protected_list_attribute
 .. autofunction:: objetto.objects.protected_list_attribute_pair
 .. autofunction:: objetto.objects.set_attribute
+.. autofunction:: objetto.objects.protected_set_attribute
 .. autofunction:: objetto.objects.protected_set_attribute_pair
 
 Auxiliary Class Factories
 -------------------------
 .. autofunction:: objetto.objects.dict_cls
-.. autofunction:: objetto.objects.list_cls
-.. autofunction:: objetto.objects.set_cls
 .. autofunction:: objetto.objects.protected_dict_cls
+.. autofunction:: objetto.objects.list_cls
 .. autofunction:: objetto.objects.protected_list_cls
+.. autofunction:: objetto.objects.set_cls
 .. autofunction:: objetto.objects.protected_set_cls
 
 Data Method Decorator

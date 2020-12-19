@@ -744,121 +744,6 @@ objetto.data.SetData]
     return attribute_
 
 
-def data_protected_dict_cls(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
-    key_subtypes=False,  # type: bool
-    key_factory=None,  # type: LazyFactory
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-):
-    # type: (...) -> Type[DictData[KT, VT]]
-    """
-    Make auxiliary protected dictionary data class.
-
-    :param types: Types.
-    :type types: str or type or None or tuple[str or type or None]
-
-    :param subtypes: Whether to accept subtypes.
-    :type subtypes: bool
-
-    :param checked: Whether to perform runtime type check.
-    :type checked: bool
-
-    :param module: Module path for lazy types/factories.
-    :type module: str or None
-
-    :param factory: Value factory.
-    :type factory: str or collections.abc.Callable or None
-
-    :param serialized: Whether should be serialized.
-    :type serialized: bool
-
-    :param serializer: Custom serializer.
-    :type serializer: str or collections.abc.Callable or None
-
-    :param deserializer: Custom deserializer.
-    :type deserializer: str or collections.abc.Callable or None
-
-    :param represented: Whether should be represented.
-    :type represented: bool
-
-    :param compared: Whether the value should be leverage when comparing.
-    :type compared: bool
-
-    :param key_types: Key types.
-    :type key_types: str or type or None or tuple[str or type or None]
-
-    :param key_subtypes: Whether to accept subtypes for the keys.
-    :type key_subtypes: bool
-
-    :param key_factory: Key factory.
-    :type key_factory: str or collections.abc.Callable or None
-
-    :param qual_name: Optional type qualified name for the generated class.
-    :type qual_name: str or None
-
-    :param unique: Whether generated class should have a unique descriptor.
-    :type unique: bool
-
-    :return: Protected dictionary data class.
-    :type: type[objetto.data.DictData]
-
-    :raises TypeError: Invalid parameter type.
-    :raises ValueError: Invalid parameter value.
-    """
-
-    # Get module from caller if not provided.
-    module = get_caller_module() if module is None else module
-
-    # Relationship.
-    with ReraiseContext((TypeError, ValueError), "defining 'data_protected_dict_cls'"):
-        relationship = DataRelationship(
-            types=types,
-            subtypes=subtypes,
-            checked=checked,
-            module=module,
-            factory=factory,
-            serialized=serialized,
-            serializer=serializer,
-            deserializer=deserializer,
-            represented=represented,
-            compared=compared,
-        )
-
-    # Key relationship.
-    with ReraiseContext((TypeError, ValueError), "defining 'data_protected_dict_cls'"):
-        key_relationship = KeyRelationship(
-            types=key_types,
-            subtypes=key_subtypes,
-            checked=checked,
-            module=module,
-            factory=key_factory,
-        )
-        dct = {"_key_relationship": key_relationship}
-
-    # Make class.
-    cls_kwargs = dict(
-        relationship=relationship,
-        qual_name=qual_name,
-        module=module,
-        unique_descriptor_name="unique_hash" if unique else None,
-        dct=dct,
-    )  # type: Dict[str, Any]
-    with ReraiseContext(TypeError, "defining 'data_protected_dict_cls'"):
-        base = DictData  # type: Type[DictData[KT, VT]]
-        return make_auxiliary_cls(base, **cls_kwargs)
-
-
 def data_dict_cls(
     types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
     subtypes=False,  # type: bool
@@ -976,8 +861,8 @@ def data_dict_cls(
         return make_auxiliary_cls(interactive_base, **cls_kwargs)
 
 
-def data_protected_list_cls(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
+def data_protected_dict_cls(
+    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -987,12 +872,15 @@ def data_protected_list_cls(
     deserializer=None,  # type: LazyFactory
     represented=True,  # type: bool
     compared=True,  # type: bool
+    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
+    key_subtypes=False,  # type: bool
+    key_factory=None,  # type: LazyFactory
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> Type[ListData[T]]
+    # type: (...) -> Type[DictData[KT, VT]]
     """
-    Make auxiliary protected list data class.
+    Make auxiliary protected dictionary data class.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -1024,14 +912,23 @@ def data_protected_list_cls(
     :param compared: Whether the value should be leverage when comparing.
     :type compared: bool
 
+    :param key_types: Key types.
+    :type key_types: str or type or None or tuple[str or type or None]
+
+    :param key_subtypes: Whether to accept subtypes for the keys.
+    :type key_subtypes: bool
+
+    :param key_factory: Key factory.
+    :type key_factory: str or collections.abc.Callable or None
+
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
 
     :param unique: Whether generated class should have a unique descriptor.
     :type unique: bool
 
-    :return: Protected list data class.
-    :type: type[objetto.data.ListData]
+    :return: Protected dictionary data class.
+    :type: type[objetto.data.DictData]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -1041,7 +938,7 @@ def data_protected_list_cls(
     module = get_caller_module() if module is None else module
 
     # Relationship.
-    with ReraiseContext((TypeError, ValueError), "defining 'data_protected_list_cls'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'data_protected_dict_cls'"):
         relationship = DataRelationship(
             types=types,
             subtypes=subtypes,
@@ -1055,15 +952,27 @@ def data_protected_list_cls(
             compared=compared,
         )
 
+    # Key relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'data_protected_dict_cls'"):
+        key_relationship = KeyRelationship(
+            types=key_types,
+            subtypes=key_subtypes,
+            checked=checked,
+            module=module,
+            factory=key_factory,
+        )
+        dct = {"_key_relationship": key_relationship}
+
     # Make class.
     cls_kwargs = dict(
         relationship=relationship,
         qual_name=qual_name,
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
+        dct=dct,
     )  # type: Dict[str, Any]
-    with ReraiseContext(TypeError, "defining 'data_protected_list_cls'"):
-        base = ListData  # type: Type[ListData[T]]
+    with ReraiseContext(TypeError, "defining 'data_protected_dict_cls'"):
+        base = DictData  # type: Type[DictData[KT, VT]]
         return make_auxiliary_cls(base, **cls_kwargs)
 
 
@@ -1158,7 +1067,7 @@ def data_list_cls(
         return make_auxiliary_cls(interactive_base, **cls_kwargs)
 
 
-def data_protected_set_cls(
+def data_protected_list_cls(
     types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
@@ -1172,9 +1081,9 @@ def data_protected_set_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
-    # type: (...) -> Type[SetData[T]]
+    # type: (...) -> Type[ListData[T]]
     """
-    Make auxiliary protected set data class.
+    Make auxiliary protected list data class.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -1212,8 +1121,8 @@ def data_protected_set_cls(
     :param unique: Whether generated class should have a unique descriptor.
     :type unique: bool
 
-    :return: Protected set data class.
-    :type: type[objetto.data.SetData]
+    :return: Protected list data class.
+    :type: type[objetto.data.ListData]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -1223,7 +1132,7 @@ def data_protected_set_cls(
     module = get_caller_module() if module is None else module
 
     # Relationship.
-    with ReraiseContext((TypeError, ValueError), "defining 'data_protected_set_cls'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'data_protected_list_cls'"):
         relationship = DataRelationship(
             types=types,
             subtypes=subtypes,
@@ -1244,8 +1153,8 @@ def data_protected_set_cls(
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
     )  # type: Dict[str, Any]
-    with ReraiseContext(TypeError, "defining 'data_protected_set_cls'"):
-        base = SetData  # type: Type[SetData[T]]
+    with ReraiseContext(TypeError, "defining 'data_protected_list_cls'"):
+        base = ListData  # type: Type[ListData[T]]
         return make_auxiliary_cls(base, **cls_kwargs)
 
 
@@ -1338,3 +1247,94 @@ def data_set_cls(
     with ReraiseContext(TypeError, "defining 'data_set_cls'"):
         interactive_base = InteractiveSetData  # type: Type[InteractiveSetData[T]]
         return make_auxiliary_cls(interactive_base, **cls_kwargs)
+
+
+def data_protected_set_cls(
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=True,  # type: bool
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    compared=True,  # type: bool
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+):
+    # type: (...) -> Type[SetData[T]]
+    """
+    Make auxiliary protected set data class.
+
+    :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
+    :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
+    :param module: Module path for lazy types/factories.
+    :type module: str or None
+
+    :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
+    :param serialized: Whether should be serialized.
+    :type serialized: bool
+
+    :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
+    :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
+    :param represented: Whether should be represented.
+    :type represented: bool
+
+    :param compared: Whether the value should be leverage when comparing.
+    :type compared: bool
+
+    :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
+    :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :return: Protected set data class.
+    :type: type[objetto.data.SetData]
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'data_protected_set_cls'"):
+        relationship = DataRelationship(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            compared=compared,
+        )
+
+    # Make class.
+    cls_kwargs = dict(
+        relationship=relationship,
+        qual_name=qual_name,
+        module=module,
+        unique_descriptor_name="unique_hash" if unique else None,
+    )  # type: Dict[str, Any]
+    with ReraiseContext(TypeError, "defining 'data_protected_set_cls'"):
+        base = SetData  # type: Type[SetData[T]]
+        return make_auxiliary_cls(base, **cls_kwargs)
