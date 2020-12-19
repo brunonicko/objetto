@@ -76,13 +76,19 @@ __all__ = [
     "constant_attribute",
     "protected_attribute_pair",
     "dict_attribute",
+    "protected_dict_attribute",
     "protected_dict_attribute_pair",
     "list_attribute",
+    "protected_list_attribute",
     "protected_list_attribute_pair",
     "set_attribute",
+    "protected_set_attribute",
     "protected_set_attribute_pair",
+    "protected_dict_cls",
     "dict_cls",
+    "protected_list_cls",
     "list_cls",
+    "protected_set_cls",
     "set_cls",
 ]
 
@@ -651,11 +657,10 @@ def dict_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    mutable=True,  # type: bool
 ):
-    # type: (...) -> Union[MutableDictAttribute[KT, VT], DictAttribute[KT, VT]]
+    # type: (...) -> MutableDictAttribute[KT, VT]
     """
-    Make dictionary attribute.
+    Make mutable dictionary attribute.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -735,12 +740,8 @@ def dict_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
-    :param mutable: Whether generated class should have public mutable interface.
-    :type mutable: bool
-
-    :return: Dictionary attribute.
-    :rtype: objetto.objects.Attribute[objetto.objects.MutableDictObject or \
-objetto.objects.DictObject]
+    :return: Mutable dictionary attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.MutableDictObject]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -771,8 +772,7 @@ objetto.objects.DictObject]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            mutable=mutable,
-        )  # type: Union[Type[MutableDictObject[KT, VT]], Type[DictObject[KT, VT]]]
+        )  # type: Type[MutableDictObject[KT, VT]]
 
     # Factory for dict object relationship.
     def dict_factory(initial=(), app=None, **_):
@@ -787,7 +787,7 @@ objetto.objects.DictObject]
         default = ()
 
     # Relationship.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'dict_attribute'"):
         relationship = Relationship(
             types=dict_type,
             subtypes=False,
@@ -805,7 +805,7 @@ objetto.objects.DictObject]
         )
 
     # Make attribute.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'dict_attribute'"):
         attribute_ = Attribute(
             relationship=relationship,
             default=default,
@@ -820,6 +820,200 @@ objetto.objects.DictObject]
             dependencies=None,
             deserialize_to=None,
         )  # type: Attribute[MutableDictObject[KT, VT]]
+
+    return attribute_
+
+
+def protected_dict_attribute(
+    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=None,  # type: Optional[bool]
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
+    key_subtypes=False,  # type: bool
+    key_factory=None,  # type: LazyFactory
+    child=True,  # type: bool
+    history=None,  # type: Optional[bool]
+    data=None,  # type: Optional[bool]
+    custom_data_relationship=None,  # type: Optional[DataRelationship]
+    default=MISSING,  # type: Any
+    default_factory=None,  # type: LazyFactory
+    required=False,  # type: bool
+    changeable=True,  # type: bool
+    deletable=False,  # type: bool
+    finalized=False,  # type: bool
+    abstracted=False,  # type: bool
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
+):
+    # type: (...) -> DictAttribute[KT, VT]
+    """
+    Make protected dictionary attribute.
+
+    :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
+    :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
+    :param module: Module path for lazy types/factories.
+    :type module: str or None
+
+    :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
+    :param serialized: Whether should be serialized.
+    :type serialized: bool
+
+    :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
+    :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
+    :param represented: Whether should be represented.
+    :type represented: bool
+
+    :param child: Whether object values should be adopted as children.
+    :type child: bool
+
+    :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
+    :param data: Whether to generate data for the value.
+    :type data: bool
+
+    :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
+    :param key_types: Key types.
+    :type key_types: str or type or None or tuple[str or type or None]
+
+    :param key_subtypes: Whether to accept subtypes for the keys.
+    :type key_subtypes: bool
+
+    :param key_factory: Key factory.
+    :type key_factory: str or collections.abc.Callable or None
+
+    :param default: Default value.
+
+    :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
+    :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
+    :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
+    :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
+    :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
+    :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
+    :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
+    :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param reactions: Reaction functions ordered by priority.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :return: Protected dictionary attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.DictObject]
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Make dictionary class.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_dict_attribute'"):
+        dict_type = protected_dict_cls(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            key_types=key_types,
+            key_subtypes=key_subtypes,
+            key_factory=key_factory,
+            child=child,
+            history=history,
+            data=data,
+            custom_data_relationship=custom_data_relationship,
+            qual_name=qual_name,
+            unique=unique,
+            reactions=reactions,
+        )  # type: Type[DictObject[KT, VT]]
+
+    # Factory for dict object relationship.
+    def dict_factory(initial=(), app=None, **_):
+        """Factory for the whole dict object."""
+        if type(initial) is dict_type and initial.app is app:
+            return initial
+        else:
+            return dict_type(app, initial)
+
+    # Get default value/factory.
+    if changeable and not required and default is MISSING and default_factory is None:
+        default = ()
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_dict_attribute'"):
+        relationship = Relationship(
+            types=dict_type,
+            subtypes=False,
+            checked=False,
+            module=module,
+            factory=dict_factory,
+            serialized=serialized,
+            serializer=None,
+            deserializer=None,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            data_relationship=None,
+        )
+
+    # Make attribute.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_dict_attribute'"):
+        attribute_ = Attribute(
+            relationship=relationship,
+            default=default,
+            default_factory=default_factory,
+            module=module,
+            required=required,
+            changeable=changeable,
+            deletable=deletable,
+            finalized=finalized,
+            abstracted=abstracted,
+            delegated=False,
+            dependencies=None,
+            deserialize_to=None,
+        )  # type: Attribute[DictObject[KT, VT]]
 
     return attribute_
 
@@ -937,38 +1131,34 @@ objetto.objects.Attribute[objetto.objects.DictObject]]
     if default is MISSING and default_factory is None:
         default = ()
 
-    public_attribute = cast(
-        "DictAttribute[KT, VT]",
-        dict_attribute(
-            types=types,
-            subtypes=subtypes,
-            checked=checked,
-            module=module,
-            factory=factory,
-            serialized=serialized,
-            serializer=serializer,
-            deserializer=deserializer,
-            represented=represented,
-            key_types=key_types,
-            key_subtypes=key_subtypes,
-            key_factory=key_factory,
-            child=child,
-            history=history,
-            data=data,
-            custom_data_relationship=custom_data_relationship,
-            default=default,
-            default_factory=default_factory,
-            required=False,
-            changeable=False,
-            deletable=False,
-            finalized=finalized,
-            abstracted=abstracted,
-            qual_name=qual_name,
-            unique=unique,
-            reactions=reactions,
-            mutable=False,
-        ),
-    )
+    public_attribute = protected_dict_attribute(
+        types=types,
+        subtypes=subtypes,
+        checked=checked,
+        module=module,
+        factory=factory,
+        serialized=serialized,
+        serializer=serializer,
+        deserializer=deserializer,
+        represented=represented,
+        key_types=key_types,
+        key_subtypes=key_subtypes,
+        key_factory=key_factory,
+        child=child,
+        history=history,
+        data=data,
+        custom_data_relationship=custom_data_relationship,
+        default=default,
+        default_factory=default_factory,
+        required=False,
+        changeable=False,
+        deletable=False,
+        finalized=finalized,
+        abstracted=abstracted,
+        qual_name=qual_name,
+        unique=unique,
+        reactions=reactions,
+    )  # type: DictAttribute[KT, VT]
 
     # Make protected attribute.
     protected_attribute = cast(
@@ -1022,11 +1212,10 @@ def list_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    mutable=True,  # type: bool
 ):
-    # type: (...) -> Union[MutableListAttribute[T], ListAttribute[T]]
+    # type: (...) -> MutableListAttribute[T]
     """
-    Make list attribute.
+    Make mutable list attribute.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -1097,12 +1286,8 @@ def list_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
-    :param mutable: Whether generated class should have public mutable interface.
-    :type mutable: bool
-
-    :return: List attribute.
-    :rtype: objetto.objects.Attribute[objetto.objects.MutableListObject or \
-objetto.objects.ListObject]
+    :return: Mutable list attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.MutableListObject]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -1130,8 +1315,7 @@ objetto.objects.ListObject]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            mutable=mutable,
-        )  # type: Union[Type[MutableListObject[T]], Type[ListObject[T]]]
+        )  # type: Type[MutableListObject[T]]
 
     # Factory for list object relationship.
     def list_factory(initial=(), app=None, **_):
@@ -1146,7 +1330,7 @@ objetto.objects.ListObject]
         default = ()
 
     # Relationship.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'list_attribute'"):
         relationship = Relationship(
             types=list_type,
             subtypes=False,
@@ -1164,7 +1348,7 @@ objetto.objects.ListObject]
         )
 
     # Make attribute.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'list_attribute'"):
         attribute_ = Attribute(
             relationship=relationship,
             default=default,
@@ -1183,8 +1367,187 @@ objetto.objects.ListObject]
     return attribute_
 
 
+def protected_list_attribute(
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=None,  # type: Optional[bool]
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    child=True,  # type: bool
+    history=None,  # type: Optional[bool]
+    data=None,  # type: Optional[bool]
+    custom_data_relationship=None,  # type: Optional[DataRelationship]
+    default=MISSING,  # type: Any
+    default_factory=None,  # type: LazyFactory
+    required=False,  # type: bool
+    changeable=True,  # type: bool
+    deletable=False,  # type: bool
+    finalized=False,  # type: bool
+    abstracted=False,  # type: bool
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
+):
+    # type: (...) -> ListAttribute[T]
+    """
+    Make protected list attribute.
+
+    :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
+    :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
+    :param module: Module path for lazy types/factories.
+    :type module: str or None
+
+    :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
+    :param serialized: Whether should be serialized.
+    :type serialized: bool
+
+    :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
+    :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
+    :param represented: Whether should be represented.
+    :type represented: bool
+
+    :param child: Whether object values should be adopted as children.
+    :type child: bool
+
+    :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
+    :param data: Whether to generate data for the value.
+    :type data: bool
+
+    :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
+    :param default: Default value.
+
+    :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
+    :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
+    :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
+    :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
+    :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
+    :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
+    :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
+    :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param reactions: Reaction functions ordered by priority.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :return: Protected list attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.ListObject]
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Make list class.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_list_attribute'"):
+        list_type = protected_list_cls(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            custom_data_relationship=custom_data_relationship,
+            qual_name=qual_name,
+            unique=unique,
+            reactions=reactions,
+        )  # type: Type[ListObject[T]]
+
+    # Factory for list object relationship.
+    def list_factory(initial=(), app=None, **_):
+        """Factory for the whole list object."""
+        if type(initial) is list_type and initial.app is app:
+            return initial
+        else:
+            return list_type(app, initial)
+
+    # Get default value/factory.
+    if changeable and not required and default is MISSING and default_factory is None:
+        default = ()
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_list_attribute'"):
+        relationship = Relationship(
+            types=list_type,
+            subtypes=False,
+            checked=False,
+            module=module,
+            factory=list_factory,
+            serialized=serialized,
+            serializer=None,
+            deserializer=None,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            data_relationship=None,
+        )
+
+    # Make attribute.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_list_attribute'"):
+        attribute_ = Attribute(
+            relationship=relationship,
+            default=default,
+            default_factory=default_factory,
+            module=module,
+            required=required,
+            changeable=changeable,
+            deletable=deletable,
+            finalized=finalized,
+            abstracted=abstracted,
+            delegated=False,
+            dependencies=None,
+            deserialize_to=None,
+        )  # type: Attribute[ListObject[T]]
+
+    return attribute_
+
+
 def protected_list_attribute_pair(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -1284,35 +1647,31 @@ objetto.objects.Attribute[objetto.objects.ListObject]]
     if default is MISSING and default_factory is None:
         default = ()
 
-    public_attribute = cast(
-        "ListAttribute[T]",
-        list_attribute(
-            types=types,
-            subtypes=subtypes,
-            checked=checked,
-            module=module,
-            factory=factory,
-            serialized=serialized,
-            serializer=serializer,
-            deserializer=deserializer,
-            represented=represented,
-            child=child,
-            history=history,
-            data=data,
-            custom_data_relationship=custom_data_relationship,
-            default=default,
-            default_factory=default_factory,
-            required=False,
-            changeable=False,
-            deletable=False,
-            finalized=finalized,
-            abstracted=abstracted,
-            qual_name=qual_name,
-            unique=unique,
-            reactions=reactions,
-            mutable=False,
-        ),
-    )
+    public_attribute = protected_list_attribute(
+        types=types,
+        subtypes=subtypes,
+        checked=checked,
+        module=module,
+        factory=factory,
+        serialized=serialized,
+        serializer=serializer,
+        deserializer=deserializer,
+        represented=represented,
+        child=child,
+        history=history,
+        data=data,
+        custom_data_relationship=custom_data_relationship,
+        default=default,
+        default_factory=default_factory,
+        required=False,
+        changeable=False,
+        deletable=False,
+        finalized=finalized,
+        abstracted=abstracted,
+        qual_name=qual_name,
+        unique=unique,
+        reactions=reactions,
+    )  # type: ListAttribute[T]
 
     # Make protected attribute.
     protected_attribute = cast(
@@ -1366,11 +1725,10 @@ def set_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    mutable=True,  # type: bool
 ):
-    # type: (...) -> Union[MutableSetAttribute[T], SetAttribute[T]]
+    # type: (...) -> MutableSetAttribute[T]
     """
-    Make set attribute.
+    Make mutable set attribute.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -1441,12 +1799,8 @@ def set_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
-    :param mutable: Whether generated class should have public mutable interface.
-    :type mutable: bool
-
-    :return: Set attribute.
-    :rtype: objetto.objects.Attribute[objetto.objects.MutableSetObject or \
-objetto.objects.SetObject]
+    :return: Mutable set attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.MutableSetObject]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -1474,8 +1828,7 @@ objetto.objects.SetObject]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
-            mutable=mutable,
-        )  # type: Union[Type[MutableSetObject[T]], Type[SetObject[T]]]
+        )  # type: Type[MutableSetObject[T]]
 
     # Factory for set object relationship.
     def set_factory(initial=(), app=None, **_):
@@ -1490,7 +1843,7 @@ objetto.objects.SetObject]
         default = ()
 
     # Relationship.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'set_attribute'"):
         relationship = Relationship(
             types=set_type,
             subtypes=False,
@@ -1508,7 +1861,7 @@ objetto.objects.SetObject]
         )
 
     # Make attribute.
-    with ReraiseContext((TypeError, ValueError), "defining 'attribute'"):
+    with ReraiseContext((TypeError, ValueError), "defining 'set_attribute'"):
         attribute_ = Attribute(
             relationship=relationship,
             default=default,
@@ -1527,8 +1880,187 @@ objetto.objects.SetObject]
     return attribute_
 
 
+def protected_set_attribute(
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=None,  # type: Optional[bool]
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    child=True,  # type: bool
+    history=None,  # type: Optional[bool]
+    data=None,  # type: Optional[bool]
+    custom_data_relationship=None,  # type: Optional[DataRelationship]
+    default=MISSING,  # type: Any
+    default_factory=None,  # type: LazyFactory
+    required=False,  # type: bool
+    changeable=True,  # type: bool
+    deletable=False,  # type: bool
+    finalized=False,  # type: bool
+    abstracted=False,  # type: bool
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
+):
+    # type: (...) -> SetAttribute[T]
+    """
+    Make protected set attribute.
+
+    :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
+    :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
+    :param module: Module path for lazy types/factories.
+    :type module: str or None
+
+    :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
+    :param serialized: Whether should be serialized.
+    :type serialized: bool
+
+    :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
+    :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
+    :param represented: Whether should be represented.
+    :type represented: bool
+
+    :param child: Whether object values should be adopted as children.
+    :type child: bool
+
+    :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
+    :param data: Whether to generate data for the value.
+    :type data: bool
+
+    :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
+    :param default: Default value.
+
+    :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+
+    :param required: Whether attribute is required to have a value or not.
+    :type required: bool
+
+    :param changeable: Whether attribute value can be changed.
+    :type changeable: bool
+
+    :param deletable: Whether attribute value can be deleted.
+    :type deletable: bool
+
+    :param finalized: If True, attribute can't be overridden by subclasses.
+    :type finalized: bool
+
+    :param abstracted: If True, attribute needs to be overridden by subclasses.
+    :type abstracted: bool
+
+    :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
+    :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param reactions: Reaction functions ordered by priority.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :return: Protected set attribute.
+    :rtype: objetto.objects.Attribute[objetto.objects.SetObject]
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Make set class.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_set_attribute'"):
+        set_type = protected_set_cls(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            custom_data_relationship=custom_data_relationship,
+            qual_name=qual_name,
+            unique=unique,
+            reactions=reactions,
+        )  # type: Type[SetObject[T]]
+
+    # Factory for set object relationship.
+    def set_factory(initial=(), app=None, **_):
+        """Factory for the whole set object."""
+        if type(initial) is set_type and initial.app is app:
+            return initial
+        else:
+            return set_type(app, initial)
+
+    # Get default value/factory.
+    if changeable and not required and default is MISSING and default_factory is None:
+        default = ()
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_set_attribute'"):
+        relationship = Relationship(
+            types=set_type,
+            subtypes=False,
+            checked=False,
+            module=module,
+            factory=set_factory,
+            serialized=serialized,
+            serializer=None,
+            deserializer=None,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            data_relationship=None,
+        )
+
+    # Make attribute.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_set_attribute'"):
+        attribute_ = Attribute(
+            relationship=relationship,
+            default=default,
+            default_factory=default_factory,
+            module=module,
+            required=required,
+            changeable=changeable,
+            deletable=deletable,
+            finalized=finalized,
+            abstracted=abstracted,
+            delegated=False,
+            dependencies=None,
+            deserialize_to=None,
+        )  # type: Attribute[SetObject[T]]
+
+    return attribute_
+
+
 def protected_set_attribute_pair(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
     module=None,  # type: Optional[str]
@@ -1628,35 +2160,31 @@ objetto.objects.Attribute[objetto.objects.SetObject]]
     if default is MISSING and default_factory is None:
         default = ()
 
-    public_attribute = cast(
-        "SetAttribute[T]",
-        set_attribute(
-            types=types,
-            subtypes=subtypes,
-            checked=checked,
-            module=module,
-            factory=factory,
-            serialized=serialized,
-            serializer=serializer,
-            deserializer=deserializer,
-            represented=represented,
-            child=child,
-            history=history,
-            data=data,
-            custom_data_relationship=custom_data_relationship,
-            default=default,
-            default_factory=default_factory,
-            required=False,
-            changeable=False,
-            deletable=False,
-            finalized=finalized,
-            abstracted=abstracted,
-            qual_name=qual_name,
-            unique=unique,
-            reactions=reactions,
-            mutable=False,
-        ),
-    )
+    public_attribute = protected_set_attribute(
+        types=types,
+        subtypes=subtypes,
+        checked=checked,
+        module=module,
+        factory=factory,
+        serialized=serialized,
+        serializer=serializer,
+        deserializer=deserializer,
+        represented=represented,
+        child=child,
+        history=history,
+        data=data,
+        custom_data_relationship=custom_data_relationship,
+        default=default,
+        default_factory=default_factory,
+        required=False,
+        changeable=False,
+        deletable=False,
+        finalized=finalized,
+        abstracted=abstracted,
+        qual_name=qual_name,
+        unique=unique,
+        reactions=reactions,
+    )  # type: SetAttribute[T]
 
     # Make protected attribute.
     protected_attribute = cast(
@@ -1734,11 +2262,10 @@ def dict_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    mutable=True,  # type: bool
 ):
-    # type: (...) -> Union[Type[MutableDictObject[KT, VT]], Type[DictObject[KT, VT]]]
+    # type: (...) -> Type[MutableDictObject[KT, VT]]
     """
-    Make auxiliary dictionary object class.
+    Make auxiliary mutable dictionary object class.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -1798,11 +2325,8 @@ def dict_cls(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
-    :param mutable: Whether generated class should have public mutable interface.
-    :type mutable: bool
-
-    :return: Dictionary object class.
-    :rtype: type[objetto.objects.DictObject or objetto.objects.MutableDictObject]
+    :return: Mutable dictionary object class.
+    :rtype: type[objetto.objects.MutableDictObject]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -1853,12 +2377,147 @@ collections.abc.Iterable[str or collections.abc.Callable]
         dct=dct,
     )  # type: Dict[str, Any]
     with ReraiseContext(TypeError, "defining 'dict_cls'"):
-        if mutable:
-            mutable_base = MutableDictObject  # type: Type[MutableDictObject[KT, VT]]
-            return make_auxiliary_cls(mutable_base, **cls_kwargs)
-        else:
-            base = DictObject  # type: Type[DictObject[KT, VT]]
-            return make_auxiliary_cls(base, **cls_kwargs)
+        mutable_base = MutableDictObject  # type: Type[MutableDictObject[KT, VT]]
+        return make_auxiliary_cls(mutable_base, **cls_kwargs)
+
+
+def protected_dict_cls(
+    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=None,  # type: Optional[bool]
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
+    key_subtypes=False,  # type: bool
+    key_factory=None,  # type: LazyFactory
+    child=True,  # type: bool
+    history=None,  # type: Optional[bool]
+    data=None,  # type: Optional[bool]
+    custom_data_relationship=None,  # type: Optional[DataRelationship]
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
+):
+    # type: (...) -> Type[DictObject[KT, VT]]
+    """
+    Make auxiliary protected dictionary object class.
+
+    :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
+    :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
+    :param module: Module path for lazy types/factories.
+    :type module: str or None
+
+    :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
+    :param serialized: Whether should be serialized.
+    :type serialized: bool
+
+    :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
+    :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
+    :param represented: Whether should be represented.
+    :type represented: bool
+
+    :param child: Whether object values should be adopted as children.
+    :type child: bool
+
+    :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
+    :param data: Whether to generate data for the value.
+    :type data: bool
+
+    :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
+    :param key_types: Key types.
+    :type key_types: str or type or None or tuple[str or type or None]
+
+    :param key_subtypes: Whether to accept subtypes for the keys.
+    :type key_subtypes: bool
+
+    :param key_factory: Key factory.
+    :type key_factory: str or collections.abc.Callable or None
+
+    :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
+    :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param reactions: Reaction functions ordered by priority.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :return: Protected dictionary object class.
+    :rtype: type[objetto.objects.DictObject]
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_dict_cls'"):
+        relationship = Relationship(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            data_relationship=custom_data_relationship,
+        )
+
+    # Key relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_dict_cls'"):
+        key_relationship = KeyRelationship(
+            types=key_types,
+            subtypes=key_subtypes,
+            checked=checked,
+            module=module,
+            factory=key_factory,
+        )
+        dct = {"_key_relationship": key_relationship}  # type: Dict[str, Any]
+
+    # Reactions.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_dict_cls'"):
+        dct.update(_prepare_reactions(reactions))
+
+    # Make class.
+    cls_kwargs = dict(
+        relationship=relationship,
+        qual_name=qual_name,
+        module=module,
+        unique_descriptor_name="unique_hash" if unique else None,
+        dct=dct,
+    )  # type: Dict[str, Any]
+    with ReraiseContext(TypeError, "defining 'protected_dict_cls'"):
+        base = DictObject  # type: Type[DictObject[KT, VT]]
+        return make_auxiliary_cls(base, **cls_kwargs)
 
 
 def list_cls(
@@ -1878,11 +2537,10 @@ def list_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    mutable=True,  # type: bool
 ):
-    # type: (...) -> Union[Type[MutableListObject[T]], Type[ListObject[T]]]
+    # type: (...) -> Type[MutableListObject[T]]
     """
-    Make auxiliary list object class.
+    Make auxiliary mutable list object class.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -1933,11 +2591,8 @@ def list_cls(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
-    :param mutable: Whether generated class should have public mutable interface.
-    :type mutable: bool
-
-    :return: List object class.
-    :rtype: type[objetto.objects.ListObject or objetto.objects.MutableListObject]
+    :return: Mutable list object class.
+    :rtype: type[objetto.objects.MutableListObject]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -1977,15 +2632,11 @@ collections.abc.Iterable[str or collections.abc.Callable]
         dct=dct,
     )  # type: Dict[str, Any]
     with ReraiseContext(TypeError, "defining 'list_cls'"):
-        if mutable:
-            mutable_base = MutableListObject  # type: Type[MutableListObject[T]]
-            return make_auxiliary_cls(mutable_base, **cls_kwargs)
-        else:
-            base = ListObject  # type: Type[ListObject[T]]
-            return make_auxiliary_cls(base, **cls_kwargs)
+        mutable_base = MutableListObject  # type: Type[MutableListObject[T]]
+        return make_auxiliary_cls(mutable_base, **cls_kwargs)
 
 
-def set_cls(
+def protected_list_cls(
     types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
     subtypes=False,  # type: bool
     checked=None,  # type: Optional[bool]
@@ -2002,11 +2653,10 @@ def set_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
-    mutable=True,  # type: bool
 ):
-    # type: (...) -> Union[Type[MutableSetObject[T]], Type[SetObject[T]]]
+    # type: (...) -> Type[ListObject[T]]
     """
-    Make auxiliary set object class.
+    Make auxiliary protected list object class.
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -2057,11 +2707,124 @@ def set_cls(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
-    :param mutable: Whether generated class should have public mutable interface.
-    :type mutable: bool
+    :return: Protected list object class.
+    :rtype: type[objetto.objects.ListObject]
 
-    :return: Set object class.
-    :rtype: type[objetto.objects.SetObject or objetto.objects.MutableSetObject]
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_list_cls'"):
+        relationship = Relationship(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            data_relationship=custom_data_relationship,
+        )
+
+    # Reactions.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_list_cls'"):
+        dct = _prepare_reactions(reactions)
+
+    # Make class.
+    cls_kwargs = dict(
+        relationship=relationship,
+        qual_name=qual_name,
+        module=module,
+        unique_descriptor_name="unique_hash" if unique else None,
+        dct=dct,
+    )  # type: Dict[str, Any]
+    with ReraiseContext(TypeError, "defining 'protected_list_cls'"):
+        base = ListObject  # type: Type[ListObject[T]]
+        return make_auxiliary_cls(base, **cls_kwargs)
+
+
+def set_cls(
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=None,  # type: Optional[bool]
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    child=True,  # type: bool
+    history=None,  # type: Optional[bool]
+    data=None,  # type: Optional[bool]
+    custom_data_relationship=None,  # type: Optional[DataRelationship]
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
+):
+    # type: (...) -> Type[MutableSetObject[T]]
+    """
+    Make auxiliary mutable set object class.
+
+    :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
+    :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
+    :param module: Module path for lazy types/factories.
+    :type module: str or None
+
+    :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
+    :param serialized: Whether should be serialized.
+    :type serialized: bool
+
+    :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
+    :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
+    :param represented: Whether should be represented.
+    :type represented: bool
+
+    :param child: Whether object values should be adopted as children.
+    :type child: bool
+
+    :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
+    :param data: Whether to generate data for the value.
+    :type data: bool
+
+    :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
+    :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
+    :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param reactions: Reaction functions ordered by priority.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :return: Mutable set object class.
+    :rtype: type[objetto.objects.MutableSetObject]
 
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
@@ -2101,9 +2864,121 @@ collections.abc.Iterable[str or collections.abc.Callable]
         dct=dct,
     )  # type: Dict[str, Any]
     with ReraiseContext(TypeError, "defining 'set_cls'"):
-        if mutable:
-            mutable_base = MutableSetObject  # type: Type[MutableSetObject[T]]
-            return make_auxiliary_cls(mutable_base, **cls_kwargs)
-        else:
-            base = SetObject  # type: Type[SetObject[T]]
-            return make_auxiliary_cls(base, **cls_kwargs)
+        mutable_base = MutableSetObject  # type: Type[MutableSetObject[T]]
+        return make_auxiliary_cls(mutable_base, **cls_kwargs)
+
+
+def protected_set_cls(
+    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
+    subtypes=False,  # type: bool
+    checked=None,  # type: Optional[bool]
+    module=None,  # type: Optional[str]
+    factory=None,  # type: LazyFactory
+    serialized=None,  # type: Optional[bool]
+    serializer=None,  # type: LazyFactory
+    deserializer=None,  # type: LazyFactory
+    represented=True,  # type: bool
+    child=True,  # type: bool
+    history=None,  # type: Optional[bool]
+    data=None,  # type: Optional[bool]
+    custom_data_relationship=None,  # type: Optional[DataRelationship]
+    qual_name=None,  # type: Optional[str]
+    unique=False,  # type: bool
+    reactions=None,  # type: ReactionsType
+):
+    # type: (...) -> Type[SetObject[T]]
+    """
+    Make auxiliary protected set object class.
+
+    :param types: Types.
+    :type types: str or type or None or tuple[str or type or None]
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
+
+    :param checked: Whether to perform runtime type check.
+    :type checked: bool
+
+    :param module: Module path for lazy types/factories.
+    :type module: str or None
+
+    :param factory: Value factory.
+    :type factory: str or collections.abc.Callable or None
+
+    :param serialized: Whether should be serialized.
+    :type serialized: bool
+
+    :param serializer: Custom serializer.
+    :type serializer: str or collections.abc.Callable or None
+
+    :param deserializer: Custom deserializer.
+    :type deserializer: str or collections.abc.Callable or None
+
+    :param represented: Whether should be represented.
+    :type represented: bool
+
+    :param child: Whether object values should be adopted as children.
+    :type child: bool
+
+    :param history: Whether to propagate the history to the child object value.
+    :type history: bool
+
+    :param data: Whether to generate data for the value.
+    :type data: bool
+
+    :param custom_data_relationship: Custom data relationship.
+    :type custom_data_relationship: objetto.data.DataRelationship or None
+
+    :param qual_name: Optional type qualified name for the generated class.
+    :type qual_name: str or None
+
+    :param unique: Whether generated class should have a unique descriptor.
+    :type unique: bool
+
+    :param reactions: Reaction functions ordered by priority.
+    :type reactions: str or collections.abc.Callable or None or \
+collections.abc.Iterable[str or collections.abc.Callable]
+
+    :return: Protected set object class.
+    :rtype: type[objetto.objects.SetObject]
+
+    :raises TypeError: Invalid parameter type.
+    :raises ValueError: Invalid parameter value.
+    """
+
+    # Get module from caller if not provided.
+    module = get_caller_module() if module is None else module
+
+    # Relationship.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_set_cls'"):
+        relationship = Relationship(
+            types=types,
+            subtypes=subtypes,
+            checked=checked,
+            module=module,
+            factory=factory,
+            serialized=serialized,
+            serializer=serializer,
+            deserializer=deserializer,
+            represented=represented,
+            child=child,
+            history=history,
+            data=data,
+            data_relationship=custom_data_relationship,
+        )
+
+    # Reactions.
+    with ReraiseContext((TypeError, ValueError), "defining 'protected_set_cls'"):
+        dct = _prepare_reactions(reactions)
+
+    # Make class.
+    cls_kwargs = dict(
+        relationship=relationship,
+        qual_name=qual_name,
+        module=module,
+        unique_descriptor_name="unique_hash" if unique else None,
+        dct=dct,
+    )  # type: Dict[str, Any]
+    with ReraiseContext(TypeError, "defining 'protected_set_cls'"):
+        base = SetObject  # type: Type[SetObject[T]]
+        return make_auxiliary_cls(base, **cls_kwargs)

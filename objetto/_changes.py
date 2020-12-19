@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Object changes."""
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from six import integer_types, string_types
 
@@ -10,9 +10,9 @@ from ._states import BaseState
 from .data import (
     Data,
     data_attribute,
-    data_dict_attribute,
-    data_list_attribute,
-    data_set_attribute,
+    data_protected_dict_attribute,
+    data_protected_list_attribute,
+    data_protected_set_attribute,
 )
 
 if TYPE_CHECKING:
@@ -50,7 +50,7 @@ class BaseChange(Data):
     """
 
     name = data_attribute(
-        string_types, checked=False, abstracted=True
+        string_types, subtypes=True, checked=False, abstracted=True
     )  # type: DataAttribute[str]
     """
     Name describing the change.
@@ -114,15 +114,11 @@ class BaseAtomicChange(BaseChange):
     :type: objetto.bases.BaseState
     """
 
-    old_children = cast(
-        "DataAttribute[SetData[BaseObject]]",
-        data_set_attribute(
-            ".._objects|BaseObject",
-            subtypes=True,
-            checked=False,
-            finalized=True,
-            interactive=False,
-        ),
+    old_children = data_protected_set_attribute(
+        ".._objects|BaseObject",
+        subtypes=True,
+        checked=False,
+        finalized=True,
     )  # type: Final[DataAttribute[SetData[BaseObject]]]
     """
     Children objects being released.
@@ -130,15 +126,11 @@ class BaseAtomicChange(BaseChange):
     :type: objetto.data.SetData[objetto.bases.BaseObject]
     """
 
-    new_children = cast(
-        "DataAttribute[SetData[BaseObject]]",
-        data_set_attribute(
-            ".._objects|BaseObject",
-            subtypes=True,
-            checked=False,
-            finalized=True,
-            interactive=False,
-        ),
+    new_children = data_protected_set_attribute(
+        ".._objects|BaseObject",
+        subtypes=True,
+        checked=False,
+        finalized=True,
     )  # type: Final[DataAttribute[SetData[BaseObject]]]
     """
     Children objects being adopted.
@@ -146,15 +138,11 @@ class BaseAtomicChange(BaseChange):
     :type: objetto.data.SetData[objetto.bases.BaseObject]
     """
 
-    history_adopters = cast(
-        "DataAttribute[SetData[BaseObject]]",
-        data_set_attribute(
-            ".._objects|BaseObject",
-            subtypes=True,
-            checked=False,
-            finalized=True,
-            interactive=False,
-        ),
+    history_adopters = data_protected_set_attribute(
+        ".._objects|BaseObject",
+        subtypes=True,
+        checked=False,
+        finalized=True,
     )  # type: Final[DataAttribute[SetData[BaseObject]]]
     """
     Objects adopting the history from the object being changed.
@@ -185,16 +173,19 @@ class Batch(BaseChange):
       - :class:`objetto.bases.BaseChange`
     """
 
-    name = data_attribute(string_types, checked=False)  # type: DataAttribute[str]
+    name = data_attribute(
+        string_types, subtypes=True, checked=False
+    )  # type: DataAttribute[str]
     """
     Name describing the change.
 
     :type: str
     """
 
-    metadata = cast(
-        "DataAttribute[DictData[str, Any]]",
-        data_dict_attribute(key_types=string_types, checked=False, interactive=False),
+    metadata = data_protected_dict_attribute(
+        key_types=string_types,
+        subtypes=True,
+        checked=False,
     )  # type: DataAttribute[DictData[str, Any]]
     """
     Metadata.
@@ -213,7 +204,7 @@ class Update(BaseAtomicChange):
     """
 
     name = data_attribute(
-        string_types, checked=False, default="Update Attributes"
+        string_types, subtypes=True, checked=False, default="Update Attributes"
     )  # type: DataAttribute[str]
     """
     Name describing the change.
@@ -221,9 +212,10 @@ class Update(BaseAtomicChange):
     :type: str
     """
 
-    old_values = cast(
-        "DataAttribute[DictData[str, Any]]",
-        data_dict_attribute(checked=False, interactive=False),
+    old_values = data_protected_dict_attribute(
+        checked=False,
+        key_types=string_types,
+        key_subtypes=True,
     )  # type: DataAttribute[DictData[str, Any]]
     """
     Old attribute values.
@@ -231,9 +223,10 @@ class Update(BaseAtomicChange):
     :type: objetto.data.DictData[str, Any]
     """
 
-    new_values = cast(
-        "DataAttribute[DictData[str, Any]]",
-        data_dict_attribute(checked=False, interactive=False),
+    new_values = data_protected_dict_attribute(
+        checked=False,
+        key_types=string_types,
+        key_subtypes=True,
     )  # type: DataAttribute[DictData[str, Any]]
     """
     New attribute values.
@@ -252,15 +245,14 @@ class DictUpdate(BaseAtomicChange):
     """
 
     name = data_attribute(
-        string_types, checked=False, default="Update Values"
+        string_types, subtypes=True, checked=False, default="Update Values"
     )  # type: DataAttribute[str]
     """
     Name describing the change.
     """
 
-    old_values = cast(
-        "DataAttribute[DictData[Any, Any]]",
-        data_dict_attribute(checked=False, interactive=False),
+    old_values = data_protected_dict_attribute(
+        checked=False
     )  # type: DataAttribute[DictData[Any, Any]]
     """
     Old values.
@@ -268,9 +260,8 @@ class DictUpdate(BaseAtomicChange):
     :type: objetto.data.DictData[collections.abc.Hashable, Any]
     """
 
-    new_values = cast(
-        "DataAttribute[DictData[Any, Any]]",
-        data_dict_attribute(checked=False, interactive=False),
+    new_values = data_protected_dict_attribute(
+        checked=False
     )  # type: DataAttribute[DictData[Any, Any]]
     """
     New values.
@@ -289,7 +280,7 @@ class ListInsert(BaseAtomicChange):
     """
 
     name = data_attribute(
-        string_types, checked=False, default="Insert Values"
+        string_types, subtypes=True, checked=False, default="Insert Values"
     )  # type: DataAttribute[str]
     """
     Name describing the change.
@@ -320,9 +311,8 @@ class ListInsert(BaseAtomicChange):
     :type: int
     """
 
-    new_values = cast(
-        "DataAttribute[ListData[Any]]",
-        data_list_attribute(checked=False, interactive=False),
+    new_values = data_protected_list_attribute(
+        checked=False,
     )  # type: DataAttribute[ListData[Any]]
     """
     New values.
@@ -341,7 +331,7 @@ class ListDelete(BaseAtomicChange):
     """
 
     name = data_attribute(
-        string_types, checked=False, default="Remove Values"
+        string_types, subtypes=True, checked=False, default="Remove Values"
     )  # type: DataAttribute[str]
     """
     Name describing the change.
@@ -372,9 +362,8 @@ class ListDelete(BaseAtomicChange):
     :type: int
     """
 
-    old_values = cast(
-        "DataAttribute[ListData[Any]]",
-        data_list_attribute(checked=False, interactive=False),
+    old_values = data_protected_list_attribute(
+        checked=False,
     )  # type: DataAttribute[ListData[Any]]
     """
     Old values.
@@ -393,7 +382,7 @@ class ListUpdate(BaseAtomicChange):
     """
 
     name = data_attribute(
-        string_types, checked=False, default="Update values"
+        string_types, subtypes=True, checked=False, default="Update values"
     )  # type: DataAttribute[str]
     """
     Name describing the change.
@@ -424,9 +413,8 @@ class ListUpdate(BaseAtomicChange):
     :type: int
     """
 
-    old_values = cast(
-        "DataAttribute[ListData[Any]]",
-        data_list_attribute(checked=False, interactive=False),
+    old_values = data_protected_list_attribute(
+        checked=False,
     )  # type: DataAttribute[ListData[Any]]
     """
     Old values.
@@ -434,9 +422,8 @@ class ListUpdate(BaseAtomicChange):
     :type: objetto.data.ListData[Any]
     """
 
-    new_values = cast(
-        "DataAttribute[ListData[Any]]",
-        data_list_attribute(checked=False, interactive=False),
+    new_values = data_protected_list_attribute(
+        checked=False,
     )  # type: DataAttribute[ListData[Any]]
     """
     New values.
@@ -455,7 +442,7 @@ class ListMove(BaseAtomicChange):
     """
 
     name = data_attribute(
-        string_types, checked=False, default="Move values"
+        string_types, subtypes=True, checked=False, default="Move values"
     )  # type: DataAttribute[str]
     """
     Name describing the change.
@@ -520,9 +507,8 @@ class ListMove(BaseAtomicChange):
     :type: int
     """
 
-    values = cast(
-        "DataAttribute[ListData[Any]]",
-        data_list_attribute(checked=False, interactive=False),
+    values = data_protected_list_attribute(
+        checked=False,
     )  # type: DataAttribute[ListData[Any]]
     """
     Values being moved.
@@ -541,7 +527,7 @@ class SetUpdate(BaseAtomicChange):
     """
 
     name = data_attribute(
-        string_types, checked=False, default="Add values"
+        string_types, subtypes=True, checked=False, default="Add values"
     )  # type: DataAttribute[str]
     """
     Name describing the change.
@@ -549,9 +535,8 @@ class SetUpdate(BaseAtomicChange):
     :type: str
     """
 
-    new_values = cast(
-        "DataAttribute[SetData[Any]]",
-        data_set_attribute(checked=False, interactive=False),
+    new_values = data_protected_set_attribute(
+        checked=False
     )  # type: DataAttribute[SetData[Any]]
     """
     Values being added to the set.
@@ -570,7 +555,7 @@ class SetRemove(BaseAtomicChange):
     """
 
     name = data_attribute(
-        string_types, checked=False, default="Remove values"
+        string_types, subtypes=True, checked=False, default="Remove values"
     )  # type: DataAttribute[str]
     """
     Name describing the change.
@@ -578,9 +563,8 @@ class SetRemove(BaseAtomicChange):
     :type: str
     """
 
-    old_values = cast(
-        "DataAttribute[SetData[Any]]",
-        data_set_attribute(checked=False, interactive=False),
+    old_values = data_protected_set_attribute(
+        checked=False
     )  # type: DataAttribute[SetData[Any]]
     """
     Values being removed from the set.

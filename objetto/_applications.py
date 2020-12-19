@@ -25,7 +25,8 @@ from .data import (
     ListData,
     data_attribute,
     data_dict_attribute,
-    data_list_attribute,
+    data_protected_dict_attribute,
+    data_protected_list_attribute,
     data_set_attribute,
 )
 from .utils.custom_repr import custom_mapping_repr
@@ -304,9 +305,8 @@ class Store(InteractiveData):
     )  # type: DataAttribute[Optional[BaseData]]
     """Data."""
 
-    metadata = cast(
-        "DataAttribute[InteractiveDictData[str, Any]]",
-        data_dict_attribute(key_types=string_types, checked=False),
+    metadata = data_dict_attribute(
+        key_types=string_types, checked=False
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
     """Metadata."""
 
@@ -370,9 +370,8 @@ class Action(Data):
     :type: objetto.bases.BaseObject
     """
 
-    locations = cast(
-        "DataAttribute[ListData[Any]]",
-        data_list_attribute(checked=False, interactive=False),
+    locations = data_protected_list_attribute(
+        checked=False
     )  # type: DataAttribute[ListData[Any]]
     """
     List of relative locations from the receiver to the sender.
@@ -393,20 +392,18 @@ class Action(Data):
 class Commit(Data):
     """Holds unmerged, modified stores."""
 
-    actions = cast(
-        "DataAttribute[ListData[Action]]",
-        data_list_attribute(Action, checked=False, finalized=True, interactive=False),
+    actions = data_protected_list_attribute(
+        Action, checked=False, finalized=True
     )  # type: Final[DataAttribute[ListData[Action]]]
     """Actions."""
 
     stores = cast(
         "DataAttribute[DictData[BaseObject, Store]]",
-        data_dict_attribute(
+        data_protected_dict_attribute(
             Store,
             checked=False,
             key_types=".._objects|BaseObject",
             key_subtypes=True,
-            interactive=False,
         ),
     )  # type: Final[DataAttribute[DictData[BaseObject, Store]]]
     """Modified stores."""
