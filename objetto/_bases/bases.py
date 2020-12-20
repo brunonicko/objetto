@@ -780,8 +780,8 @@ class AbstractMember(with_metaclass(AbstractMemberMeta, Base)):
         return self.__repr__()
 
 
-def abstract_member():
-    # type: () -> Type[AbstractMember]
+def abstract_member(types=()):
+    # type: (Union[Type[T], Iterable[Type[T]]]) -> Union[Type[AbstractMember], T]
     """
     Used to indicate an abstract attribute member in a class.
 
@@ -801,8 +801,13 @@ method...
         ...     some_attribute = (1, 2, 3)  # concrete
         >>> obj = ConcreteClass()
 
+    :param types: Types for static type checking.
+    :type types: type or tuple[type]
+
     :return: Abstract member.
     """
+    if False and types:  # for PyCharm
+        pass
     return AbstractMember
 
 
