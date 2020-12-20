@@ -6,6 +6,14 @@ Bases (objetto.bases)
 Base Classes
 ------------
 
+.. autoclass:: objetto.bases.BaseMeta
+   :members: __fullname__
+
+   .. automethod:: objetto.bases.BaseMeta.__repr__
+   .. automethod:: objetto.bases.BaseMeta.__dir__
+   .. automethod:: objetto.bases.BaseMeta.__setattr__
+   .. automethod:: objetto.bases.BaseMeta.__delattr__
+
 .. autoclass:: objetto.bases.Base
    :members: _initializing
 
@@ -29,17 +37,6 @@ Base Classes
 .. autoclass:: objetto.bases.BaseContainer
 
    .. automethod:: objetto.bases.BaseContainer.__contains__
-
-Base Metaclasses
-----------------
-
-.. autoclass:: objetto.bases.BaseMeta
-   :members: __fullname__
-
-   .. automethod:: objetto.bases.BaseMeta.__repr__
-   .. automethod:: objetto.bases.BaseMeta.__dir__
-   .. automethod:: objetto.bases.BaseMeta.__setattr__
-   .. automethod:: objetto.bases.BaseMeta.__delattr__
 
 Base Decorators
 ---------------
@@ -241,10 +238,12 @@ Base Set Classes
 
 Base Exception Class
 --------------------
+
 .. autoclass:: objetto.bases.BaseObjettoException
 
 Base State Class
 ----------------
+
 .. autoclass:: objetto.bases.BaseState
    :members: _internal
 
@@ -256,6 +255,14 @@ Base State Class
 
 Base Structure Classes
 ----------------------
+
+.. autoclass:: objetto.bases.BaseStructureMeta
+   :members:
+      _unique_descriptor_name,
+      _unique_descriptor,
+      _serializable_structure_types,
+      _relationship_type,
+
 .. autoclass:: objetto.bases.BaseStructure
    :members: _state
 

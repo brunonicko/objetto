@@ -70,6 +70,7 @@ from ._structures import (
     BaseMutableStructure,
     BaseRelationship,
     BaseSetStructure,
+    BaseStructureMeta,
     BaseStructure,
 )
 
@@ -105,6 +106,7 @@ __all__ = [
     "BaseSized",
     "BaseState",
     "BaseRelationship",
+    "BaseStructureMeta",
     "BaseStructure",
     "BaseInteractiveStructure",
     "BaseMutableStructure",
