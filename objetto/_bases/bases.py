@@ -65,6 +65,8 @@ __all__ = [
     "make_base_cls",
     "BaseMeta",
     "Base",
+    "AbstractMemberMeta",
+    "AbstractMember",
     "abstract_member",
     "Generic",
     "BaseHashable",
@@ -755,7 +757,15 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
 
 @final
 class AbstractMemberMeta(BaseMeta):
-    """Metaclass for `AbstractMember`."""
+    """
+    Metaclass for :class:`objetto.bases.AbstractMember`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMeta`
+
+    Features:
+      - Enforces abstract tag.
+    """
 
     @staticmethod
     def __new__(mcs, name, bases, dct):
@@ -763,10 +773,44 @@ class AbstractMemberMeta(BaseMeta):
         dct[ABSTRACT_TAG] = True
         return super(AbstractMemberMeta, mcs).__new__(mcs, name, bases, dct)
 
+    def __call__(cls, *args, **kwargs):
+        """
+        Prevent instantiation.
+
+        :raises TypeError: Always raised.
+        """
+        error = "'{}' can't be instantiated".format(cls.__name__)
+        raise TypeError(error)
+
+    def __repr__(cls):
+        # type: () -> str
+        """
+        Get class representation.
+
+        :return: Class representation.
+        :rtype: str
+        """
+        return "<abstract>"
+
 
 @final
 class AbstractMember(with_metaclass(AbstractMemberMeta, Base)):
-    """Abstract member for classes."""
+    """
+    Abstract member for classes.
+
+    .. note::
+        Do not use this class directly. Use the helper function
+        :func:`objetto.bases.abstract_member` instead.
+
+    Metaclass:
+      - :class:`objetto.bases.AbstractMemberMeta`
+
+    Inherits from:
+      - :class:`objetto.bases.Base`
+
+    Features:
+      - Prevents class from instantiating if not overriden by a concrete member.
+    """
 
     __slots__ = ()
 
@@ -780,24 +824,6 @@ class AbstractMember(with_metaclass(AbstractMemberMeta, Base)):
         error = "'{}' can't be instantiated".format(cls.__name__)
         raise TypeError(error)
 
-    def __repr__(self):
-        # type: () -> str
-        """
-        Get representation.
-
-        :return: Representation.
-        """
-        return "<abstract>"
-
-    def __str__(self):
-        # type: () -> str
-        """
-        Get string representation.
-
-        :return: String representation.
-        """
-        return self.__repr__()
-
 
 def abstract_member(types=()):
     # type: (Union[Type[T], Iterable[Type[T]]]) -> Union[Type[AbstractMember], T]
@@ -809,7 +835,7 @@ def abstract_member(types=()):
         >>> from objetto.bases import Base, abstract_member
 
         >>> class AbstractClass(Base):
-        ...     some_attribute = abstract_member()  # will prevent instatiation
+        ...     some_attribute = abstract_member(int)  # will prevent instatiation
         ...
         >>> obj = AbstractClass()
         Traceback (most recent call last):
@@ -817,13 +843,14 @@ def abstract_member(types=()):
 method...
 
         >>> class ConcreteClass(AbstractClass):
-        ...     some_attribute = (1, 2, 3)  # concrete
+        ...     some_attribute = 3  # concrete
         >>> obj = ConcreteClass()
 
-    :param types: Types for static type checking.
+    :param types: Type(s) for static type checking.
     :type types: type or tuple[type]
 
     :return: Abstract member.
+    :rtype: type[objetto.bases.AbstractMember]
     """
     if False and types:  # for PyCharm
         pass

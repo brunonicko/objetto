@@ -572,3 +572,10 @@ Base Phase Enum
 ---------------
 .. autoclass:: objetto.bases.Phase
    :members: PRE, POST
+
+Abstract Member Classes
+-----------------------
+.. autoclass:: objetto.bases.AbstractMemberMeta
+   :members: __repr__
+
+.. autoclass:: objetto.bases.AbstractMember

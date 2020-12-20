@@ -25,6 +25,8 @@ from ._bases import (
     BaseProtectedSet,
     BaseSet,
     BaseSized,
+    AbstractMemberMeta,
+    AbstractMember,
     abstract_member,
     final,
     init,
@@ -144,6 +146,8 @@ __all__ = [
     "BaseProxyObject",
     "BaseChange",
     "Phase",
+    "AbstractMemberMeta",
+    "AbstractMember",
     "BaseAtomicChange",
     "BaseFactory",
 ]
