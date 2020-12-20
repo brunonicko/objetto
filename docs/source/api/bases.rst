@@ -280,6 +280,9 @@ Base Structure Classes
 
 .. autoclass:: objetto.bases.BaseMutableStructure
 
+.. autoclass:: objetto.bases.BaseAuxiliaryStructureMeta
+   :members: _base_auxiliary_type
+
 .. autoclass:: objetto.bases.BaseAuxiliaryStructure
    :members: _relationship
 

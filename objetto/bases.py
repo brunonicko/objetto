@@ -72,6 +72,7 @@ from ._structures import (
     BaseSetStructure,
     BaseStructureMeta,
     BaseStructure,
+    BaseAuxiliaryStructureMeta,
 )
 
 __all__ = [
@@ -114,6 +115,7 @@ __all__ = [
     "BaseAttributeStructure",
     "BaseInteractiveAttributeStructure",
     "BaseMutableAttributeStructure",
+    "BaseAuxiliaryStructureMeta",
     "BaseAuxiliaryStructure",
     "BaseInteractiveAuxiliaryStructure",
     "BaseMutableAuxiliaryStructure",

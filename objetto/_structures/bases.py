@@ -654,7 +654,7 @@ class BaseStructureMeta(BaseMeta):
       - :class:`objetto.bases.BaseObjectMeta`
 
     Features:
-      - Support for `unique descriptors <objetto.objects.unique_descriptor>`.
+      - Support for `unique descriptors <objetto.objects.unique_descriptor>`_.
       - Enforces correct type for :attr:`objetto.bases.BaseAuxiliaryStructure.\
 _relationship`.
     """
@@ -1194,7 +1194,22 @@ class BaseMutableStructure(BaseStructure[T], BaseMutableCollection[T]):
 
 
 class BaseAuxiliaryStructureMeta(BaseStructureMeta):
-    """Metaclass for :class:`objetto.bases.BaseAuxiliaryStructure`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseAuxiliaryStructure`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseStructureMeta`
+
+    Inherited by:
+      - :class:`objetto.bases.BaseAuxiliaryDataMeta`
+      - :class:`objetto.bases.BaseAuxiliaryObjectMeta`
+      - :class:`objetto.bases.BaseDictStructureMeta`
+      - :class:`objetto.bases.BaseListStructureMeta`
+      - :class:`objetto.bases.BaseSetStructureMeta`
+
+    Features:
+      - Defines a base auxiliary type.
+    """
 
     def __init__(cls, name, bases, dct):
         super(BaseAuxiliaryStructureMeta, cls).__init__(name, bases, dct)
@@ -1208,7 +1223,11 @@ class BaseAuxiliaryStructureMeta(BaseStructureMeta):
     @abstractmethod
     def _base_auxiliary_type(cls):
         # type: () -> Type[BaseAuxiliaryStructure]
-        """Base auxiliary structure type."""
+        """
+        Base auxiliary structure type.
+
+        :rtype: type[objetto.bases.BaseAuxiliaryStructure]
+        """
         raise NotImplementedError()
 
 
