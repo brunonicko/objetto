@@ -804,7 +804,7 @@ class BaseObjectMeta(BaseStructureMeta):
     @property
     @final
     def _relationship_type(cls):
-        # type: () -> Type[BaseRelationship]
+        # type: () -> Type[Relationship]
         """Relationship type."""
         return Relationship
 

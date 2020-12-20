@@ -3,6 +3,7 @@
 
 from .bases import (
     BaseAuxiliaryData,
+    BaseDataMeta,
     BaseData,
     BaseInteractiveAuxiliaryData,
     BaseInteractiveData,
@@ -15,6 +16,7 @@ from .set import InteractiveSetData, SetData
 
 __all__ = [
     "DataRelationship",
+    "BaseDataMeta",
     "BaseData",
     "BaseInteractiveData",
     "DataAttribute",

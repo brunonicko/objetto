@@ -445,6 +445,10 @@ Base Attribute Class
 
 Base Data Classes
 -----------------
+
+.. autoclass:: objetto.bases.BaseDataMeta
+   :members: _serializable_structure_types, _relationship_type
+
 .. autoclass:: objetto.bases.BaseData
    :members: _state
 

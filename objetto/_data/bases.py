@@ -139,27 +139,42 @@ class DataRelationship(BaseRelationship):
 
 
 class BaseDataMeta(BaseStructureMeta):
-    """Metaclass for `BaseData`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseData`.
 
-    @property
-    @final
-    def _serializable_container_types(cls):
-        # type: () -> Tuple[Type[BaseData]]
-        """Serializable container types."""
-        return (BaseData,)
+    Inherits from:
+      - :class:`objetto.bases.BaseStructureMeta`
+
+    Inherited by:
+      - :class:`objetto.bases.BaseAuxiliaryDataMeta`
+      - :class:`objetto.data.DataMeta`
+
+    Features:
+      - Defines serializable structure type as :class:`objetto.bases.BaseData`.
+      - Enforces correct type for :attr:`objetto.bases.BaseAuxiliaryData.\
+_relationship`.
+    """
 
     @property
     @final
     def _serializable_structure_types(cls):
         # type: () -> Tuple[Type[BaseData]]
-        """Serializable structure types."""
+        """
+        Serializable structure types.
+
+        :rtype: tuple[type[objetto.bases.BaseData]]
+        """
         return (BaseData,)
 
     @property
     @final
     def _relationship_type(cls):
-        # type: () -> Type[BaseRelationship]
-        """Relationship type."""
+        # type: () -> Type[DataRelationship]
+        """
+        Relationship type.
+
+        :rtype: type[objetto.data.DataRelationship]
+        """
         return DataRelationship
 
 
@@ -171,6 +186,9 @@ _BD = TypeVar("_BD", bound="BaseData")
 class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
     """
     Base data.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseDataMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseStructure`

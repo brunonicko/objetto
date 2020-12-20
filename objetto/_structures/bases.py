@@ -655,6 +655,7 @@ class BaseStructureMeta(BaseMeta):
 
     Features:
       - Support for `unique descriptors <objetto.objects.unique_descriptor>`_.
+      - Defines serializable structure type.
       - Enforces correct type for :attr:`objetto.bases.BaseAuxiliaryStructure.\
 _relationship`.
     """

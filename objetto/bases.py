@@ -35,6 +35,7 @@ from ._bases import (
 from ._changes import BaseAtomicChange, BaseChange
 from ._data import (
     BaseAuxiliaryData,
+    BaseDataMeta,
     BaseData,
     BaseInteractiveAuxiliaryData,
     BaseInteractiveData,
@@ -130,6 +131,7 @@ __all__ = [
     "BaseSetStructure",
     "BaseInteractiveSetStructure",
     "BaseMutableSetStructure",
+    "BaseDataMeta",
     "BaseData",
     "BaseInteractiveData",
     "BaseAuxiliaryData",
