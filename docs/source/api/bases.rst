@@ -358,6 +358,12 @@ Base Set Structure Classes
 Base Attribute Structure Classes
 ********************************
 
+.. autoclass:: objetto.bases.BaseAttributeStructureMeta
+   :members:
+      _attribute_type,
+      _attributes,
+      _attribute_names,
+
 .. autoclass:: objetto.bases.BaseAttributeStructure
    :members: _state
 

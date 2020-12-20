@@ -52,6 +52,7 @@ from ._objects import (
 from ._states import BaseState
 from ._structures import (
     BaseAttribute,
+    BaseAttributeStructureMeta,
     BaseAttributeStructure,
     BaseAuxiliaryStructure,
     BaseDictStructure,
@@ -112,6 +113,7 @@ __all__ = [
     "BaseInteractiveStructure",
     "BaseMutableStructure",
     "BaseAttribute",
+    "BaseAttributeStructureMeta",
     "BaseAttributeStructure",
     "BaseInteractiveAttributeStructure",
     "BaseMutableAttributeStructure",
