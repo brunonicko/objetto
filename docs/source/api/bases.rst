@@ -30,6 +30,17 @@ Base Classes
 
    .. automethod:: objetto.bases.BaseContainer.__contains__
 
+Base Metaclasses
+----------------
+
+.. autoclass:: objetto.bases.BaseMeta
+   :members: __fullname__
+
+   .. automethod:: objetto.bases.BaseMeta.__repr__
+   .. automethod:: objetto.bases.BaseMeta.__dir__
+   .. automethod:: objetto.bases.BaseMeta.__setattr__
+   .. automethod:: objetto.bases.BaseMeta.__delattr__
+
 Base Decorators
 ---------------
 

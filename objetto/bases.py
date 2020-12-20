@@ -3,6 +3,7 @@
 
 from ._applications import Phase
 from ._bases import (
+    BaseMeta,
     Base,
     BaseCollection,
     BaseContainer,
@@ -80,6 +81,7 @@ __all__ = [
     "simplify_member_names",
     "make_base_cls",
     "BaseObjettoException",
+    "BaseMeta",
     "Base",
     "BaseCollection",
     "BaseContainer",
