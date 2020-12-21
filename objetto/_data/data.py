@@ -48,7 +48,11 @@ class DataAttributeMeta(BaseAttributeMeta):
     @property
     def _relationship_type(cls):
         # type: () -> Type[DataRelationship]
-        """Relationship type."""
+        """
+        Relationship type.
+
+        :rtype: type[objetto.data.DataRelationship]
+        """
         return DataRelationship
 
 

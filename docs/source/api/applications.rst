@@ -5,6 +5,10 @@ Applications (objetto.applications)
 
 Application Class
 -----------------
+
+.. autoclass:: objetto.applications.ApplicationMeta
+   :members: _roots, _root_names
+
 .. autoclass:: objetto.applications.Application
 
    .. automethod:: objetto.applications.Application.read_context()

@@ -87,7 +87,11 @@ class BaseAttributeMeta(BaseMeta):
     @abstractmethod
     def _relationship_type(cls):
         # type: () -> Type[BaseRelationship]
-        """Relationship type."""
+        """
+        Relationship type.
+
+        :rtype: type[objetto.bases.BaseRelationship]
+        """
         return BaseRelationship
 
 

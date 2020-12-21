@@ -89,7 +89,11 @@ class AttributeMeta(BaseAttributeMeta):
     @property
     def _relationship_type(cls):
         # type: () -> Type[Relationship]
-        """Relationship type."""
+        """
+        Relationship type.
+
+        :rtype: type[objetto.objects.Relationship]
+        """
         return Relationship
 
 

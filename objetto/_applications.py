@@ -83,8 +83,9 @@ __all__ = [
     "Action",
     "Store",
     "BO",
-    "ApplicationRoot",
+    "ApplicationMeta",
     "Application",
+    "ApplicationRoot",
 ]
 
 
@@ -1452,7 +1453,15 @@ class ApplicationInternals(Base):
 
 
 class ApplicationMeta(BaseMeta):
-    """Metaclass for `Application`."""
+    """
+    Metaclass for :class:`objetto.applications.Application`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMeta`
+
+    Features:
+      - Check and store `root descriptors <objetto.applications.root>`_.
+    """
 
     __roots = WeakKeyDictionary(
         {}
@@ -1485,19 +1494,30 @@ class ApplicationMeta(BaseMeta):
     @property
     def _roots(cls):
         # type: () -> Mapping[str, ApplicationRoot]
-        """Attributes mapped by name."""
+        """
+        Attributes mapped by name.
+
+        :rtype: dict[str, objetto.applications.ApplicationRoot]
+        """
         return type(cls).__roots[cls]
 
     @property
     def _root_names(cls):
         # type: () -> Mapping[Any, str]
-        """Names mapped by root."""
+        """
+        Names mapped by root.
+
+        :rtype: dict[objetto.applications.ApplicationRoot, str]
+        """
         return type(cls).__root_names[cls]
 
 
 class Application(with_metaclass(ApplicationMeta, Base)):
     """
     Application.
+
+    Metaclass:
+      - :class:`objetto.applications.ApplicationMeta`
 
     Inherits from:
       - :class:`objetto.bases.Base`
