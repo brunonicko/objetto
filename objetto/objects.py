@@ -17,19 +17,24 @@ from ._data import DataRelationship
 from ._objects import (
     DATA_METHOD_TAG,
     Attribute,
+    AttributeMeta,
     BaseReaction,
     DictObject,
+    DictObjectMeta,
     HistoryDescriptor,
     ListObject,
+    ListObjectMeta,
     MutableDictObject,
     MutableListObject,
     MutableSetObject,
     Object,
+    ObjectMeta,
     ProxyDictObject,
     ProxyListObject,
     ProxySetObject,
     Relationship,
     SetObject,
+    SetObjectMeta,
 )
 from ._reactions import reaction
 from ._structures import (
@@ -53,17 +58,22 @@ if TYPE_CHECKING:
     ReactionsType = Union[ReactionType, Iterable[ReactionType]]
 
 __all__ = [
+    "ObjectMeta",
     "Object",
+    "DictObjectMeta",
     "DictObject",
     "MutableDictObject",
+    "ListObjectMeta",
     "ListObject",
     "MutableListObject",
+    "SetObjectMeta",
     "SetObject",
     "MutableSetObject",
     "ProxyDictObject",
     "ProxyListObject",
     "ProxySetObject",
     "Relationship",
+    "AttributeMeta",
     "Attribute",
     "KeyRelationship",
     "UniqueDescriptor",

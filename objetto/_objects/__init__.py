@@ -10,15 +10,16 @@ from .bases import (
     BaseMutableAuxiliaryObject,
     BaseMutableObject,
     BaseObject,
+    BaseObjectMeta,
     BaseProxyObject,
     BaseReaction,
     HistoryDescriptor,
     Relationship,
 )
-from .dict import DictObject, MutableDictObject, ProxyDictObject
-from .list import ListObject, MutableListObject, ProxyListObject
-from .object import Attribute, Object
-from .set import MutableSetObject, ProxySetObject, SetObject
+from .dict import DictObject, DictObjectMeta, MutableDictObject, ProxyDictObject
+from .list import ListObject, ListObjectMeta, MutableListObject, ProxyListObject
+from .object import Attribute, AttributeMeta, Object, ObjectMeta
+from .set import MutableSetObject, ProxySetObject, SetObject, SetObjectMeta
 
 __all__ = [
     "DELETED",
@@ -27,20 +28,26 @@ __all__ = [
     "Relationship",
     "BaseReaction",
     "HistoryDescriptor",
+    "BaseObjectMeta",
     "BaseObject",
     "BaseMutableObject",
     "BaseAuxiliaryObjectMeta",
     "BaseAuxiliaryObject",
     "BaseMutableAuxiliaryObject",
     "BaseProxyObject",
+    "AttributeMeta",
     "Attribute",
+    "ObjectMeta",
     "Object",
+    "DictObjectMeta",
     "DictObject",
     "MutableDictObject",
     "ProxyDictObject",
+    "ListObjectMeta",
     "ListObject",
     "MutableListObject",
     "ProxyListObject",
+    "SetObjectMeta",
     "SetObject",
     "MutableSetObject",
     "ProxySetObject",

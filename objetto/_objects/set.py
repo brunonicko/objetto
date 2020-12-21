@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from .._applications import Store
     from .._history import HistoryObject
 
-__all__ = ["SetObject", "MutableSetObject", "ProxySetObject"]
+__all__ = ["SetObjectMeta", "SetObject", "MutableSetObject", "ProxySetObject"]
 
 
 T = TypeVar("T")  # Any type.
@@ -303,27 +303,50 @@ type.__setattr__(cast(type, SetObjectFunctions), FINAL_METHOD_TAG, True)
 
 
 class SetObjectMeta(BaseAuxiliaryObjectMeta, BaseSetStructureMeta):
-    """Metaclass for `SetObject`."""
+    """
+    Metaclass for :class:`objetto.objects.SetObject`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryObjectMeta`
+      - :class:`objetto.bases.BaseSetStructureMeta`
+
+    Features:
+      - Defines a state factory.
+      - Defines a base auxiliary type.
+      - Defines a base auxiliary data type.
+    """
 
     @property
     @final
     def _state_factory(cls):
         # type: () -> Callable[..., SetState]
-        """State factory."""
+        """
+        State factory.
+
+        :rtype: type[objetto.states.SetState]
+        """
         return SetState
 
     @property
     @final
     def _base_auxiliary_type(cls):
         # type: () -> Type[SetObject]
-        """Base auxiliary object type."""
+        """
+        Base auxiliary object type.
+
+        :rtype: type[objetto.objects.SetObject]
+        """
         return SetObject
 
     @property
     @final
     def _base_auxiliary_data_type(cls):
         # type: () -> Type[SetData]
-        """Base auxiliary data type."""
+        """
+        Base auxiliary data type.
+
+        :rtype: type[objetto.data.SetData]
+        """
         return SetData
 
 
@@ -340,6 +363,9 @@ class SetObject(
 ):
     """
     Set object.
+
+    Metaclass:
+      - :class:`objetto.objects.SetObjectMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAuxiliaryObject`

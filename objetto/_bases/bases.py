@@ -65,6 +65,8 @@ __all__ = [
     "make_base_cls",
     "BaseMeta",
     "Base",
+    "AbstractMemberMeta",
+    "AbstractMember",
     "abstract_member",
     "Generic",
     "BaseHashable",
@@ -473,6 +475,14 @@ class BaseMeta(SlottedABCMeta):
     """
     Metaclass for :class:`objetto.bases.Base`.
 
+    Inherits from:
+      - :class:`slotted.SlottedABCMeta`
+
+    Inherited by:
+      - :class:`objetto.bases.BaseStructureMeta`
+      - :class:`objetto.bases.BaseAttributeMeta`
+      - :class:`objetto.applications.ApplicationMeta`
+
     Features:
       - Forces the use of `__slots__`.
       - Forces `__hash__` to be declared if `__eq__` was declared.
@@ -561,9 +571,10 @@ class BaseMeta(SlottedABCMeta):
     def __repr__(cls):
         # type: () -> str
         """
-        Get representation.
+        Get class representation.
 
-        :return: Representation.
+        :return: Class representation.
+        :rtype: str
         """
         module = cls.__module__
         name = cls.__fullname__
@@ -577,9 +588,10 @@ class BaseMeta(SlottedABCMeta):
     def __dir__(cls):
         # type: () -> List[str]
         """
-        Get a simplified list of member names.
+        Get a simplified list of class member names.
 
-        :return: List of member names.
+        :return: List of class member names.
+        :rtype: list[str]
         """
         member_names = set()  # type: Set[str]
         for base in reversed(getmro(type(cls))):
@@ -596,10 +608,13 @@ class BaseMeta(SlottedABCMeta):
     def __setattr__(cls, name, value):
         # type: (str, Any) -> None
         """
-        Set class attribute.
+        Prevent setting read-only class attributes.
 
         :param name: Name.
+        :str name: str
+
         :param value: Value.
+
         :raises AttributeError: Read-only attribute.
         """
         open_attributes = type(cls).__open_attributes.get(cls)
@@ -612,9 +627,11 @@ class BaseMeta(SlottedABCMeta):
     def __delattr__(cls, name):
         # type: (str) -> None
         """
-        Delete class attribute.
+        Prevent deleting read-only class attributes.
 
         :param name: Name.
+        :type name: str
+
         :raises AttributeError: Read-only attribute.
         """
         open_attributes = type(cls).__open_attributes.get(cls)
@@ -631,6 +648,7 @@ class BaseMeta(SlottedABCMeta):
         Get qualified class name if possible, fall back to class name otherwise.
 
         :return: Full class name.
+        :rtype: str
         """
         try:
             name = qualname(cls)
@@ -644,6 +662,9 @@ class BaseMeta(SlottedABCMeta):
 class Base(with_metaclass(BaseMeta, SlottedABC)):
     """
     Base class for all `Objetto` types.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseMeta`
 
     Inherits from:
       - :class:`slotted.SlottedABC`
@@ -736,7 +757,15 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
 
 @final
 class AbstractMemberMeta(BaseMeta):
-    """Metaclass for `AbstractMember`."""
+    """
+    Metaclass for :class:`objetto.bases.AbstractMember`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMeta`
+
+    Features:
+      - Enforces abstract tag.
+    """
 
     @staticmethod
     def __new__(mcs, name, bases, dct):
@@ -744,10 +773,44 @@ class AbstractMemberMeta(BaseMeta):
         dct[ABSTRACT_TAG] = True
         return super(AbstractMemberMeta, mcs).__new__(mcs, name, bases, dct)
 
+    def __call__(cls, *args, **kwargs):
+        """
+        Prevent instantiation.
+
+        :raises TypeError: Always raised.
+        """
+        error = "'{}' can't be instantiated".format(cls.__name__)
+        raise TypeError(error)
+
+    def __repr__(cls):
+        # type: () -> str
+        """
+        Get class representation.
+
+        :return: Class representation.
+        :rtype: str
+        """
+        return "<abstract>"
+
 
 @final
 class AbstractMember(with_metaclass(AbstractMemberMeta, Base)):
-    """Abstract member for classes."""
+    """
+    Abstract member for classes.
+
+    .. note::
+        Do not use this class directly. Use the helper function
+        :func:`objetto.bases.abstract_member` instead.
+
+    Metaclass:
+      - :class:`objetto.bases.AbstractMemberMeta`
+
+    Inherits from:
+      - :class:`objetto.bases.Base`
+
+    Features:
+      - Prevents class from instantiating if not overriden by a concrete member.
+    """
 
     __slots__ = ()
 
@@ -761,27 +824,9 @@ class AbstractMember(with_metaclass(AbstractMemberMeta, Base)):
         error = "'{}' can't be instantiated".format(cls.__name__)
         raise TypeError(error)
 
-    def __repr__(self):
-        # type: () -> str
-        """
-        Get representation.
 
-        :return: Representation.
-        """
-        return "<abstract>"
-
-    def __str__(self):
-        # type: () -> str
-        """
-        Get string representation.
-
-        :return: String representation.
-        """
-        return self.__repr__()
-
-
-def abstract_member():
-    # type: () -> Type[AbstractMember]
+def abstract_member(types=()):
+    # type: (Union[Type[T], Iterable[Type[T]]]) -> Union[Type[AbstractMember], T]
     """
     Used to indicate an abstract attribute member in a class.
 
@@ -790,7 +835,7 @@ def abstract_member():
         >>> from objetto.bases import Base, abstract_member
 
         >>> class AbstractClass(Base):
-        ...     some_attribute = abstract_member()  # will prevent instatiation
+        ...     some_attribute = abstract_member(int)  # will prevent instatiation
         ...
         >>> obj = AbstractClass()
         Traceback (most recent call last):
@@ -798,11 +843,17 @@ def abstract_member():
 method...
 
         >>> class ConcreteClass(AbstractClass):
-        ...     some_attribute = (1, 2, 3)  # concrete
+        ...     some_attribute = 3  # concrete
         >>> obj = ConcreteClass()
 
+    :param types: Type(s) for static type checking.
+    :type types: type or tuple[type]
+
     :return: Abstract member.
+    :rtype: type[objetto.bases.AbstractMember]
     """
+    if False and types:  # for PyCharm
+        pass
     return AbstractMember
 
 

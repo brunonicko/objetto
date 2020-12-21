@@ -713,7 +713,23 @@ class BaseObjectInternals(Base):
 
 class BaseObjectMeta(BaseStructureMeta):
     """
-    Metaclass for `BaseObject`.
+    Metaclass for :class:`objetto.bases.BaseObject`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseStructureMeta`
+
+    Inherited by:
+      - :class:`objetto.bases.BaseAuxiliaryObjectMeta`
+      - :class:`objetto.objects.ObjectMeta`
+
+    Features:
+      - Support for `history descriptors <objetto.objects.history_descriptor>`_.
+      - Stores `data methods <objetto.objects.data_method>`_.
+      - Defines a state factory.
+      - Defines serializable structure types as :class:`objetto.bases.BaseData` and \
+:class:`objetto.bases.BaseObject`.
+      - Defines a relationship type as :class:`objetto.objects.Relationship`.
+      - Constructs automatic `Data` class.
 
     :raises TypeError: Class has multiple history descriptors.
     """
@@ -791,56 +807,88 @@ class BaseObjectMeta(BaseStructureMeta):
     @abstractmethod
     def _state_factory(cls):
         # type: () -> Callable[..., BaseState]
-        """State factory."""
+        """
+        State factory.
+
+        :rtype: type[objetto.bases.BaseState]
+        """
         raise NotImplementedError()
 
     @property
     @final
     def _serializable_structure_types(cls):
-        # type: () -> Tuple[Type[BaseObject]]
-        """Serializable structure types."""
-        return (BaseObject,)
+        # type: () -> Tuple[Type[BaseObject], Type[BaseData]]
+        """
+        Serializable structure types.
+
+        :rtype: tuple[type[objetto.bases.BaseObject], type[objetto.bases.BaseData]]
+        """
+        return (BaseObject, BaseData)
 
     @property
     @final
     def _relationship_type(cls):
-        # type: () -> Type[BaseRelationship]
-        """Relationship type."""
+        # type: () -> Type[Relationship]
+        """
+        Relationship type.
+
+        :rtype: type[objetto.objects.Relationship]
+        """
         return Relationship
 
     @property
     @final
     def _history_descriptor_name(cls):
         # type: () -> Optional[str]
-        """History descriptor name or `None`."""
+        """
+        History descriptor name or `None`.
+
+        :rtype: str or None
+        """
         return type(cls).__history_descriptor_name[cls]
 
     @property
     @final
     def _history_descriptor(cls):
         # type: () -> Optional[HistoryDescriptor]
-        """History descriptor or `None`."""
+        """
+        History descriptor or `None`.
+
+        :rtype: objetto.objects.HistoryDescriptor or None
+        """
         return type(cls).__history_descriptor[cls]
 
     @property
     @final
     def _reactions(cls):
         # type: () -> Tuple[BaseReaction, ...]
-        """Reactions sorted by priority."""
+        """
+        Reactions sorted by priority.
+
+        :rtype: tuple[objetto.bases.BaseReaction]
+        """
         return type(cls).__reactions[cls]
 
     @property
     @final
     def _data_methods(cls):
         # type: () -> Mapping[str, Callable]
-        """Data method functions."""
+        """
+        Data method functions.
+
+        :rtype: dict[str, function]
+        """
         return type(cls).__data_methods[cls]
 
     @property
     @abstractmethod
     def Data(cls):
         # type: () -> Type[BaseData]
-        """Data type."""
+        """
+        Data type.
+
+        :rtype: type[objetto.bases.BaseData]
+        """
         raise NotImplementedError()
 
 
@@ -851,6 +899,9 @@ _BO = TypeVar("_BO", bound="BaseObject")
 class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
     """
     Base object.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseObjectMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseStructure`
@@ -1124,7 +1175,23 @@ class BaseAuxiliaryObjectFunctions(BaseObjectFunctions):
 
 
 class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryStructureMeta):
-    """Metaclass for `BaseAuxiliaryObject`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseAuxiliaryObject`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseObjectMeta`
+      - :class:`objetto.bases.BaseAuxiliaryStructureMeta`
+
+    Inherited by:
+      - :class:`objetto.objects.DictObjectMeta`
+      - :class:`objetto.objects.ListObjectMeta`
+      - :class:`objetto.objects.SetObjectMeta`
+
+    Features:
+      - Defines a base auxiliary type.
+      - Defines a base auxiliary `Data` type.
+      - Constructs automatic `Data` class.
+    """
 
     __data_type = WeakKeyDictionary(
         {}
@@ -1134,21 +1201,33 @@ class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryStructureMeta):
     @abstractmethod
     def _base_auxiliary_type(cls):
         # type: () -> Type[BaseAuxiliaryObject]
-        """Base auxiliary object type."""
+        """
+        Base auxiliary object type.
+
+        :rtype: type[objetto.bases.BaseAuxiliaryObject]
+        """
         raise NotImplementedError()
 
     @property
     @abstractmethod
     def _base_auxiliary_data_type(cls):
         # type: () -> Type[BaseAuxiliaryData]
-        """Base auxiliary data type."""
+        """
+        Base auxiliary data type.
+
+        :rtype: type[objetto.bases.BaseAuxiliaryData]
+        """
         raise NotImplementedError()
 
     @property
     @final
     def Data(cls):
         # type: () -> Type[BaseAuxiliaryData]
-        """Data type."""
+        """
+        Data type.
+
+        :rtype: type[objetto.bases.BaseAuxiliaryData]
+        """
         mcs = type(cls)
 
         # Try to get cached data type.
@@ -1203,6 +1282,9 @@ class BaseAuxiliaryObject(
 ):
     """
     Base auxiliary object.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseAuxiliaryObjectMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAuxiliaryStructure`

@@ -5,6 +5,19 @@ Objects (objetto.objects)
 
 Object Class
 ------------
+
+.. autoclass:: objetto.objects.ObjectMeta
+   :members:
+      _attribute_type,
+      _attributes,
+      _attribute_names,
+      _state_factory,
+      _attribute_dependencies,
+      _attribute_dependents,
+      _attribute_flattened_dependencies,
+      _attribute_flattened_dependents,
+      Data,
+
 .. autoclass:: objetto.objects.Object
    :members: _state, data
 
@@ -83,6 +96,9 @@ When subclassing a :class:`objetto.objects.DictObject`, the schema is defined by
 :class:`objetto.objects.Relationship` assigned to the class attribute
 :attr:`objetto.bases.BaseDictStructure._key_relationship`.
 
+.. autoclass:: objetto.objects.DictObjectMeta
+   :members: _state_factory, _base_auxiliary_type, _base_auxiliary_data_type
+
 .. autoclass:: objetto.objects.DictObject
    :members: _state, data
 
@@ -104,6 +120,10 @@ When subclassing a :class:`objetto.objects.DictObject`, the schema is defined by
 
 List Classes
 ************
+
+.. autoclass:: objetto.objects.ListObjectMeta
+   :members: _state_factory, _base_auxiliary_type, _base_auxiliary_data_type
+
 .. autoclass:: objetto.objects.ListObject
    :members: _state, data
 
@@ -131,6 +151,10 @@ List Classes
 
 Set Classes
 ***********
+
+.. autoclass:: objetto.objects.SetObjectMeta
+   :members: _state_factory, _base_auxiliary_type, _base_auxiliary_data_type
+
 .. autoclass:: objetto.objects.SetObject
    :members: _state, data
 
@@ -226,6 +250,10 @@ Proxy Set Class
 
 Attribute Descriptor Class
 --------------------------
+
+.. autoclass:: objetto.objects.AttributeMeta
+   :members: _relationship_type
+
 .. autoclass:: objetto.objects.Attribute
    :members:
      relationship,

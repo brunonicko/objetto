@@ -69,13 +69,29 @@ T = TypeVar("T")  # Any type.
 
 
 class BaseAttributeMeta(BaseMeta):
-    """Metaclass for `BaseAttribute`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseAttribute`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMeta`
+
+    Inherited by:
+      - :class:`objetto.data.DataAttributeMeta`
+      - :class:`objetto.objects.AttributeMeta`
+
+    Features:
+      - Defines relationship type.
+    """
 
     @property
     @abstractmethod
     def _relationship_type(cls):
         # type: () -> Type[BaseRelationship]
-        """Relationship type."""
+        """
+        Relationship type.
+
+        :rtype: type[objetto.bases.BaseRelationship]
+        """
         return BaseRelationship
 
 
@@ -86,6 +102,9 @@ _BA = TypeVar("_BA", bound="BaseAttribute")
 class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T])):
     """
     Base attribute descriptor for :class:`objetto.bases.BaseAttributeStructure` classes.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseAttributeMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseHashable`
@@ -470,7 +489,19 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
 
 
 class BaseAttributeStructureMeta(BaseStructureMeta):
-    """Metaclass for `BaseAttributeStructure`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseAttributeStructure`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseStructureMeta`
+
+    Inherited by:
+      - :class:`objetto.data.DataMeta`
+      - :class:`objetto.objects.ObjectMeta`
+
+    Features:
+      - Support for :class:`objetto.bases.BaseAttribute` descriptors.
+    """
 
     __attributes = WeakKeyDictionary(
         {}
@@ -512,19 +543,31 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
     @abstractmethod
     def _attribute_type(cls):
         # type: () -> Type[BaseAttribute]
-        """Attribute type."""
+        """
+        Attribute type.
+
+        :rtype: type[objetto.bases.BaseAttribute]
+        """
         raise NotImplementedError()
 
     @property
     def _attributes(cls):
         # type: () -> Mapping[str, BaseAttribute]
-        """Attributes mapped by name."""
+        """
+        Attributes mapped by name.
+
+        :rtype: dict[str, objetto.bases.BaseAttribute]
+        """
         return type(cls).__attributes[cls]
 
     @property
     def _attribute_names(cls):
         # type: () -> Mapping[Any, str]
-        """Names mapped by attribute."""
+        """
+        Names mapped by attribute.
+
+        :rtype: dict[objetto.bases.BaseAttribute, str]
+        """
         return type(cls).__attribute_names[cls]
 
 
@@ -537,6 +580,9 @@ class BaseAttributeStructure(
 ):
     """
     Base attribute structure.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseAttributeStructureMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseStructure`

@@ -53,7 +53,7 @@ if TYPE_CHECKING:
     from .._applications import Store
     from .._history import HistoryObject
 
-__all__ = ["ListObject", "MutableListObject", "ProxyListObject"]
+__all__ = ["ListObjectMeta", "ListObject", "MutableListObject", "ProxyListObject"]
 
 
 T = TypeVar("T")  # Any type.
@@ -512,7 +512,18 @@ type.__setattr__(cast(type, ListObjectFunctions), FINAL_METHOD_TAG, True)
 
 
 class ListObjectMeta(BaseAuxiliaryObjectMeta, BaseListStructureMeta):
-    """Metaclass for `ListObject`."""
+    """
+    Metaclass for :class:`objetto.objects.ListObject`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryObjectMeta`
+      - :class:`objetto.bases.BaseListStructureMeta`
+
+    Features:
+      - Defines a state factory.
+      - Defines a base auxiliary type.
+      - Defines a base auxiliary data type.
+    """
 
     def __init__(cls, name, bases, dct):
         # type: (str, Tuple[Type, ...], Dict[str, Any]) -> None
@@ -534,21 +545,33 @@ class ListObjectMeta(BaseAuxiliaryObjectMeta, BaseListStructureMeta):
     @final
     def _state_factory(cls):
         # type: () -> Callable[..., ListState]
-        """State factory."""
+        """
+        State factory.
+
+        :rtype: type[objetto.states.ListState]
+        """
         return ListState
 
     @property
     @final
     def _base_auxiliary_type(cls):
         # type: () -> Type[ListObject]
-        """Base auxiliary object type."""
+        """
+        Base auxiliary object type.
+
+        :rtype: type[objetto.objects.ListObject]
+        """
         return ListObject
 
     @property
     @final
     def _base_auxiliary_data_type(cls):
         # type: () -> Type[ListData]
-        """Base auxiliary data type."""
+        """
+        Base auxiliary data type.
+
+        :rtype: type[objetto.data.ListData]
+        """
         return ListData
 
 
@@ -565,6 +588,9 @@ class ListObject(
 ):
     """
     List object.
+
+    Metaclass:
+      - :class:`objetto.objects.ListObjectMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAuxiliaryObject`

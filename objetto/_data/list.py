@@ -28,20 +28,33 @@ if TYPE_CHECKING:
     from typing import Any, Iterable, List, Sequence, Type, Union
 
 
-__all__ = ["ListData", "InteractiveListData"]
+__all__ = ["ListDataMeta", "ListData", "InteractiveListData"]
 
 
 T = TypeVar("T")  # Any type.
 
 
 class ListDataMeta(BaseAuxiliaryDataMeta, BaseListStructureMeta):
-    """Metaclass for `ListData`."""
+    """
+    Metaclass for :class:`objetto.data.ListData`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryDataMeta`
+      - :class:`objetto.bases.BaseListStructureMeta`
+
+    Features:
+      - Defines a base auxiliary type.
+    """
 
     @property
     @final
     def _base_auxiliary_type(cls):
         # type: () -> Type[ListData]
-        """Base auxiliary container type."""
+        """
+        Base auxiliary container type.
+
+        :rtype: type[objetto.data.ListData]
+        """
         return ListData
 
 
@@ -58,6 +71,9 @@ class ListData(
 ):
     """
     List data.
+
+    Metaclass:
+      - :class:`objetto.data.ListDataMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseListStructure`

@@ -6,6 +6,14 @@ Bases (objetto.bases)
 Base Classes
 ------------
 
+.. autoclass:: objetto.bases.BaseMeta
+   :members: __fullname__
+
+   .. automethod:: objetto.bases.BaseMeta.__repr__
+   .. automethod:: objetto.bases.BaseMeta.__dir__
+   .. automethod:: objetto.bases.BaseMeta.__setattr__
+   .. automethod:: objetto.bases.BaseMeta.__delattr__
+
 .. autoclass:: objetto.bases.Base
    :members: _initializing
 
@@ -230,10 +238,12 @@ Base Set Classes
 
 Base Exception Class
 --------------------
+
 .. autoclass:: objetto.bases.BaseObjettoException
 
 Base State Class
 ----------------
+
 .. autoclass:: objetto.bases.BaseState
    :members: _internal
 
@@ -245,6 +255,14 @@ Base State Class
 
 Base Structure Classes
 ----------------------
+
+.. autoclass:: objetto.bases.BaseStructureMeta
+   :members:
+      _unique_descriptor_name,
+      _unique_descriptor,
+      _serializable_structure_types,
+      _relationship_type,
+
 .. autoclass:: objetto.bases.BaseStructure
    :members: _state
 
@@ -262,6 +280,9 @@ Base Structure Classes
 
 .. autoclass:: objetto.bases.BaseMutableStructure
 
+.. autoclass:: objetto.bases.BaseAuxiliaryStructureMeta
+   :members: _base_auxiliary_type
+
 .. autoclass:: objetto.bases.BaseAuxiliaryStructure
    :members: _relationship
 
@@ -274,6 +295,9 @@ Base Structure Classes
 
 Base Dict Structure Classes
 ***************************
+
+.. autoclass:: objetto.bases.BaseDictStructureMeta
+   :members: _key_relationship_type
 
 .. autoclass:: objetto.bases.BaseDictStructure
    :members: _key_relationship, _state
@@ -296,6 +320,8 @@ Base Dict Structure Classes
 Base List Structure Classes
 ***************************
 
+.. autoclass:: objetto.bases.BaseListStructureMeta
+
 .. autoclass:: objetto.bases.BaseListStructure
    :members: _state
 
@@ -314,6 +340,8 @@ Base List Structure Classes
 
 Base Set Structure Classes
 **************************
+
+.. autoclass:: objetto.bases.BaseSetStructureMeta
 
 .. autoclass:: objetto.bases.BaseSetStructure
    :members: _state
@@ -336,6 +364,12 @@ Base Set Structure Classes
 
 Base Attribute Structure Classes
 ********************************
+
+.. autoclass:: objetto.bases.BaseAttributeStructureMeta
+   :members:
+      _attribute_type,
+      _attributes,
+      _attribute_names,
 
 .. autoclass:: objetto.bases.BaseAttributeStructure
    :members: _state
@@ -393,6 +427,10 @@ Base Relationship Class
 
 Base Attribute Class
 --------------------
+
+.. autoclass:: objetto.bases.BaseAttributeMeta
+   :members: _relationship_type
+
 .. autoclass:: objetto.bases.BaseAttribute
    :members:
      relationship,
@@ -418,12 +456,19 @@ Base Attribute Class
 
 Base Data Classes
 -----------------
+
+.. autoclass:: objetto.bases.BaseDataMeta
+   :members: _serializable_structure_types, _relationship_type
+
 .. autoclass:: objetto.bases.BaseData
    :members: _state
 
    .. automethod:: objetto.bases.BaseData.__copy__
 
 .. autoclass:: objetto.bases.BaseInteractiveData
+
+.. autoclass:: objetto.bases.BaseAuxiliaryDataMeta
+   :members: _base_auxiliary_type
 
 .. autoclass:: objetto.bases.BaseAuxiliaryData
    :members:
@@ -437,6 +482,18 @@ Base Data Classes
 
 Base Object Classes
 -------------------
+
+.. autoclass:: objetto.bases.BaseObjectMeta
+   :members:
+     _state_factory,
+     _serializable_structure_types,
+     _relationship_type,
+     _history_descriptor_name,
+     _history_descriptor,
+     _reactions,
+     _data_methods,
+     Data,
+
 .. autoclass:: objetto.bases.BaseObject
    :members:
      _state,
@@ -457,6 +514,9 @@ Base Object Classes
    .. automethod:: objetto.bases.BaseObject.deserialize
 
 .. autoclass:: objetto.bases.BaseMutableObject
+
+.. autoclass:: objetto.bases.BaseAuxiliaryObjectMeta
+   :members: _base_auxiliary_type, _base_auxiliary_data_type, Data
 
 .. autoclass:: objetto.bases.BaseAuxiliaryObject
    :members: _relationship
@@ -541,3 +601,10 @@ Base Phase Enum
 ---------------
 .. autoclass:: objetto.bases.Phase
    :members: PRE, POST
+
+Abstract Member Classes
+-----------------------
+.. autoclass:: objetto.bases.AbstractMemberMeta
+   :members: __repr__
+
+.. autoclass:: objetto.bases.AbstractMember

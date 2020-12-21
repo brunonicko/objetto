@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from typing import Any, Dict, Iterable, Mapping, Tuple, Type, Union
 
 
-__all__ = ["DictData", "InteractiveDictData"]
+__all__ = ["DictDataMeta", "DictData", "InteractiveDictData"]
 
 
 T = TypeVar("T")  # Any type.
@@ -38,13 +38,26 @@ VT = TypeVar("VT")  # Value type.
 
 
 class DictDataMeta(BaseAuxiliaryDataMeta, BaseDictStructureMeta):
-    """Metaclass for `DictData`."""
+    """
+    Metaclass for :class:`objetto.data.DictData`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryDataMeta`
+      - :class:`objetto.bases.BaseDictStructureMeta`
+
+    Features:
+      - Defines a base auxiliary type.
+    """
 
     @property
     @final
     def _base_auxiliary_type(cls):
         # type: () -> Type[DictData]
-        """Base auxiliary container type."""
+        """
+        Base auxiliary container type.
+
+        :rtype: type[objetto.data.DictData]
+        """
         return DictData
 
 
@@ -61,6 +74,9 @@ class DictData(
 ):
     """
     Dictionary data.
+
+    Metaclass:
+      - :class:`objetto.data.DictDataMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseDictStructure`

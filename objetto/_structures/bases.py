@@ -615,7 +615,7 @@ class UniqueDescriptor(Base):
 def unique_descriptor():
     # type: () -> UniqueDescriptor
     """
-    Descriptor to be used when declaring an :class:`objetto.objects.Object` or a
+    Descriptor to be used when declaring an :class:`objetto.objects.Object` or an
     :class:`objetto.data.InteractiveData` container class.
     When used, the hash for the container will be the object ID, and the equality method
     will compare by identity instead of values.
@@ -641,7 +641,22 @@ def unique_descriptor():
 
 
 class BaseStructureMeta(BaseMeta):
-    """Metaclass for `BaseStructure`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseStructure`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMeta`
+
+    Inherited by:
+      - :class:`objetto.bases.BaseAuxiliaryStructureMeta`
+      - :class:`objetto.bases.BaseAttributeStructureMeta`
+      - :class:`objetto.bases.BaseDataMeta`
+      - :class:`objetto.bases.BaseObjectMeta`
+
+    Features:
+      - Support for `unique descriptors <objetto.objects.unique_descriptor>`_.
+      - Defines serializable structure type.
+    """
 
     __unique_descriptor_name = WeakKeyDictionary(
         {}
@@ -700,27 +715,44 @@ class BaseStructureMeta(BaseMeta):
     @final
     def _unique_descriptor_name(cls):
         # type: () -> Optional[str]
-        """Unique descriptor name or `None`."""
+        """
+        Unique descriptor name or `None`.
+
+        :rtype: str or None
+        """
         return type(cls).__unique_descriptor_name[cls]
 
     @property
     @final
     def _unique_descriptor(cls):
         # type: () -> Optional[UniqueDescriptor]
-        """Unique descriptor or `None`."""
+        """
+        Unique descriptor or `None`.
+
+        :rtype: objetto.objects.UniqueDescriptor or objetto.data.UniqueDescriptor or \
+None
+        """
         return type(cls).__unique_descriptor[cls]
 
     @property
     @abstractmethod
     def _serializable_structure_types(cls):
         # type: () -> Tuple[Type[BaseStructure], ...]
-        """Serializable structure types."""
+        """
+        Serializable structure types.
+
+        :rtype: tuple[type[objetto.bases.BaseStructure]]
+        """
         raise NotImplementedError()
 
     @property
     def _relationship_type(cls):
         # type: () -> Type[BaseRelationship]
-        """Relationship type."""
+        """
+        Relationship type.
+
+        :rtype: type[objetto.bases.BaseRelationship]
+        """
         return BaseRelationship
 
 
@@ -733,6 +765,9 @@ class BaseStructure(
 ):
     """
     Base structure.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseStructureMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseHashable`
@@ -1158,7 +1193,24 @@ class BaseMutableStructure(BaseStructure[T], BaseMutableCollection[T]):
 
 
 class BaseAuxiliaryStructureMeta(BaseStructureMeta):
-    """Metaclass for `BaseAuxiliaryStructure`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseAuxiliaryStructure`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseStructureMeta`
+
+    Inherited by:
+      - :class:`objetto.bases.BaseAuxiliaryDataMeta`
+      - :class:`objetto.bases.BaseAuxiliaryObjectMeta`
+      - :class:`objetto.bases.BaseDictStructureMeta`
+      - :class:`objetto.bases.BaseListStructureMeta`
+      - :class:`objetto.bases.BaseSetStructureMeta`
+
+    Features:
+      - Defines a base auxiliary type.
+      - Enforces correct type for :attr:`objetto.bases.BaseAuxiliaryStructure.\
+_relationship`.
+    """
 
     def __init__(cls, name, bases, dct):
         super(BaseAuxiliaryStructureMeta, cls).__init__(name, bases, dct)
@@ -1172,7 +1224,11 @@ class BaseAuxiliaryStructureMeta(BaseStructureMeta):
     @abstractmethod
     def _base_auxiliary_type(cls):
         # type: () -> Type[BaseAuxiliaryStructure]
-        """Base auxiliary structure type."""
+        """
+        Base auxiliary structure type.
+
+        :rtype: type[objetto.bases.BaseAuxiliaryStructure]
+        """
         raise NotImplementedError()
 
 
