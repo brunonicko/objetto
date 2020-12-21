@@ -17,7 +17,7 @@ from .bases import (
 )
 from .dict import DictObject, MutableDictObject, ProxyDictObject
 from .list import ListObject, MutableListObject, ProxyListObject
-from .object import Attribute, Object
+from .object import AttributeMeta, Attribute, Object
 from .set import MutableSetObject, ProxySetObject, SetObject
 
 __all__ = [
@@ -33,6 +33,7 @@ __all__ = [
     "BaseAuxiliaryObject",
     "BaseMutableAuxiliaryObject",
     "BaseProxyObject",
+    "AttributeMeta",
     "Attribute",
     "Object",
     "DictObject",

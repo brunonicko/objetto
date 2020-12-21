@@ -9,7 +9,7 @@ from .bases import (
     BaseInteractiveData,
     DataRelationship,
 )
-from .data import Data, DataAttribute, InteractiveData
+from .data import Data, DataAttributeMeta, DataAttribute, InteractiveData
 from .dict import DictData, InteractiveDictData
 from .list import InteractiveListData, ListData
 from .set import InteractiveSetData, SetData
@@ -19,6 +19,7 @@ __all__ = [
     "BaseDataMeta",
     "BaseData",
     "BaseInteractiveData",
+    "DataAttributeMeta",
     "DataAttribute",
     "Data",
     "InteractiveData",

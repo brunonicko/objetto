@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, TypeVar
 from ._bases import MISSING
 from ._data import (
     Data,
+    DataAttributeMeta,
     DataAttribute,
     DataRelationship,
     DictData,
@@ -34,6 +35,7 @@ __all__ = [
     "DataRelationship",
     "KeyRelationship",
     "UniqueDescriptor",
+    "DataAttributeMeta",
     "Data",
     "InteractiveData",
     "DictData",

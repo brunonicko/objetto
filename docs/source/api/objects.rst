@@ -226,6 +226,10 @@ Proxy Set Class
 
 Attribute Descriptor Class
 --------------------------
+
+.. autoclass:: objetto.objects.AttributeMeta
+   :members: _relationship_type
+
 .. autoclass:: objetto.objects.Attribute
    :members:
      relationship,

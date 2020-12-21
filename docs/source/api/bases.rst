@@ -420,6 +420,10 @@ Base Relationship Class
 
 Base Attribute Class
 --------------------
+
+.. autoclass:: objetto.bases.BaseAttributeMeta
+   :members: _relationship_type
+
 .. autoclass:: objetto.bases.BaseAttribute
    :members:
      relationship,

@@ -16,6 +16,7 @@ from ._bases import MISSING
 from ._data import DataRelationship
 from ._objects import (
     DATA_METHOD_TAG,
+    AttributeMeta,
     Attribute,
     BaseReaction,
     DictObject,
@@ -64,6 +65,7 @@ __all__ = [
     "ProxyListObject",
     "ProxySetObject",
     "Relationship",
+    "AttributeMeta",
     "Attribute",
     "KeyRelationship",
     "UniqueDescriptor",

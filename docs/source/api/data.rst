@@ -105,6 +105,10 @@ Data Set Classes
 
 Data Attribute Descriptor Class
 -------------------------------
+
+.. autoclass:: objetto.data.DataAttributeMeta
+   :members: _relationship_type
+
 .. autoclass:: objetto.data.DataAttribute
    :members: relationship
 

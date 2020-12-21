@@ -27,17 +27,25 @@ if TYPE_CHECKING:
 
     from ..utils.factoring import LazyFactory
 
-__all__ = ["DataAttribute", "Data", "InteractiveData"]
+__all__ = ["DataAttributeMeta", "DataAttribute", "Data", "InteractiveData"]
 
 
 T = TypeVar("T")  # Any type.
 
 
+@final
 class DataAttributeMeta(BaseAttributeMeta):
-    """Metaclass for `DataAttribute`."""
+    """
+    Metaclass for :class:`objetto.data.DataAttribute`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAttributeMeta`
+
+    Features:
+      - Defines relationship type.
+    """
 
     @property
-    @final
     def _relationship_type(cls):
         # type: () -> Type[DataRelationship]
         """Relationship type."""
@@ -48,6 +56,9 @@ class DataAttributeMeta(BaseAttributeMeta):
 class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
     """
     Attribute descriptor for :class:`objetto.data.Data` classes.
+
+    Metaclass:
+      - :class:`objetto.data.DataAttributeMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAttribute`

@@ -64,7 +64,7 @@ if TYPE_CHECKING:
     from .._history import HistoryObject
     from ..utils.factoring import LazyFactory
 
-__all__ = ["Attribute", "Object"]
+__all__ = ["AttributeMeta", "Attribute", "Object"]
 
 
 T = TypeVar("T")  # Any type.
@@ -74,11 +74,19 @@ T = TypeVar("T")  # Any type.
 _A = TypeVar("_A", bound="Attribute")
 
 
+@final
 class AttributeMeta(BaseAttributeMeta):
-    """Metaclass for `Attribute`."""
+    """
+    Metaclass for :class:`objetto.objects.Attribute`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAttributeMeta`
+
+    Features:
+      - Defines relationship type.
+    """
 
     @property
-    @final
     def _relationship_type(cls):
         # type: () -> Type[Relationship]
         """Relationship type."""
@@ -89,6 +97,9 @@ class AttributeMeta(BaseAttributeMeta):
 class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
     """
     Attribute descriptor for :class:`objetto.objects.Object` classes.
+
+    Metaclass:
+      - :class:`objetto.objects.AttributeMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAttribute`

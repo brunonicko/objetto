@@ -69,7 +69,19 @@ T = TypeVar("T")  # Any type.
 
 
 class BaseAttributeMeta(BaseMeta):
-    """Metaclass for `BaseAttribute`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseAttribute`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseMeta`
+
+    Inherited by:
+      - :class:`objetto.data.DataAttributeMeta`
+      - :class:`objetto.objects.AttributeMeta`
+
+    Features:
+      - Defines relationship type.
+    """
 
     @property
     @abstractmethod
@@ -86,6 +98,9 @@ _BA = TypeVar("_BA", bound="BaseAttribute")
 class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T])):
     """
     Base attribute descriptor for :class:`objetto.bases.BaseAttributeStructure` classes.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseAttributeMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseHashable`
