@@ -16,25 +16,25 @@ from ._bases import MISSING
 from ._data import DataRelationship
 from ._objects import (
     DATA_METHOD_TAG,
-    AttributeMeta,
     Attribute,
+    AttributeMeta,
     BaseReaction,
-    DictObjectMeta,
     DictObject,
+    DictObjectMeta,
     HistoryDescriptor,
-    ListObjectMeta,
     ListObject,
+    ListObjectMeta,
     MutableDictObject,
     MutableListObject,
     MutableSetObject,
-    ObjectMeta,
     Object,
+    ObjectMeta,
     ProxyDictObject,
     ProxyListObject,
     ProxySetObject,
     Relationship,
-    SetObjectMeta,
     SetObject,
+    SetObjectMeta,
 )
 from ._reactions import reaction
 from ._structures import (

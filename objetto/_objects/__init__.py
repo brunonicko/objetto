@@ -9,17 +9,17 @@ from .bases import (
     BaseAuxiliaryObjectMeta,
     BaseMutableAuxiliaryObject,
     BaseMutableObject,
-    BaseObjectMeta,
     BaseObject,
+    BaseObjectMeta,
     BaseProxyObject,
     BaseReaction,
     HistoryDescriptor,
     Relationship,
 )
-from .dict import DictObjectMeta, DictObject, MutableDictObject, ProxyDictObject
-from .list import ListObjectMeta, ListObject, MutableListObject, ProxyListObject
-from .object import AttributeMeta, Attribute, ObjectMeta, Object
-from .set import MutableSetObject, ProxySetObject, SetObjectMeta, SetObject
+from .dict import DictObject, DictObjectMeta, MutableDictObject, ProxyDictObject
+from .list import ListObject, ListObjectMeta, MutableListObject, ProxyListObject
+from .object import Attribute, AttributeMeta, Object, ObjectMeta
+from .set import MutableSetObject, ProxySetObject, SetObject, SetObjectMeta
 
 __all__ = [
     "DELETED",

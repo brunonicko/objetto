@@ -14,7 +14,7 @@ other objects.
 
 from typing import TYPE_CHECKING
 
-from ._applications import BO, ApplicationMeta, Application, ApplicationRoot
+from ._applications import BO, Application, ApplicationMeta, ApplicationRoot
 
 if TYPE_CHECKING:
     from typing import Any, Optional, Type
