@@ -87,7 +87,7 @@ VT = TypeVar("VT")  # Value type.
 T_co = TypeVar("T_co", covariant=True)  # Any type covariant containers.
 VT_co = TypeVar("VT_co", covariant=True)  # Value type covariant containers.
 
-MISSING = object()
+MISSING = type("MISSING", (object,), {"__slots__": ()})()
 ABSTRACT_TAG = "__isabstractmethod__"
 FINAL_CLASS_TAG = "__isfinalclass__"
 FINAL_METHOD_TAG = "__isfinalmethod__"

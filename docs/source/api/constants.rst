@@ -10,7 +10,8 @@ Action Execution Phases
 
 Special Values
 --------------
-.. autoattribute:: objetto.constants.DELETED
+.. autodata:: objetto.constants.DELETED
+   :annotation: :  Special Value
 
    Special marker that represents a deleted value.
    Can be used when updating :class:`objetto.objects.Object` attributes or
@@ -21,14 +22,14 @@ Regular Expressions
 
 Lazy Import Paths Validation
 ****************************
-.. autoattribute:: objetto.constants.PARTIAL_IMPORT_PATH_REGEX
+.. autodata:: objetto.constants.PARTIAL_IMPORT_PATH_REGEX
 
    Partial lazy import path regex.
 
-.. autoattribute:: objetto.constants.RELATIVE_IMPORT_PATH_REGEX
+.. autodata:: objetto.constants.RELATIVE_IMPORT_PATH_REGEX
 
    Relative lazy import path regex.
 
-.. autoattribute:: objetto.constants.IMPORT_PATH_REGEX
+.. autodata:: objetto.constants.IMPORT_PATH_REGEX
 
    Full lazy import path regex.

@@ -78,7 +78,7 @@ __all__ = [
 
 T = TypeVar("T")  # Any type.
 
-DELETED = object()
+DELETED = type("DELETED", (object,), {"__slots__": ()})()
 """
 Special marker that represents a deleted value.
 Can be used when updating :class:`objetto.objects.Object` attributes or
