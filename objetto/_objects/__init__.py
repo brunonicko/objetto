@@ -15,10 +15,10 @@ from .bases import (
     HistoryDescriptor,
     Relationship,
 )
-from .dict import DictObject, MutableDictObject, ProxyDictObject
-from .list import ListObject, MutableListObject, ProxyListObject
+from .dict import DictObjectMeta, DictObject, MutableDictObject, ProxyDictObject
+from .list import ListObjectMeta, ListObject, MutableListObject, ProxyListObject
 from .object import AttributeMeta, Attribute, Object
-from .set import MutableSetObject, ProxySetObject, SetObject
+from .set import MutableSetObject, ProxySetObject, SetObjectMeta, SetObject
 
 __all__ = [
     "DELETED",
@@ -36,12 +36,15 @@ __all__ = [
     "AttributeMeta",
     "Attribute",
     "Object",
+    "DictObjectMeta",
     "DictObject",
     "MutableDictObject",
     "ProxyDictObject",
+    "ListObjectMeta",
     "ListObject",
     "MutableListObject",
     "ProxyListObject",
+    "SetObjectMeta",
     "SetObject",
     "MutableSetObject",
     "ProxySetObject",

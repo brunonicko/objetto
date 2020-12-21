@@ -19,8 +19,10 @@ from ._objects import (
     AttributeMeta,
     Attribute,
     BaseReaction,
+    DictObjectMeta,
     DictObject,
     HistoryDescriptor,
+    ListObjectMeta,
     ListObject,
     MutableDictObject,
     MutableListObject,
@@ -30,6 +32,7 @@ from ._objects import (
     ProxyListObject,
     ProxySetObject,
     Relationship,
+    SetObjectMeta,
     SetObject,
 )
 from ._reactions import reaction
@@ -55,10 +58,13 @@ if TYPE_CHECKING:
 
 __all__ = [
     "Object",
+    "DictObjectMeta",
     "DictObject",
     "MutableDictObject",
+    "ListObjectMeta",
     "ListObject",
     "MutableListObject",
+    "SetObjectMeta",
     "SetObject",
     "MutableSetObject",
     "ProxyDictObject",

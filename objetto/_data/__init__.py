@@ -11,9 +11,9 @@ from .bases import (
     DataRelationship,
 )
 from .data import Data, DataAttributeMeta, DataAttribute, InteractiveData
-from .dict import DictData, InteractiveDictData
-from .list import InteractiveListData, ListData
-from .set import InteractiveSetData, SetData
+from .dict import DictDataMeta, DictData, InteractiveDictData
+from .list import InteractiveListData, ListDataMeta, ListData
+from .set import InteractiveSetData, SetDataMeta, SetData
 
 __all__ = [
     "DataRelationship",
@@ -27,10 +27,13 @@ __all__ = [
     "BaseAuxiliaryDataMeta",
     "BaseAuxiliaryData",
     "BaseInteractiveAuxiliaryData",
+    "DictDataMeta",
     "DictData",
     "InteractiveDictData",
+    "ListDataMeta",
     "ListData",
     "InteractiveListData",
+    "SetDataMeta",
     "SetData",
     "InteractiveSetData",
 ]

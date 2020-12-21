@@ -28,20 +28,33 @@ if TYPE_CHECKING:
     from typing import Any, Iterable, List, Type
 
 
-__all__ = ["SetData", "InteractiveSetData"]
+__all__ = ["SetDataMeta", "SetData", "InteractiveSetData"]
 
 
 T = TypeVar("T")  # Any type.
 
 
 class SetDataMeta(BaseAuxiliaryDataMeta, BaseSetStructureMeta):
-    """Metaclass for `SetData`."""
+    """
+    Metaclass for :class:`objetto.data.SetData`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryDataMeta`
+      - :class:`objetto.bases.BaseSetStructureMeta`
+
+    Features:
+      - Defines a base auxiliary type.
+    """
 
     @property
     @final
     def _base_auxiliary_type(cls):
         # type: () -> Type[SetData]
-        """Base auxiliary container type."""
+        """
+        Base auxiliary container type.
+
+        :rtype: type[objetto.data.SetData]
+        """
         return SetData
 
 
@@ -58,6 +71,9 @@ class SetData(
 ):
     """
     Set data.
+
+    Metaclass:
+      - :class:`objetto.data.SetDataMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseSetStructure`

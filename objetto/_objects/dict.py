@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     from .._applications import Store
     from .._history import HistoryObject
 
-__all__ = ["DictObject", "MutableDictObject", "ProxyDictObject"]
+__all__ = ["DictObjectMeta", "DictObject", "MutableDictObject", "ProxyDictObject"]
 
 
 KT = TypeVar("KT")  # Key type.
@@ -273,27 +273,50 @@ type.__setattr__(cast(type, DictObjectFunctions), FINAL_METHOD_TAG, True)
 
 
 class DictObjectMeta(BaseAuxiliaryObjectMeta, BaseDictStructureMeta):
-    """Metaclass for `DictObject`."""
+    """
+    Metaclass for :class:`objetto.objects.DictObject`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryObjectMeta`
+      - :class:`objetto.bases.BaseDictStructureMeta`
+
+    Features:
+      - Defines a state factory.
+      - Defines a base auxiliary type.
+      - Defines a base auxiliary data type.
+    """
 
     @property
     @final
     def _state_factory(cls):
         # type: () -> Callable[..., DictState]
-        """State factory."""
+        """
+        State factory.
+
+        :rtype: type[objetto.states.DictState]
+        """
         return DictState
 
     @property
     @final
     def _base_auxiliary_type(cls):
         # type: () -> Type[DictObject]
-        """Base auxiliary object type."""
+        """
+        Base auxiliary object type.
+
+        :rtype: type[objetto.objects.DictObject]
+        """
         return DictObject
 
     @property
     @final
     def _base_auxiliary_data_type(cls):
         # type: () -> Type[DictData]
-        """Base auxiliary data type."""
+        """
+        Base auxiliary data type.
+
+        :rtype: type[objetto.data.DictData]
+        """
         return DictData
 
 
@@ -310,6 +333,9 @@ class DictObject(
 ):
     """
     Dictionary object.
+
+    Metaclass:
+      - :class:`objetto.objects.DictObjectMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAuxiliaryObject`

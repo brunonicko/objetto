@@ -53,6 +53,10 @@ Auxiliary Data Classes
 
 Data Dictionary Classes
 ***********************
+
+.. autoclass:: objetto.data.DictDataMeta
+   :members: _base_auxiliary_type
+
 .. autoclass:: objetto.data.DictData
    :members: _key_relationship, _state
 
@@ -68,6 +72,10 @@ Data Dictionary Classes
 
 Data List Classes
 *****************
+
+.. autoclass:: objetto.data.ListDataMeta
+   :members: _base_auxiliary_type
+
 .. autoclass:: objetto.data.ListData
    :members: _state
 
@@ -88,6 +96,10 @@ Data List Classes
 
 Data Set Classes
 *****************
+
+.. autoclass:: objetto.data.SetDataMeta
+   :members: _base_auxiliary_type
+
 .. autoclass:: objetto.data.SetData
    :members: _state
 
