@@ -482,6 +482,18 @@ Base Data Classes
 
 Base Object Classes
 -------------------
+
+.. autoclass:: objetto.bases.BaseObjectMeta
+   :members:
+     _state_factory,
+     _serializable_structure_types,
+     _relationship_type,
+     _history_descriptor_name,
+     _history_descriptor,
+     _reactions,
+     _data_methods,
+     Data,
+
 .. autoclass:: objetto.bases.BaseObject
    :members:
      _state,

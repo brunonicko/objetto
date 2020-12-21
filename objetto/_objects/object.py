@@ -64,7 +64,7 @@ if TYPE_CHECKING:
     from .._history import HistoryObject
     from ..utils.factoring import LazyFactory
 
-__all__ = ["AttributeMeta", "Attribute", "Object"]
+__all__ = ["AttributeMeta", "Attribute", "ObjectMeta", "Object"]
 
 
 T = TypeVar("T")  # Any type.
@@ -802,7 +802,16 @@ type.__setattr__(cast(type, Functions), FINAL_METHOD_TAG, True)
 
 class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
     """
-    Metaclass for `Object`.
+    Metaclass for :class:`objetto.objects.Object`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAttributeStructureMeta`
+      - :class:`objetto.bases.BaseObjectMeta`
+
+    Features:
+      - Support for :class:`objetto.objects.Attribute` descriptors.
+      - Compute and store attribute dependencies.
+      - Constructs automatic `Data` class.
 
     :raises TypeError: Attribute is delegated but no delegates were defined.
     :raises TypeError: Attribute declares a dependency which is not available.
@@ -887,63 +896,99 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
     @final
     def _attribute_type(cls):
         # type: () -> Type[Attribute]
-        """Attribute type."""
+        """
+        Attribute type.
+
+        :rtype: type[objetto.objects.Attribute]
+        """
         return Attribute
 
     @property
     @final
     def _attributes(cls):
         # type: () -> Mapping[str, Attribute]
-        """Attributes mapped by name."""
+        """
+        Attributes mapped by name.
+
+        :rtype: dict[str, objetto.objects.Attribute]
+        """
         return cast("Mapping[str, Attribute]", super(ObjectMeta, cls)._attributes)
 
     @property
     @final
     def _attribute_names(cls):
         # type: () -> Mapping[Attribute, str]
-        """Names mapped by attribute."""
+        """
+        Names mapped by attribute.
+
+        :rtype: dict[objetto.objects.Attribute, str]
+        """
         return cast("Mapping[Attribute, str]", super(ObjectMeta, cls)._attribute_names)
 
     @property
     @final
     def _state_factory(cls):
         # type: () -> Callable[..., DictState]
-        """State factory."""
+        """
+        State factory.
+
+        :rtype: type[objetto.states.DictState]
+        """
         return DictState
 
     @property
     @final
     def _attribute_dependencies(cls):
         # type: () -> DictState[str, SetState[str]]
-        """Attribute dependencies."""
+        """
+        Attribute dependencies.
+
+        :rtype: dict[str, set[str]]
+        """
         return type(cls).__attribute_dependencies[cls]
 
     @property
     @final
     def _attribute_dependents(cls):
         # type: () -> DictState[str, SetState[str]]
-        """Attribute dependents."""
+        """
+        Attribute dependents.
+
+        :rtype: dict[str, set[str]]
+        """
         return type(cls).__attribute_dependents[cls]
 
     @property
     @final
     def _attribute_flattened_dependencies(cls):
         # type: () -> DictState[str, SetState[str]]
-        """Flattened attribute dependencies."""
+        """
+        Flattened attribute dependencies.
+
+        :rtype: dict[str, set[str]]
+        """
         return type(cls).__attribute_flattened_dependencies[cls]
 
     @property
     @final
     def _attribute_flattened_dependents(cls):
         # type: () -> DictState[str, SetState[str]]
-        """Flattened attribute dependents."""
+        """
+        Flattened attribute dependents.
+
+        :rtype: dict[str, set[str]]
+        """
         return type(cls).__attribute_flattened_dependents[cls]
 
     @property
     @final
     def Data(cls):
         # type: () -> Type[Data]
-        """Data type."""
+        """
+        Data type.
+
+        :rtype: type[objetto.data.Data]
+        """
 
         # Try to get cached data type.
         mcs = type(cls)
@@ -1010,6 +1055,9 @@ class Object(
 ):
     """
     Object.
+
+    Metaclass:
+      - :class:`objetto.objects.ObjectMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseMutableObject`

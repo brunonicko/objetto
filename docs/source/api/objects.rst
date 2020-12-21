@@ -5,6 +5,19 @@ Objects (objetto.objects)
 
 Object Class
 ------------
+
+.. autoclass:: objetto.objects.ObjectMeta
+   :members:
+      _attribute_type,
+      _attributes,
+      _attribute_names,
+      _state_factory,
+      _attribute_dependencies,
+      _attribute_dependents,
+      _attribute_flattened_dependencies,
+      _attribute_flattened_dependents,
+      Data,
+
 .. autoclass:: objetto.objects.Object
    :members: _state, data
 

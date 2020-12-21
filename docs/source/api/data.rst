@@ -5,6 +5,13 @@ Data (objetto.data)
 
 Data Classes
 ------------
+
+.. autoclass:: objetto.data.DataMeta
+   :members:
+      _attribute_type,
+      _attributes,
+      _attribute_names,
+
 .. autoclass:: objetto.data.Data
    :members: _state
 

@@ -9,6 +9,7 @@ from .bases import (
     BaseAuxiliaryObjectMeta,
     BaseMutableAuxiliaryObject,
     BaseMutableObject,
+    BaseObjectMeta,
     BaseObject,
     BaseProxyObject,
     BaseReaction,
@@ -17,7 +18,7 @@ from .bases import (
 )
 from .dict import DictObjectMeta, DictObject, MutableDictObject, ProxyDictObject
 from .list import ListObjectMeta, ListObject, MutableListObject, ProxyListObject
-from .object import AttributeMeta, Attribute, Object
+from .object import AttributeMeta, Attribute, ObjectMeta, Object
 from .set import MutableSetObject, ProxySetObject, SetObjectMeta, SetObject
 
 __all__ = [
@@ -27,6 +28,7 @@ __all__ = [
     "Relationship",
     "BaseReaction",
     "HistoryDescriptor",
+    "BaseObjectMeta",
     "BaseObject",
     "BaseMutableObject",
     "BaseAuxiliaryObjectMeta",
@@ -35,6 +37,7 @@ __all__ = [
     "BaseProxyObject",
     "AttributeMeta",
     "Attribute",
+    "ObjectMeta",
     "Object",
     "DictObjectMeta",
     "DictObject",

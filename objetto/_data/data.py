@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
     from ..utils.factoring import LazyFactory
 
-__all__ = ["DataAttributeMeta", "DataAttribute", "Data", "InteractiveData"]
+__all__ = ["DataAttributeMeta", "DataAttribute", "DataMeta", "Data", "InteractiveData"]
 
 
 T = TypeVar("T")  # Any type.
@@ -136,27 +136,48 @@ class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
 
 
 class DataMeta(BaseAttributeStructureMeta, BaseDataMeta):
-    """Metaclass for `Data`."""
+    """
+    Metaclass for :class:`objetto.data.Data`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAttributeStructureMeta`
+      - :class:`objetto.bases.BaseDataMeta`
+
+    Features:
+      - Support for :class:`objetto.data.DataAttribute` descriptors.
+    """
 
     @property
     @final
     def _attribute_type(cls):
         # type: () -> Type[DataAttribute]
-        """Attribute type."""
+        """
+        Attribute type.
+
+        :rtype: type[objetto.data.DataAttribute]
+        """
         return DataAttribute
 
     @property
     @final
     def _attributes(cls):
         # type: () -> Mapping[str, DataAttribute]
-        """Attributes mapped by name."""
+        """
+        Attributes mapped by name.
+
+        :rtype: dict[str, objetto.data.DataAttribute]
+        """
         return cast("Mapping[str, DataAttribute]", super(DataMeta, cls)._attributes)
 
     @property
     @final
     def _attribute_names(cls):
         # type: () -> Mapping[DataAttribute, str]
-        """Names mapped by attribute."""
+        """
+        Names mapped by attribute.
+
+        :rtype: dict[objetto.data.DataAttribute, str]
+        """
         return cast(
             "Mapping[DataAttribute, str]", super(DataMeta, cls)._attribute_names
         )
@@ -169,6 +190,9 @@ _D = TypeVar("_D", bound="Data")
 class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
     """
     Data.
+
+    Metaclass:
+      - :class:`objetto.data.DataMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAttributeStructure`

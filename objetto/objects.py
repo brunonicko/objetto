@@ -27,6 +27,7 @@ from ._objects import (
     MutableDictObject,
     MutableListObject,
     MutableSetObject,
+    ObjectMeta,
     Object,
     ProxyDictObject,
     ProxyListObject,
@@ -57,6 +58,7 @@ if TYPE_CHECKING:
     ReactionsType = Union[ReactionType, Iterable[ReactionType]]
 
 __all__ = [
+    "ObjectMeta",
     "Object",
     "DictObjectMeta",
     "DictObject",
