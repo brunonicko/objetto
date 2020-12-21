@@ -3,7 +3,7 @@
 
 from collections import Counter as ValueCounter
 from collections import defaultdict
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 
 from six import integer_types, iteritems, string_types
 
@@ -22,8 +22,11 @@ if TYPE_CHECKING:
     from ._applications import Action
     from ._objects import BaseObject
 
+    if False and BaseObject:  # for PyCharm
+        pass
+
     ReactionDecorator = Callable[
-        [Callable[[BaseObject, Action, Phase], None]], "CustomReaction"
+        [Callable[["_BO", Action, Phase], None]], "CustomReaction"
     ]
 
 __all__ = [
@@ -35,9 +38,12 @@ __all__ = [
 ]
 
 
+_BO = TypeVar("_BO", bound="BaseObject")
+
+
 # noinspection PyAbstractClass
 def reaction(
-    func=None,  # type: Optional[Callable[[BaseObject, Action, Phase], None]]
+    func=None,  # type: Optional[Callable[[_BO, Action, Phase], None]]
     priority=None,  # type: Optional[int]
 ):
     # type: (...) -> Union[CustomReaction, ReactionDecorator]
@@ -84,7 +90,7 @@ def reaction(
     """
 
     def _reaction(func_):
-        # type: (Callable[[BaseObject, Action, Phase], None]) -> CustomReaction
+        # type: (Callable[[_BO, Action, Phase], None]) -> CustomReaction
         """
         Reaction method decorator.
 
@@ -121,7 +127,7 @@ class CustomReaction(BaseReaction):
     __slots__ = ("__func", "__priority")
 
     def __init__(self, func, priority=None):
-        # type: (Callable[[BaseObject, Action, Phase], None], Optional[int]) -> None
+        # type: (Callable[[_BO, Action, Phase], None], Optional[int]) -> None
         super(CustomReaction, self).__init__()
 
         # 'func'
@@ -169,7 +175,7 @@ class CustomReaction(BaseReaction):
 
     @property
     def func(self):
-        # type: () -> Callable[[BaseObject, Action, Phase], None]
+        # type: () -> Callable[[_BO, Action, Phase], None]
         """
         Function.
 
@@ -224,7 +230,7 @@ class UniqueAttributes(BaseReaction):
         self.__incrementers = all_incrementers
 
     def __call__(self, obj, action, phase):
-        # type: (BaseObject, Action, Phase) -> None
+        # type: (_BO, Action, Phase) -> None
         """
         React to new children or children's attribute changes.
 
@@ -390,7 +396,7 @@ class UniqueAttributes(BaseReaction):
 
     def __react(
         self,
-        obj,  # type: BaseObject
+        obj,  # type: _BO
         children,  # type: FrozenSet[Object]
         child_new_values=None,  # type: Optional[Dict[Object, Mapping[str, Any]]]
     ):
@@ -547,7 +553,7 @@ class LimitChildren(BaseReaction):
         self.__maximum = maximum
 
     def __call__(self, obj, action, phase):
-        # type: (BaseObject, Action, Phase) -> None
+        # type: (_BO, Action, Phase) -> None
         """
         React to atomic changes.
 
@@ -661,7 +667,7 @@ class Limit(BaseReaction):
         self.__maximum = maximum
 
     def __call__(self, obj, action, phase):
-        # type: (BaseObject, Action, Phase) -> None
+        # type: (_BO, Action, Phase) -> None
         """
         React to atomic changes.
 
