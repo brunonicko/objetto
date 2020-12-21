@@ -154,8 +154,6 @@ class BaseDataMeta(BaseStructureMeta):
 
     Features:
       - Defines serializable structure type as :class:`objetto.bases.BaseData`.
-      - Enforces correct type for :attr:`objetto.bases.BaseAuxiliaryData.\
-_relationship`.
     """
 
     @property

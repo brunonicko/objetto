@@ -273,7 +273,21 @@ class KeyRelationship(BaseHashable):
 
 # noinspection PyAbstractClass
 class BaseDictStructureMeta(BaseAuxiliaryStructureMeta):
-    """Metaclass for `DictStructure`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseDictStructure`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryStructureMeta`
+
+    Inherited by:
+      - :class:`objetto.data.DictDataMeta`
+      - :class:`objetto.objects.DictObjectMeta`
+
+    Features:
+      - Defines a key relationship type.
+      - Enforces correct type for :attr:`objetto.bases.BaseDictStructure.\
+_key_relationship`.
+    """
 
     def __init__(cls, name, bases, dct):
         super(BaseDictStructureMeta, cls).__init__(name, bases, dct)
@@ -290,7 +304,11 @@ class BaseDictStructureMeta(BaseAuxiliaryStructureMeta):
     @final
     def _key_relationship_type(cls):
         # type: () -> Type[KeyRelationship]
-        """Relationship type."""
+        """
+        Relationship type.
+
+        :rtype: type[objetto.objects.KeyRelationship or objetto.data.KeyRelationship]
+        """
         return KeyRelationship
 
 
@@ -303,6 +321,9 @@ class BaseDictStructure(
 ):
     """
     Base dictionary structure.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseDictStructureMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAuxiliaryStructure`

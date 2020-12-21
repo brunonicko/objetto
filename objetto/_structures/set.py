@@ -39,7 +39,16 @@ T = TypeVar("T")  # Any type.
 
 # noinspection PyAbstractClass
 class BaseSetStructureMeta(BaseAuxiliaryStructureMeta):
-    """Metaclass for `SetStructure`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseSetStructure`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseAuxiliaryStructureMeta`
+
+    Inherited by:
+      - :class:`objetto.data.SetDataMeta`
+      - :class:`objetto.objects.SetObjectMeta`
+    """
 
 
 class BaseSetStructure(
@@ -51,6 +60,9 @@ class BaseSetStructure(
 ):
     """
     Base set structure.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseSetStructureMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAuxiliaryStructure`

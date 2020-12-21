@@ -296,6 +296,9 @@ Base Structure Classes
 Base Dict Structure Classes
 ***************************
 
+.. autoclass:: objetto.bases.BaseDictStructureMeta
+   :members: _key_relationship_type
+
 .. autoclass:: objetto.bases.BaseDictStructure
    :members: _key_relationship, _state
 
@@ -317,6 +320,8 @@ Base Dict Structure Classes
 Base List Structure Classes
 ***************************
 
+.. autoclass:: objetto.bases.BaseListStructureMeta
+
 .. autoclass:: objetto.bases.BaseListStructure
    :members: _state
 
@@ -335,6 +340,8 @@ Base List Structure Classes
 
 Base Set Structure Classes
 **************************
+
+.. autoclass:: objetto.bases.BaseSetStructureMeta
 
 .. autoclass:: objetto.bases.BaseSetStructure
    :members: _state

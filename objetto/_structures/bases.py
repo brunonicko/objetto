@@ -656,8 +656,6 @@ class BaseStructureMeta(BaseMeta):
     Features:
       - Support for `unique descriptors <objetto.objects.unique_descriptor>`_.
       - Defines serializable structure type.
-      - Enforces correct type for :attr:`objetto.bases.BaseAuxiliaryStructure.\
-_relationship`.
     """
 
     __unique_descriptor_name = WeakKeyDictionary(
@@ -1210,6 +1208,8 @@ class BaseAuxiliaryStructureMeta(BaseStructureMeta):
 
     Features:
       - Defines a base auxiliary type.
+      - Enforces correct type for :attr:`objetto.bases.BaseAuxiliaryStructure.\
+_relationship`.
     """
 
     def __init__(cls, name, bases, dct):
