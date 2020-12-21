@@ -34,6 +34,9 @@ __all__ = [
     "BaseDataMeta",
     "BaseData",
     "BaseInteractiveData",
+    "BaseAuxiliaryDataMeta",
+    "BaseAuxiliaryData",
+    "BaseInteractiveAuxiliaryData",
 ]
 
 
@@ -283,13 +286,31 @@ class BaseInteractiveData(BaseData[T], BaseInteractiveStructure[T]):
 
 
 class BaseAuxiliaryDataMeta(BaseDataMeta, BaseAuxiliaryStructureMeta):
-    """Metaclass for `BaseAuxiliaryData`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseAuxiliaryData`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseDataMeta`
+      - :class:`objetto.bases.BaseAuxiliaryStructureMeta`
+
+    Inherited by:
+      - :class:`objetto.data.DictDataMeta`
+      - :class:`objetto.data.ListDataMeta`
+      - :class:`objetto.data.SetDataMeta`
+
+    Features:
+      - Defines a base auxiliary type.
+    """
 
     @property
     @abstractmethod
     def _base_auxiliary_type(cls):
         # type: () -> Type[BaseAuxiliaryData]
-        """Base auxiliary data type."""
+        """
+        Base auxiliary data type.
+
+        :rtype: type[objetto.bases.BaseAuxiliaryData]
+        """
         raise NotImplementedError()
 
 
@@ -303,6 +324,9 @@ class BaseAuxiliaryData(
 ):
     """
     Base auxiliary data.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseAuxiliaryDataMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAuxiliaryStructure`

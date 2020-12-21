@@ -36,6 +36,7 @@ from ._bases import (
 )
 from ._changes import BaseAtomicChange, BaseChange
 from ._data import (
+    BaseAuxiliaryDataMeta,
     BaseAuxiliaryData,
     BaseDataMeta,
     BaseData,
@@ -45,6 +46,7 @@ from ._data import (
 from ._exceptions import BaseObjettoException
 from ._factories import BaseFactory
 from ._objects import (
+    BaseAuxiliaryObjectMeta,
     BaseAuxiliaryObject,
     BaseMutableAuxiliaryObject,
     BaseMutableObject,
@@ -138,11 +140,13 @@ __all__ = [
     "BaseDataMeta",
     "BaseData",
     "BaseInteractiveData",
+    "BaseAuxiliaryDataMeta",
     "BaseAuxiliaryData",
     "BaseInteractiveAuxiliaryData",
     "BaseObject",
     "BaseReaction",
     "BaseMutableObject",
+    "BaseAuxiliaryObjectMeta",
     "BaseAuxiliaryObject",
     "BaseMutableAuxiliaryObject",
     "BaseProxyObject",

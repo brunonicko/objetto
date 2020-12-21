@@ -460,6 +460,9 @@ Base Data Classes
 
 .. autoclass:: objetto.bases.BaseInteractiveData
 
+.. autoclass:: objetto.bases.BaseAuxiliaryDataMeta
+   :members: _base_auxiliary_type
+
 .. autoclass:: objetto.bases.BaseAuxiliaryData
    :members:
      _relationship
@@ -492,6 +495,9 @@ Base Object Classes
    .. automethod:: objetto.bases.BaseObject.deserialize
 
 .. autoclass:: objetto.bases.BaseMutableObject
+
+.. autoclass:: objetto.bases.BaseAuxiliaryObjectMeta
+   :members: _base_auxiliary_type, _base_auxiliary_data_type, Data
 
 .. autoclass:: objetto.bases.BaseAuxiliaryObject
    :members: _relationship

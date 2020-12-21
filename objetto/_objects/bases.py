@@ -1124,7 +1124,23 @@ class BaseAuxiliaryObjectFunctions(BaseObjectFunctions):
 
 
 class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryStructureMeta):
-    """Metaclass for `BaseAuxiliaryObject`."""
+    """
+    Metaclass for :class:`objetto.bases.BaseAuxiliaryObject`.
+
+    Inherits from:
+      - :class:`objetto.bases.BaseObjectMeta`
+      - :class:`objetto.bases.BaseAuxiliaryStructureMeta`
+
+    Inherited by:
+      - :class:`objetto.objects.DictObjectMeta`
+      - :class:`objetto.objects.ListObjectMeta`
+      - :class:`objetto.objects.SetObjectMeta`
+
+    Features:
+      - Defines a base auxiliary type.
+      - Defines a base auxiliary `Data` type.
+      - Constructs automatic `Data` class.
+    """
 
     __data_type = WeakKeyDictionary(
         {}
@@ -1134,21 +1150,33 @@ class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryStructureMeta):
     @abstractmethod
     def _base_auxiliary_type(cls):
         # type: () -> Type[BaseAuxiliaryObject]
-        """Base auxiliary object type."""
+        """
+        Base auxiliary object type.
+
+        :rtype: type[objetto.bases.BaseAuxiliaryObject]
+        """
         raise NotImplementedError()
 
     @property
     @abstractmethod
     def _base_auxiliary_data_type(cls):
         # type: () -> Type[BaseAuxiliaryData]
-        """Base auxiliary data type."""
+        """
+        Base auxiliary data type.
+
+        :rtype: type[objetto.bases.BaseAuxiliaryData]
+        """
         raise NotImplementedError()
 
     @property
     @final
     def Data(cls):
         # type: () -> Type[BaseAuxiliaryData]
-        """Data type."""
+        """
+        Data type.
+
+        :rtype: type[objetto.bases.BaseAuxiliaryData]
+        """
         mcs = type(cls)
 
         # Try to get cached data type.
@@ -1203,6 +1231,9 @@ class BaseAuxiliaryObject(
 ):
     """
     Base auxiliary object.
+
+    Metaclass:
+      - :class:`objetto.bases.BaseAuxiliaryObjectMeta`
 
     Inherits from:
       - :class:`objetto.bases.BaseAuxiliaryStructure`

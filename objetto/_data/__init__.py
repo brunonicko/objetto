@@ -2,6 +2,7 @@
 """Immutable structures."""
 
 from .bases import (
+    BaseAuxiliaryDataMeta,
     BaseAuxiliaryData,
     BaseDataMeta,
     BaseData,
@@ -23,6 +24,7 @@ __all__ = [
     "DataAttribute",
     "Data",
     "InteractiveData",
+    "BaseAuxiliaryDataMeta",
     "BaseAuxiliaryData",
     "BaseInteractiveAuxiliaryData",
     "DictData",
