@@ -567,6 +567,18 @@ Base Factory Class
    .. automethod:: __call__
    .. automethod:: __add__
 
+Base Serializer Class
+---------------------
+.. autoclass:: objetto.bases.BaseSerializer
+
+   .. automethod:: __call__
+
+Base Deserializer Class
+-----------------------
+.. autoclass:: objetto.bases.BaseDeserializer
+
+   .. automethod:: __call__
+
 Base Change Classes
 -------------------
 .. autoclass:: objetto.bases.BaseChange

@@ -640,6 +640,8 @@ class BaseAttributeStructure(
             prefix="{}(".format(type(self).__fullname__),
             template="{key}={value}",
             suffix=")",
+            sorting=True,
+            sort_key=lambda p: p[0],
             key_repr=str,
         )
 
