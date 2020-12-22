@@ -820,7 +820,7 @@ Custom Serializer/Deserializer
 ******************************
 You can specify custom serializer/deserializer functions for attributes.
 
-**Example**: Serialize an `Enum`.
+**Example**: Serialize an `Enum` using lambdas.
 
 .. code:: python
 
@@ -844,6 +844,45 @@ You can specify custom serializer/deserializer functions for attributes.
     {'hobby': 'guitar'}
     >>> Person.deserialize({"hobby": "biking"}, app=app)
     Person(hobby=<Hobby.BIKING: 2>)
+
+**Example**: Serialize an `Enum` using provided serializer/deserializer.
+
+.. code:: python
+
+    >>> from enum import Enum
+    >>> from objetto import Application, Object, attribute
+    >>> from objetto.serializers import EnumSerializer
+    >>> from objetto.deserializers import EnumDeserializer
+
+    >>> class Hobby(Enum):
+    ...     GUITAR = 1
+    ...     BIKING = 2
+    ...
+    >>> class Job(Enum):
+    ...     PROGRAMMER = 1
+    ...     TEACHER = 2
+    ...
+    >>> class Person(Object):
+    ...     hobby = attribute(
+    ...         Hobby,
+    ...         serializer=EnumSerializer(),
+    ...         deserializer=EnumDeserializer(Hobby),
+    ...     )
+    ...     job = attribute(
+    ...         Job,
+    ...         serializer=EnumSerializer(by_name=True),
+    ...         deserializer=EnumDeserializer(Job, by_name=True),
+    ...     )
+    ...
+    >>> app = Application()
+    >>> person = Person(app, hobby=Hobby.GUITAR, job=Job.PROGRAMMER)
+    >>> serialized = person.serialize()
+    >>> serialized["hobby"]
+    1
+    >>> serialized["job"]
+    'PROGRAMMER'
+    >>> Person.deserialize({"hobby": 2, "job": "TEACHER"}, app=app)
+    Person(hobby=<Hobby.BIKING: 2>, job=<Job.TEACHER: 2>)
 
 ... And More!
 *************

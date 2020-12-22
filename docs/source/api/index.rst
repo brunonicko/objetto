@@ -8,6 +8,8 @@ API Reference
    changes
    factories
    reactions
+   serializers
+   deserializers
    history
    data
    states

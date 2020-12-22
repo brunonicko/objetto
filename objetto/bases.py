@@ -43,6 +43,7 @@ from ._data import (
     BaseInteractiveAuxiliaryData,
     BaseInteractiveData,
 )
+from ._deserializers import BaseDeserializer
 from ._exceptions import BaseObjettoException
 from ._factories import BaseFactory
 from ._objects import (
@@ -55,6 +56,7 @@ from ._objects import (
     BaseProxyObject,
     BaseReaction,
 )
+from ._serializers import BaseSerializer
 from ._states import BaseState
 from ._structures import (
     BaseAttribute,
@@ -164,4 +166,6 @@ __all__ = [
     "AbstractMember",
     "BaseAtomicChange",
     "BaseFactory",
+    "BaseSerializer",
+    "BaseDeserializer",
 ]
