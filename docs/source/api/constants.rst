@@ -22,6 +22,11 @@ Regular Expressions
 
 Lazy Import Paths Validation
 ****************************
+
+.. autodata:: PRE_IMPORT_PATH_VALIDATION_REGEX
+
+   Pre import path regex validation regex.
+
 .. autodata:: objetto.constants.PARTIAL_IMPORT_PATH_REGEX
 
    Partial lazy import path regex.

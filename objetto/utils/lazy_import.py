@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from typing import Any, Optional
 
 __all__ = [
+    "PRE_IMPORT_PATH_VALIDATION_REGEX",
     "PARTIAL_IMPORT_PATH_REGEX",
     "RELATIVE_IMPORT_PATH_REGEX",
     "IMPORT_PATH_REGEX",
@@ -18,6 +19,9 @@ __all__ = [
     "decorate_path",
 ]
 
+
+PRE_IMPORT_PATH_VALIDATION_REGEX = r"^[\w\-\|\.]+$"
+"""Pre import path regex validation regex."""
 
 PARTIAL_IMPORT_PATH_REGEX = r"^((?:\w+\.{0,1})+)$"
 """Partial lazy import path regex."""
@@ -64,7 +68,9 @@ def import_path(path):
         error = "import path '{}' is not absolute".format(path)
         raise ValueError(error)
 
-    match = re_match(IMPORT_PATH_REGEX, path)
+    match = re_match(PRE_IMPORT_PATH_VALIDATION_REGEX, path) and re_match(
+        IMPORT_PATH_REGEX, path
+    )
     if not match:
         error = "invalid import path '{}'".format(path)
         raise ValueError(error)
@@ -100,6 +106,7 @@ def get_path(obj):
 
     :raises ValueError: Can't determine consistent import path.
     """
+
     module = obj.__module__
     if not module:
         error = "can't get module for {}".format(obj)
@@ -120,7 +127,7 @@ def get_path(obj):
 
     try:
         imported_obj = import_path(path)
-    except ImportError:
+    except (ValueError, ImportError):
         imported_obj = None
 
     if imported_obj is not obj:
@@ -159,7 +166,9 @@ def decorate_path(path, module=None):
 
     # Partial path, need to add module.
     if "|" not in path:
-        path_match = re_match(PARTIAL_IMPORT_PATH_REGEX, path)
+        path_match = re_match(PRE_IMPORT_PATH_VALIDATION_REGEX, path) and re_match(
+            PARTIAL_IMPORT_PATH_REGEX, path
+        )
         if not path_match:
             error = "invalid partial import path '{}'".format(path)
             raise ValueError(error)
@@ -170,7 +179,9 @@ def decorate_path(path, module=None):
             ).format(path)
             raise ValueError(error)
 
-        module_match = re_match(PARTIAL_IMPORT_PATH_REGEX, module)
+        module_match = re_match(PRE_IMPORT_PATH_VALIDATION_REGEX, module) and re_match(
+            PARTIAL_IMPORT_PATH_REGEX, module
+        )
         if not module_match:
             error = "invalid module path '{}'".format(module)
             raise ValueError(error)
@@ -179,7 +190,9 @@ def decorate_path(path, module=None):
 
     # Relative path, need to resolve module and decorate it.
     elif path.startswith("."):
-        path_match = re_match(RELATIVE_IMPORT_PATH_REGEX, path)
+        path_match = re_match(PRE_IMPORT_PATH_VALIDATION_REGEX, path) and re_match(
+            RELATIVE_IMPORT_PATH_REGEX, path
+        )
         if not path_match:
             error = "invalid relative import path '{}'".format(path)
             raise ValueError(error)
@@ -190,7 +203,9 @@ def decorate_path(path, module=None):
             ).format(path)
             raise ValueError(error)
 
-        module_match = re_match(PARTIAL_IMPORT_PATH_REGEX, module)
+        module_match = re_match(PRE_IMPORT_PATH_VALIDATION_REGEX, module) and re_match(
+            PARTIAL_IMPORT_PATH_REGEX, module
+        )
         if not module_match:
             error = "invalid module path '{}'".format(module)
             raise ValueError(error)
@@ -218,7 +233,9 @@ def decorate_path(path, module=None):
 
     # Full path, no need to decorate it with module.
     else:
-        match = re_match(IMPORT_PATH_REGEX, path)
+        match = re_match(PRE_IMPORT_PATH_VALIDATION_REGEX, path) and re_match(
+            IMPORT_PATH_REGEX, path
+        )
         if not match:
             error = "invalid import path '{}'".format(path)
             raise ValueError(error)
