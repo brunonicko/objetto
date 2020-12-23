@@ -4,6 +4,7 @@
 from ._applications import Phase
 from ._objects import DELETED
 from .utils.lazy_import import (
+    PRE_IMPORT_PATH_VALIDATION_REGEX,
     IMPORT_PATH_REGEX,
     PARTIAL_IMPORT_PATH_REGEX,
     RELATIVE_IMPORT_PATH_REGEX,
@@ -13,6 +14,7 @@ __all__ = [
     "DELETED",
     "PRE",
     "POST",
+    "PRE_IMPORT_PATH_VALIDATION_REGEX",
     "PARTIAL_IMPORT_PATH_REGEX",
     "RELATIVE_IMPORT_PATH_REGEX",
     "IMPORT_PATH_REGEX",

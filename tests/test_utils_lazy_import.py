@@ -19,12 +19,21 @@ def test_import_path():
     assert import_path(__name__ + "|MyClass") is MyClass
     assert import_path(__name__ + "|MyClass.MyNestedClass") is MyClass.MyNestedClass
 
+    with pytest.raises(ValueError):
+        import_path("module.submodule|<locals>.Test")
+
 
 def test_get_path():
     assert get_path(floor) == "math|floor"
     assert get_path(chain) == "itertools|chain"
     assert get_path(MyClass) == __name__ + "|MyClass"
     assert get_path(MyClass.MyNestedClass) == __name__ + "|MyClass.MyNestedClass"
+
+    class LocalClass(object):
+        pass
+
+    with pytest.raises(ValueError):
+        get_path(LocalClass)
 
 
 def test_decorate_path():
