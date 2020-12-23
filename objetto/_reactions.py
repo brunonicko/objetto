@@ -464,7 +464,7 @@ class UniqueAttributes(BaseReaction):
                         # Incrementer was able to provide a unique value, so
                         # keep track of it and update all values dictionary.
                         all_values[name][value] -= 1
-                        if values_counter.get(new_value, 0) < 2:
+                        if values_counter.get(new_value, 0) < 1:
                             all_new_values[child][name] = new_value
                             all_values[name][new_value] += 1
                             continue
