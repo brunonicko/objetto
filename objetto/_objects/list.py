@@ -700,7 +700,10 @@ class ListObject(
         :return: Transformed.
         :rtype: objetto.objects.ListObject
         """
-        self.__functions__.insert(self, len(self._state), iterable)
+        values = list(iterable)
+        if not values:
+            return self
+        self.__functions__.insert(self, len(self._state), values)
         return self
 
     @final
