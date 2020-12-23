@@ -505,6 +505,7 @@ Base Object Classes
      data,
 
    .. automethod:: objetto.bases.BaseObject.__copy__
+   .. automethod:: objetto.bases.BaseObject.__post_deserialize__
    .. automethod:: objetto.bases.BaseObject._hash
    .. automethod:: objetto.bases.BaseObject._eq
    .. automethod:: objetto.bases.BaseObject._locate

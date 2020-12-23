@@ -601,6 +601,7 @@ class SetObject(
                     if cls._relationship.serialized
                 )
                 self.__functions__.update(self, initial)
+            self.__post_deserialize__()
             return self
 
     @final

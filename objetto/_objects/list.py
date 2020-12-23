@@ -880,6 +880,7 @@ class ListObject(
                     if cls._relationship.serialized
                 )
                 self.__functions__.insert(self, 0, initial)
+            self.__post_deserialize__()
             return self
 
     @final
