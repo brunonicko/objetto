@@ -938,6 +938,10 @@ class BaseObject(with_metaclass(BaseObjectMeta, BaseStructure[T])):
         """
         return type(self).deserialize(self.serialize())
 
+    def __post_deserialize__(self):
+        # type: () -> None
+        """This magic method gets automatically called after deserialization."""
+
     @final
     def _hash(self):
         """

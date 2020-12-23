@@ -1317,6 +1317,7 @@ class Object(
                     factory=False,
                 )
                 Functions.check_missing(cls, self._state)
+            self.__post_deserialize__()
             return self
 
     @final
