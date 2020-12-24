@@ -97,6 +97,7 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
         # type: (...) -> None
         cls = type(obj)
         relationship = cls._relationship
+        input_values = set(input_values)
         with obj.app.__.write_context(obj) as (read, write):
             if not input_values:
                 return
