@@ -254,7 +254,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
             if attribute_type is not None and isinstance(self, attribute_type):
                 return self.get_value(instance)
         elif self.constant:
-            return self.relationship.fabricate_value(self.default)
+            return self.default
         else:
             return self
 
@@ -485,7 +485,11 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
 
         :rtype: bool
         """
-        return self.default is not MISSING and not self.changeable
+        return (
+            self.default is not MISSING
+            and not self.changeable
+            and self.relationship.factory is None
+        )
 
 
 class BaseAttributeStructureMeta(BaseStructureMeta):
