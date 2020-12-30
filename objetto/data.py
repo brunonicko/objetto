@@ -101,6 +101,7 @@ def data_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
 ):
     # type: (...) -> DataAttribute[T]
     """
@@ -156,6 +157,8 @@ def data_attribute(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
 
+    :param metadata: Metadata.
+
     :return: Data attribute.
     :rtype: objetto.data.DataAttribute
 
@@ -193,6 +196,7 @@ def data_attribute(
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )  # type: DataAttribute[T]
 
     return attribute
@@ -207,6 +211,7 @@ def data_constant_attribute(
     compared=True,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
 ):
     # type: (...) -> DataAttribute[T]
     """
@@ -234,6 +239,8 @@ def data_constant_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :return: Constant data attribute.
     :rtype: objetto.data.DataAttribute
@@ -266,6 +273,7 @@ def data_constant_attribute(
             deletable=False,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )  # type: DataAttribute[T]
 
     return attribute_
@@ -292,6 +300,7 @@ def data_dict_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
@@ -357,6 +366,8 @@ def data_dict_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -432,6 +443,7 @@ def data_dict_attribute(
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )  # type: DataAttribute[InteractiveDictData[KT, VT]]
 
     return attribute_
@@ -458,6 +470,7 @@ def data_protected_dict_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
@@ -523,6 +536,8 @@ def data_protected_dict_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -604,6 +619,7 @@ def data_protected_dict_attribute(
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )  # type: DataAttribute[DictData[KT, VT]]
 
     return attribute_
@@ -627,6 +643,7 @@ def data_list_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
@@ -683,6 +700,8 @@ def data_list_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -755,6 +774,7 @@ def data_list_attribute(
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )  # type: DataAttribute[InteractiveListData[T]]
 
     return attribute_
@@ -778,6 +798,7 @@ def data_protected_list_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
@@ -834,6 +855,8 @@ def data_protected_list_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -912,6 +935,7 @@ def data_protected_list_attribute(
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )  # type: DataAttribute[ListData[T]]
 
     return attribute_
@@ -935,6 +959,7 @@ def data_set_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
@@ -991,6 +1016,8 @@ def data_set_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -1063,6 +1090,7 @@ def data_set_attribute(
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )  # type: DataAttribute[InteractiveSetData[T]]
 
     return attribute_
@@ -1086,6 +1114,7 @@ def data_protected_set_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
 ):
@@ -1142,6 +1171,8 @@ def data_protected_set_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -1220,6 +1251,7 @@ def data_protected_set_attribute(
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )  # type: DataAttribute[SetData[T]]
 
     return attribute_

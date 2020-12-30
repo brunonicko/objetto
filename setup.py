@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="objetto",
-    version="1.11.5",
+    version="1.12.0",
     author="Bruno Nicko",
     author_email="brunonicko@gmail.com",
     description="Object-oriented framework for building smart applications and APIs",

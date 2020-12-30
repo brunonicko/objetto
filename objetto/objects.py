@@ -287,6 +287,7 @@ def attribute(
     deletable=None,  # type: Optional[bool]
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     delegated=False,  # type: bool
     dependencies=None,  # type: Optional[Union[Iterable[Attribute], Attribute]]
     deserialize_to=None,  # type: Optional[Attribute]
@@ -354,6 +355,8 @@ def attribute(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
 
+    :param metadata: Metadata.
+
     :param delegated: Whether attribute allows for delegates to be defined.
     :type delegated: bool
 
@@ -414,6 +417,7 @@ objetto.objects.Attribute or None
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
             delegated=delegated,
             dependencies=dependencies,
             deserialize_to=deserialize_to,
@@ -431,6 +435,7 @@ def constant_attribute(
     data=True,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
 ):
     # type: (...) -> Attribute[T]
     """
@@ -458,6 +463,8 @@ def constant_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :return: Constant attribute.
     :rtype: objetto.objects.Attribute
@@ -493,6 +500,7 @@ def constant_attribute(
             deletable=False,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )  # type: Attribute[T]
 
     return attribute_
@@ -518,6 +526,8 @@ def protected_attribute_pair(
     deletable=None,  # type: Optional[bool]
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
+    protected_metadata=None,  # type: Any
 ):
     # type: (...) -> Tuple[Attribute[T], Attribute[T]]
     """
@@ -579,6 +589,10 @@ def protected_attribute_pair(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
 
+    :param metadata: Metadata.
+
+    :param protected_metadata: Protected metadata.
+
     :return: Protected-public attribute pair.
     :rtype: tuple[objetto.objects.Attribute, objetto.objects.Attribute]
 
@@ -605,6 +619,7 @@ def protected_attribute_pair(
         deletable=deletable,
         finalized=finalized,
         abstracted=abstracted,
+        metadata=protected_metadata,
         delegated=False,
     )
 
@@ -625,6 +640,7 @@ def protected_attribute_pair(
         required=False,
         finalized=finalized,
         abstracted=abstracted,
+        metadata=metadata,
         delegated=True,
         dependencies=(protected_attribute,),
         deserialize_to=protected_attribute if serialized else None,
@@ -664,6 +680,7 @@ def dict_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
@@ -739,6 +756,8 @@ def dict_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -826,6 +845,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
             delegated=False,
             dependencies=None,
             deserialize_to=None,
@@ -858,6 +878,7 @@ def protected_dict_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
@@ -933,6 +954,8 @@ def protected_dict_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -1020,6 +1043,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
             delegated=False,
             dependencies=None,
             deserialize_to=None,
@@ -1049,6 +1073,8 @@ def protected_dict_attribute_pair(
     default_factory=None,  # type: LazyFactory
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
+    protected_metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
@@ -1116,6 +1142,10 @@ def protected_dict_attribute_pair(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
 
+    :param metadata: Metadata.
+
+    :param protected_metadata: Protected metadata.
+
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
 
@@ -1165,6 +1195,7 @@ objetto.objects.Attribute[objetto.objects.DictObject]]
         deletable=False,
         finalized=finalized,
         abstracted=abstracted,
+        metadata=protected_metadata,
         qual_name=qual_name,
         unique=unique,
         reactions=reactions,
@@ -1183,6 +1214,7 @@ objetto.objects.Attribute[objetto.objects.DictObject]]
             required=False,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
             delegated=True,
             dependencies=(public_attribute,),
         ),
@@ -1219,6 +1251,7 @@ def list_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
@@ -1285,6 +1318,8 @@ def list_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -1369,6 +1404,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
             delegated=False,
             dependencies=None,
             deserialize_to=None,
@@ -1398,6 +1434,7 @@ def protected_list_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
@@ -1464,6 +1501,8 @@ def protected_list_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -1548,6 +1587,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
             delegated=False,
             dependencies=None,
             deserialize_to=None,
@@ -1574,6 +1614,8 @@ def protected_list_attribute_pair(
     default_factory=None,  # type: LazyFactory
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
+    protected_metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
@@ -1632,6 +1674,10 @@ def protected_list_attribute_pair(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
 
+    :param metadata: Metadata.
+
+    :param protected_metadata: Protected metadata.
+
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
 
@@ -1678,6 +1724,7 @@ objetto.objects.Attribute[objetto.objects.ListObject]]
         deletable=False,
         finalized=finalized,
         abstracted=abstracted,
+        metadata=protected_metadata,
         qual_name=qual_name,
         unique=unique,
         reactions=reactions,
@@ -1696,6 +1743,7 @@ objetto.objects.Attribute[objetto.objects.ListObject]]
             required=False,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
             delegated=True,
             dependencies=(public_attribute,),
         ),
@@ -1732,6 +1780,7 @@ def set_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
@@ -1798,6 +1847,8 @@ def set_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -1882,6 +1933,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
             delegated=False,
             dependencies=None,
             deserialize_to=None,
@@ -1911,6 +1963,7 @@ def protected_set_attribute(
     deletable=False,  # type: bool
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
@@ -1977,6 +2030,8 @@ def protected_set_attribute(
 
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
+
+    :param metadata: Metadata.
 
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
@@ -2061,6 +2116,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
             delegated=False,
             dependencies=None,
             deserialize_to=None,
@@ -2087,6 +2143,8 @@ def protected_set_attribute_pair(
     default_factory=None,  # type: LazyFactory
     finalized=False,  # type: bool
     abstracted=False,  # type: bool
+    metadata=None,  # type: Any
+    protected_metadata=None,  # type: Any
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
@@ -2145,6 +2203,10 @@ def protected_set_attribute_pair(
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
 
+    :param metadata: Metadata.
+
+    :param protected_metadata: Protected metadata.
+
     :param qual_name: Optional type qualified name for the generated class.
     :type qual_name: str or None
 
@@ -2191,6 +2253,7 @@ objetto.objects.Attribute[objetto.objects.SetObject]]
         deletable=False,
         finalized=finalized,
         abstracted=abstracted,
+        metadata=protected_metadata,
         qual_name=qual_name,
         unique=unique,
         reactions=reactions,
@@ -2209,6 +2272,7 @@ objetto.objects.Attribute[objetto.objects.SetObject]]
             required=False,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
             delegated=True,
             dependencies=(public_attribute,),
         ),
