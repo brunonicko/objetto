@@ -304,8 +304,8 @@ class Relationship(BaseRelationship):
                 module=self.module,
                 factory=None,
                 serialized=self.serialized,
-                serializer=None,
-                deserializer=None,
+                serializer=self.serializer,
+                deserializer=self.deserializer,
                 represented=self.represented,
                 compared=True,
             )
