@@ -93,6 +93,8 @@ class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
 
+    :param metadata: Metadata.
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     """
@@ -110,6 +112,7 @@ class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
         deletable=False,  # type: bool
         finalized=False,  # type: bool
         abstracted=False,  # type: bool
+        metadata=None,  # type: Any
     ):
         # type: (...) -> None
         super(DataAttribute, self).__init__(
@@ -122,6 +125,7 @@ class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )
 
     @property

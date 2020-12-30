@@ -134,6 +134,8 @@ class Attribute(with_metaclass(AttributeMeta, BaseAttribute[T])):
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
 
+    :param metadata: Metadata.
+
     :param delegated: Whether attribute allows for delegates to be defined.
     :type delegated: bool
 
@@ -175,6 +177,7 @@ objetto.objects.Attribute or None
         deletable=None,  # type: Optional[bool]
         finalized=False,  # type: bool
         abstracted=False,  # type: bool
+        metadata=None,  # type: Any
         delegated=False,  # type: bool
         dependencies=None,  # type: Optional[Union[Iterable[Attribute], Attribute]]
         deserialize_to=None,  # type: Optional[Attribute]
@@ -248,6 +251,7 @@ objetto.objects.Attribute or None
             deletable=deletable,
             finalized=finalized,
             abstracted=abstracted,
+            metadata=metadata,
         )
 
         self.__delegated = bool(delegated)
@@ -512,6 +516,7 @@ objetto.objects.Attribute or None
                     deletable=True,
                     finalized=False,
                     abstracted=False,
+                    metadata=self.metadata,
                 )
         return self.__data_attribute
 

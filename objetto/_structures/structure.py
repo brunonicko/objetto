@@ -140,6 +140,8 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
     :param abstracted: If True, attribute needs to be overridden by subclasses.
     :type abstracted: bool
 
+    :param metadata: Metadata.
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     :raises ValueError: Can't specify both 'default' and 'default_factory' arguments.
@@ -157,6 +159,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         "_deletable",
         "__finalized",
         "__abstracted",
+        "__metadata",
         ABSTRACT_TAG,
         FINAL_METHOD_TAG,
     )
@@ -172,6 +175,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         deletable=False,  # type: bool
         finalized=False,  # type: bool
         abstracted=False,  # type: bool
+        metadata=None,  # type: Any
     ):
         # type: (...) -> None
         cls = type(self)
@@ -214,6 +218,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         self._deletable = bool(deletable)
         self.__finalized = bool(finalized)
         self.__abstracted = bool(abstracted)
+        self.__metadata = metadata
 
         if finalized:
             setattr(self, FINAL_METHOD_TAG, True)
@@ -318,6 +323,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
             "deletable": self.deletable,
             "finalized": self.finalized,
             "abstracted": self.abstracted,
+            "metadata": self.metadata,
         }
 
     def get_name(self, instance):
@@ -466,6 +472,12 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         :rtype: bool
         """
         return self.__abstracted
+
+    @property
+    def metadata(self):
+        # type: () -> Any
+        """Metadata."""
+        return self.__metadata
 
     @property
     def has_default(self):
