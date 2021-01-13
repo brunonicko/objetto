@@ -191,8 +191,8 @@ def simplify_member_names(names):
 
 
 @contextmanager
-def init_context(obj):
-    # type: (Base) -> Iterator
+def init_context(obj, flag=True):
+    # type: (Base, bool) -> Iterator
     """
     Context manager that sets the initializing tag for :class:`objetto.bases.Base`
     objects.
@@ -219,12 +219,15 @@ def init_context(obj):
     :param obj: Instance of :class:`objetto.bases.Base`.
     :type obj: objetto.bases.Base
 
+    :param flag: Whether to set initialization flag to True of False.
+    :type flag: bool
+
     :return: Context manager.
     :rtype: contextlib.AbstractContextManager
     """
     previous = getattr(obj, INITIALIZING_TAG, False)
     # noinspection PyCallByClass
-    object.__setattr__(obj, INITIALIZING_TAG, True)
+    object.__setattr__(obj, INITIALIZING_TAG, bool(flag))
     try:
         yield
     finally:
