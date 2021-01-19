@@ -1564,16 +1564,6 @@ class Application(with_metaclass(ApplicationMeta, Base)):
         self.__.init_root_objs()
 
     @final
-    def take_snapshot(self):
-        """
-        Take a snapshot of the current application state.
-
-        :return: Application snapshot.
-        :rtype: objetto.applications.ApplicationSnapshot
-        """
-        return self.__.take_snapshot()
-
-    @final
     @contextmanager
     def read_context(self, snapshot=None):
         # type: (Optional[ApplicationSnapshot]) -> Iterator
@@ -1631,7 +1621,18 @@ class Application(with_metaclass(ApplicationMeta, Base)):
             else:
                 raise TemporaryContextException()
 
+    @final
+    def take_snapshot(self):
+        """
+        Take a snapshot of the current application state.
 
+        :return: Application snapshot.
+        :rtype: objetto.applications.ApplicationSnapshot
+        """
+        return self.__.take_snapshot()
+
+
+@final
 class ApplicationSnapshot(Base):
     """
     Application snapshot.
