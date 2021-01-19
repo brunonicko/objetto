@@ -4,7 +4,7 @@
 from abc import abstractmethod
 from copy import deepcopy
 from functools import partial
-from typing import TYPE_CHECKING, Generic, TypeVar, final
+from typing import TYPE_CHECKING, Generic, TypeVar, final, cast
 from weakref import WeakSet, ref
 
 from pyrsistent import pmap
@@ -91,7 +91,9 @@ class Storage(AbstractStorage[KT, VT]):
         # type: (Optional[Mapping[KT, VT]]) -> None
         self.__parent = None  # type: Optional[WeakReference[Storage[KT, VT]]]
         self.__storages = WeakSet({self})  # type: MutableSet[Storage[KT, VT]]
-        self.__data = pmap().evolver()  # type: PMapEvolver[WeakReference[KT], VT]
+        self.__data = cast(
+            "PMapEvolver[WeakReference[KT], VT]", pmap().evolver()
+        )  # type: PMapEvolver[WeakReference[KT], VT]
         if initial is not None:
             self.__initialize(initial)
 
