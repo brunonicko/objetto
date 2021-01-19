@@ -44,6 +44,35 @@ Re-Raise Context
 .. automodule:: objetto.utils.reraise_context
    :members:
 
+Storage
+-------
+.. automodule:: objetto.utils.storage
+
+   .. autoclass:: objetto.utils.storage.AbstractStorage
+
+      .. automethod:: objetto.utils.storage.AbstractStorage.update
+      .. automethod:: objetto.utils.storage.AbstractStorage.query
+      .. automethod:: objetto.utils.storage.AbstractStorage.to_dict
+
+   .. autoclass:: objetto.utils.storage.Storage
+
+      .. automethod:: objetto.utils.storage.Storage.to_dict
+      .. automethod:: objetto.utils.storage.Storage.update
+      .. automethod:: objetto.utils.storage.Storage.query
+      .. automethod:: objetto.utils.storage.Storage.evolver
+
+   .. autoclass:: objetto.utils.storage.StorageEvolver
+      :members: updates
+
+      .. automethod:: objetto.utils.storage.StorageEvolver.to_dict
+      .. automethod:: objetto.utils.storage.StorageEvolver.update
+      .. automethod:: objetto.utils.storage.StorageEvolver.query
+      .. automethod:: objetto.utils.storage.StorageEvolver.persistent
+      .. automethod:: objetto.utils.storage.StorageEvolver.fork
+      .. automethod:: objetto.utils.storage.StorageEvolver.is_dirty
+      .. automethod:: objetto.utils.storage.StorageEvolver.reset
+      .. automethod:: objetto.utils.storage.StorageEvolver.commit
+
 Subject-Observer
 ----------------
 .. automodule:: objetto.utils.subject_observer

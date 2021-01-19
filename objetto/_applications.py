@@ -32,6 +32,7 @@ from .data import (
 from .utils.custom_repr import custom_mapping_repr
 from .utils.recursive_repr import recursive_repr
 from .utils.reraise_context import ReraiseContext
+from .utils.storage import Storage
 from .utils.type_checking import (
     assert_is_callable,
     assert_is_instance,
@@ -86,6 +87,7 @@ __all__ = [
     "ApplicationMeta",
     "Application",
     "ApplicationRoot",
+    "ApplicationSnapshot",
 ]
 
 
@@ -255,42 +257,6 @@ class ApplicationLock(Base):
         :return: Class and init arguments.
         """
         return type(self), ()
-
-
-class ApplicationStorage(WeakKeyDictionary):
-    """
-    Application storage.
-
-      - Holds a store for each object in the application.
-      - Can be deep copied and pickled.
-    """
-
-    def __deepcopy__(self, memo=None):
-        # type: (Optional[Dict[int, Any]]) -> ApplicationStorage
-        """
-        Make a deep copy.
-
-        :param memo: Memo dict.
-        :return: Deep copy.
-        """
-        if memo is None:
-            memo = {}
-        try:
-            deep_copy = memo[id(self)]
-        except KeyError:
-            deep_copy = memo[id(self)] = type(self)()
-            deep_copy_args = dict(self), memo
-            deep_copy.update(deepcopy(*deep_copy_args))
-        return deep_copy
-
-    def __reduce__(self):
-        # type: () -> Tuple[Type[ApplicationStorage], Tuple[Dict[BaseObject, Store]]]
-        """
-        Reduce for pickling.
-
-        :return: Class and init arguments.
-        """
-        return type(self), (dict(self),)
 
 
 class Store(InteractiveData):
@@ -585,6 +551,7 @@ class ApplicationInternals(Base):
         "__history_cls",
         "__lock",
         "__storage",
+        "__snapshot",
         "__busy_writing",
         "__busy_hierarchy",
         "__commits",
@@ -598,7 +565,8 @@ class ApplicationInternals(Base):
         self.__app_ref = WeakReference(app)
         self.__history_cls = None  # type: Optional[Type[HistoryObject]]
         self.__lock = ApplicationLock()
-        self.__storage = ApplicationStorage()
+        self.__storage = Storage()  # type: Storage[BaseObject, Store]
+        self.__snapshot = None  # type: Optional[ApplicationSnapshot]
         self.__busy_writing = set()  # type: Set[BaseObject]
         self.__busy_hierarchy = ValueCounter()  # type: Counter[BaseObject]
         self.__commits = []  # type: List[Commit]
@@ -653,15 +621,21 @@ class ApplicationInternals(Base):
         :param obj: Object.
         :return: Store.
         """
+        if self.__snapshot is not None:
+            try:
+                return self.__snapshot._storage.query(obj)
+            except KeyError:
+                error = "object with id {} is not valid in snapshot".format(id(obj))
+                raise RuntimeError(error)
         if self.__writing:
             try:
                 return self.__commits[-1].stores[obj]
             except (IndexError, KeyError):
                 pass
         try:
-            return self.__storage[obj]
+            return self.__storage.query(obj)
         except KeyError:
-            error = "object {} is no longer valid".format(obj)
+            error = "object with id {} is no longer valid".format(id(obj))
             raise RuntimeError(error)
 
     def __read_history(
@@ -1078,7 +1052,7 @@ class ApplicationInternals(Base):
                             action.receiver.__.subject.send(action, Phase.PRE)
                         )
 
-                    self.__storage.update(commit.stores)
+                    self.__storage = self.__storage.update(commit.stores)
 
                     for action in commit.actions:
                         ingest_action_exception_infos(
@@ -1159,7 +1133,15 @@ class ApplicationInternals(Base):
             except IndexError:
                 stores = InteractiveDictData()
 
-            if obj in stores or obj in self.__storage:
+            def _obj_in_storage():
+                try:
+                    self.__storage.query(obj)
+                except KeyError:
+                    return False
+                else:
+                    return True
+
+            if obj in stores or _obj_in_storage():
                 error = "object {} can't be initialized more than once".format(obj)
                 raise RuntimeError(error)
 
@@ -1196,6 +1178,21 @@ class ApplicationInternals(Base):
             stores = stores._set(obj, Store(state=state, data=data, **kwargs))
             commit = Commit(stores=stores)
             self.__commits.append(commit)
+
+    @contextmanager
+    def snapshot_context(self, snapshot):
+        # type: (ApplicationSnapshot) -> Iterator
+        """
+        Snapshot read context manager.
+
+        :param snapshot: Snapshot.
+        """
+        with self.read_context():
+            self.__snapshot = snapshot
+            try:
+                yield
+            finally:
+                self.__snapshot = None
 
     @contextmanager
     def read_context(self, obj=None):
@@ -1451,6 +1448,20 @@ class ApplicationInternals(Base):
         """
         return self.__roots[root]
 
+    def take_snapshot(self):
+        """
+        Take a snapshot of the current application state.
+
+        :return: Application snapshot.
+        :rtype: objetto.applications.ApplicationSnapshot
+        """
+        storage = self.__storage
+        if self.__writing and self.__commits:
+            storage = storage.update(self.__commits[-1].stores)
+        app = self.__app_ref()
+        assert app is not None
+        return ApplicationSnapshot(app, storage)
+
 
 class ApplicationMeta(BaseMeta):
     """
@@ -1549,16 +1560,30 @@ class Application(with_metaclass(ApplicationMeta, Base)):
 
     @final
     @contextmanager
-    def read_context(self):
-        # type: () -> Iterator
+    def read_context(self, snapshot=None):
+        # type: (Optional[ApplicationSnapshot]) -> Iterator
         """
         Read context.
 
+        :param snapshot: Application state snapshot.
+        :type snapshot: objetto.applications.ApplicationSnapshot
+
         :return: Context manager.
         :rtype: contextlib.AbstractContextManager
+
+        :raises ValueError: Application mismatch.
         """
-        with self.__.read_context():
-            yield
+        if snapshot is not None:
+            with ReraiseContext((TypeError, ValueError), "'snapshot' parameter"):
+                assert_is_instance(snapshot, ApplicationSnapshot)
+                if snapshot.app is not self:
+                    error = "application mismatch"
+                    raise ValueError(error)
+            with self.__.snapshot_context(snapshot):
+                yield
+        else:
+            with self.__.read_context():
+                yield
 
     @final
     @contextmanager
@@ -1590,3 +1615,77 @@ class Application(with_metaclass(ApplicationMeta, Base)):
                 raise
             else:
                 raise TemporaryContextException()
+
+    @final
+    def take_snapshot(self):
+        """
+        Take a snapshot of the current application state.
+
+        :return: Application snapshot.
+        :rtype: objetto.applications.ApplicationSnapshot
+        """
+        return self.__.take_snapshot()
+
+
+@final
+class ApplicationSnapshot(Base):
+    """
+    Application snapshot.
+
+    Inherits from:
+      - :class:`objetto.bases.Base`
+
+    Features:
+      - Freezes entire application state at a moment in time.
+      - Can be used with an application's read context to travel back in time.
+
+    You can acquire a snapshot by calling the
+    :meth:`objetto.applications.Application.take_snapshot` method. You can then pass it
+    to a :meth:`objetto.applications.Application.read_context` in order to temporarily
+    bring the whole application back to the time the snapshot was taken.
+
+    .. code:: python
+
+        >>> from objetto import Application, Object, attribute
+
+        >>> class Person(Object):
+        ...     name = attribute(str)
+        ...
+        >>> app = Application()
+        >>> obj = Person(app, name="Albert")
+        >>> obj.name
+        'Albert'
+        >>> snapshot = app.take_snapshot()
+        >>> obj.name = "Einstein"
+        >>> obj.name
+        'Einstein'
+        >>> with app.read_context(snapshot):
+        ...     obj.name
+        ...
+        'Albert'
+        >>> obj.name
+        'Einstein'
+    """
+
+    __slots__ = ("__app", "__storage")
+
+    def __init__(self, app, storage):
+        # type: (Application, Storage) -> None
+        self.__app = app
+        self.__storage = storage
+
+    @property
+    def _storage(self):
+        # type: () -> Storage
+        """Internal storage."""
+        return self.__storage
+
+    @property
+    def app(self):
+        # type: () -> Application
+        """
+        Application.
+
+        :rtype: objetto.applications.Application
+        """
+        return self.__app

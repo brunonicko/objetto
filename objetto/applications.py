@@ -14,12 +14,18 @@ other objects.
 
 from typing import TYPE_CHECKING
 
-from ._applications import BO, Application, ApplicationMeta, ApplicationRoot
+from ._applications import (
+    BO,
+    Application,
+    ApplicationMeta,
+    ApplicationRoot,
+    ApplicationSnapshot,
+)
 
 if TYPE_CHECKING:
     from typing import Any, Optional, Type
 
-__all__ = ["ApplicationMeta", "Application", "root"]
+__all__ = ["ApplicationMeta", "Application", "ApplicationSnapshot", "root"]
 
 
 def root(obj_type, priority=None, **kwargs):
