@@ -50,9 +50,9 @@ Storage
 
    .. autoclass:: objetto.utils.storage.AbstractStorage
 
-      .. automethod:: objetto.utils.storage.Subject.update
-      .. automethod:: objetto.utils.storage.Subject.query
-      .. automethod:: objetto.utils.storage.Subject.to_dict
+      .. automethod:: objetto.utils.storage.AbstractStorage.update
+      .. automethod:: objetto.utils.storage.AbstractStorage.query
+      .. automethod:: objetto.utils.storage.AbstractStorage.to_dict
 
    .. autoclass:: objetto.utils.storage.Storage
 
