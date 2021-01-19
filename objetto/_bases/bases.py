@@ -679,7 +679,10 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
       - :class:`objetto.bases.BaseContainer`
       - :class:`objetto.bases.BaseReaction`
       - :class:`objetto.bases.BaseFactory`
+      - :class:`objetto.bases.AbstractMember`
       - :class:`objetto.objects.UniqueDescriptor`
+      - :class:`objetto.applications.Application`
+      - :class:`objetto.applications.ApplicationSnapshot`
 
     Features:
       - Forces the use of `__slots__`.
