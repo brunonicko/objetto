@@ -4,8 +4,13 @@
 from abc import abstractmethod
 from copy import deepcopy
 from functools import partial
-from typing import TYPE_CHECKING, Generic, TypeVar, cast, final
+from typing import TYPE_CHECKING, Generic, TypeVar, cast
 from weakref import WeakSet, ref
+
+try:
+    from typing import final
+except ImportError:
+    final = lambda f: f  # type: ignore
 
 from pyrsistent import pmap
 from six import iteritems
