@@ -32,13 +32,13 @@ from .data import (
 from .utils.custom_repr import custom_mapping_repr
 from .utils.recursive_repr import recursive_repr
 from .utils.reraise_context import ReraiseContext
+from .utils.storage import Storage
 from .utils.type_checking import (
     assert_is_callable,
     assert_is_instance,
     assert_is_subclass,
 )
 from .utils.weak_reference import WeakReference
-from .utils.storage import Storage
 
 if TYPE_CHECKING:
     from typing import (
@@ -1671,6 +1671,7 @@ class ApplicationSnapshot(Base):
         >>> obj.name
         'Einstein'
     """
+
     __slots__ = ("__app", "__storage")
 
     def __init__(self, app, storage):

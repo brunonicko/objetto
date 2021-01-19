@@ -15,7 +15,11 @@ other objects.
 from typing import TYPE_CHECKING
 
 from ._applications import (
-    BO, Application, ApplicationMeta, ApplicationRoot, ApplicationSnapshot
+    BO,
+    Application,
+    ApplicationMeta,
+    ApplicationRoot,
+    ApplicationSnapshot,
 )
 
 if TYPE_CHECKING:
