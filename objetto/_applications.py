@@ -1456,13 +1456,8 @@ class ApplicationInternals(Base):
         :rtype: objetto.applications.ApplicationSnapshot
         """
         storage = self.__storage
-        if self.__writing:
-            try:
-                updates = self.__commits[-1].stores
-            except IndexError:
-                pass
-            else:
-                storage = storage.update(updates)
+        if self.__writing and self.__commits:
+            storage = storage.update(self.__commits[-1].stores)
         app = self.__app_ref()
         assert app is not None
         return ApplicationSnapshot(app, storage)
