@@ -4,7 +4,7 @@
 from abc import abstractmethod
 from copy import deepcopy
 from functools import partial
-from typing import TYPE_CHECKING, Generic, TypeVar, final, cast
+from typing import TYPE_CHECKING, Generic, TypeVar, cast, final
 from weakref import WeakSet, ref
 
 from pyrsistent import pmap
