@@ -38,6 +38,7 @@ from .utils.type_checking import (
     assert_is_subclass,
 )
 from .utils.weak_reference import WeakReference
+from .utils.storage import Storage
 
 if TYPE_CHECKING:
     from typing import (
@@ -255,42 +256,6 @@ class ApplicationLock(Base):
         :return: Class and init arguments.
         """
         return type(self), ()
-
-
-class ApplicationStorage(WeakKeyDictionary):
-    """
-    Application storage.
-
-      - Holds a store for each object in the application.
-      - Can be deep copied and pickled.
-    """
-
-    def __deepcopy__(self, memo=None):
-        # type: (Optional[Dict[int, Any]]) -> ApplicationStorage
-        """
-        Make a deep copy.
-
-        :param memo: Memo dict.
-        :return: Deep copy.
-        """
-        if memo is None:
-            memo = {}
-        try:
-            deep_copy = memo[id(self)]
-        except KeyError:
-            deep_copy = memo[id(self)] = type(self)()
-            deep_copy_args = dict(self), memo
-            deep_copy.update(deepcopy(*deep_copy_args))
-        return deep_copy
-
-    def __reduce__(self):
-        # type: () -> Tuple[Type[ApplicationStorage], Tuple[Dict[BaseObject, Store]]]
-        """
-        Reduce for pickling.
-
-        :return: Class and init arguments.
-        """
-        return type(self), (dict(self),)
 
 
 class Store(InteractiveData):
@@ -598,7 +563,7 @@ class ApplicationInternals(Base):
         self.__app_ref = WeakReference(app)
         self.__history_cls = None  # type: Optional[Type[HistoryObject]]
         self.__lock = ApplicationLock()
-        self.__storage = ApplicationStorage()
+        self.__storage = Storage()  # type: Storage[BaseObject, Store]
         self.__busy_writing = set()  # type: Set[BaseObject]
         self.__busy_hierarchy = ValueCounter()  # type: Counter[BaseObject]
         self.__commits = []  # type: List[Commit]
@@ -659,7 +624,7 @@ class ApplicationInternals(Base):
             except (IndexError, KeyError):
                 pass
         try:
-            return self.__storage[obj]
+            return self.__storage.query(obj)
         except KeyError:
             error = "object {} is no longer valid".format(obj)
             raise RuntimeError(error)
@@ -1078,7 +1043,7 @@ class ApplicationInternals(Base):
                             action.receiver.__.subject.send(action, Phase.PRE)
                         )
 
-                    self.__storage.update(commit.stores)
+                    self.__storage = self.__storage.update(commit.stores)
 
                     for action in commit.actions:
                         ingest_action_exception_infos(
@@ -1159,7 +1124,15 @@ class ApplicationInternals(Base):
             except IndexError:
                 stores = InteractiveDictData()
 
-            if obj in stores or obj in self.__storage:
+            def _obj_in_storage():
+                try:
+                    self.__storage.query(obj)
+                except KeyError:
+                    return False
+                else:
+                    return True
+
+            if obj in stores or _obj_in_storage():
                 error = "object {} can't be initialized more than once".format(obj)
                 raise RuntimeError(error)
 
