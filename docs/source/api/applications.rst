@@ -10,6 +10,7 @@ Application Class
    :members: _roots, _root_names
 
 .. autoclass:: objetto.applications.Application
+   :members: is_reading, is_writing
 
    .. automethod:: objetto.applications.Application.read_context()
    .. automethod:: objetto.applications.Application.write_context()

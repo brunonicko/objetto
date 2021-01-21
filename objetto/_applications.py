@@ -1462,6 +1462,28 @@ class ApplicationInternals(Base):
         assert app is not None
         return ApplicationSnapshot(app, storage)
 
+    @property
+    def is_writing(self):
+        # type: () -> bool
+        """
+        Whether this application is inside a write context.
+
+        :rtype: bool
+        """
+        with self.read_context():
+            return bool(self.__writing)
+
+    @property
+    def is_reading(self):
+        # type: () -> bool
+        """
+        Whether this application is inside a read context.
+
+        :rtype: bool
+        """
+        with self.read_context():
+            return len(self.__reading) > 1
+
 
 class ApplicationMeta(BaseMeta):
     """
@@ -1618,6 +1640,7 @@ class Application(with_metaclass(ApplicationMeta, Base)):
 
     @final
     def take_snapshot(self):
+        # type: () -> ApplicationSnapshot
         """
         Take a snapshot of the current application state.
 
@@ -1625,6 +1648,26 @@ class Application(with_metaclass(ApplicationMeta, Base)):
         :rtype: objetto.applications.ApplicationSnapshot
         """
         return self.__.take_snapshot()
+
+    @property
+    def is_writing(self):
+        # type: () -> bool
+        """
+        Whether this application is inside a write context.
+
+        :rtype: bool
+        """
+        return self.__.is_writing
+
+    @property
+    def is_reading(self):
+        # type: () -> bool
+        """
+        Whether this application is inside a read context.
+
+        :rtype: bool
+        """
+        return self.__.is_reading
 
 
 @final
