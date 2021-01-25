@@ -22,6 +22,7 @@ from .._structures import (
     BaseMutableListStructure,
     SerializationError,
 )
+from ..utils.dummy_context import DummyContext
 from ..utils.list_operations import pre_move, resolve_continuous_slice, resolve_index
 from .bases import (
     BaseAuxiliaryObject,
@@ -94,7 +95,16 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         cls = type(obj)
         relationship = cls._relationship
         input_values = list(input_values)
-        with obj.app.__.write_context(obj) as (read, write):
+
+        # Batch context.
+        batch_name = cls._BATCH_INSERT_NAME
+        if batch_name is None:
+            context = DummyContext()  # type: ignore
+        else:
+            context = obj._batch_context(name=batch_name)  # type: ignore
+
+        # Write context.
+        with context, obj.app.__.write_context(obj) as (read, write):
             if not input_values:
                 return
 
@@ -211,7 +221,16 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         # type: (...) -> None
         cls = type(obj)
         relationship = cls._relationship
-        with obj.app.__.write_context(obj) as (read, write):
+
+        # Batch context.
+        batch_name = cls._BATCH_DELETE_NAME
+        if batch_name is None:
+            context = DummyContext()  # type: ignore
+        else:
+            context = obj._batch_context(name=batch_name)  # type: ignore
+
+        # Write context.
+        with context, obj.app.__.write_context(obj) as (read, write):
 
             # Get state, data, and a brand new locations cache.
             store = read()
@@ -305,7 +324,16 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         # type: (...) -> None
         cls = type(obj)
         relationship = cls._relationship
-        with obj.app.__.write_context(obj) as (read, write):
+
+        # Batch context.
+        batch_name = cls._BATCH_UPDATE_NAME
+        if batch_name is None:
+            context = DummyContext()  # type: ignore
+        else:
+            context = obj._batch_context(name=batch_name)  # type: ignore
+
+        # Write context.
+        with context, obj.app.__.write_context(obj) as (read, write):
 
             # Get state, data, and a brand new locations cache.
             store = read()
@@ -438,7 +466,17 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
         history=None,  # type: Optional[HistoryObject]
     ):
         # type: (...) -> None
-        with obj.app.__.write_context(obj) as (read, write):
+        cls = type(obj)
+
+        # Batch context.
+        batch_name = cls._BATCH_MOVE_NAME
+        if batch_name is None:
+            context = DummyContext()  # type: ignore
+        else:
+            context = obj._batch_context(name=batch_name)  # type: ignore
+
+        # Write context.
+        with context, obj.app.__.write_context(obj) as (read, write):
 
             # Get state, data, and a brand new locations cache.
             store = read()
@@ -609,6 +647,34 @@ class ListObject(
 
     __slots__ = ()
     __functions__ = ListObjectFunctions
+
+    _BATCH_INSERT_NAME = None  # type: Optional[str]
+    """
+    Batch name for insert operations.
+
+    :type: str or None
+    """
+
+    _BATCH_DELETE_NAME = None  # type: Optional[str]
+    """
+    Batch name for delete operations.
+
+    :type: str or None
+    """
+
+    _BATCH_UPDATE_NAME = None  # type: Optional[str]
+    """
+    Batch name for update operations.
+
+    :type: str or None
+    """
+
+    _BATCH_MOVE_NAME = None  # type: Optional[str]
+    """
+    Batch name for move operations.
+
+    :type: str or None
+    """
 
     def __init__(self, app, initial=()):
         # type: (Application, Iterable[T]) -> None

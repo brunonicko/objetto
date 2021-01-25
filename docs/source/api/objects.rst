@@ -102,6 +102,7 @@ When subclassing a :class:`objetto.objects.DictObject`, the schema is defined by
 .. autoclass:: objetto.objects.DictObject
    :members: _state, data
 
+   .. autoattribute:: objetto.objects.DictObject._BATCH_UPDATE_NAME
    .. automethod:: objetto.objects.DictObject._clear
    .. automethod:: objetto.objects.DictObject._update
    .. automethod:: objetto.objects.DictObject._set
@@ -127,6 +128,10 @@ List Classes
 .. autoclass:: objetto.objects.ListObject
    :members: _state, data
 
+   .. autoattribute:: objetto.objects.ListObject._BATCH_INSERT_NAME
+   .. autoattribute:: objetto.objects.ListObject._BATCH_DELETE_NAME
+   .. autoattribute:: objetto.objects.ListObject._BATCH_UPDATE_NAME
+   .. autoattribute:: objetto.objects.ListObject._BATCH_MOVE_NAME
    .. automethod:: objetto.objects.ListObject.__getitem__
    .. automethod:: objetto.objects.ListObject._clear
    .. automethod:: objetto.objects.ListObject._insert
@@ -158,6 +163,8 @@ Set Classes
 .. autoclass:: objetto.objects.SetObject
    :members: _state, data
 
+   .. autoattribute:: objetto.objects.SetObject._BATCH_UPDATE_NAME
+   .. autoattribute:: objetto.objects.SetObject._BATCH_REMOVE_NAME
    .. automethod:: objetto.objects.SetObject._from_iterable
    .. automethod:: objetto.objects.SetObject._clear
    .. automethod:: objetto.objects.SetObject._add
@@ -264,6 +271,7 @@ Attribute Descriptor Class
      fset,
      fdel,
      constant,
+     batch_name,
      data_attribute,
 
    .. automethod:: objetto.objects.Attribute.__set__

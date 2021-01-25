@@ -291,6 +291,7 @@ def attribute(
     delegated=False,  # type: bool
     dependencies=None,  # type: Optional[Union[Iterable[Attribute], Attribute]]
     deserialize_to=None,  # type: Optional[Attribute]
+    batch_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Attribute[T]
     """
@@ -367,6 +368,9 @@ objetto.objects.Attribute or None
     :param deserialize_to: Non-serialized attribute to deserialize this into.
     :type deserialize_to: objetto.objects.Attribute or None
 
+    :param batch_name: Batch name.
+    :type batch_name: str or None
+
     :return: Attribute.
     :rtype: objetto.objects.Attribute
 
@@ -421,6 +425,7 @@ objetto.objects.Attribute or None
             delegated=delegated,
             dependencies=dependencies,
             deserialize_to=deserialize_to,
+            batch_name=batch_name,
         )  # type: Attribute[T]
 
     return attribute_
@@ -528,6 +533,7 @@ def protected_attribute_pair(
     abstracted=False,  # type: bool
     metadata=None,  # type: Any
     protected_metadata=None,  # type: Any
+    batch_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Tuple[Attribute[T], Attribute[T]]
     """
@@ -593,6 +599,9 @@ def protected_attribute_pair(
 
     :param protected_metadata: Protected metadata.
 
+    :param batch_name: Batch name.
+    :type batch_name: str or None
+
     :return: Protected-public attribute pair.
     :rtype: tuple[objetto.objects.Attribute, objetto.objects.Attribute]
 
@@ -621,6 +630,7 @@ def protected_attribute_pair(
         abstracted=abstracted,
         metadata=protected_metadata,
         delegated=False,
+        batch_name=batch_name,
     )
 
     # Make public attribute.
@@ -684,6 +694,7 @@ def dict_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_update_name=None,  # type: Optional[str]
 ):
     # type: (...) -> MutableDictAttribute[KT, VT]
     """
@@ -769,6 +780,9 @@ def dict_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
     :return: Mutable dictionary attribute.
     :rtype: objetto.objects.Attribute[objetto.objects.MutableDictObject]
 
@@ -801,6 +815,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
+            batch_update_name=batch_update_name,
         )  # type: Type[MutableDictObject[KT, VT]]
 
     # Factory for dict object relationship.
@@ -882,6 +897,7 @@ def protected_dict_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_update_name=None,  # type: Optional[str]
 ):
     # type: (...) -> DictAttribute[KT, VT]
     """
@@ -967,6 +983,9 @@ def protected_dict_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
     :return: Protected dictionary attribute.
     :rtype: objetto.objects.Attribute[objetto.objects.DictObject]
 
@@ -999,6 +1018,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
+            batch_update_name=batch_update_name,
         )  # type: Type[DictObject[KT, VT]]
 
     # Factory for dict object relationship.
@@ -1078,6 +1098,7 @@ def protected_dict_attribute_pair(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_update_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Tuple[ProxyDictAttribute[KT, VT], DictAttribute[KT, VT]]
     """
@@ -1156,6 +1177,9 @@ def protected_dict_attribute_pair(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
     :return: Protected-public dictionary attribute pair.
     :rtype: tuple[objetto.objects.Attribute[objetto.objects.ProxyDictObject], \
 objetto.objects.Attribute[objetto.objects.DictObject]]
@@ -1199,6 +1223,7 @@ objetto.objects.Attribute[objetto.objects.DictObject]]
         qual_name=qual_name,
         unique=unique,
         reactions=reactions,
+        batch_update_name=batch_update_name,
     )  # type: DictAttribute[KT, VT]
 
     # Make protected attribute.
@@ -1255,6 +1280,10 @@ def list_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_insert_name=None,  # type: Optional[str]
+    batch_delete_name=None,  # type: Optional[str]
+    batch_update_name=None,  # type: Optional[str]
+    batch_move_name=None,  # type: Optional[str]
 ):
     # type: (...) -> MutableListAttribute[T]
     """
@@ -1331,6 +1360,18 @@ def list_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_insert_name: Batch name for insert operations.
+    :type batch_insert_name: str or None
+
+    :param batch_delete_name: Batch name for delete operations.
+    :type batch_delete_name: str or None
+
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
+    :param batch_move_name: Batch name for move operations.
+    :type batch_move_name: str or None
+
     :return: Mutable list attribute.
     :rtype: objetto.objects.Attribute[objetto.objects.MutableListObject]
 
@@ -1360,6 +1401,10 @@ collections.abc.Iterable[str or collections.abc.Callable]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
+            batch_insert_name=batch_insert_name,
+            batch_delete_name=batch_delete_name,
+            batch_update_name=batch_update_name,
+            batch_move_name=batch_move_name,
         )  # type: Type[MutableListObject[T]]
 
     # Factory for list object relationship.
@@ -1438,6 +1483,10 @@ def protected_list_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_insert_name=None,  # type: Optional[str]
+    batch_delete_name=None,  # type: Optional[str]
+    batch_update_name=None,  # type: Optional[str]
+    batch_move_name=None,  # type: Optional[str]
 ):
     # type: (...) -> ListAttribute[T]
     """
@@ -1514,6 +1563,18 @@ def protected_list_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_insert_name: Batch name for insert operations.
+    :type batch_insert_name: str or None
+
+    :param batch_delete_name: Batch name for delete operations.
+    :type batch_delete_name: str or None
+
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
+    :param batch_move_name: Batch name for move operations.
+    :type batch_move_name: str or None
+
     :return: Protected list attribute.
     :rtype: objetto.objects.Attribute[objetto.objects.ListObject]
 
@@ -1543,6 +1604,10 @@ collections.abc.Iterable[str or collections.abc.Callable]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
+            batch_insert_name=batch_insert_name,
+            batch_delete_name=batch_delete_name,
+            batch_update_name=batch_update_name,
+            batch_move_name=batch_move_name,
         )  # type: Type[ListObject[T]]
 
     # Factory for list object relationship.
@@ -1619,6 +1684,10 @@ def protected_list_attribute_pair(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_insert_name=None,  # type: Optional[str]
+    batch_delete_name=None,  # type: Optional[str]
+    batch_update_name=None,  # type: Optional[str]
+    batch_move_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Tuple[ProxyListAttribute[T], ListAttribute[T]]
     """
@@ -1688,6 +1757,18 @@ def protected_list_attribute_pair(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_insert_name: Batch name for insert operations.
+    :type batch_insert_name: str or None
+
+    :param batch_delete_name: Batch name for delete operations.
+    :type batch_delete_name: str or None
+
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
+    :param batch_move_name: Batch name for move operations.
+    :type batch_move_name: str or None
+
     :return: Protected-public list attribute pair.
     :rtype: tuple[objetto.objects.Attribute[objetto.objects.ProxyListObject], \
 objetto.objects.Attribute[objetto.objects.ListObject]]
@@ -1728,6 +1809,10 @@ objetto.objects.Attribute[objetto.objects.ListObject]]
         qual_name=qual_name,
         unique=unique,
         reactions=reactions,
+        batch_insert_name=batch_insert_name,
+        batch_delete_name=batch_delete_name,
+        batch_update_name=batch_update_name,
+        batch_move_name=batch_move_name,
     )  # type: ListAttribute[T]
 
     # Make protected attribute.
@@ -1784,6 +1869,8 @@ def set_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_update_name=None,  # type: Optional[str]
+    batch_remove_name=None,  # type: Optional[str]
 ):
     # type: (...) -> MutableSetAttribute[T]
     """
@@ -1860,6 +1947,12 @@ def set_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
+    :param batch_remove_name: Batch name for remove operations.
+    :type batch_remove_name: str or None
+
     :return: Mutable set attribute.
     :rtype: objetto.objects.Attribute[objetto.objects.MutableSetObject]
 
@@ -1889,6 +1982,8 @@ collections.abc.Iterable[str or collections.abc.Callable]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
+            batch_update_name=batch_update_name,
+            batch_remove_name=batch_remove_name,
         )  # type: Type[MutableSetObject[T]]
 
     # Factory for set object relationship.
@@ -1967,6 +2062,8 @@ def protected_set_attribute(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_update_name=None,  # type: Optional[str]
+    batch_remove_name=None,  # type: Optional[str]
 ):
     # type: (...) -> SetAttribute[T]
     """
@@ -2043,6 +2140,12 @@ def protected_set_attribute(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
+    :param batch_remove_name: Batch name for remove operations.
+    :type batch_remove_name: str or None
+
     :return: Protected set attribute.
     :rtype: objetto.objects.Attribute[objetto.objects.SetObject]
 
@@ -2072,6 +2175,8 @@ collections.abc.Iterable[str or collections.abc.Callable]
             qual_name=qual_name,
             unique=unique,
             reactions=reactions,
+            batch_update_name=batch_update_name,
+            batch_remove_name=batch_remove_name,
         )  # type: Type[SetObject[T]]
 
     # Factory for set object relationship.
@@ -2148,6 +2253,8 @@ def protected_set_attribute_pair(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_update_name=None,  # type: Optional[str]
+    batch_remove_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Tuple[ProxySetAttribute[T], SetAttribute[T]]
     """
@@ -2217,6 +2324,12 @@ def protected_set_attribute_pair(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
+    :param batch_remove_name: Batch name for remove operations.
+    :type batch_remove_name: str or None
+
     :return: Protected-public set attribute pair.
     :rtype: tuple[objetto.objects.Attribute[objetto.objects.ProxySetObject], \
 objetto.objects.Attribute[objetto.objects.SetObject]]
@@ -2257,6 +2370,8 @@ objetto.objects.Attribute[objetto.objects.SetObject]]
         qual_name=qual_name,
         unique=unique,
         reactions=reactions,
+        batch_update_name=batch_update_name,
+        batch_remove_name=batch_remove_name,
     )  # type: SetAttribute[T]
 
     # Make protected attribute.
@@ -2336,6 +2451,7 @@ def dict_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_update_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Type[MutableDictObject[KT, VT]]
     """
@@ -2399,6 +2515,9 @@ def dict_cls(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
     :return: Mutable dictionary object class.
     :rtype: type[objetto.objects.MutableDictObject]
 
@@ -2427,6 +2546,9 @@ collections.abc.Iterable[str or collections.abc.Callable]
             data_relationship=custom_data_relationship,
         )
 
+    # Prepare dct.
+    dct = {}  # type: Dict[str, Any]
+
     # Key relationship.
     with ReraiseContext((TypeError, ValueError), "defining 'dict_cls'"):
         key_relationship = KeyRelationship(
@@ -2436,11 +2558,15 @@ collections.abc.Iterable[str or collections.abc.Callable]
             module=module,
             factory=key_factory,
         )
-        dct = {"_key_relationship": key_relationship}  # type: Dict[str, Any]
+        dct.update({"_key_relationship": key_relationship})
 
     # Reactions.
     with ReraiseContext((TypeError, ValueError), "defining 'dict_cls'"):
         dct.update(_prepare_reactions(reactions))
+
+    # Batch names.
+    if batch_update_name:
+        dct["_BATCH_UPDATE_NAME"] = batch_update_name
 
     # Make class.
     cls_kwargs = dict(
@@ -2475,6 +2601,7 @@ def protected_dict_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_update_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Type[DictObject[KT, VT]]
     """
@@ -2538,6 +2665,9 @@ def protected_dict_cls(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
     :return: Protected dictionary object class.
     :rtype: type[objetto.objects.DictObject]
 
@@ -2566,6 +2696,9 @@ collections.abc.Iterable[str or collections.abc.Callable]
             data_relationship=custom_data_relationship,
         )
 
+    # Prepare dct.
+    dct = {}  # type: Dict[str, Any]
+
     # Key relationship.
     with ReraiseContext((TypeError, ValueError), "defining 'protected_dict_cls'"):
         key_relationship = KeyRelationship(
@@ -2575,11 +2708,15 @@ collections.abc.Iterable[str or collections.abc.Callable]
             module=module,
             factory=key_factory,
         )
-        dct = {"_key_relationship": key_relationship}  # type: Dict[str, Any]
+        dct.update({"_key_relationship": key_relationship})
 
     # Reactions.
     with ReraiseContext((TypeError, ValueError), "defining 'protected_dict_cls'"):
         dct.update(_prepare_reactions(reactions))
+
+    # Batch names.
+    if batch_update_name:
+        dct["_BATCH_UPDATE_NAME"] = batch_update_name
 
     # Make class.
     cls_kwargs = dict(
@@ -2611,6 +2748,10 @@ def list_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_insert_name=None,  # type: Optional[str]
+    batch_delete_name=None,  # type: Optional[str]
+    batch_update_name=None,  # type: Optional[str]
+    batch_move_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Type[MutableListObject[T]]
     """
@@ -2665,6 +2806,18 @@ def list_cls(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_insert_name: Batch name for insert operations.
+    :type batch_insert_name: str or None
+
+    :param batch_delete_name: Batch name for delete operations.
+    :type batch_delete_name: str or None
+
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
+    :param batch_move_name: Batch name for move operations.
+    :type batch_move_name: str or None
+
     :return: Mutable list object class.
     :rtype: type[objetto.objects.MutableListObject]
 
@@ -2693,9 +2846,22 @@ collections.abc.Iterable[str or collections.abc.Callable]
             data_relationship=custom_data_relationship,
         )
 
+    # Prepare dct.
+    dct = {}  # type: Dict[str, Any]
+
     # Reactions.
     with ReraiseContext((TypeError, ValueError), "defining 'list_cls'"):
-        dct = _prepare_reactions(reactions)
+        dct.update(_prepare_reactions(reactions))
+
+    # Batch names.
+    if batch_insert_name:
+        dct["_BATCH_INSERT_NAME"] = batch_insert_name
+    if batch_delete_name:
+        dct["_BATCH_DELETE_NAME"] = batch_delete_name
+    if batch_update_name:
+        dct["_BATCH_UPDATE_NAME"] = batch_update_name
+    if batch_move_name:
+        dct["_BATCH_MOVE_NAME"] = batch_move_name
 
     # Make class.
     cls_kwargs = dict(
@@ -2727,6 +2893,10 @@ def protected_list_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_insert_name=None,  # type: Optional[str]
+    batch_delete_name=None,  # type: Optional[str]
+    batch_update_name=None,  # type: Optional[str]
+    batch_move_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Type[ListObject[T]]
     """
@@ -2781,6 +2951,18 @@ def protected_list_cls(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_insert_name: Batch name for insert operations.
+    :type batch_insert_name: str or None
+
+    :param batch_delete_name: Batch name for delete operations.
+    :type batch_delete_name: str or None
+
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
+    :param batch_move_name: Batch name for move operations.
+    :type batch_move_name: str or None
+
     :return: Protected list object class.
     :rtype: type[objetto.objects.ListObject]
 
@@ -2809,9 +2991,22 @@ collections.abc.Iterable[str or collections.abc.Callable]
             data_relationship=custom_data_relationship,
         )
 
+    # Prepare dct.
+    dct = {}  # type: Dict[str, Any]
+
     # Reactions.
     with ReraiseContext((TypeError, ValueError), "defining 'protected_list_cls'"):
-        dct = _prepare_reactions(reactions)
+        dct.update(_prepare_reactions(reactions))
+
+    # Batch names.
+    if batch_insert_name:
+        dct["_BATCH_INSERT_NAME"] = batch_insert_name
+    if batch_delete_name:
+        dct["_BATCH_DELETE_NAME"] = batch_delete_name
+    if batch_update_name:
+        dct["_BATCH_UPDATE_NAME"] = batch_update_name
+    if batch_move_name:
+        dct["_BATCH_MOVE_NAME"] = batch_move_name
 
     # Make class.
     cls_kwargs = dict(
@@ -2843,6 +3038,8 @@ def set_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_update_name=None,  # type: Optional[str]
+    batch_remove_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Type[MutableSetObject[T]]
     """
@@ -2897,6 +3094,12 @@ def set_cls(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
+    :param batch_remove_name: Batch name for remove operations.
+    :type batch_remove_name: str or None
+
     :return: Mutable set object class.
     :rtype: type[objetto.objects.MutableSetObject]
 
@@ -2925,9 +3128,18 @@ collections.abc.Iterable[str or collections.abc.Callable]
             data_relationship=custom_data_relationship,
         )
 
+    # Prepare dct.
+    dct = {}  # type: Dict[str, Any]
+
     # Reactions.
     with ReraiseContext((TypeError, ValueError), "defining 'set_cls'"):
-        dct = _prepare_reactions(reactions)
+        dct.update(_prepare_reactions(reactions))
+
+    # Batch names.
+    if batch_update_name:
+        dct["_BATCH_UPDATE_NAME"] = batch_update_name
+    if batch_remove_name:
+        dct["_BATCH_REMOVE_NAME"] = batch_remove_name
 
     # Make class.
     cls_kwargs = dict(
@@ -2959,6 +3171,8 @@ def protected_set_cls(
     qual_name=None,  # type: Optional[str]
     unique=False,  # type: bool
     reactions=None,  # type: ReactionsType
+    batch_update_name=None,  # type: Optional[str]
+    batch_remove_name=None,  # type: Optional[str]
 ):
     # type: (...) -> Type[SetObject[T]]
     """
@@ -3013,6 +3227,12 @@ def protected_set_cls(
     :type reactions: str or collections.abc.Callable or None or \
 collections.abc.Iterable[str or collections.abc.Callable]
 
+    :param batch_update_name: Batch name for update operations.
+    :type batch_update_name: str or None
+
+    :param batch_remove_name: Batch name for remove operations.
+    :type batch_remove_name: str or None
+
     :return: Protected set object class.
     :rtype: type[objetto.objects.SetObject]
 
@@ -3041,9 +3261,18 @@ collections.abc.Iterable[str or collections.abc.Callable]
             data_relationship=custom_data_relationship,
         )
 
+    # Prepare dct.
+    dct = {}  # type: Dict[str, Any]
+
     # Reactions.
     with ReraiseContext((TypeError, ValueError), "defining 'protected_set_cls'"):
-        dct = _prepare_reactions(reactions)
+        dct.update(_prepare_reactions(reactions))
+
+    # Batch names.
+    if batch_update_name:
+        dct["_BATCH_UPDATE_NAME"] = batch_update_name
+    if batch_remove_name:
+        dct["_BATCH_REMOVE_NAME"] = batch_remove_name
 
     # Make class.
     cls_kwargs = dict(

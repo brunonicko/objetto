@@ -22,6 +22,7 @@ from .._structures import (
     BaseSetStructureMeta,
     SerializationError,
 )
+from ..utils.dummy_context import DummyContext
 from .bases import (
     BaseAuxiliaryObject,
     BaseAuxiliaryObjectFunctions,
@@ -98,7 +99,16 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
         cls = type(obj)
         relationship = cls._relationship
         input_values = set(input_values)
-        with obj.app.__.write_context(obj) as (read, write):
+
+        # Batch context.
+        batch_name = cls._BATCH_UPDATE_NAME
+        if batch_name is None:
+            context = DummyContext()  # type: ignore
+        else:
+            context = obj._batch_context(name=batch_name)  # type: ignore
+
+        # Write context.
+        with context, obj.app.__.write_context(obj) as (read, write):
             if not input_values:
                 return
 
@@ -218,7 +228,16 @@ class SetObjectFunctions(BaseAuxiliaryObjectFunctions):
         # type: (...) -> None
         cls = type(obj)
         relationship = cls._relationship
-        with obj.app.__.write_context(obj) as (read, write):
+
+        # Batch context.
+        batch_name = cls._BATCH_REMOVE_NAME
+        if batch_name is None:
+            context = DummyContext()  # type: ignore
+        else:
+            context = obj._batch_context(name=batch_name)  # type: ignore
+
+        # Write context.
+        with context, obj.app.__.write_context(obj) as (read, write):
             if not input_values:
                 return
 
@@ -384,6 +403,20 @@ class SetObject(
 
     __slots__ = ()
     __functions__ = SetObjectFunctions
+
+    _BATCH_UPDATE_NAME = None  # type: Optional[str]
+    """
+    Batch name for update operations.
+
+    :type: str or None
+    """
+
+    _BATCH_REMOVE_NAME = None  # type: Optional[str]
+    """
+    Batch name for remove operations.
+
+    :type: str or None
+    """
 
     @classmethod
     @final

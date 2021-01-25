@@ -13,7 +13,7 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, raise_from, with_metaclass
+from six import ensure_str, iteritems, raise_from, with_metaclass
 
 from .._applications import Application
 from .._bases import FINAL_METHOD_TAG, MISSING, Base, final, init_context, make_base_cls
@@ -26,6 +26,7 @@ from .._structures import (
     BaseAttributeStructureMeta,
     BaseMutableAttributeStructure,
 )
+from ..utils.dummy_context import DummyContext
 from ..utils.reraise_context import ReraiseContext
 from ..utils.type_checking import (
     assert_is_callable,
@@ -146,6 +147,9 @@ objetto.objects.Attribute or None
     :param deserialize_to: Non-serialized attribute to deserialize this into.
     :type deserialize_to: objetto.objects.Attribute or None
 
+    :param batch_name: Batch name.
+    :type batch_name: str or None
+
     :raises TypeError: Invalid parameter type.
     :raises ValueError: Invalid parameter value.
     :raises ValueError: Can't declare same dependency more than once.
@@ -164,6 +168,7 @@ objetto.objects.Attribute or None
         "__fset",
         "__fdel",
         "__data_attribute",
+        "__batch_name",
     )
 
     def __init__(
@@ -181,6 +186,7 @@ objetto.objects.Attribute or None
         delegated=False,  # type: bool
         dependencies=None,  # type: Optional[Union[Iterable[Attribute], Attribute]]
         deserialize_to=None,  # type: Optional[Attribute]
+        batch_name=None,  # type: Optional[str]
     ):
         # type: (...) -> None
 
@@ -261,6 +267,9 @@ objetto.objects.Attribute or None
         self.__fset = None  # type: Optional[Callable]
         self.__fdel = None  # type: Optional[Callable]
         self.__data_attribute = None  # type: Optional[DataAttribute]
+        self.__batch_name = (
+            ensure_str(batch_name) if batch_name is not None else None
+        )  # type: Optional[str]
 
     def __set__(self, instance, value):
         # type: (Object, T) -> None
@@ -301,6 +310,7 @@ objetto.objects.Attribute or None
                 "fget": self.fget,
                 "fset": self.fset,
                 "fdel": self.fdel,
+                "batch_name": self.batch_name,
             }
         )
         return dct
@@ -494,6 +504,16 @@ objetto.objects.Attribute or None
         :rtype: bool
         """
         return super(Attribute, self).constant and not self.delegated
+
+    @property
+    def batch_name(self):
+        # type: () -> Optional[str]
+        """
+        Batch name.
+
+        :rtype: str or None
+        """
+        return self.__batch_name
 
     @property
     def data_attribute(self):
@@ -1198,8 +1218,15 @@ class Object(
 
         :raises AttributeError: Attribute is not changeable and already has a value.
         """
-        self.__functions__.update(self, {name: value})
-        return self
+        attribute = self._get_attribute(name)
+        batch_name = attribute.batch_name
+        if batch_name is None:
+            context = DummyContext()  # type: ignore
+        else:
+            context = self._batch_context(name=batch_name)  # type: ignore
+        with context:
+            self.__functions__.update(self, {name: value})
+            return self
 
     @final
     def _delete(self, name):
@@ -1216,8 +1243,15 @@ class Object(
         :raises KeyError: Attribute does not exist or has no value.
         :raises AttributeError: Attribute is not deletable.
         """
-        self.__functions__.update(self, {name: DELETED})
-        return self
+        attribute = self._get_attribute(name)
+        batch_name = attribute.batch_name
+        if batch_name is None:
+            context = DummyContext()  # type: ignore
+        else:
+            context = self._batch_context(name=batch_name)  # type: ignore
+        with context:
+            self.__functions__.update(self, {name: DELETED})
+            return self
 
     @final
     def _locate(self, child):
