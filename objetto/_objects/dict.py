@@ -22,6 +22,7 @@ from .._structures import (
     BaseMutableDictStructure,
     SerializationError,
 )
+from ..utils.dummy_context import DummyContext
 from .bases import (
     DELETED,
     BaseAuxiliaryObject,
@@ -112,7 +113,7 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
         """
         Update values.
 
-        :param obj: Object.
+        :param obj: Dictionary object.
         :param input_values: Input values.
         :param factory: Whether to run values through factory.
         :param history: History than triggered this change during undo/redo.
@@ -120,7 +121,16 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
         cls = type(obj)
         relationship = cls._relationship
         key_relationship = cls._key_relationship
-        with obj.app.__.write_context(obj) as (read, write):
+
+        # Batch context.
+        batch_name = cls._BATCH_UPDATE_NAME
+        if batch_name is None:
+            context = DummyContext()  # type: ignore
+        else:
+            context = obj._batch_context(name=batch_name)  # type: ignore
+
+        # Write context.
+        with context, obj.app.__.write_context(obj) as (read, write):
             if not input_values:
                 return
 
@@ -354,6 +364,13 @@ tuple[collections.abc.Hashable, Any]]
 
     __slots__ = ()
     __functions__ = DictObjectFunctions
+
+    _BATCH_UPDATE_NAME = None  # type: Optional[str]
+    """
+    Batch name for update operations.
+
+    :type: str or None
+    """
 
     def __init__(
         self,
