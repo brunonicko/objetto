@@ -30,7 +30,7 @@ from ..utils.custom_repr import custom_iterable_repr, custom_mapping_repr
 from ..utils.factoring import format_factory, import_factory, run_factory
 from ..utils.recursive_repr import recursive_repr
 from ..utils.reraise_context import ReraiseContext
-from ..utils.type_checking import assert_is_instance
+from ..utils.type_checking import assert_is_instance, get_type_names
 from .bases import (
     BaseInteractiveStructure,
     BaseMutableStructure,
@@ -536,13 +536,129 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
         except NotImplementedError:
             attribute_type = None
 
-        # Store attributes.
-        attributes = {}
+        # Store attributes, check implementation of abstract attributes along the way.
+        attributes = {}  # type: Dict[str, BaseAttribute]
+        abstract_attributes = {}  # type: Dict[str, Tuple[Type, BaseAttribute]]
         if attribute_type is not None:
             for base in reversed(getmro(cls)):
                 for member_name, member in iteritems(base.__dict__):
+
+                    # Implementing abstract attribute.
+                    if member_name in abstract_attributes:
+                        abstract_base, abstract_attribute = abstract_attributes[
+                            member_name
+                        ]
+
+                        # Not a supported attribute.
+                        if not isinstance(member, attribute_type):
+                            error = (
+                                "can't implement abstract attribute '{}.{}' in '{}.{}' "
+                                "with unsupported member type '{}', expected '{}'"
+                            ).format(
+                                abstract_base.__name__,
+                                member_name,
+                                name,
+                                member_name,
+                                type(member).__name__,
+                                attribute_type.__fullname__,
+                            )
+                            raise TypeError(error)
+
+                        # Check types if possible.
+                        for typ in abstract_attribute.relationship.types:
+
+                            # No types declared in implementation.
+                            if not member.relationship.types:
+
+                                error = (
+                                    "abstract attribute '{}.{}' declares types, but "
+                                    "implementation in '{}.{}' does not"
+                                ).format(
+                                    abstract_base.__name__,
+                                    member_name,
+                                    name,
+                                    member_name,
+                                )
+                                raise TypeError(error)
+
+                            # Types are incompatible (skip lazy imported).
+                            if not any(
+                                isinstance(typ, string_types)
+                                or isinstance(t, string_types)
+                                or issubclass(t, typ)
+                                for t in member.relationship.types
+                            ):
+                                error = (
+                                    "types in attribute '{}.{}' {} are not compatible "
+                                    "with abstract '{}.{}' attribute types {}"
+                                ).format(
+                                    name,
+                                    member_name,
+                                    get_type_names(member.relationship.types),
+                                    abstract_base.__name__,
+                                    member_name,
+                                    get_type_names(
+                                        abstract_attribute.relationship.types
+                                    ),
+                                )
+                                raise TypeError(error)
+
+                        # Check other parameters.
+                        if abstract_attribute.changeable and not member.changeable:
+                            error = (
+                                "abstract attribute '{}.{}' is changeable, but "
+                                "implementation in '{}.{}' is not"
+                            ).format(
+                                abstract_base.__name__,
+                                member_name,
+                                name,
+                                member_name,
+                            )
+                            raise TypeError(error)
+                        if not abstract_attribute.changeable and member.changeable:
+                            error = (
+                                "abstract attribute '{}.{}' is not changeable, but "
+                                "implementation in '{}.{}' is"
+                            ).format(
+                                abstract_base.__name__,
+                                member_name,
+                                name,
+                                member_name,
+                            )
+                            raise TypeError(error)
+
+                        if abstract_attribute.deletable and not member.deletable:
+                            error = (
+                                "abstract attribute '{}.{}' is deletable, but "
+                                "implementation in '{}.{}' is not"
+                            ).format(
+                                abstract_base.__name__,
+                                member_name,
+                                name,
+                                member_name,
+                            )
+                            raise TypeError(error)
+                        if not abstract_attribute.deletable and member.deletable:
+                            error = (
+                                "abstract attribute '{}.{}' is not deletable, but "
+                                "implementation in '{}.{}' is"
+                            ).format(
+                                abstract_base.__name__,
+                                member_name,
+                                name,
+                                member_name,
+                            )
+                            raise TypeError(error)
+
+                    # Store attribute.
                     if isinstance(member, attribute_type):
                         attributes[member_name] = member
+
+                        # Abstract attribute, remember it.
+                        if member.abstracted:
+                            abstract_attributes[member_name] = base, member
+
+                    # Not an attribute.
                     elif member_name in attributes:
                         del attributes[member_name]
 

@@ -617,9 +617,10 @@ class Functions(BaseObjectFunctions):
             n for n, a in iteritems(cls._attributes) if not a.required
         )  # type: Set[str]
         if missing_attributes.difference(optional_attributes):
-            error = "missing required attribute{} {}".format(
+            error = "missing required attribute{} {} in '{}' object".format(
                 "s" if len(missing_attributes) != 1 else "",
                 ", ".join("'{}'".format(n) for n in missing_attributes),
+                cls.__fullname__,
             )
             raise TypeError(error)
 
