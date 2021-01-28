@@ -24,7 +24,8 @@ Objetto
 .. image:: https://badge.fury.io/py/objetto.svg
    :target: https://pypi.org/project/objetto/
 
-`Objetto` is an object-oriented framework for building smart applications and APIs.
+`Objetto` is an opinionated object-oriented framework for building modular applications
+and APIs.
 
 Overview
 --------
