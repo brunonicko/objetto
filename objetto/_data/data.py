@@ -251,7 +251,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         for name, value in iteritems(input_values):
             attribute = cls._get_attribute(name)
             initial[name] = attribute.relationship.fabricate_value(
-                value, factory=factory
+                value, factory=factory, owner=cls
             )
 
         missing_attributes = set()  # type: Set[str]
@@ -259,7 +259,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
             if name not in initial:
                 if attribute.has_default:
                     if not missing_attributes:
-                        initial[name] = attribute.fabricate_default_value()
+                        initial[name] = attribute.fabricate_default_value(owner=cls)
                 elif attribute.required:
                     missing_attributes.add(name)
 
@@ -415,7 +415,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         if not attribute.changeable and name in self._state:
             error = "non-changeable attribute '{}' already has a value".format(name)
             raise AttributeError(error)
-        fabricated_value = attribute.relationship.fabricate_value(value)
+        fabricated_value = attribute.relationship.fabricate_value(value, owner=cls)
         return type(self).__make__(self._state.set(name, fabricated_value))
 
     @final
@@ -475,7 +475,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
             if not attribute.changeable and name in self._state:
                 error = "non-changeable attribute '{}' already has a value".format(name)
                 raise AttributeError(error)
-            fabricated_value = attribute.relationship.fabricate_value(value)
+            fabricated_value = attribute.relationship.fabricate_value(value, owner=cls)
             fabricated_update[name] = fabricated_value
         return cls.__make__(self._state.update(fabricated_update))
 

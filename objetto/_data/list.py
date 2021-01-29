@@ -141,7 +141,7 @@ class ListData(
         """
         if not cls._relationship.passthrough:
             state = ListState(
-                cls._relationship.fabricate_value(v, factory=factory)
+                cls._relationship.fabricate_value(v, factory=factory, owner=cls)
                 for v in input_values
             )
         else:
@@ -178,7 +178,9 @@ class ListData(
         """
         cls = type(self)
         if not cls._relationship.passthrough:
-            fabricated_values = (cls._relationship.fabricate_value(v) for v in values)
+            fabricated_values = (
+                cls._relationship.fabricate_value(v, owner=cls) for v in values
+            )
             return type(self).__make__(self._state.insert(index, *fabricated_values))
         else:
             return type(self).__make__(self._state.insert(index, *values))
@@ -195,7 +197,7 @@ class ListData(
         :rtype: objetto.data.ListData
         """
         cls = type(self)
-        fabricated_value = cls._relationship.fabricate_value(value)
+        fabricated_value = cls._relationship.fabricate_value(value, owner=cls)
         return type(self).__make__(self._state.append(fabricated_value))
 
     @final
@@ -213,7 +215,7 @@ class ListData(
         cls = type(self)
         if not cls._relationship.passthrough:
             fabricated_iterable = (
-                cls._relationship.fabricate_value(v) for v in iterable
+                cls._relationship.fabricate_value(v, owner=cls) for v in iterable
             )
             return type(self).__make__(self._state.extend(fabricated_iterable))
         else:
@@ -294,7 +296,9 @@ class ListData(
         """
         cls = type(self)
         if not cls._relationship.passthrough:
-            fabricated_values = (cls._relationship.fabricate_value(v) for v in values)
+            fabricated_values = (
+                cls._relationship.fabricate_value(v, owner=cls) for v in values
+            )
             return type(self).__make__(self._state.update(index, *fabricated_values))
         else:
             return type(self).__make__(self._state.update(index, *values))

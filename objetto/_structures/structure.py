@@ -368,10 +368,13 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
             return value
 
     @final
-    def fabricate_default_value(self, **kwargs):
-        # type: (Any, Any) -> Any
+    def fabricate_default_value(self, owner=None, **kwargs):
+        # type: (Optional[Type[BaseAttributeStructure]], Any) -> T
         """
         Fabricate default value.
+
+        :param owner: Owner class.
+        :type owner: type[objetto.bases.BaseAttributeStructure] or None
 
         :param kwargs: Keyword arguments to be passed to the factories.
 
@@ -380,6 +383,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
         :raises ValueError: No default or default factory.
         """
         default = self.__default
+        kwargs["owner"] = owner
         if self.__default_factory is not None:
             default = run_factory(self.__default_factory, kwargs=kwargs)
         if default is MISSING:
