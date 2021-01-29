@@ -272,6 +272,7 @@ Attribute Descriptor Class
      fdel,
      constant,
      batch_name,
+     data_attribute,
 
    .. automethod:: objetto.objects.Attribute.__set__
    .. automethod:: objetto.objects.Attribute.__delete__
@@ -281,7 +282,6 @@ Attribute Descriptor Class
    .. automethod:: objetto.objects.Attribute.getter
    .. automethod:: objetto.objects.Attribute.setter
    .. automethod:: objetto.objects.Attribute.deleter
-   .. automethod:: objetto.objects.Attribute.get_data_attribute
 
 Relationship Classes
 --------------------
@@ -290,9 +290,9 @@ Relationship Classes
      child,
      history,
      data,
+     data_relationship,
 
    .. automethod:: objetto.objects.Relationship.to_dict
-   .. automethod:: objetto.objects.Relationship.get_data_relationship
 
 .. autoclass:: objetto.objects.KeyRelationship
    :members:

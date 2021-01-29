@@ -133,7 +133,7 @@ class SetData(
         """
         if not cls._relationship.passthrough:
             state = SetState(
-                cls._relationship.fabricate_value(v, factory=factory, owner=cls)
+                cls._relationship.fabricate_value(v, factory=factory)
                 for v in input_values
             )
         else:
@@ -164,7 +164,7 @@ class SetData(
         :rtype: objetto.data.SetData
         """
         cls = type(self)
-        fabricated_value = cls._relationship.fabricate_value(value, owner=cls)
+        fabricated_value = cls._relationship.fabricate_value(value)
         return type(self).__make__(self._state.add(fabricated_value))
 
     @final
@@ -218,7 +218,7 @@ class SetData(
         :raises KeyError: Value is not present.
         """
         cls = type(self)
-        fabricated_new_value = cls._relationship.fabricate_value(new_value, owner=cls)
+        fabricated_new_value = cls._relationship.fabricate_value(new_value)
         return type(self).__make__(self._state.remove(value).add(fabricated_new_value))
 
     @final
@@ -236,7 +236,7 @@ class SetData(
         cls = type(self)
         if not cls._relationship.passthrough:
             fabricated_iterable = (
-                cls._relationship.fabricate_value(v, owner=cls) for v in iterable
+                cls._relationship.fabricate_value(v) for v in iterable
             )
             return type(self).__make__(self._state.update(fabricated_iterable))
         else:

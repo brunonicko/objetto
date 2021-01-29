@@ -168,7 +168,6 @@ objetto.objects.Attribute or None
         "__fset",
         "__fdel",
         "__data_attribute",
-        "__data_attributes",
         "__batch_name",
     )
 
@@ -268,9 +267,6 @@ objetto.objects.Attribute or None
         self.__fset = None  # type: Optional[Callable]
         self.__fdel = None  # type: Optional[Callable]
         self.__data_attribute = None  # type: Optional[DataAttribute]
-        self.__data_attributes = WeakKeyDictionary(
-            {}
-        )  # type: MutableMapping[Type[Object], DataAttribute]
         self.__batch_name = (
             ensure_str(batch_name) if batch_name is not None else None
         )  # type: Optional[str]
@@ -429,55 +425,6 @@ objetto.objects.Attribute or None
         self._deletable = True
         return self
 
-    def get_data_attribute(self, owner=None):
-        # type: (Optional[Type[Object]]) -> Optional[DataAttribute]
-        """
-        Get data attribute.
-
-        :param owner: Owner class.
-        :type owner: type[objetto.objects.Object] or None
-
-        :return: Data attribute.
-        :rtype: objetto.data.DataAttribute or None
-        """
-
-        # No data.
-        if not self.relationship.data:
-            return None
-
-        # Try to get cached data attribute first.
-        if owner is None:
-            if self.__data_attribute is not None:
-                return self.__data_attribute
-        else:
-            try:
-                return self.__data_attributes[owner]
-            except KeyError:
-                pass
-
-        # Make new one.
-        data_relationship = self.relationship.get_data_relationship(owner=owner)
-        assert data_relationship is not None
-        data_attribute = DataAttribute(
-            data_relationship,
-            default=MISSING,
-            default_factory=None,
-            module=self.module,
-            required=False,
-            changeable=True,
-            deletable=True,
-            finalized=False,
-            abstracted=False,
-            metadata=self.metadata,
-        )  # type: DataAttribute
-
-        # Cache and return it.
-        if owner is None:
-            self.__data_attribute = data_attribute
-        else:
-            self.__data_attributes[owner] = data_attribute
-        return data_attribute
-
     @property
     def relationship(self):
         # type: () -> Relationship
@@ -568,6 +515,31 @@ objetto.objects.Attribute or None
         """
         return self.__batch_name
 
+    @property
+    def data_attribute(self):
+        # type: () -> Optional[DataAttribute]
+        """
+        Data attribute.
+
+        :rtype: objetto.data.DataAttribute or None
+        """
+        if self.__data_attribute is None:
+            data_relationship = self.relationship.data_relationship
+            if data_relationship is not None:
+                self.__data_attribute = DataAttribute(
+                    data_relationship,
+                    default=MISSING,
+                    default_factory=None,
+                    module=self.module,
+                    required=False,
+                    changeable=True,
+                    deletable=True,
+                    finalized=False,
+                    abstracted=False,
+                    metadata=self.metadata,
+                )
+        return self.__data_attribute
+
 
 @final
 class Functions(BaseObjectFunctions):
@@ -620,15 +592,13 @@ class Functions(BaseObjectFunctions):
                 raise_from(exc, None)
                 raise exc
             initial[name] = attribute.relationship.fabricate_value(
-                value, factory=factory, owner=cls, **kwargs
+                value, factory=factory, **kwargs
             )
 
         for name, attribute in iteritems(cls._attributes):
             if name not in initial:
                 if attribute.has_default:
-                    initial[name] = attribute.fabricate_default_value(
-                        owner=cls, **kwargs
-                    )
+                    initial[name] = attribute.fabricate_default_value(**kwargs)
 
         return initial
 
@@ -689,7 +659,7 @@ class Functions(BaseObjectFunctions):
                     else:
                         if factory:
                             value = attribute.relationship.fabricate_value(
-                                value, factory=True, owner=cls, **{"app": obj.app}
+                                value, factory=True, **{"app": obj.app}
                             )
                     intermediary_object.__.set_value(name, value, factory=False)
 
@@ -780,24 +750,20 @@ class Functions(BaseObjectFunctions):
                         if delete_item:
                             data = data._delete(name)
                         else:
-                            data_relationship = relationship.get_data_relationship(
-                                owner=cls,
-                            )
+                            data_relationship = relationship.data_relationship
                             assert data_relationship is not None
                             if same_app:
                                 with value.app.__.write_context(value) as (v_read, _):
                                     data = data._set(
                                         name,
                                         data_relationship.fabricate_value(
-                                            v_read().data, owner=cls.Data
+                                            v_read().data
                                         ),
                                     )
                             else:
                                 data = data._set(
                                     name,
-                                    data_relationship.fabricate_value(
-                                        value, owner=cls.Data
-                                    ),
+                                    data_relationship.fabricate_value(value),
                                 )
 
                 # Update state.
@@ -1081,9 +1047,7 @@ class ObjectMeta(BaseAttributeStructureMeta, BaseObjectMeta):
                 attributes = {}
                 for attribute_name, attribute in iteritems(cls._attributes):
                     if attribute.relationship.data:
-                        data_attribute = attribute.get_data_attribute(
-                            owner=cast("Type[Object]", cls)
-                        )
+                        data_attribute = attribute.data_attribute
                         if data_attribute is None:
                             continue
                         attributes[attribute_name] = data_attribute
@@ -1511,7 +1475,7 @@ class IntermediaryObjectInternals(Base):
                 with self.__getter_context(attribute):
                     value = attribute.fget(self.iobj)
                 value = attribute.relationship.fabricate_value(
-                    value, factory=True, owner=self.cls, **{"app": self.app}
+                    value, factory=True, **{"app": self.app}
                 )
                 self.__set_new_value(name, value)
                 return value
@@ -1561,7 +1525,7 @@ class IntermediaryObjectInternals(Base):
 
         if factory:
             value = attribute.relationship.fabricate_value(
-                value, factory=True, owner=self.cls, **{"app": self.app}
+                value, factory=True, **{"app": self.app}
             )
         if attribute.delegated:
             attribute.fset(self.iobj, value)

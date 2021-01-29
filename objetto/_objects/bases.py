@@ -153,7 +153,6 @@ class Relationship(BaseRelationship):
         "__history",
         "__data",
         "__data_relationship",
-        "__data_relationships",
     )
 
     def __init__(
@@ -229,10 +228,7 @@ class Relationship(BaseRelationship):
         self.__child = bool(child)
         self.__history = bool(history) and self.__child
         self.__data = bool(data) and self.__child
-        self.__data_relationship = None  # type: Optional[DataRelationship]
-        self.__data_relationships = WeakKeyDictionary(
-            {}
-        )  # type: MutableMapping[Type[BaseObject], DataRelationship]
+        self.__data_relationship = data_relationship
 
     def to_dict(self):
         # type: () -> Dict[str, Any]
@@ -248,69 +244,10 @@ class Relationship(BaseRelationship):
                 "child": self.child,
                 "history": self.history,
                 "data": self.data,
-                "data_relationship": self.get_data_relationship(),
+                "data_relationship": self.data_relationship,
             }
         )
         return dct
-
-    def get_data_relationship(self, owner=None):
-        # type: (Optional[Type[BaseObject]]) -> Optional[DataRelationship]
-        """
-        Data relationship.
-
-        :param owner: Owner class.
-        :type owner: type[objetto.bases.BaseObject] or None
-
-        :return: Data relationship.
-        :rtype: objetto.data.DataRelationship or None
-        """
-
-        # No data.
-        if not self.__data:
-            return None
-
-        # Try to get cached data relationship first.
-        if owner is None:
-            if self.__data_relationship is not None:
-                return self.__data_relationship
-        else:
-            try:
-                return self.__data_relationships[owner]
-            except KeyError:
-                pass
-
-        # Make new one.
-        environment = {"owner": owner}
-        types = set()  # type: Set[Union[Type, str]]
-        for lazy, typ in zip(
-            self.types, import_types(self.types, environment=environment)
-        ):
-            if issubclass(typ, BaseObject):
-                if isinstance(lazy, string_types):
-                    types.add(lazy + ".Data")
-                else:
-                    types.add(typ.Data)
-            else:
-                types.add(typ)
-        data_relationship = DataRelationship(
-            types=types,
-            subtypes=self.subtypes,
-            checked=False,
-            module=self.module,
-            factory=None,
-            serialized=self.serialized,
-            serializer=self.serializer,
-            deserializer=self.deserializer,
-            represented=self.represented,
-            compared=True,
-        )
-
-        # Cache and return it.
-        if owner is None:
-            self.__data_relationship = data_relationship
-        else:
-            self.__data_relationships[owner] = data_relationship
-        return data_relationship
 
     @property
     def child(self):
@@ -341,6 +278,38 @@ class Relationship(BaseRelationship):
         :rtype: bool
         """
         return self.__data
+
+    @property
+    def data_relationship(self):
+        # type: () -> Optional[DataRelationship]
+        """
+        Data relationship.
+
+        :rtype: objetto.data.DataRelationship or None
+        """
+        if self.__data and self.__data_relationship is None:
+            types = set()  # type: Set[Union[Type, str]]
+            for lazy, typ in zip(self.types, import_types(self.types)):
+                if issubclass(typ, BaseObject):
+                    if isinstance(lazy, string_types):
+                        types.add(lazy + ".Data")
+                    else:
+                        types.add(typ.Data)
+                else:
+                    types.add(typ)
+            self.__data_relationship = DataRelationship(
+                types=types,
+                subtypes=self.subtypes,
+                checked=False,
+                module=self.module,
+                factory=None,
+                serialized=self.serialized,
+                serializer=self.serializer,
+                deserializer=self.deserializer,
+                represented=self.represented,
+                compared=True,
+            )
+        return self.__data_relationship
 
 
 # noinspection PyTypeChecker
@@ -1291,9 +1260,7 @@ class BaseAuxiliaryObjectMeta(BaseObjectMeta, BaseAuxiliaryStructureMeta):
 
             # Automatically defined data type.
             else:
-                data_relationship = cls_._relationship.get_data_relationship(
-                    owner=cast("Type[BaseObject]", cls)
-                )
+                data_relationship = cls_._relationship.data_relationship
                 if data_relationship is None:
                     data_type = mcs.__data_type[cls] = cls._base_auxiliary_data_type
                 else:

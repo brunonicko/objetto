@@ -424,8 +424,8 @@ class BaseRelationship(BaseHashable):
             return None
 
     @final
-    def fabricate_value(self, value, factory=True, owner=None, **kwargs):
-        # type: (Any, bool, Optional[Type[BaseStructure]], Any) -> Any
+    def fabricate_value(self, value, factory=True, **kwargs):
+        # type: (Any, bool, Any) -> Any
         """
         Perform type check and run value through factory.
 
@@ -434,23 +434,14 @@ class BaseRelationship(BaseHashable):
         :param factory: Whether to run value through factory.
         :type factory: bool
 
-        :param owner: Owner class.
-        :type owner: type[objetto.bases.BaseStructure] or None
-
         :param kwargs: Keyword arguments to be passed to the factory.
 
         :return: Fabricated value.
         """
-        kwargs["owner"] = owner
         if factory and self.factory is not None:
             value = run_factory(self.factory, args=(value,), kwargs=kwargs)
         if self.types and self.checked:
-            assert_is_instance(
-                value,
-                self.types,
-                subtypes=self.subtypes,
-                environment=kwargs,
-            )
+            assert_is_instance(value, self.types, subtypes=self.subtypes)
         return value
 
     @property
@@ -845,7 +836,8 @@ class BaseStructure(
         serialized,  # type: Any
         location,  # type: Any
         relationship,  # type: BaseRelationship
-        owner,  # type: Type[BaseStructure]
+        serializable_structure_types,  # type: Tuple[Type[BaseStructure], ...]
+        class_name,  # type: str
         **kwargs  # type: Any
     ):
         # type: (...) -> Any
@@ -855,7 +847,7 @@ class BaseStructure(
         :param serialized: Serialized value.
         :param location: Location.
         :param relationship: Relationship.
-        :param owner: Owner class.
+        :param serializable_structure_types: Serializable structure types.
         :param kwargs: Keyword arguments to be passed to the deserializers.
         :return: Deserialized value.
         :raises TypeError: Can't deserialize value due to ambiguous types.
@@ -882,7 +874,7 @@ class BaseStructure(
 
             # Single, non-ambiguous structure type.
             single_structure_type = relationship.get_single_exact_type(
-                owner._serializable_structure_types
+                serializable_structure_types
             )  # type: Optional[Type[BaseStructure]]
             if single_structure_type is not None:
                 return single_structure_type.deserialize(serialized, **kwargs)
@@ -897,13 +889,13 @@ class BaseStructure(
                     "relationship{} defines none or ambiguous types"
                 ).format(
                     type(serialized).__name__,
-                    owner.__fullname__,
+                    class_name,
                     " at location {}".format(location) if location is not None else "",
                 )
                 raise TypeError(error)
 
         # Return type-check deserialized value.
-        return relationship.fabricate_value(serialized, factory=False, owner=owner)
+        return relationship.fabricate_value(serialized, factory=False)
 
     @staticmethod
     @final
@@ -1036,7 +1028,12 @@ class BaseStructure(
 
         # Built-in deserializer.
         deserializer = lambda: cls.__deserialize_value(
-            serialized, location, relationship, cls, **kwargs
+            serialized,
+            location,
+            relationship,
+            cls._serializable_structure_types,
+            cls.__fullname__,
+            **kwargs
         )
         if relationship.deserializer is None:
             return deserializer()
@@ -1045,20 +1042,16 @@ class BaseStructure(
         if "super" in kwargs:
             error = "can't pass reserved keyword argument 'super' to deserializers"
             raise ValueError(error)
-        if "owner" in kwargs:
-            error = "can't pass reserved keyword argument 'owner' to deserializers"
-            raise ValueError(error)
 
         # Custom deserializer.
         kwargs = dict(kwargs)
         kwargs["super"] = deserializer
-        kwargs["owner"] = cls
         if type(serialized) is dict:
             serialized = _unescape_serialized_class(serialized)
         value = run_factory(
             relationship.deserializer, args=(serialized,), kwargs=kwargs
         )
-        return relationship.fabricate_value(value, factory=False, owner=cls)
+        return relationship.fabricate_value(value, factory=False)
 
     @final
     def serialize_value(self, value, location=None, **kwargs):
