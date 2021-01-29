@@ -547,8 +547,11 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
             for base in reversed(getmro(cls)):
                 for member_name, member in iteritems(base.__dict__):
 
-                    # Implementing abstract attribute.
-                    if member_name in abstract_attributes:
+                    # Implementing checked abstract attribute.
+                    if (
+                        member_name in abstract_attributes and
+                        abstract_attributes[member_name][1].relationship.checked
+                    ):
                         abstract_base, abstract_attribute = abstract_attributes[
                             member_name
                         ]

@@ -433,6 +433,7 @@ objetto.objects.Attribute or None
 
 def constant_attribute(
     value,  # type: T
+    checked=None,  # type: Optional[bool]
     serialized=False,  # type: bool
     serializer=None,  # type: LazyFactory
     deserializer=None,  # type: LazyFactory
@@ -447,6 +448,9 @@ def constant_attribute(
     Make constant attribute.
 
     :param value: Constant value.
+
+    :param checked: Whether to type check when implementing abstract constant attribute.
+    :type checked: bool or None
 
     :param serialized: Whether should be serialized.
     :type serialized: bool
@@ -483,7 +487,7 @@ def constant_attribute(
         relationship = Relationship(
             types=type(value),
             subtypes=False,
-            checked=False,
+            checked=True if (checked is None and abstracted) else checked,
             serialized=serialized,
             serializer=serializer,
             deserializer=deserializer,
