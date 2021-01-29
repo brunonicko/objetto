@@ -406,7 +406,7 @@ def data_dict_attribute(
         )  # type: Type[InteractiveDictData[KT, VT]]
 
     # Factory that forces the dictionary type.
-    def dict_factory(initial=()):
+    def dict_factory(initial=(), **_):
         if type(initial) is dict_type:
             return initial
         else:
@@ -578,7 +578,7 @@ def data_protected_dict_attribute(
         )  # type: Type[DictData[KT, VT]]
 
     # Factory that forces the dictionary type.
-    def dict_factory(initial=()):
+    def dict_factory(initial=(), **_):
         if type(initial) is dict_type:
             return initial
         else:
@@ -737,7 +737,7 @@ def data_list_attribute(
         )  # type: Type[InteractiveListData[T]]
 
     # Factory that forces the list type.
-    def list_factory(initial=()):
+    def list_factory(initial=(), **_):
         if type(initial) is list_type:
             return initial
         else:
@@ -894,7 +894,7 @@ def data_protected_list_attribute(
         )  # type: Type[ListData[T]]
 
     # Factory that forces the list type.
-    def list_factory(initial=()):
+    def list_factory(initial=(), **_):
         if type(initial) is list_type:
             return initial
         else:
@@ -1053,7 +1053,7 @@ def data_set_attribute(
         )  # type: Type[InteractiveSetData[T]]
 
     # Factory that forces the set type.
-    def set_factory(initial=()):
+    def set_factory(initial=(), **_):
         if type(initial) is set_type:
             return initial
         else:
@@ -1210,7 +1210,7 @@ def data_protected_set_attribute(
         )  # type: Type[SetData[T]]
 
     # Factory that forces the set type.
-    def set_factory(initial=()):
+    def set_factory(initial=(), **_):
         if type(initial) is set_type:
             return initial
         else:

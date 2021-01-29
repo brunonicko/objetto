@@ -188,8 +188,8 @@ class KeyRelationship(BaseHashable):
             "factory": import_factory(self.factory),
         }
 
-    def fabricate_key(self, key, factory=True, **kwargs):
-        # type: (Any, bool, Any) -> Any
+    def fabricate_key(self, key, factory=True, owner=None, **kwargs):
+        # type: (Any, bool, Optional[Type[BaseDictStructure]], Any) -> Any
         """
         Perform type check and run key through factory.
 
@@ -199,15 +199,24 @@ class KeyRelationship(BaseHashable):
         :param factory: Whether to run value through factory.
         :type factory: bool
 
+        :param owner: Owner class.
+        :type owner: type[objetto.bases.BaseStructure] or None
+
         :param kwargs: Keyword arguments to be passed to the factory.
 
         :return: Fabricated value.
         :type key: collections.abc.Hashable
         """
+        kwargs["owner"] = owner
         if factory and self.factory is not None:
             key = run_factory(self.factory, args=(key,), kwargs=kwargs)
         if self.types and self.checked:
-            assert_is_instance(key, self.types, subtypes=self.subtypes)
+            assert_is_instance(
+                key,
+                self.types,
+                subtypes=self.subtypes,
+                environment=kwargs,
+            )
         return key
 
     @property
