@@ -4,9 +4,6 @@
 from itertools import chain
 from typing import TYPE_CHECKING, cast
 
-from jinja2 import StrictUndefined, Undefined  # type: ignore
-from jinja2.nativetypes import NativeEnvironment  # type: ignore
-
 try:
     import collections.abc as collections_abc
 except ImportError:
@@ -17,7 +14,7 @@ from six import string_types
 from ..utils.lazy_import import decorate_path, import_path
 
 if TYPE_CHECKING:
-    from typing import Any, Iterable, Mapping, Optional, Tuple, Type, Union
+    from typing import Any, Iterable, Optional, Tuple, Type, Union
 
     _LazyType = Union[Type, str]
     LazyTypes = Union[Optional[_LazyType], Iterable[Optional[_LazyType]]]
@@ -32,7 +29,6 @@ __all__ = [
     "format_types",
     "get_type_names",
     "flatten_types",
-    "expand_types",
     "import_types",
     "is_instance",
     "is_subclass",
@@ -74,13 +70,8 @@ def format_types(types, module=None):
         return (type(None),)
     if isinstance(types, type):
         return (types,)
-
-    # Lazy path.
     elif isinstance(types, string_types):
-        if "{" in types or "}" in types:
-            return (types,)
-        else:
-            return (decorate_path(types, module=module),)
+        return (decorate_path(types, module=module),)
     elif isinstance(types, collections_abc.Iterable):
         return tuple(chain.from_iterable(format_types(t, module=module) for t in types))
     else:
@@ -146,51 +137,8 @@ def flatten_types(types):
         raise TypeError(type(types).__name__)
 
 
-def expand_types(types, environment=None):
-    # type: (LazyTypes, Optional[Mapping[str, Any]]) -> LazyTypesTuple
-    """
-    Unpack variables in lazy import paths based on given environment using jinja.
-
-    :param types: Types.
-    :type types: str or type or None or tuple[str or type or None]
-
-    :param environment: Map between variable names and their values.
-    :type environment: collections.abc.Mapping[str, Any]
-
-    :return: Flattened types.
-    :rtype: tuple[str or type]
-    """
-    if environment is None:
-        return flatten_types(types)
-
-    jinja_environment = NativeEnvironment(undefined=StrictUndefined)
-    expanded_types = []
-    for typ in flatten_types(types):
-
-        # Only lazy types can be expanded.
-        if isinstance(typ, string_types):
-
-            # Make jinja template.
-            template = jinja_environment.from_string(typ)
-
-            # Render template using provided environment.
-            expanded_type = template.render(environment)
-            if expanded_type is Undefined:
-                raise ValueError(
-                    "could not unpack variables in lazy import path '{}'".format(typ)
-                )
-
-            expanded_types.append(expanded_type)
-
-        # Not lazy, do not expand.
-        else:
-            expanded_types.append(typ)
-
-    return tuple(expanded_types)
-
-
-def import_types(types, environment=None):
-    # type: (LazyTypes, Optional[Mapping[str, Any]]) -> Tuple[Type, ...]
+def import_types(types):
+    # type: (LazyTypes) -> Tuple[Type, ...]
     """
     Import types from lazy import paths.
 
@@ -208,20 +156,17 @@ def import_types(types, environment=None):
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
 
-    :param environment: Map between variable names and their values.
-    :type environment: collections.abc.Mapping[str, Any]
-
     :return: Imported types.
     :rtype: tuple[type]
     """
     return tuple(
         cast(type, import_path(t)) if isinstance(t, string_types) else t
-        for t in expand_types(types, environment=environment)
+        for t in flatten_types(types)
     )
 
 
-def is_instance(obj, types, subtypes=True, environment=None):
-    # type: (Any, LazyTypes, bool, Optional[Mapping[str, Any]]) -> bool
+def is_instance(obj, types, subtypes=True):
+    # type: (Any, LazyTypes, bool) -> bool
     """
     Get whether object is an instance of any of the provided types.
 
@@ -255,21 +200,18 @@ def is_instance(obj, types, subtypes=True, environment=None):
     :param subtypes: Whether to accept subtypes.
     :type subtypes: bool
 
-    :param environment: Map between variable names and their values.
-    :type environment: collections.abc.Mapping[str, Any]
-
     :return: True if it is an instance.
     :rtype: bool
     """
-    imported_types = import_types(types, environment=environment)
+    imported_types = import_types(types)
     if subtypes:
         return isinstance(obj, imported_types)
     else:
         return type(obj) in imported_types
 
 
-def is_subclass(cls, types, subtypes=True, environment=None):
-    # type: (type, LazyTypes, bool, Optional[Mapping[str, Any]]) -> bool
+def is_subclass(cls, types, subtypes=True):
+    # type: (type, LazyTypes, bool) -> bool
     """
     Get whether class is a subclass of any of the provided types.
 
@@ -303,9 +245,6 @@ def is_subclass(cls, types, subtypes=True, environment=None):
     :param subtypes: Whether to accept subtypes.
     :type subtypes: bool
 
-    :param environment: Map between variable names and their values.
-    :type environment: collections.abc.Mapping[str, Any]
-
     :return: True if it is a subclass.
     :rtype: bool
 
@@ -314,15 +253,15 @@ def is_subclass(cls, types, subtypes=True, environment=None):
     if not isinstance(cls, type):
         error = "is_subclass() arg 1 must be a class"
         raise TypeError(error)
-    imported_types = import_types(types, environment=environment)
+    imported_types = import_types(types)
     if subtypes:
-        return issubclass(cls, imported_types)
+        return issubclass(cls, import_types(types))
     else:
         return cls in imported_types
 
 
-def assert_is_instance(obj, types, subtypes=True, environment=None):
-    # type: (Any, LazyTypes, bool, Optional[Mapping[str, Any]]) -> None
+def assert_is_instance(obj, types, subtypes=True):
+    # type: (Any, LazyTypes, bool) -> None
     """
     Assert object is an instance of any of the provided types.
 
@@ -358,14 +297,11 @@ subclasses are not accepted)
     :param subtypes: Whether to accept subtypes.
     :type subtypes: bool
 
-    :param environment: Map between variable names and their values.
-    :type environment: collections.abc.Mapping[str, Any]
-
     :raises ValueError: No types were provided.
     :raises TypeError: Object is not an instance of provided types.
     """
-    if not is_instance(obj, types, subtypes=subtypes, environment=environment):
-        types = expand_types(types, environment=environment)
+    if not is_instance(obj, types, subtypes=subtypes):
+        types = flatten_types(types)
         if not types:
             error = "no types were provided to perform assertion"
             raise ValueError(error)
@@ -379,8 +315,8 @@ subclasses are not accepted)
         raise TypeError(error)
 
 
-def assert_is_subclass(cls, types, subtypes=True, environment=None):
-    # type: (type, LazyTypes, bool, Optional[Mapping[str, Any]]) -> None
+def assert_is_subclass(cls, types, subtypes=True):
+    # type: (type, LazyTypes, bool) -> None
     """
     Assert a class is a subclass of any of the provided types.
 
@@ -414,14 +350,11 @@ def assert_is_subclass(cls, types, subtypes=True, environment=None):
     :param subtypes: Whether to accept subtypes.
     :type subtypes: bool
 
-    :param environment: Map between variable names and their values.
-    :type environment: collections.abc.Mapping[str, Any]
-
     :raises ValueError: No types were provided.
     :raises TypeError: Class is not a subclass of provided types.
     """
-    if not isinstance(cls, type):
-        types = expand_types(types, environment=environment)
+    if not is_instance(cls, type):
+        types = flatten_types(types)
         error = "got instance of '{}', expected {}{}{}".format(
             type(cls).__name__,
             "one of " if len(types) > 1 else "class ",
@@ -432,8 +365,8 @@ def assert_is_subclass(cls, types, subtypes=True, environment=None):
         )
         raise TypeError(error)
 
-    if not is_subclass(cls, types, subtypes=subtypes, environment=environment):
-        types = expand_types(types, environment=environment)
+    if not is_subclass(cls, types, subtypes=subtypes):
+        types = flatten_types(types)
         if not types:
             error = "no types were provided to perform assertion"
             raise ValueError(error)

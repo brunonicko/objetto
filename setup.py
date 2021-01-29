@@ -21,7 +21,6 @@ setuptools.setup(
         "qualname",
         "six",
         "slotted",
-        "jinja2",
         "typing; python_version < '3.5'",
     ],
     classifiers=[

@@ -131,7 +131,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                 # Fabricate new value.
                 if factory:
                     value = relationship.fabricate_value(
-                        value, factory=factory, owner=cls, **{"app": obj.app}
+                        value, factory=factory, **{"app": obj.app}
                     )
                 new_values.append(value)
 
@@ -151,19 +151,15 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
 
                     # Update data.
                     if relationship.data:
-                        data_relationship = relationship.get_data_relationship(
-                            owner=cls
-                        )
+                        data_relationship = relationship.data_relationship
                         assert data_relationship is not None
                         if same_app:
                             with value.app.__.write_context(value) as (v_read, _):
                                 data_value = data_relationship.fabricate_value(
-                                    v_read().data, owner=cls.Data
+                                    v_read().data,
                                 )
                         else:
-                            data_value = data_relationship.fabricate_value(
-                                value, owner=cls.Data
-                            )
+                            data_value = data_relationship.fabricate_value(value)
                         new_data_values.append(data_value)
 
             # Update state and data.
@@ -376,7 +372,7 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
                 # Fabricate new value.
                 if factory:
                     value = relationship.fabricate_value(
-                        value, factory=factory, owner=cls, **{"app": obj.app}
+                        value, factory=factory, **{"app": obj.app}
                     )
                 new_values.append(value)
 
@@ -402,19 +398,15 @@ class ListObjectFunctions(BaseAuxiliaryObjectFunctions):
 
                     # Update data.
                     if relationship.data:
-                        data_relationship = relationship.get_data_relationship(
-                            owner=cls
-                        )
+                        data_relationship = relationship.data_relationship
                         assert data_relationship is not None
                         if same_app:
                             with value.app.__.write_context(value) as (v_read, _):
                                 data_value = data_relationship.fabricate_value(
-                                    v_read().data, owner=cls.Data
+                                    v_read().data,
                                 )
                         else:
-                            data_value = data_relationship.fabricate_value(
-                                value, owner=cls.Data
-                            )
+                            data_value = data_relationship.fabricate_value(value)
                         new_data_values.append(data_value)
 
             # Update state and data.
