@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="objetto",
-    version="1.17.0",
+    version="1.18.0",
     author="Bruno Nicko",
     author_email="brunonicko@gmail.com",
     description="Object-oriented framework for building smart applications and APIs",
@@ -21,6 +21,7 @@ setuptools.setup(
         "qualname",
         "six",
         "slotted",
+        "jinja2",
         "typing; python_version < '3.5'",
     ],
     classifiers=[

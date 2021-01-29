@@ -130,8 +130,8 @@ tuple[collections.abc.Hashable, Any]]
         if not cls._key_relationship.passthrough or not cls._relationship.passthrough:
             state = DictState(
                 (
-                    cls._key_relationship.fabricate_key(k, factory=factory),
-                    cls._relationship.fabricate_value(v, factory=factory),
+                    cls._key_relationship.fabricate_key(k, factory=factory, owner=cls),
+                    cls._relationship.fabricate_value(v, factory=factory, owner=cls),
                 )
                 for k, v in iteritems(input_values)
             )
@@ -165,8 +165,8 @@ tuple[collections.abc.Hashable, Any]]
         :rtype: objetto.data.DictData
         """
         cls = type(self)
-        key = cls._key_relationship.fabricate_key(key)
-        value = cls._relationship.fabricate_value(value)
+        key = cls._key_relationship.fabricate_key(key, owner=cls)
+        value = cls._relationship.fabricate_value(value, owner=cls)
         return cls.__make__(self._state.set(key, value))
 
     @final
@@ -226,8 +226,8 @@ tuple[collections.abc.Hashable, Any]]
         if not cls._key_relationship.passthrough or not cls._relationship.passthrough:
             fabricated_update = (
                 (
-                    cls._key_relationship.fabricate_key(k),
-                    cls._relationship.fabricate_value(v),
+                    cls._key_relationship.fabricate_key(k, owner=cls),
+                    cls._relationship.fabricate_value(v, owner=cls),
                 )
                 for k, v in iteritems(update)
             )
@@ -257,7 +257,9 @@ tuple[collections.abc.Hashable, Any]]
             raise SerializationError(error)
         state = DictState(
             (
-                cls._key_relationship.fabricate_key(k, factory=False),
+                cls._key_relationship.fabricate_key(
+                    k, factory=False, owner=cls, **kwargs
+                ),
                 cls.deserialize_value(v, location=None, **kwargs),
             )
             for k, v in iteritems(serialized)

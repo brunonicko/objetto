@@ -152,7 +152,7 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
             # Fabricate keys first.
             if factory and cls._key_relationship.factory is not None:
                 input_values = dict(
-                    (key_relationship.fabricate_key(k, factory=True), v)
+                    (key_relationship.fabricate_key(k, factory=True, owner=cls), v)
                     for k, v in iteritems(input_values)
                 )
 
@@ -166,7 +166,7 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
                 if not delete_item:
                     if factory:
                         value = relationship.fabricate_value(
-                            value, factory=factory, **{"app": obj.app}
+                            value, factory=factory, owner=cls, **{"app": obj.app}
                         )
                 new_values[key] = value
 
@@ -207,20 +207,24 @@ class DictObjectFunctions(BaseAuxiliaryObjectFunctions):
                         if delete_item:
                             data = data._remove(key)
                         else:
-                            data_relationship = relationship.data_relationship
+                            data_relationship = relationship.get_data_relationship(
+                                owner=cls
+                            )
                             assert data_relationship is not None
                             if same_app:
                                 with value.app.__.write_context(value) as (v_read, _):
                                     data = data._set(
                                         key,
                                         data_relationship.fabricate_value(
-                                            v_read().data
+                                            v_read().data, owner=cls.Data
                                         ),
                                     )
                             else:
                                 data = data._set(
                                     key,
-                                    data_relationship.fabricate_value(value),
+                                    data_relationship.fabricate_value(
+                                        value, owner=cls.Data
+                                    ),
                                 )
 
                 # Update state.
