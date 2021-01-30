@@ -258,7 +258,7 @@ def data_constant_attribute(
         relationship = DataRelationship(
             types=type(value),
             subtypes=False,
-            checked=True if (checked is None and abstracted) else checked,
+            checked=abstracted if checked is None else checked,
             serialized=serialized,
             serializer=serializer,
             deserializer=deserializer,
