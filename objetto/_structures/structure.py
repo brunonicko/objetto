@@ -545,8 +545,8 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
 
                     # Implementing checked abstract attribute.
                     if (
-                        member_name in abstract_attributes and
-                        abstract_attributes[member_name][1].relationship.checked
+                        member_name in abstract_attributes
+                        and abstract_attributes[member_name][1].relationship.checked
                     ):
                         abstract_base, abstract_attribute = abstract_attributes[
                             member_name

@@ -16,6 +16,7 @@ from six import iteritems, string_types, with_metaclass
 
 from .._bases import (
     FINAL_METHOD_TAG,
+    MISSING,
     Base,
     BaseHashable,
     BaseInteractiveCollection,
@@ -838,6 +839,7 @@ class BaseStructure(
         relationship,  # type: BaseRelationship
         serializable_structure_types,  # type: Tuple[Type[BaseStructure], ...]
         class_name,  # type: str
+        override_serialized=MISSING,  # type: Any
         **kwargs  # type: Any
     ):
         # type: (...) -> Any
@@ -848,10 +850,15 @@ class BaseStructure(
         :param location: Location.
         :param relationship: Relationship.
         :param serializable_structure_types: Serializable structure types.
+        :param override_serialized: Override serialized value.
         :param kwargs: Keyword arguments to be passed to the deserializers.
         :return: Deserialized value.
         :raises TypeError: Can't deserialize value due to ambiguous types.
         """
+
+        # Override serialized.
+        if override_serialized is not MISSING:
+            serialized = override_serialized
 
         # Possible serialized structure.
         if type(serialized) in (dict, list):
@@ -903,6 +910,7 @@ class BaseStructure(
         value,  # type: Any
         relationship,  # type: BaseRelationship
         serializable_structure_types,  # type: Tuple[Type[BaseStructure], ...]
+        override_value=MISSING,  # type: Any
         **kwargs  # type: Any
     ):
         # type: (...) -> Any
@@ -912,9 +920,14 @@ class BaseStructure(
         :param value: Value.
         :param relationship: Relationship.
         :param serializable_structure_types: Serializable structure types.
+        :param override_value: Override value.
         :param kwargs: Keyword arguments to be passed to the serializers.
         :return: Serialized value.
         """
+
+        # Override value.
+        if override_value is not MISSING:
+            value = override_value
 
         # Structure type.
         if isinstance(value, serializable_structure_types):
@@ -1027,12 +1040,13 @@ class BaseStructure(
             raise SerializationError(error)
 
         # Built-in deserializer.
-        deserializer = lambda: cls.__deserialize_value(
+        deserializer = lambda override_serialized=MISSING: cls.__deserialize_value(
             serialized,
             location,
             relationship,
             cls._serializable_structure_types,
             cls.__fullname__,
+            override_serialized=override_serialized,
             **kwargs
         )
         if relationship.deserializer is None:
@@ -1042,10 +1056,14 @@ class BaseStructure(
         if "super" in kwargs:
             error = "can't pass reserved keyword argument 'super' to deserializers"
             raise ValueError(error)
+        if "owner" in kwargs:
+            error = "can't pass reserved keyword argument 'owner' to deserializers"
+            raise ValueError(error)
 
         # Custom deserializer.
         kwargs = dict(kwargs)
         kwargs["super"] = deserializer
+        kwargs["owner"] = cls
         if type(serialized) is dict:
             serialized = _unescape_serialized_class(serialized)
         value = run_factory(
@@ -1087,8 +1105,12 @@ class BaseStructure(
             raise SerializationError(error)
 
         # Built-in serializer
-        serializer = lambda: self.__serialize_value(
-            value, relationship, cls._serializable_structure_types, **kwargs
+        serializer = lambda override_value=MISSING: self.__serialize_value(
+            value,
+            relationship,
+            cls._serializable_structure_types,
+            override_value=override_value,
+            **kwargs
         )
         if relationship.serializer is None:
             return serializer()
@@ -1097,10 +1119,18 @@ class BaseStructure(
         if "super" in kwargs:
             error = "can't pass reserved keyword argument 'super' to serializers"
             raise ValueError(error)
+        if "owner" in kwargs:
+            error = "can't pass reserved keyword argument 'owner' to deserializers"
+            raise ValueError(error)
+        if "instance" in kwargs:
+            error = "can't pass reserved keyword argument 'instance' to deserializers"
+            raise ValueError(error)
 
         # Custom serializer.
         kwargs = dict(kwargs)
         kwargs["super"] = serializer
+        kwargs["owner"] = cls
+        kwargs["instance"] = self
         serialized_value = run_factory(
             relationship.serializer, args=(value,), kwargs=kwargs
         )
