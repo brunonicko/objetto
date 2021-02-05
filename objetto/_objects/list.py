@@ -860,7 +860,20 @@ class ListObject(
         if not values:
             error = "no values provided"
             raise ValueError(error)
-        self.__functions__.update(self, index, values)
+        if len(values) > 1:
+            with self.app.write_context():
+                values_len = len(values)
+                index, stop = self.resolve_continuous_slice(
+                    slice(index, index + values_len)
+                )
+                if values_len != stop - index:
+                    error = "values length ({}) does not fit in slice ({})".format(
+                        len(values), stop - index
+                    )
+                    raise ValueError(error)
+            self.__functions__.update(self, slice(index, stop), values)
+        else:
+            self.__functions__.update(self, index, values)
         return self
 
     @final
@@ -1084,12 +1097,7 @@ class MutableListObject(
         if isinstance(item, slice):
             with self.app.write_context():
                 values = tuple(cast("Iterable[T]", value))
-                index, stop = self.resolve_continuous_slice(item)
-                if len(values) != stop - index:
-                    error = "values length ({}) does not fit in slice ({})".format(
-                        len(values), stop - index
-                    )
-                    raise ValueError(error)
+                index, _ = self.resolve_continuous_slice(item)
                 self._update(index, *values)
         else:
             self._update(item, cast("T", value))
