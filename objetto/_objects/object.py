@@ -1356,8 +1356,8 @@ class Object(
                     self.__functions__.get_initial(self, initial),
                     factory=False,
                 )
+                self.__post_deserialize__()
                 Functions.check_missing(cls, self._state)
-            self.__post_deserialize__()
             return self
 
     @final
