@@ -235,7 +235,6 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
 
     def __invariant__(self):
         """Gets called whenever a new instance is made. Can be used for validation."""
-        pass
 
     @final
     def _init_state(self, state):
