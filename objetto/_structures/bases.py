@@ -12,7 +12,7 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, string_types, with_metaclass
+from six import iteritems, with_metaclass
 
 from .._bases import (
     FINAL_METHOD_TAG,
@@ -26,6 +26,7 @@ from .._bases import (
     final,
     make_base_cls,
 )
+from .._constants import BASE_STRING_TYPES
 from .._exceptions import BaseObjettoException
 from .._states import BaseState
 from ..utils.custom_repr import custom_mapping_repr
@@ -148,11 +149,11 @@ def make_auxiliary_cls(
 
     # 'qual_name'
     with ReraiseContext(TypeError, "'qual_name' parameter"):
-        assert_is_instance(qual_name, string_types + (None,))
+        assert_is_instance(qual_name, BASE_STRING_TYPES + (None,))
 
     # 'module'
     with ReraiseContext(TypeError, "'module' parameter"):
-        assert_is_instance(module, string_types + (None,))
+        assert_is_instance(module, BASE_STRING_TYPES + (None,))
     module = module or None
 
     # Generate default name based on relationship types.
@@ -271,7 +272,7 @@ class BaseRelationship(BaseHashable):
 
         # 'module'
         with ReraiseContext(TypeError, "'module' parameter"):
-            assert_is_instance(module, string_types + (None,))
+            assert_is_instance(module, BASE_STRING_TYPES + (None,))
         module = module or None
 
         # 'types' and 'checked'

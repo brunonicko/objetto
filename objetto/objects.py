@@ -9,10 +9,10 @@ except ImportError:
     import collections as collections_abc  # type: ignore
 
 from decorator import decorator
-from six import string_types
 
 from ._applications import Action
 from ._bases import MISSING
+from ._constants import BASE_STRING_TYPES
 from ._data import DataRelationship
 from ._objects import (
     DATA_METHOD_TAG,
@@ -2418,7 +2418,7 @@ def _prepare_reactions(reactions=None):
     dct = {}  # type: Dict[str, BaseReaction]
     if reactions is None:
         return dct
-    if isinstance(reactions, string_types) or not isinstance(
+    if isinstance(reactions, BASE_STRING_TYPES) or not isinstance(
         reactions, collections_abc.Iterable
     ):
         reactions = (reactions,)

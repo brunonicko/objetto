@@ -5,9 +5,8 @@ from abc import abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from six import string_types
-
 from ._bases import Base
+from ._constants import BASE_STRING_TYPES
 from .utils.reraise_context import ReraiseContext
 from .utils.type_checking import assert_is_subclass
 
@@ -90,7 +89,7 @@ class EnumDeserializer(BaseDeserializer):
         :raises TypeError: Deserializing by name but serialized is not a string.
         """
         if self.by_name:
-            if not isinstance(serialized, string_types):
+            if not isinstance(serialized, BASE_STRING_TYPES):
                 error = (
                     "can't deserialize '{}' by name as serialized value is not a string"
                 ).format(type(self.enum).__name__)

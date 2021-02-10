@@ -11,7 +11,7 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, raise_from, string_types, with_metaclass
+from six import iteritems, raise_from, with_metaclass
 
 from .._bases import (
     ABSTRACT_TAG,
@@ -25,6 +25,7 @@ from .._bases import (
     Generic,
     final,
 )
+from .._constants import BASE_STRING_TYPES
 from .._states import DictState, SetState
 from ..utils.custom_repr import custom_iterable_repr, custom_mapping_repr
 from ..utils.factoring import format_factory, import_factory, run_factory
@@ -189,7 +190,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
             module = relationship.module
         else:
             with ReraiseContext(TypeError, "'module' parameter"):
-                assert_is_instance(module, string_types + (None,))
+                assert_is_instance(module, BASE_STRING_TYPES + (None,))
             module = module or None
 
         # 'default' and 'default_factory'
@@ -586,8 +587,8 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
 
                             # Types are incompatible (skip lazy imported).
                             if not any(
-                                isinstance(typ, string_types)
-                                or isinstance(t, string_types)
+                                isinstance(typ, BASE_STRING_TYPES)
+                                or isinstance(t, BASE_STRING_TYPES)
                                 or issubclass(t, typ)
                                 for t in member.relationship.types
                             ):

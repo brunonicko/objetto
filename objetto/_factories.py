@@ -7,9 +7,8 @@ from re import match as re_match
 from re import sub as re_sub
 from typing import TYPE_CHECKING, cast
 
-from six import string_types
-
 from ._bases import Base
+from ._constants import BASE_STRING_TYPES
 from .utils.factoring import format_factory, run_factory
 from .utils.reraise_context import ReraiseContext
 from .utils.type_checking import assert_is_callable, assert_is_instance
@@ -81,7 +80,7 @@ class BaseFactory(Base):
         :rtype: objetto.factories.MultiFactory
         """
         with ReraiseContext(TypeError, "adding factories together"):
-            if not isinstance(other, string_types):
+            if not isinstance(other, BASE_STRING_TYPES):
                 assert_is_callable(other)
         return MultiFactory((self, other))
 
@@ -472,7 +471,7 @@ class String(BaseFactory):
         """
         if value is None and self.__accepts_none:
             return value
-        if not isinstance(value, string_types):
+        if not isinstance(value, BASE_STRING_TYPES):
             return str(value)
         else:
             return value
@@ -579,9 +578,9 @@ class RegexSub(String):
         # type: (str, str, bool) -> None
         super(RegexSub, self).__init__(accepts_none=accepts_none)
         with ReraiseContext(TypeError, "'pattern' parameter"):
-            assert_is_instance(pattern, string_types)
+            assert_is_instance(pattern, BASE_STRING_TYPES)
         with ReraiseContext(TypeError, "'repl' parameter"):
-            assert_is_instance(repl, string_types)
+            assert_is_instance(repl, BASE_STRING_TYPES)
         self.__pattern = pattern
         self.__compiled_pattern = re_compile(pattern)
         self.__repl = repl

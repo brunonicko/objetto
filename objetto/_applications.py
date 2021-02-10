@@ -11,10 +11,11 @@ from traceback import format_exception
 from typing import TYPE_CHECKING, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
 
-from six import iteritems, itervalues, string_types, with_metaclass
+from six import iteritems, itervalues, with_metaclass
 
 from ._bases import Base, BaseMeta, Generic, final
 from ._changes import BaseChange
+from ._constants import STRING_TYPES
 from ._data import BaseData, DataAttribute, InteractiveDictData
 from ._exceptions import BaseObjettoException
 from ._states import BaseState, DictState
@@ -273,7 +274,7 @@ class Store(InteractiveData):
     """Data."""
 
     metadata = data_dict_attribute(
-        key_types=string_types, checked=False
+        key_types=STRING_TYPES, checked=False
     )  # type: DataAttribute[InteractiveDictData[str, Any]]
     """Metadata."""
 

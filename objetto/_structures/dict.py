@@ -9,7 +9,7 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, iterkeys, itervalues, string_types, with_metaclass
+from six import iteritems, iterkeys, itervalues, with_metaclass
 
 from .._bases import (
     BaseHashable,
@@ -18,6 +18,7 @@ from .._bases import (
     BaseProtectedDict,
     final,
 )
+from .._constants import BASE_STRING_TYPES
 from .._states import DictState
 from ..utils.custom_repr import custom_mapping_repr
 from ..utils.factoring import format_factory, import_factory, run_factory
@@ -97,7 +98,7 @@ class KeyRelationship(BaseHashable):
 
         # 'module'
         with ReraiseContext(TypeError, "'module' parameter"):
-            assert_is_instance(module, string_types + (None,))
+            assert_is_instance(module, BASE_STRING_TYPES + (None,))
         module = module or None
 
         # 'types' and 'checked'
