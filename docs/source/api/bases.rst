@@ -464,6 +464,7 @@ Base Data Classes
    :members: _state
 
    .. automethod:: objetto.bases.BaseData.__copy__
+   .. automethod:: objetto.bases.BaseData.__invariant__
 
 .. autoclass:: objetto.bases.BaseInteractiveData
 
