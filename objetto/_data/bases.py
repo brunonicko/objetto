@@ -233,6 +233,10 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
         self._init_state(state)
         return self
 
+    def __invariant__(self):
+        """Gets called whenever a new instance is made. Can be used for validation."""
+        pass
+
     @final
     def _init_state(self, state):
         # type: (BaseState) -> None
@@ -252,6 +256,7 @@ class BaseData(with_metaclass(BaseDataMeta, BaseStructure[T])):
         else:
             error = "state already initialized"
             raise RuntimeError(error)
+        self.__invariant__()
 
     @property
     def _state(self):
