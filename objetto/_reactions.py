@@ -5,11 +5,12 @@ from collections import Counter as ValueCounter
 from collections import defaultdict
 from typing import TYPE_CHECKING, TypeVar, cast
 
-from six import integer_types, iteritems, string_types
+from six import iteritems
 
 from ._applications import Phase, RejectChangeException
 from ._bases import MISSING, final
 from ._changes import BaseAtomicChange, Update
+from ._constants import BASE_STRING_TYPES, INTEGER_TYPES
 from ._data import InteractiveDictData
 from ._objects import UNIQUE_ATTRIBUTES_METADATA_KEY, BaseReaction, Object
 from ._states import DictState
@@ -137,7 +138,7 @@ class CustomReaction(BaseReaction):
         # 'priority'
         if priority is not None:
             with ReraiseContext(TypeError, "'priority' parameter"):
-                assert_is_instance(priority, integer_types)
+                assert_is_instance(priority, INTEGER_TYPES)
 
         self.__func = func
         self._priority = priority
@@ -207,7 +208,7 @@ class UniqueAttributes(BaseReaction):
 
         # Check names.
         for name in names:
-            assert_is_instance(name, string_types)
+            assert_is_instance(name, BASE_STRING_TYPES)
         # noinspection PyTypeChecker
         all_names = frozenset(names).union(incrementers)
         if not all_names:

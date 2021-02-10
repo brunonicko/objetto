@@ -8,9 +8,10 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, string_types, with_metaclass
+from six import iteritems, with_metaclass
 
 from .._bases import MISSING, final
+from .._constants import BASE_STRING_TYPES
 from .._states import BaseState, DictState
 from .._structures import (
     BaseAttribute,
@@ -470,7 +471,7 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
         cls = type(self)
         fabricated_update = {}
         for name, value in iteritems(update):
-            assert_is_instance(name, string_types)
+            assert_is_instance(name, BASE_STRING_TYPES)
             attribute = cls._get_attribute(name)
             if not attribute.changeable and name in self._state:
                 error = "non-changeable attribute '{}' already has a value".format(name)

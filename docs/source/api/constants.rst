@@ -23,7 +23,7 @@ Regular Expressions
 Lazy Import Paths Validation
 ****************************
 
-.. autodata:: PRE_IMPORT_PATH_VALIDATION_REGEX
+.. autodata:: objetto.constants.PRE_IMPORT_PATH_VALIDATION_REGEX
 
    Pre import path regex validation regex.
 
@@ -38,3 +38,22 @@ Lazy Import Paths Validation
 .. autodata:: objetto.constants.IMPORT_PATH_REGEX
 
    Full lazy import path regex.
+
+Compatibility
+-------------
+
+.. autodata:: objetto.constants.TEXT_TYPE
+
+   Text type.
+
+.. autodata:: objetto.constants.BASE_STRING_TYPES
+
+   Base string types.
+
+.. autodata:: objetto.constants.STRING_TYPES
+
+   All string types.
+
+.. autodata:: objetto.constants.INTEGER_TYPES
+
+   Integer type.

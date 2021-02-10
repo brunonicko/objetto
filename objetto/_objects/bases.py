@@ -12,11 +12,12 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import integer_types, iteritems, itervalues, string_types, with_metaclass
+from six import iteritems, itervalues, with_metaclass
 
 from .._applications import Application
 from .._bases import Base, BaseHashable, BaseMutableCollection, final
 from .._changes import Batch
+from .._constants import BASE_STRING_TYPES, INTEGER_TYPES
 from .._data import BaseAuxiliaryData, BaseData, DataRelationship
 from .._states import BaseState, DictState
 from .._structures import (
@@ -291,7 +292,7 @@ class Relationship(BaseRelationship):
             types = set()  # type: Set[Union[Type, str]]
             for lazy, typ in zip(self.types, import_types(self.types)):
                 if issubclass(typ, BaseObject):
-                    if isinstance(lazy, string_types):
+                    if isinstance(lazy, BASE_STRING_TYPES):
                         types.add(lazy + ".Data")
                     else:
                         types.add(typ.Data)
@@ -484,7 +485,7 @@ class BaseReaction(Base):
         # 'priority'
         if priority is not None:
             with ReraiseContext(TypeError, "'priority' parameter"):
-                assert_is_instance(priority, integer_types)
+                assert_is_instance(priority, INTEGER_TYPES)
 
         state = self.__getstate__()
         new_reaction = type(self).__new__(type(self))
@@ -533,7 +534,7 @@ class HistoryDescriptor(BaseHashable):
         # type: (Optional[int]) -> None
         if size is not None:
             with ReraiseContext(TypeError, "'size' parameter"):
-                assert_is_instance(size, integer_types)
+                assert_is_instance(size, INTEGER_TYPES)
             size = int(size)
             if size < 0:
                 size = 0
