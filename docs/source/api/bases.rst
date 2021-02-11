@@ -450,6 +450,7 @@ Base Attribute Class
    .. automethod:: objetto.bases.BaseAttribute.__eq__
    .. automethod:: objetto.bases.BaseAttribute.__repr__
    .. automethod:: objetto.bases.BaseAttribute.to_dict
+   .. automethod:: objetto.bases.BaseAttribute.copy
    .. automethod:: objetto.bases.BaseAttribute.get_name
    .. automethod:: objetto.bases.BaseAttribute.get_value
    .. automethod:: objetto.bases.BaseAttribute.fabricate_default_value

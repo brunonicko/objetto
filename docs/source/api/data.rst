@@ -131,6 +131,8 @@ Data Attribute Descriptor Class
 .. autoclass:: objetto.data.DataAttribute
    :members: relationship
 
+   .. automethod:: objetto.data.DataAttribute.copy
+
 Data Relationship Classes
 -------------------------
 .. autoclass:: objetto.data.DataRelationship

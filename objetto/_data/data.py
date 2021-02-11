@@ -34,6 +34,10 @@ __all__ = ["DataAttributeMeta", "DataAttribute", "DataMeta", "Data", "Interactiv
 T = TypeVar("T")  # Any type.
 
 
+# noinspection PyTypeChecker
+_DA = TypeVar("_DA", bound="DataAttribute")
+
+
 @final
 class DataAttributeMeta(BaseAttributeMeta):
     """
@@ -127,6 +131,29 @@ class DataAttribute(with_metaclass(DataAttributeMeta, BaseAttribute[T])):
             finalized=finalized,
             abstracted=abstracted,
             metadata=metadata,
+        )
+
+    def copy(self, **kwargs):
+        # type: (_DA, Any) -> _DA
+        """
+        Make a copy of this attribute and optionally change some of its parameters.
+
+        :param kwargs: New parameters.
+
+        :return: New attribute.
+        :rtype: objetto.data.DataAttribute
+        """
+        return type(self)(
+            relationship=kwargs.get("relationship", self.relationship),
+            default=kwargs.get("default", self.default),
+            default_factory=kwargs.get("default_factory", self.default_factory),
+            module=kwargs.get("module", self.module),
+            required=kwargs.get("required", self.required),
+            changeable=kwargs.get("changeable", self.changeable),
+            deletable=kwargs.get("deletable", self.deletable),
+            finalized=kwargs.get("finalized", self.finalized),
+            abstracted=kwargs.get("abstracted", self.abstracted),
+            metadata=kwargs.get("metadata", self.metadata),
         )
 
     @property

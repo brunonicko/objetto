@@ -277,6 +277,7 @@ Attribute Descriptor Class
    .. automethod:: objetto.objects.Attribute.__set__
    .. automethod:: objetto.objects.Attribute.__delete__
    .. automethod:: objetto.objects.Attribute.to_dict
+   .. automethod:: objetto.objects.Attribute.copy
    .. automethod:: objetto.objects.Attribute.set_value
    .. automethod:: objetto.objects.Attribute.delete_value
    .. automethod:: objetto.objects.Attribute.getter
