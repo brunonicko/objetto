@@ -675,6 +675,13 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
         type(cls).__attributes[cls] = DictState(attributes)
         type(cls).__attribute_names[cls] = DictState(attribute_names)
 
+        # Store abstract attributes.
+        abstract_members = set(cls.__dict__.get("__abstractmethods__", ()))
+        for attribute_name, attribute in iteritems(attributes):
+            if attribute.abstracted:
+                abstract_members.add(attribute_name)
+        type.__setattr__(cls, "__abstractmethods__", frozenset(abstract_members))
+
     @property
     @abstractmethod
     def _attribute_type(cls):
