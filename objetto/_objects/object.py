@@ -315,6 +315,33 @@ objetto.objects.Attribute or None
         )
         return dct
 
+    def copy(self, **kwargs):
+        # type: (_A, Any) -> _A
+        """
+        Make a copy of this attribute and optionally change some of its parameters.
+
+        :param kwargs: New parameters.
+
+        :return: New attribute.
+        :rtype: objetto.objects.Attribute
+        """
+        return type(self)(
+            relationship=kwargs.get("relationship", self.relationship),
+            default=kwargs.get("default", self.default),
+            default_factory=kwargs.get("default_factory", self.default_factory),
+            module=kwargs.get("module", self.module),
+            required=kwargs.get("required", self.required),
+            changeable=kwargs.get("changeable", self.changeable),
+            deletable=kwargs.get("deletable", self.deletable),
+            finalized=kwargs.get("finalized", self.finalized),
+            abstracted=kwargs.get("abstracted", self.abstracted),
+            metadata=kwargs.get("metadata", self.metadata),
+            delegated=kwargs.get("delegated", self.delegated),
+            dependencies=kwargs.get("dependencies", self.dependencies),
+            deserialize_to=kwargs.get("deserialize_to", self.deserialize_to),
+            batch_name=kwargs.get("batch_name", self.batch_name),
+        )
+
     def set_value(self, instance, value):
         # type: (Object, T) -> None
         """

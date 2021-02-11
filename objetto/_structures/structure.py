@@ -327,6 +327,29 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
             "metadata": self.metadata,
         }
 
+    def copy(self, **kwargs):
+        # type: (_BA, Any) -> _BA
+        """
+        Make a copy of this attribute and optionally change some of its parameters.
+
+        :param kwargs: New parameters.
+
+        :return: New attribute.
+        :rtype: objetto.bases.BaseAttribute
+        """
+        return type(self)(
+            relationship=kwargs.get("relationship", self.relationship),
+            default=kwargs.get("default", self.default),
+            default_factory=kwargs.get("default_factory", self.default_factory),
+            module=kwargs.get("module", self.module),
+            required=kwargs.get("required", self.required),
+            changeable=kwargs.get("changeable", self.changeable),
+            deletable=kwargs.get("deletable", self.deletable),
+            finalized=kwargs.get("finalized", self.finalized),
+            abstracted=kwargs.get("abstracted", self.abstracted),
+            metadata=kwargs.get("metadata", self.metadata),
+        )
+
     def get_name(self, instance):
         # type: (BaseAttributeStructure) -> str
         """
@@ -542,7 +565,15 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
         abstract_attributes = {}  # type: Dict[str, Tuple[Type, BaseAttribute]]
         if attribute_type is not None:
             for base in reversed(getmro(cls)):
-                for member_name, member in iteritems(base.__dict__):
+
+                # We might need to replace something in the dict for this base, copy it.
+                if base is cls:
+                    base_dict = dict(base.__dict__)
+                else:
+                    base_dict = base.__dict__
+
+                # Loop through base dict.
+                for member_name, member in iteritems(base_dict):
 
                     # Implementing checked abstract attribute.
                     if (
@@ -553,20 +584,60 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                             member_name
                         ]
 
-                        # Not a supported attribute.
+                        # Not an attribute.
                         if not isinstance(member, attribute_type):
-                            error = (
-                                "can't implement abstract attribute '{}.{}' in '{}.{}' "
-                                "with unsupported member type '{}', expected '{}'"
-                            ).format(
-                                abstract_base.__name__,
-                                member_name,
-                                name,
-                                member_name,
-                                type(member).__name__,
-                                attribute_type.__fullname__,
-                            )
-                            raise TypeError(error)
+
+                            # Abstract attribute is constant, wrap non-attribute value.
+                            if (
+                                cls is base
+                                and abstract_attribute.constant
+                                and not isinstance(member, BaseAttribute)
+                            ):
+
+                                # Test for constant value type.
+                                try:
+                                    abstract_attribute.relationship.fabricate_value(
+                                        member, factory=False
+                                    )
+                                except TypeError:
+                                    error = (
+                                        "attribute '{}.{}' value type '{}' is not "
+                                        "compatible with abstract '{}.{}' constant "
+                                        "attribute type '{}'"
+                                    ).format(
+                                        name,
+                                        member_name,
+                                        type(member).__name__,
+                                        abstract_base.__name__,
+                                        member_name,
+                                        type(abstract_attribute.default).__name__,
+                                    )
+                                    exc = TypeError(error)
+                                    raise_from(exc, None)
+                                    raise exc
+
+                                # Wrap with a concrete copy of the abstract attribute.
+                                member = abstract_attribute.copy(
+                                    default=member,
+                                    abstracted=False,
+                                )
+                                type.__setattr__(cls, member_name, member)
+
+                            # Error out.
+                            else:
+                                error = (
+                                    "can't implement abstract attribute '{}.{}' in "
+                                    "'{}.{}' with unsupported member type '{}', "
+                                    "expected '{}'"
+                                ).format(
+                                    abstract_base.__name__,
+                                    member_name,
+                                    name,
+                                    member_name,
+                                    type(member).__name__,
+                                    attribute_type.__fullname__,
+                                )
+                                raise TypeError(error)
 
                         # Check types if possible.
                         for typ in abstract_attribute.relationship.types:
