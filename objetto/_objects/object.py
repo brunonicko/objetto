@@ -324,7 +324,21 @@ objetto.objects.Attribute or None
 
         :return: New attribute.
         :rtype: objetto.objects.Attribute
+
+        :raises RuntimeError: Can't copy delegated attribute.
+        :raises RuntimeError: Can't copy attribute that deserializes to another.
         """
+
+        # Can't copy delegated attribute.
+        if self.delegated:
+            error = "can't copy delegated attribute"
+            raise RuntimeError(error)
+
+        # Can't copy attribute with 'deserialize_to'.
+        if self.deserialize_to is not None:
+            error = "can't copy attribute that deserializes to another"
+            raise RuntimeError(error)
+
         return type(self)(
             relationship=kwargs.get("relationship", self.relationship),
             default=kwargs.get("default", self.default),
@@ -336,9 +350,9 @@ objetto.objects.Attribute or None
             finalized=kwargs.get("finalized", self.finalized),
             abstracted=kwargs.get("abstracted", self.abstracted),
             metadata=kwargs.get("metadata", self.metadata),
-            delegated=kwargs.get("delegated", self.delegated),
-            dependencies=kwargs.get("dependencies", self.dependencies),
-            deserialize_to=kwargs.get("deserialize_to", self.deserialize_to),
+            delegated=False,
+            dependencies=None,
+            deserialize_to=None,
             batch_name=kwargs.get("batch_name", self.batch_name),
         )
 
