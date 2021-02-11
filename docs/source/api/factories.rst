@@ -50,5 +50,6 @@ Factories (objetto.factories)
       .. automethod:: objetto.factories.Curated.__call__
 
    .. autoclass:: objetto.factories.Boolean
+      :members: accepts_none
 
       .. automethod:: objetto.factories.Boolean.__call__

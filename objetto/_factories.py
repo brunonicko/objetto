@@ -681,12 +681,19 @@ class Boolean(BaseFactory):
 
     Inherits from:
       - :class:`objetto.bases.BaseFactory`
+
+    :param accepts_none: Whether to accept None as a value.
+    :type accepts_none: bool
     """
 
-    __slots__ = ()
+    __slots__ = ("__accepts_none",)
+
+    def __init__(self, accepts_none=False):
+        # type: (bool) -> None
+        self.__accepts_none = bool(accepts_none)
 
     def __call__(self, value, **kwargs):
-        # type: (Any, Any) -> bool
+        # type: (Any, Any) -> Optional[bool]
         """
         Call with input value and optional keyword arguments.
 
@@ -695,6 +702,19 @@ class Boolean(BaseFactory):
         :param kwargs: Keyword arguments.
 
         :return: Output value (True or False).
+        :rtype: bool or None
+        """
+        if self.accepts_none and value is None:
+            return value
+        else:
+            return bool(value)
+
+    @property
+    def accepts_none(self):
+        # type: () -> bool
+        """
+        Whether to accept None as a value.
+
         :rtype: bool
         """
-        return bool(value)
+        return self.__accepts_none
