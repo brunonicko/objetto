@@ -393,7 +393,7 @@ class BaseAttribute(with_metaclass(BaseAttributeMeta, BaseHashable, Generic[T]))
 
     @final
     def fabricate_default_value(self, **kwargs):
-        # type: (Any, Any) -> Any
+        # type: (Any) -> Any
         """
         Fabricate default value.
 

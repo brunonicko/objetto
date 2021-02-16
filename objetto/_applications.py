@@ -11,11 +11,11 @@ from traceback import format_exception
 from typing import TYPE_CHECKING, TypeVar, cast, overload
 from weakref import WeakKeyDictionary
 
-from six import iteritems, itervalues, with_metaclass
+from six import iteritems, itervalues, raise_from, with_metaclass
 
 from ._bases import Base, BaseMeta, Generic, final
 from ._changes import BaseChange
-from ._constants import STRING_TYPES
+from ._constants import BASE_STRING_TYPES, STRING_TYPES
 from ._data import BaseData, DataAttribute, InteractiveDictData
 from ._exceptions import BaseObjettoException
 from ._states import BaseState, DictState
@@ -31,6 +31,7 @@ from .data import (
     data_set_attribute,
 )
 from .utils.custom_repr import custom_mapping_repr
+from .utils.factoring import format_factory, run_factory
 from .utils.recursive_repr import recursive_repr
 from .utils.reraise_context import ReraiseContext
 from .utils.storage import Storage
@@ -65,6 +66,7 @@ if TYPE_CHECKING:
     from ._history import HistoryObject
     from ._objects import BaseObject, Relationship
     from ._observers import ActionObserverExceptionData, InternalObserver
+    from .utils.factoring import LazyFactory
     from .utils.subject_observer import ObserverExceptionInfo
 
     assert Relationship
@@ -88,6 +90,7 @@ __all__ = [
     "ApplicationMeta",
     "Application",
     "ApplicationRoot",
+    "ApplicationProperty",
     "ApplicationSnapshot",
 ]
 
@@ -401,6 +404,9 @@ class ApplicationRoot(Base, Generic[BO]):
         Prefer using the :func:`objetto.applications.root` factory over
         instantiating :class:`objetto.applications.ApplicationRoot` directly.
 
+    Inherits from:
+      - :class:`objetto.bases.Base`
+
     :param obj_type: Object type.
     :type obj_type: type[objetto.bases.BaseObject]
 
@@ -542,6 +548,73 @@ class ApplicationRoot(Base, Generic[BO]):
         # type: () -> DictState[str, Any]
         """Keyword arguments to be passed to object's '__init__'."""
         return self.__kwargs
+
+
+class ApplicationProperty(Base):
+    """
+    Dynamic generic application property.
+
+    Inherits from:
+      - :class:`objetto.bases.Base`
+
+    :param default_factory: Default value factory.
+    :type default_factory: str or collections.abc.Callable or None
+    """
+
+    __slots__ = ("__weakref__", "__default_factory", "__module")
+
+    def __init__(self, default_factory=None, module=None):
+        # type: (LazyFactory, Optional[str]) -> None
+
+        # 'default_factory'
+        with ReraiseContext((ValueError, TypeError), "'default_factory' parameter"):
+            default_factory = format_factory(default_factory, module=module)
+
+        # 'module'
+        with ReraiseContext(TypeError, "'module' parameter"):
+            assert_is_instance(module, BASE_STRING_TYPES + (None,))
+        module = module or None
+
+        self.__default_factory = default_factory
+        self.__module = module
+
+    @final
+    def fabricate_default_value(self, **kwargs):
+        # type: (Any) -> Any
+        """
+        Fabricate default value.
+
+        :param kwargs: Keyword arguments to be passed to the factory.
+
+        :return: Fabricated value.
+
+        :raises ValueError: No default factory.
+        """
+        if self.__default_factory is not None:
+            return run_factory(self.__default_factory, kwargs=kwargs)
+        else:
+            error = "property has no 'default factory'"
+            raise ValueError(error)
+
+    @property
+    def default_factory(self):
+        # type: () -> LazyFactory
+        """
+        Default value factory.
+
+        :rtype: str or collections.abc.Callable or None
+        """
+        return self.__default_factory
+
+    @property
+    def module(self):
+        # type: () -> Optional[str]
+        """
+        Optional module path to use in case partial paths are provided.
+
+        :rtype: str or None
+        """
+        return self.__module
 
 
 class ApplicationInternals(Base):
@@ -1575,11 +1648,84 @@ class Application(with_metaclass(ApplicationMeta, Base)):
         True
     """
 
-    __slots__ = ("__weakref__", "__")
+    __slots__ = ("__weakref__", "__", "__properties")
 
     def __init__(self):
         self.__ = ApplicationInternals(self)
         self.__.init_root_objs()
+        self.__properties = WeakKeyDictionary()
+
+    @final
+    def _get_property(self, prop, **kwargs):
+        # type: (ApplicationProperty, Any) -> Any
+        """
+        Get property value.
+
+        :param prop: Application property.
+        :type prop: objetto.applications.ApplicationProperty
+
+        :param kwargs: Keyword arguments to be passed to the default factory.
+
+        :return: Value.
+
+        :raises TypeError: Invalid parameter type.
+        """
+        try:
+            value = self.__properties[prop]
+        except KeyError:
+            with ReraiseContext(TypeError, "'prop' parameter"):
+                assert_is_instance(prop, ApplicationProperty)
+
+            if "app" in kwargs:
+                error = "can't pass reserved keyword argument 'app' in kwargs"
+                exc = ValueError(error)
+                raise_from(exc, None)
+                raise exc
+
+            kwargs["app"] = self
+            value = self.__properties[prop] = prop.fabricate_default_value(**kwargs)
+        return value
+
+    @final
+    def _set_property(self, prop, value):
+        # type: (ApplicationProperty, Any) -> None
+        """
+        Set property value.
+
+        :param prop: Application property.
+        :type prop: objetto.applications.ApplicationProperty
+
+        :param value: Value.
+
+        :raises TypeError: Invalid parameter type.
+        """
+        if prop not in self.__properties:
+            with ReraiseContext(TypeError, "'prop' parameter"):
+                assert_is_instance(prop, ApplicationProperty)
+        self.__properties[prop] = value
+
+    @final
+    def _delete_property(self, prop, force=False):
+        # type: (ApplicationProperty, bool) -> None
+        """
+        Delete property value.
+
+        :param prop: Application property.
+        :type prop: objetto.applications.ApplicationProperty
+
+        :param force: If True, will not fail if has no value set.
+        :type force: bool
+
+        :raises TypeError: Invalid parameter type.
+        :raises ValueError: Property has no value.
+        """
+        if prop not in self.__properties:
+            with ReraiseContext(TypeError, "'prop' parameter"):
+                assert_is_instance(prop, ApplicationProperty)
+            if not force:
+                error = "property has no value, can't delete it"
+                raise ValueError(error)
+        self.__properties.pop(prop, None)
 
     @final
     @contextmanager

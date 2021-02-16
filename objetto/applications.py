@@ -18,6 +18,7 @@ from ._applications import (
     BO,
     Application,
     ApplicationMeta,
+    ApplicationProperty,
     ApplicationRoot,
     ApplicationSnapshot,
 )
@@ -25,7 +26,13 @@ from ._applications import (
 if TYPE_CHECKING:
     from typing import Any, Optional, Type
 
-__all__ = ["ApplicationMeta", "Application", "ApplicationSnapshot", "root"]
+__all__ = [
+    "ApplicationMeta",
+    "Application",
+    "ApplicationProperty",
+    "ApplicationSnapshot",
+    "root",
+]
 
 
 def root(obj_type, priority=None, **kwargs):
