@@ -683,6 +683,8 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
       - :class:`objetto.objects.UniqueDescriptor`
       - :class:`objetto.applications.Application`
       - :class:`objetto.applications.ApplicationSnapshot`
+      - :class:`objetto.applications.ApplicationRoot`
+      - :class:`objetto.applications.ApplicationProperty`
 
     Features:
       - Forces the use of `__slots__`.
