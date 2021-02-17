@@ -13,6 +13,9 @@ Batch Change
    .. autoattribute:: objetto.changes.Batch.metadata
       :annotation: :  Data Attribute
 
+   .. autoattribute:: objetto.changes.Batch.is_atomic
+      :annotation: :  Data Attribute
+
 Attributes Change
 -----------------
 .. autoclass:: objetto.changes.Update
