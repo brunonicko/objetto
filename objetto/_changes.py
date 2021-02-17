@@ -9,6 +9,7 @@ from ._states import BaseState
 from .data import (
     Data,
     data_attribute,
+    data_constant_attribute,
     data_protected_dict_attribute,
     data_protected_list_attribute,
     data_protected_set_attribute,
@@ -64,6 +65,15 @@ class BaseChange(Data):
     Object being changed.
 
     :type: objetto.bases.BaseObject
+    """
+
+    is_atomic = data_constant_attribute(
+        False, abstracted=True
+    )  # type: DataAttribute[bool]
+    """
+    Whether change is atomic or not.
+
+    :type: bool
     """
 
 
@@ -162,6 +172,15 @@ class BaseAtomicChange(BaseChange):
     :type: objetto.history.HistoryObject or None
     """
 
+    is_atomic = data_constant_attribute(
+        True, finalized=True
+    )  # type: DataAttribute[bool]
+    """
+    Whether change is atomic or not.
+
+    :type: bool
+    """
+
 
 @final
 class Batch(BaseChange):
@@ -186,6 +205,15 @@ class Batch(BaseChange):
     Metadata.
 
     :type: objetto.data.DictData[str, Any]
+    """
+
+    is_atomic = data_constant_attribute(
+        False, finalized=True
+    )  # type: DataAttribute[bool]
+    """
+    Whether change is atomic or not.
+
+    :type: bool
     """
 
 

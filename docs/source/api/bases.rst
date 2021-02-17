@@ -592,6 +592,9 @@ Base Change Classes
    .. autoattribute:: objetto.bases.BaseChange.obj
       :annotation: :  Data Attribute
 
+   .. autoattribute:: objetto.bases.BaseChange.is_atomic
+      :annotation: :  Data Attribute
+
 .. autoclass:: objetto.bases.BaseAtomicChange
 
    .. autoattribute:: objetto.bases.BaseAtomicChange.old_state
@@ -610,6 +613,9 @@ Base Change Classes
       :annotation: :  Data Attribute
 
    .. autoattribute:: objetto.bases.BaseAtomicChange.history
+      :annotation: :  Data Attribute
+
+   .. autoattribute:: objetto.bases.BaseAtomicChange.is_atomic
       :annotation: :  Data Attribute
 
 Base Phase Enum
