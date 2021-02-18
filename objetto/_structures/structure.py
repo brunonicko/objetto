@@ -33,6 +33,7 @@ from ..utils.recursive_repr import recursive_repr
 from ..utils.reraise_context import ReraiseContext
 from ..utils.type_checking import assert_is_instance, get_type_names
 from .bases import (
+    BaseAuxiliaryStructure,
     BaseInteractiveStructure,
     BaseMutableStructure,
     BaseRelationship,
@@ -639,11 +640,44 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                                 )
                                 raise TypeError(error)
 
-                        # Check types if possible.
-                        for typ in abstract_attribute.relationship.types:
+                        # Get abstract and concrete types.
+                        abstract_member_types = abstract_attribute.relationship.types
+                        member_types = member.relationship.types
+
+                        # Both abstract and concrete are matching auxiliary structures.
+                        if (
+                            len(abstract_member_types) == 1
+                            and isinstance(abstract_member_types[0], type)
+                            and issubclass(
+                                abstract_member_types[0],
+                                BaseAuxiliaryStructure,
+                            )
+                            and len(member_types) == 1
+                            and isinstance(member_types[0], type)
+                            and issubclass(
+                                member_types[0],
+                                abstract_member_types[0]._base_auxiliary_type,
+                            )
+                        ):
+
+                            # Use their auxiliary relationship types.
+                            abstract_member_types = abstract_member_types[
+                                0
+                            ]._relationship.types
+                            member_types = member_types[0]._relationship.types
+
+                        # Check types.
+                        for typ in abstract_member_types:
+
+                            # If auxiliary structure, use base type.
+                            if (
+                                not isinstance(typ, BASE_STRING_TYPES)
+                                and issubclass(typ, BaseAuxiliaryStructure)
+                            ):
+                                typ = typ._base_auxiliary_type
 
                             # No types declared in implementation.
-                            if not member.relationship.types:
+                            if not member_types:
 
                                 error = (
                                     "abstract attribute '{}.{}' declares types, but "
@@ -661,7 +695,7 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                                 isinstance(typ, BASE_STRING_TYPES)
                                 or isinstance(t, BASE_STRING_TYPES)
                                 or issubclass(t, typ)
-                                for t in member.relationship.types
+                                for t in member_types
                             ):
                                 error = (
                                     "types in attribute '{}.{}' {} are not compatible "
@@ -669,12 +703,10 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                                 ).format(
                                     name,
                                     member_name,
-                                    get_type_names(member.relationship.types),
+                                    get_type_names(member_types),
                                     abstract_base.__name__,
                                     member_name,
-                                    get_type_names(
-                                        abstract_attribute.relationship.types
-                                    ),
+                                    get_type_names(abstract_member_types),
                                 )
                                 raise TypeError(error)
 
