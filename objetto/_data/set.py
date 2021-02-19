@@ -283,9 +283,9 @@ class SetData(
         if not type(self)._relationship.serialized:
             error = "'{}' is not serializable".format(type(self).__fullname__)
             raise SerializationError(error)
-        return sorted(
-            (self.serialize_value(v, location=None, **kwargs) for v in self._state),
-            key=lambda v: hash(v),
+        return list(
+            self.serialize_value(v, location=None, **kwargs)
+            for v in sorted(self._state, key=lambda v: hash(v))
         )
 
     @property
