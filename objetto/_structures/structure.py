@@ -31,7 +31,7 @@ from ..utils.custom_repr import custom_iterable_repr, custom_mapping_repr
 from ..utils.factoring import format_factory, import_factory, run_factory
 from ..utils.recursive_repr import recursive_repr
 from ..utils.reraise_context import ReraiseContext
-from ..utils.type_checking import assert_is_instance, get_type_names
+from ..utils.type_checking import assert_is_instance, get_type_names, import_types
 from .bases import (
     BaseAuxiliaryStructure,
     BaseInteractiveStructure,
@@ -644,8 +644,22 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                         abstract_member_types = abstract_attribute.relationship.types
                         member_types = member.relationship.types
 
-                        # Both abstract and concrete are matching auxiliary structures.
+                        # Both are constant attributes with a non-empty tuple/frozenset.
                         if (
+                            abstract_attribute.constant
+                            and member.constant
+                            and type(abstract_attribute.default) in (tuple, frozenset)
+                            and type(member.default) is type(abstract_attribute.default)
+                            and abstract_attribute.default
+                            and member.default
+                        ):
+                            abstract_member_types = tuple(
+                                type(v) for v in abstract_attribute.default
+                            )
+                            member_types = tuple(type(v) for v in member.default)
+
+                        # Both abstract and concrete are matching auxiliary structures.
+                        elif (
                             len(abstract_member_types) == 1
                             and isinstance(abstract_member_types[0], type)
                             and issubclass(
@@ -659,44 +673,44 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                                 abstract_member_types[0]._base_auxiliary_type,
                             )
                         ):
-
-                            # Use their auxiliary relationship types.
                             abstract_member_types = abstract_member_types[
                                 0
                             ]._relationship.types
                             member_types = member_types[0]._relationship.types
 
-                        # Check types.
-                        for typ in abstract_member_types:
+                        # Import abstract member types.
+                        abstract_member_types = import_types(abstract_member_types)
 
-                            # If auxiliary structure, use base type.
-                            if (
-                                not isinstance(typ, BASE_STRING_TYPES)
-                                and issubclass(typ, BaseAuxiliaryStructure)
-                            ):
-                                typ = typ._base_auxiliary_type
+                        # No types declared in implementation.
+                        if abstract_member_types and not member_types:
+                            error = (
+                                "abstract attribute '{}.{}' declares types, but "
+                                "implementation in '{}.{}' does not"
+                            ).format(
+                                abstract_base.__name__,
+                                member_name,
+                                name,
+                                member_name,
+                            )
+                            raise TypeError(error)
 
-                            # No types declared in implementation.
-                            if not member_types:
+                        # Types need to be compatible.
+                        # Implementation needs to be a subset and subclass of abstract.
+                        for t in member_types:
 
-                                error = (
-                                    "abstract attribute '{}.{}' declares types, but "
-                                    "implementation in '{}.{}' does not"
-                                ).format(
-                                    abstract_base.__name__,
-                                    member_name,
-                                    name,
-                                    member_name,
-                                )
-                                raise TypeError(error)
+                            # Ignore lazy type.
+                            if isinstance(t, BASE_STRING_TYPES):
+                                continue
 
-                            # Types are incompatible (skip lazy imported).
-                            if not any(
-                                isinstance(typ, BASE_STRING_TYPES)
-                                or isinstance(t, BASE_STRING_TYPES)
-                                or issubclass(t, typ)
-                                for t in member_types
-                            ):
+                            # Check against abstract member types until we find a match.
+                            for typ in abstract_member_types:
+
+                                # Match!
+                                if issubclass(t, typ):
+                                    break
+
+                            # No match.
+                            else:
                                 error = (
                                     "types in attribute '{}.{}' {} are not compatible "
                                     "with abstract '{}.{}' attribute types {}"
