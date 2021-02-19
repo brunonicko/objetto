@@ -24,7 +24,7 @@ lint:
 	flake8 objetto --count --select=E9,F63,F7,F82 --show-source --statistics
 	flake8 tests --count --select=E9,F63,F7,F82 --show-source --statistics
 	# Exit-zero treats all errors as warnings.
-	flake8 objetto --count --exit-zero --ignore=F403,F401,W503,C901,E203,E731 --max-complexity=10 --max-line-length=88 --statistics
-	flake8 tests --count --exit-zero --ignore=F403,F401,W503,C901,E203,E731 --max-complexity=10 --max-line-length=88 --statistics
+	flake8 objetto --count --exit-zero --ignore=F403,F401,W503,C901,E203,E731,E721 --max-complexity=10 --max-line-length=88 --statistics
+	flake8 tests --count --exit-zero --ignore=F403,F401,W503,C901,E203,E731,E721 --max-complexity=10 --max-line-length=88 --statistics
 docs:
 	cd docs; make html
