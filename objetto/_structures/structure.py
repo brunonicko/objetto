@@ -562,7 +562,7 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
             attribute_type = None
 
         # Store attributes, check implementation of abstract attributes along the way.
-        attributes = {}  # type: Dict[str, BaseAttribute]
+        attributes = {}  # type: Dict[str, Tuple[Type, BaseAttribute]]
         abstract_attributes = {}  # type: Dict[str, Tuple[Type, BaseAttribute]]
         if attribute_type is not None:
             for base in reversed(getmro(cls)):
@@ -576,14 +576,27 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                 # Loop through base dict.
                 for member_name, member in iteritems(base_dict):
 
-                    # Implementing checked abstract attribute.
+                    # Implementing checked attribute.
+                    is_abstract = member_name in abstract_attributes
                     if (
-                        member_name in abstract_attributes
+                        is_abstract
                         and abstract_attributes[member_name][1].relationship.checked
+                    ) or (
+                        member_name in attributes
+                        and attributes[member_name][1].relationship.checked
                     ):
-                        abstract_base, abstract_attribute = abstract_attributes[
-                            member_name
-                        ]
+
+                        # Labels for messages.
+                        abstract_label = "abstract" if is_abstract else "super"
+                        member_label = "implementation" if is_abstract else "override"
+
+                        # Get abstract/super attribute.
+                        if is_abstract:
+                            abstract_base, abstract_attribute = abstract_attributes[
+                                member_name
+                            ]
+                        else:
+                            abstract_base, abstract_attribute = attributes[member_name]
 
                         # Not an attribute.
                         if not isinstance(member, attribute_type):
@@ -602,13 +615,15 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                                     )
                                 except TypeError:
                                     error = (
-                                        "attribute '{}.{}' value type '{}' is not "
-                                        "compatible with abstract '{}.{}' constant "
-                                        "attribute type '{}'"
+                                        "attribute {} '{}.{}' value type '{}' is not "
+                                        "compatible with {} '{}.{}' constant attribute "
+                                        "type '{}'"
                                     ).format(
+                                        member_label,
                                         name,
                                         member_name,
                                         type(member).__name__,
+                                        abstract_label,
                                         abstract_base.__name__,
                                         member_name,
                                         type(abstract_attribute.default).__name__,
@@ -627,10 +642,10 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                             # Error out.
                             else:
                                 error = (
-                                    "can't implement abstract attribute '{}.{}' in "
-                                    "'{}.{}' with unsupported member type '{}', "
-                                    "expected '{}'"
+                                    "can't override {} attribute '{}.{}' in '{}.{}' "
+                                    "with unsupported member type '{}', expected '{}'"
                                 ).format(
+                                    abstract_label,
                                     abstract_base.__name__,
                                     member_name,
                                     name,
@@ -686,11 +701,13 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                         # No types declared in implementation.
                         if abstract_member_types and not member_types:
                             error = (
-                                "abstract attribute '{}.{}' declares types, but "
-                                "implementation in '{}.{}' does not"
+                                "{} attribute '{}.{}' declares types, but {} in "
+                                "'{}.{}' does not"
                             ).format(
+                                abstract_label,
                                 abstract_base.__name__,
                                 member_name,
+                                member_label,
                                 name,
                                 member_name,
                             )
@@ -752,60 +769,45 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                             # No match.
                             else:
                                 error = (
-                                    "types in attribute '{}.{}' {} are not compatible "
-                                    "with abstract '{}.{}' attribute types {}"
+                                    "types in {} attribute '{}.{}' {} are not "
+                                    "compatible with {} '{}.{}' attribute types {}"
                                 ).format(
+                                    member_label,
                                     name,
                                     member_name,
                                     get_type_names(member_types),
+                                    abstract_label,
                                     abstract_base.__name__,
                                     member_name,
                                     get_type_names(abstract_member_types),
                                 )
                                 raise TypeError(error)
 
-                        # Check other parameters.
-                        if abstract_attribute.changeable and not member.changeable:
-                            error = (
-                                "abstract attribute '{}.{}' is changeable, but "
-                                "implementation in '{}.{}' is not"
-                            ).format(
-                                abstract_base.__name__,
-                                member_name,
-                                name,
-                                member_name,
-                            )
-                            raise TypeError(error)
+                        # Can't go from non-changeable to changeable.
                         if not abstract_attribute.changeable and member.changeable:
                             error = (
-                                "abstract attribute '{}.{}' is not changeable, but "
-                                "implementation in '{}.{}' is"
+                                "{} attribute '{}.{}' is not changeable, but {} in "
+                                "'{}.{}' is"
                             ).format(
+                                abstract_label,
                                 abstract_base.__name__,
                                 member_name,
+                                member_label,
                                 name,
                                 member_name,
                             )
                             raise TypeError(error)
 
+                        # Can't go from deletable to non-deletable.
                         if abstract_attribute.deletable and not member.deletable:
                             error = (
-                                "abstract attribute '{}.{}' is deletable, but "
-                                "implementation in '{}.{}' is not"
+                                "{} attribute '{}.{}' is deletable, but {} in "
+                                "'{}.{}' is not"
                             ).format(
+                                abstract_label,
                                 abstract_base.__name__,
                                 member_name,
-                                name,
-                                member_name,
-                            )
-                            raise TypeError(error)
-                        if not abstract_attribute.deletable and member.deletable:
-                            error = (
-                                "abstract attribute '{}.{}' is not deletable, but "
-                                "implementation in '{}.{}' is"
-                            ).format(
-                                abstract_base.__name__,
-                                member_name,
+                                member_label,
                                 name,
                                 member_name,
                             )
@@ -813,7 +815,7 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
 
                     # Store attribute.
                     if isinstance(member, attribute_type):
-                        attributes[member_name] = member
+                        attributes[member_name] = base, member
 
                         # Abstract attribute, remember it.
                         if member.abstracted:
@@ -823,18 +825,20 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                     elif member_name in attributes:
                         del attributes[member_name]
 
-        # Store attribute names.
+        # Get attribute dict and store attribute names.
+        attribute_dict = {}
         attribute_names = {}
         if attribute_type is not None:
-            for attribute_name, attribute in iteritems(attributes):
+            for attribute_name, (_, attribute) in iteritems(attributes):
+                attribute_dict[attribute_name] = attribute
                 attribute_names[attribute] = attribute_name
 
-        type(cls).__attributes[cls] = DictState(attributes)
+        type(cls).__attributes[cls] = DictState(attribute_dict)
         type(cls).__attribute_names[cls] = DictState(attribute_names)
 
         # Store abstract attributes.
         abstract_members = set(cls.__dict__.get("__abstractmethods__", ()))
-        for attribute_name, attribute in iteritems(attributes):
+        for attribute_name, attribute in iteritems(attribute_dict):
             if attribute.abstracted:
                 abstract_members.add(attribute_name)
         type.__setattr__(cls, "__abstractmethods__", frozenset(abstract_members))
