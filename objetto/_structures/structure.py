@@ -645,6 +645,7 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                         member_types = member.relationship.types
 
                         # Both are constant attributes with a non-empty tuple/frozenset.
+                        is_multi_constant = False
                         if (
                             abstract_attribute.constant
                             and member.constant
@@ -653,6 +654,7 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                             and abstract_attribute.default
                             and member.default
                         ):
+                            is_multi_constant = True
                             abstract_member_types = tuple(
                                 type(v) for v in abstract_attribute.default
                             )
@@ -694,6 +696,40 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                             )
                             raise TypeError(error)
 
+                        # Types are meta and attributes are constant, use the values.
+                        if abstract_attribute.constant and member.constant:
+                            if (
+                                abstract_member_types
+                                and member_types
+                                and all(
+                                    issubclass(t, type) for t in abstract_member_types
+                                )
+                                and all(issubclass(t, type) for t in member_types)
+                                and (
+                                    all(
+                                        isinstance(v, type)
+                                        for v in abstract_attribute.default
+                                    )
+                                    if is_multi_constant
+                                    else isinstance(abstract_attribute.default, type)
+                                )
+                                and (
+                                    all(isinstance(v, type) for v in member.default)
+                                    if is_multi_constant
+                                    else isinstance(member.default, type)
+                                )
+                            ):
+                                if is_multi_constant:
+                                    abstract_member_types = tuple(
+                                        abstract_attribute.default
+                                    )
+                                    member_types = tuple(member.default)
+                                else:
+                                    abstract_member_types = (
+                                        abstract_attribute.default,
+                                    )
+                                    member_types = (member.default,)
+
                         # Types need to be compatible.
                         # Implementation needs to be a subset and subclass of abstract.
                         for t in member_types:
@@ -704,6 +740,10 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
 
                             # Check against abstract member types until we find a match.
                             for typ in abstract_member_types:
+
+                                # Ignore lazy type.
+                                if isinstance(typ, BASE_STRING_TYPES):
+                                    continue
 
                                 # Match!
                                 if issubclass(t, typ):
