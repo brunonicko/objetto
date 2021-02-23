@@ -204,7 +204,7 @@ def data_attribute(
 
 def data_constant_attribute(
     value,  # type: T
-    checked=None,  # type: Optional[bool]
+    checked=True,  # type: bool
     serialized=False,  # type: bool
     serializer=None,  # type: LazyFactory
     deserializer=None,  # type: LazyFactory
@@ -220,8 +220,8 @@ def data_constant_attribute(
 
     :param value: Constant value.
 
-    :param checked: Whether to type check when implementing abstract constant attribute.
-    :type checked: bool or None
+    :param checked: Whether to type check when overriding this constant attribute.
+    :type checked: bool
 
     :param serialized: Whether should be serialized.
     :type serialized: bool
@@ -258,7 +258,7 @@ def data_constant_attribute(
         relationship = DataRelationship(
             types=type(value),
             subtypes=False,
-            checked=abstracted if checked is None else checked,
+            checked=checked,
             serialized=serialized,
             serializer=serializer,
             deserializer=deserializer,
