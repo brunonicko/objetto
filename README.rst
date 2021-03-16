@@ -21,9 +21,6 @@ Objetto
 .. image:: https://img.shields.io/pypi/pyversions/objetto?color=light-green&style=flat
    :target: https://pypi.org/project/objetto/
 
-.. image:: https://badge.fury.io/py/objetto.svg
-   :target: https://pypi.org/project/objetto/
-
 `Objetto` is an opinionated object-oriented framework for building modular applications
 and APIs.
 
