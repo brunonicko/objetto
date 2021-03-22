@@ -7,6 +7,8 @@ from re import match as re_match
 from re import sub as re_sub
 from typing import TYPE_CHECKING, cast
 
+from six import raise_from
+
 from ._bases import Base
 from ._constants import BASE_STRING_TYPES
 from .utils.factoring import format_factory, run_factory
@@ -229,7 +231,14 @@ class Integer(BaseFactory):
         """
         if value is None and self.__accepts_none:
             return value
-        value = int(value)
+        try:
+            value = int(value)
+        except ValueError as e:
+            try:
+                value = int(float(value))
+            except ValueError:
+                raise_from(e, e)
+                raise e
         if self.minimum is not None and value < self.minimum:
             if self.clamp_minimum:
                 value = self.minimum
