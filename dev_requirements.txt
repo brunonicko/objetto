@@ -1,9 +1,0 @@
-autoflake
-black
-flake8
-isort
-mypy
-pytest
-sphinx
-sphinx-rtd-theme
-tox

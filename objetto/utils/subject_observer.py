@@ -7,16 +7,22 @@ Implementation of the `Subject-Observer Pattern
 from abc import abstractmethod
 from sys import exc_info
 from types import TracebackType
-from typing import TYPE_CHECKING, NamedTuple, Optional, Tuple, Type
+from typing import TYPE_CHECKING, TypeVar
 from weakref import WeakKeyDictionary, ref
 
+import attr
+
+from .base import GenericBase, Base
+
 if TYPE_CHECKING:
-    from typing import Any, Dict, List, MutableMapping, Set
+    from typing import Any, Dict, List, Set, Optional, Tuple, Type
+
+T = TypeVar("T")
 
 __all__ = ["Subject", "Observer", "ObserverToken", "ObserverExceptionInfo"]
 
 
-class Subject(object):
+class Subject(GenericBase[T]):
     """Sends payloads to observers."""
 
     __slots__ = (
@@ -27,18 +33,20 @@ class Subject(object):
         "__failed",
         "__payload",
         "__exception_infos",
+        "__owner_ref"
     )
 
-    def __init__(self):
-        # type: () -> None
+    def __init__(self, owner=None):
+        # type: (Optional[T]) -> None
         self.__observers = WeakKeyDictionary(
             {}
-        )  # type: MutableMapping[Observer, ObserverToken]
+        )  # type: WeakKeyDictionary[Observer, ObserverToken]
         self.__observing = set()  # type: Set[Observer]
         self.__receiving = set()  # type: Set[Observer]
         self.__failed = set()  # type: Set[Observer]
         self.__payload = None  # type: Optional[Tuple[Any, ...]]
         self.__exception_infos = []  # type: List[ObserverExceptionInfo]
+        self.__owner_ref = ref(owner) if owner is not None else None
 
     def __deepcopy__(self, memo=None):
         # type: (Optional[Dict[int, Any]]) -> Subject
@@ -53,7 +61,7 @@ class Subject(object):
         try:
             return memo[id(self)]
         except KeyError:
-            subject_copy = memo[id(self)] = type(self)()
+            subject_copy = memo[id(self)] = type(self)(owner=self.owner)
             return subject_copy
 
     def __copy__(self):
@@ -64,7 +72,7 @@ class Subject(object):
         :return: New subject.
         :rtype: objetto.utils.subject_observer.Subject
         """
-        return type(self)()
+        return type(self)(owner=self.owner)
 
     def __reduce__(self):
         # type: () -> Tuple[Type[Subject], Any]
@@ -74,7 +82,7 @@ class Subject(object):
         :return: Subject class, no arguments.
         :rtype: tuple[type[objetto.utils.subject_observer.Subject], tuple]
         """
-        return type(self), ()
+        return type(self), (self.owner,)
 
     def wait(self, token):
         # type: (ObserverToken) -> None
@@ -219,26 +227,19 @@ class Subject(object):
         error = "observer is not registered"
         raise ValueError(error)
 
+    @property
+    def owner(self):
+        # type: () -> Optional[T]
+        """Owner of this subject."""
+        owner_ref = self.__owner_ref
+        if owner_ref is not None:
+            return owner_ref()
+        else:
+            return None
+
 
 class Observer(object):
-    """
-    Observes payloads sent from a subject.
-
-    .. code:: python
-
-        >>> from objetto.utils.subject_observer import Subject, Observer
-
-        >>> class MyObserver(Observer):
-        ...
-        ...     def __observe__(self, *payload):
-        ...         print("received payload {}".format(payload))
-        ...
-        >>> subject = Subject()
-        >>> observer = MyObserver()
-        >>> token = observer.start_observing(subject)
-        >>> exception_infos = subject.send(1, 2, 3)
-        received payload (1, 2, 3)
-    """
+    """Observes payloads sent from a subject."""
 
     @abstractmethod
     def __observe__(self, *payload):
@@ -280,7 +281,7 @@ class Observer(object):
         subject.deregister_observer(self)
 
 
-class ObserverToken(object):
+class ObserverToken(Base):
     """
     Allows control over observers' order/priority.
 
@@ -364,36 +365,11 @@ class ObserverToken(object):
         return self._observer_ref()
 
 
-# noinspection PyUnresolvedReferences
-class ObserverExceptionInfo(
-    NamedTuple(
-        "ObserverExceptionInfo",
-        (
-            ("observer", Observer),
-            ("payload", Tuple),
-            ("exception_type", Optional[Type[BaseException]]),
-            ("exception", Optional[BaseException]),
-            ("traceback", Optional[TracebackType]),
-        ),
-    )
-):
-    """
-    Describes an exception raised by an observer receiving a payload.
-
-    :param observer: Observer.
-    :type observer: objetto.utils.subject_observer.Observer
-
-    :param payload: Payload.
-    :type payload: tuple
-
-    :param exception_type: Exception type.
-    :type exception_type: type[BaseException] or None
-
-    :param exception: Exception.
-    :type exception: BaseException or None
-
-    :param traceback: Traceback.
-    :type traceback: types.TracebackType or None
-    """
-
-    __slots__ = ()
+@attr.s(frozen=True)
+class ObserverExceptionInfo(object):
+    """Describes an exception raised by an observer receiving a payload."""
+    observer = attr.ib()  # type:  Observer
+    payload = attr.ib()  # type:  Tuple
+    exception_type = attr.ib()  # type:  Optional[Type[BaseException]]
+    exception = attr.ib()  # type:  Optional[BaseException]
+    traceback = attr.ib()  # type:  Optional[TracebackType]

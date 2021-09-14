@@ -1,113 +1,85 @@
 # -*- coding: utf-8 -*-
-"""Immutable weak key/strong value storage and mutable evolver."""
 
 from abc import abstractmethod
 from copy import deepcopy
 from functools import partial
-from typing import TYPE_CHECKING, Generic, TypeVar, cast
+from typing import TYPE_CHECKING, TypeVar, cast
 from weakref import WeakSet, ref
 
-try:
-    from typing import final
-except ImportError:
-    final = lambda f: f  # type: ignore
-
 from pyrsistent import pmap
-from six import iteritems
+
+from .base import Base, GenericBase, final
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Dict, Mapping, MutableSet, Optional, Tuple, Type
+    from _weakref import ReferenceType
+    from typing import Dict, Mapping, MutableSet, Optional
 
     from pyrsistent.typing import PMap, PMapEvolver
 
-    # Typevars.
-    T = TypeVar("T")  # Any type.
-    _AS = TypeVar("_AS", bound="AbstractStorage")  # AbstractStorage self type.
-    _SE = TypeVar("_SE", bound="StorageEvolver")  # StorageEvolver self type.
+__all__ = ["AbstractStorage", "Storage", "Evolver"]
 
-    # Type aliases.
-    WeakReference = Callable[[], Optional[T]]  # Weak reference-like callable type.
-
-__all__ = ["AbstractStorage", "Storage", "StorageEvolver"]
-
-# Runtime typevars.
-KT = TypeVar("KT")  # Key type.
-VT = TypeVar("VT")  # Value type.
+_T = TypeVar("_T")
+_AST = TypeVar("_AST", bound="AbstractStorage")
+_ST = TypeVar("_ST", bound="Storage")
+_ET = TypeVar("_ET", bound="Evolver")
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
 
 
-class AbstractStorage(Generic[KT, VT]):
+# noinspection PyAbstractClass
+class AbstractStorage(GenericBase[_KT, _VT], Base):
     """Abstract interface for storages."""
 
     __slots__ = ()
 
+    @final
+    def get(self, key, fallback=None):
+        # type: (_KT, Optional[_VT]) -> Optional[_VT]
+        """Get value for key, return fallback value if not present."""
+        try:
+            return self.query(key)
+        except KeyError:
+            return fallback
+
     @abstractmethod
     def update(self, updates):
-        # type: (_AS, Mapping[KT, VT]) -> _AS
-        """
-        Update keys and values.
-
-        :param updates: Updates.
-        :type updates: collections.abc.Mapping[collections.abc.Hashable, Any]
-
-        :return: Updated abstract storage.
-        :rtype: AbstractStorage
-        """
+        # type: (_AST, Mapping[_KT, _VT]) -> _AST
+        """Update keys and values."""
         raise NotImplementedError()
 
     @abstractmethod
     def query(self, key):
-        # type: (KT) -> VT
-        """
-        Query value for key.
-
-        :param key: Key.
-        :type key: collections.abc.Hashable
-
-        :return: Value.
-
-        :raises KeyError: Key is not in storage.
-        """
+        # type: (_KT) -> _VT
+        """Query value for key."""
         raise NotImplementedError()
 
     @abstractmethod
     def to_dict(self):
-        # type: () -> Dict[KT, VT]
-        """
-        Convert to dictionary.
-
-        :return: Dictionary.
-        :rtype: dict[collections.abc.Hashable, Any]
-        """
+        # type: () -> Dict[_KT, _VT]
+        """Convert to dictionary."""
         raise NotImplementedError()
 
 
 @final
-class Storage(AbstractStorage[KT, VT]):
-    """
-    Immutable weak key/strong value storage.
-
-    :param initial: Initial values.
-    :type initial: collections.abc.Mapping[collections.abc.Hashable, Any]
-    """
+class Storage(AbstractStorage[_KT, _VT]):
+    """Immutable weak key/strong value storage."""
 
     __slots__ = ("__weakref__", "__parent", "__storages", "__data")
 
     def __init__(self, initial=None):
-        # type: (Optional[Mapping[KT, VT]]) -> None
-        self.__parent = None  # type: Optional[WeakReference[Storage[KT, VT]]]
-        self.__storages = WeakSet({self})  # type: MutableSet[Storage[KT, VT]]
+        # type: (Optional[Mapping[_KT, _VT]]) -> None
+        self.__parent = None  # type: Optional[ReferenceType[Storage[_KT, _VT]]]
+        self.__storages = WeakSet({self})  # type: MutableSet[Storage[_KT, _VT]]
         self.__data = cast(
-            "PMapEvolver[WeakReference[KT], VT]", pmap().evolver()
-        )  # type: PMapEvolver[WeakReference[KT], VT]
+            "PMapEvolver[ReferenceType[_KT], _VT]", pmap().evolver()
+        )  # type: PMapEvolver[ReferenceType[_KT], _VT]
         if initial is not None:
             self.__initialize(initial)
 
     def __reduce__(self):
-        # type: () -> Tuple[Type[Storage], Tuple[Dict[KT, VT]]]
-        return Storage, (self.to_dict(),)
+        return type(self), (self.to_dict(),)
 
     def __deepcopy__(self, memo=None):
-        # type: (Optional[Dict[int, Any]]) -> Storage[KT, VT]
         if memo is None:
             memo = {}
         try:
@@ -123,44 +95,21 @@ class Storage(AbstractStorage[KT, VT]):
 
     @staticmethod
     def __clean(storages, weak_key):
-        # type: (MutableSet[Storage[KT, VT]], WeakReference[KT]) -> None
+        # type: (MutableSet[Storage[_KT, _VT]], ReferenceType[_KT]) -> None
         for storage in storages:
             del storage.__data[weak_key]
 
     def __initialize(self, initial):
-        # type: (Mapping[KT, VT]) -> None
+        # type: (Mapping[_KT, _VT]) -> None
         temp_storage = self.update(initial)
         self.__storages = storages = temp_storage.__storages
         storages.clear()
         storages.add(self)
         self.__data = temp_storage.__data
 
-    def to_dict(self):
-        # type: () -> Dict[KT, VT]
-        """
-        Convert to dictionary.
-
-        :return: Dictionary.
-        :rtype: dict[collections.abc.Hashable, Any]
-        """
-        update = {}
-        for weak_key, data in iteritems(self.__data.persistent()):
-            key = weak_key()
-            if key is not None:
-                update[key] = data
-        return update
-
     def update(self, updates):
-        # type: (Mapping[KT, VT]) -> Storage[KT, VT]
-        """
-        Get new storage with update keys and values.
-
-        :param updates: Updates.
-        :type updates: collections.abc.Mapping[collections.abc.Hashable, Any]
-
-        :return: Updated storage.
-        :rtype: Storage
-        """
+        # type: (_ST, Mapping[_KT, _VT]) -> _ST
+        """Get new storage with updated keys and values."""
         if not updates:
             return self
 
@@ -171,14 +120,14 @@ class Storage(AbstractStorage[KT, VT]):
 
         # Make weak references to keys.
         weak_updates = {}
-        for key, data in iteritems(updates):
+        for key, data in updates.items():
             weak_key = ref(key, partial(Storage.__clean, storages))
             weak_updates[weak_key] = data
         if not weak_updates:
             return self
 
         # Add new storages to all parents.
-        parent = self  # type: Optional[Storage[KT, VT]]
+        parent = self  # type: Optional[Storage[_KT, _VT]]
         while parent is not None:
             parent.__storages.add(storage)
             if parent.__parent is None:
@@ -191,58 +140,49 @@ class Storage(AbstractStorage[KT, VT]):
         return storage
 
     def query(self, key):
-        # type: (KT) -> VT
-        """
-        Query value for key.
-
-        :param key: Key.
-        :type key: collections.abc.Hashable
-
-        :return: Value.
-
-        :raises KeyError: Key is not in storage.
-        """
+        # type: (_KT) -> _VT
+        """Query value for key."""
         return self.__data[ref(key)]
 
+    def to_dict(self):
+        # type: () -> Dict[_KT, _VT]
+        """Convert to dictionary."""
+        to_dict = {}
+        for weak_key, data in self.__data.persistent().items():
+            key = weak_key()
+            if key is not None:
+                to_dict[key] = data
+        return to_dict
+
     def evolver(self):
-        # type: () -> StorageEvolver[KT, VT]
-        """
-        Get evolver.
-
-        :return: Evolver.
-        :rtype: StorageEvolver
-        """
-        return StorageEvolver(self)
-
-
-def _unpickle_storage_evolver(storage, updates):
-    # type: (Storage[KT, VT], Mapping[KT, VT]) -> StorageEvolver[KT, VT]
-    evolver = StorageEvolver(storage)  # type: StorageEvolver[KT, VT]
-    evolver.update(updates)
-    return evolver
+        # type: () -> Evolver[_KT, _VT]
+        """Get evolver."""
+        return Evolver(self)
 
 
 @final
-class StorageEvolver(AbstractStorage[KT, VT]):
+class Evolver(AbstractStorage[_KT, _VT]):
     """Mutable data storage evolver."""
 
     __slots__ = ("__storage", "__updates")
 
-    def __init__(self, storage):
-        self.__storage = storage  # type: Storage[KT, VT]
-        self.__updates = pmap()  # type: PMap[KT, VT]
+    def __init__(self, storage=None):
+        # type: (Optional[Storage[_KT, _VT]]) -> None
+        if storage is None:
+            storage = cast("Storage[_KT, _VT]", Storage())
+        self.__storage = storage  # type: Storage[_KT, _VT]
+        self.__updates = pmap()  # type: PMap[_KT, _VT]
 
     def __reduce__(self):
-        return _unpickle_storage_evolver, (self.__storage, self.__updates)
+        return _evolver_reducer, (self.__storage, self.__updates)
 
     def __deepcopy__(self, memo=None):
-        # type: (Optional[Dict[int, Any]]) -> Storage[KT, VT]
         if memo is None:
             memo = {}
         try:
             deep_copy = memo[id(self)]
         except KeyError:
-            deep_copy = memo[id(self)] = StorageEvolver.__new__(StorageEvolver)
+            deep_copy = memo[id(self)] = Evolver.__new__(Evolver)
             args_a = (self.__storage, memo)
             deep_copy.__storage = deepcopy(*args_a)
             args_b = (self.__updates, memo)
@@ -252,78 +192,41 @@ class StorageEvolver(AbstractStorage[KT, VT]):
     def __copy__(self):
         return self.fork()
 
-    def to_dict(self):
-        # type: () -> Dict[KT, VT]
-        """
-        Convert to dictionary.
-
-        :return: Dictionary.
-        :rtype: dict[collections.abc.Hashable, Any]
-        """
-        return self.persistent().to_dict()
-
     def update(self, updates):
-        # type: (_SE, Mapping[KT, VT]) -> _SE
-        """
-        Update keys and values in place.
-
-        :param updates: Updates.
-        :type updates: collections.abc.Mapping[collections.abc.Hashable, Any]
-
-        :return: Itself.
-        :rtype: StorageEvolver
-        """
+        # type: (_ET, Mapping[_KT, _VT]) -> _ET
+        """Update keys and values in place."""
         self.__updates = self.__updates.update(updates)
         return self
 
     def query(self, key):
-        # type: (KT) -> VT
-        """
-        Query value for key.
-
-        :param key: Key.
-        :type key: collections.abc.Hashable
-
-        :return: Value.
-
-        :raises KeyError: Key is not in storage.
-        """
+        # type: (_KT) -> _VT
+        """Query value for key."""
         try:
             return self.__updates[key]
         except KeyError:
             return self.__storage.query(key)
 
-    def persistent(self):
-        # type: () -> Storage[KT, VT]
-        """
-        Get immutable storage with current updates.
+    def to_dict(self):
+        # type: () -> Dict[_KT, _VT]
+        """Convert to dictionary."""
+        return self.storage().to_dict()
 
-        :return: Storage.
-        :rtype: Storage
-        """
+    def storage(self):
+        # type: () -> Storage[_KT, _VT]
+        """Get immutable storage with current updates."""
         return self.__storage.update(self.__updates)
 
     def fork(self):
-        # type: () -> StorageEvolver[KT, VT]
-        """
-        Fork into another evolver.
-
-        :return: Forked evolver.
-        :rtype: StorageEvolver
-        """
-        evolver = StorageEvolver.__new__(StorageEvolver)
+        # type: (_ET) -> _ET
+        """Fork into another evolver."""
+        evolver = Evolver.__new__(Evolver)
         evolver.__storage = self.__storage
         evolver.__updates = self.__updates
         return evolver
 
     def is_dirty(self):
         # type: () -> bool
-        """
-        Get whether has updates.
-
-        :return: True if has updates.
-        :rtype: bool
-        """
+        """Get whether has updates."""
         return bool(self.__updates)
 
     def reset(self):
@@ -339,10 +242,13 @@ class StorageEvolver(AbstractStorage[KT, VT]):
 
     @property
     def updates(self):
-        # type: () -> PMap[KT, VT]
-        """
-        Updates.
-
-        :rtype: pyrsistent.PMap[collections.abc.Hashable, Any]
-        """
+        # type: () -> PMap[_KT, _VT]
+        """Updates."""
         return self.__updates
+
+
+def _evolver_reducer(storage, updates):
+    # type: (Storage[_KT, _VT], Mapping[_KT, _VT]) -> Evolver[_KT, _VT]
+    evolver = Evolver(storage)  # type: Evolver[_KT, _VT]
+    evolver.update(updates)
+    return evolver

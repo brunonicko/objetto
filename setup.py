@@ -1,11 +1,16 @@
-import setuptools
+import sys
+import setuptools  # type: ignore
+
+if sys.version_info[0] == 3 and sys.version_info[1] < 7:
+    error = "python {} is not supported".format(".".join((sys.version_info[0:2])))
+    raise RuntimeError(error)
 
 with open("README.rst", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="objetto",
-    version="1.28.0",
+    version="2.0.0",
     author="Bruno Nicko",
     author_email="brunonicko@gmail.com",
     description="Object-oriented framework for building smart applications and APIs",
@@ -16,6 +21,8 @@ setuptools.setup(
     package_data={"objetto": ["py.typed"]},
     install_requires=[
         "enum34; python_version < '3.4'",
+        "attrs",
+        "jinja2",
         "decorator",
         "pyrsistent",
         "qualname",
@@ -28,8 +35,6 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
