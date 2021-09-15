@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING, overload
 
-import attr
+from pyrsistent import PClass, field
 
 if TYPE_CHECKING:
     from typing import Any, Optional, Callable, Type, Tuple
@@ -19,10 +19,11 @@ __all__ = [
 ]
 
 
-@attr.s(frozen=True)
-class ReactionDescriptor(object):
-    func = attr.ib()  # type: Callable[[AbstractObject, Action, Phase], None]
-    priority = attr.ib()  # type: Optional[int]
+class ReactionDescriptor(PClass):
+    func = field(
+        mandatory=True
+    )  # type: Callable[[AbstractObject, Action, Phase], None]
+    priority = field(mandatory=True)  # type: Optional[int]
 
     @overload
     def __get__(self, instance, owner):
@@ -48,11 +49,10 @@ class ReactionDescriptor(object):
             return lambda action, phase: self.func(instance, action, phase)
 
 
-@attr.s(frozen=True)
-class HistoryDescriptor(object):
-    type = attr.ib()  # type: Type[AbstractHistoryObject]
-    args = attr.ib()  # type: Tuple[Any, ...]
-    kwargs = attr.ib()  # type: PMap[str, Any]
+class HistoryDescriptor(PClass):
+    type = field(mandatory=True)  # type: Type[AbstractHistoryObject]
+    args = field(mandatory=True)  # type: Tuple[Any, ...]
+    kwargs = field(mandatory=True)  # type: PMap[str, Any]
 
     @overload
     def __get__(self, instance, owner):

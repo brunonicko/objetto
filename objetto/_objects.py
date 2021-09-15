@@ -124,7 +124,6 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
         "__pointer",
         "__subject",
         "__app",
-        "__store",
         "_Writer__acting",
         "_Writer__pinned_count",
         "_Writer__pinned_hierarchy",
@@ -137,7 +136,6 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
             self.__pointer = Pointer(self)
             self.__subject = Subject(self)
             self.__app = app
-            self.__store = None
 
             self._Writer__acting = False
             self._Writer__pinned_count = 0

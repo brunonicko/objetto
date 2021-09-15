@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 from contextlib import contextmanager
 from weakref import ref
 
-from attr import evolve
 from six import iteritems
 from pyrsistent import pset
 
@@ -170,7 +169,7 @@ class _Writer(Base):
                 change=change,
                 locations=previous_locations,
             )
-            previous_action = evolve(app_action, sender=obj)
+            previous_action = app_action.set(sender=obj)
             actions = [previous_action]
             for parent in hierarchy[1:]:
 
@@ -180,8 +179,8 @@ class _Writer(Base):
 
                 # Make next action.
                 previous_locations = previous_locations + (location,)
-                action = evolve(
-                    previous_action, sender=parent, locations=previous_locations
+                action = previous_action.set(
+                    sender=parent, locations=previous_locations
                 )
                 actions.append(action)
                 previous_parent = parent
@@ -296,7 +295,7 @@ class _Writer(Base):
 
                     child_store = self.__evolver.query(child_pointer)
                     self.__evolver.update({
-                        child_pointer: evolve(child_store, parent_ref=obj_ref)
+                        child_pointer: child_store.set(parent_ref=obj_ref)
                     })
 
             self.__evolver.update({obj.pointer: store})
@@ -358,8 +357,7 @@ class _Writer(Base):
                         history_pointers_to_flush.add(last_parent_history.pointer)
 
                 # Freeze child store.
-                frozen_stores[child.pointer] = evolve(
-                    child_store,
+                frozen_stores[child.pointer] = child_store.set(
                     history_provider_ref=None,
                     last_parent_history_ref=None,
                     history=None,
@@ -505,16 +503,14 @@ class _Writer(Base):
                 for release_pointer in release_pointers:
                     adoption_store = self.__evolver.query(release_pointer)
                     self.__evolver.update({
-                        release_pointer: evolve(
-                            adoption_store,
+                        release_pointer: adoption_store.set(
                             parent_ref=None,
                         )
                     })
                 for adoption_pointer in adoption_pointers:
                     adoption_store = self.__evolver.query(adoption_pointer)
                     self.__evolver.update({
-                        adoption_pointer: evolve(
-                            adoption_store,
+                        adoption_pointer: adoption_store.set(
                             parent_ref=obj_ref,
                             last_parent_history_ref=history_ref,
                         )
@@ -526,14 +522,13 @@ class _Writer(Base):
                         historied_adoption_pointer
                     )
                     self.__evolver.update({
-                        historied_adoption_pointer: evolve(
-                            historied_adoption_store,
+                        historied_adoption_pointer: historied_adoption_store.set(
                             history_provider_ref=obj_ref
                         )
                     })
 
                 # Update object store.
-                self.__evolver.update({obj.pointer: evolve(store, state=new_state)})
+                self.__evolver.update({obj.pointer: store.set(state=new_state)})
 
             # Push changes to history.
             if history is not None:

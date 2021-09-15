@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from typing import TYPE_CHECKING, overload
+from typing import TYPE_CHECKING
 
-import attr
+from pyrsistent import PClass, field
 
 if TYPE_CHECKING:
     from uuid import UUID
@@ -33,86 +33,78 @@ __all__ = [
 ]
 
 
-@attr.s(frozen=True)
-class ObserverError(object):
-    exception_info = attr.ib()  # type: ObserverExceptionInfo
-    action = attr.ib()  # type: Action
-    phase = attr.ib()  # type: Phase
+class ObserverError(PClass):
+    exception_info = field(mandatory=True)  # type: ObserverExceptionInfo
+    action = field(mandatory=True)  # type: Action
+    phase = field(mandatory=True)  # type: Phase
 
 
-@attr.s(frozen=True)
-class Relationship(object):
-    historied = attr.ib()  # type: bool
-    serialized = attr.ib()  # type: bool
+class Relationship(PClass):
+    historied = field(mandatory=True)  # type: bool
+    serialized = field(mandatory=True)  # type: bool
 
 
-@attr.s(frozen=True)
-class State(object):
-    data = attr.ib()  # type: Any
-    metadata = attr.ib()  # type: Any
-    children_pointers = attr.ib()  # type: PMap[Pointer[AbstractObject], Relationship]
+class State(PClass):
+    data = field(mandatory=True)  # type: Any
+    metadata = field(mandatory=True)  # type: Any
+    children_pointers = field(
+        mandatory=True
+    )  # type: PMap[Pointer[AbstractObject], Relationship]
 
 
-@attr.s(frozen=True)
-class AbstractChange(object):
+class AbstractChange(PClass):
     pass
 
 
-@attr.s(frozen=True)
 class InitializedChange(AbstractChange):
-    state = attr.ib()  # type: State
+    state = field(mandatory=True)  # type: State
 
 
-@attr.s(frozen=True)
 class StateChange(AbstractChange):
-    event = attr.ib()  # type: Any
-    undo_event = attr.ib()  # type: Any
-    old_state = attr.ib()  # type: State
-    new_state = attr.ib()  # type: State
-    adoption_pointers = attr.ib()  # type: PSet[Pointer[AbstractObject]]
-    release_pointers = attr.ib()  # type: PSet[Pointer[AbstractObject]]
+    event = field(mandatory=True)  # type: Any
+    undo_event = field(mandatory=True)  # type: Any
+    old_state = field(mandatory=True)  # type: State
+    new_state = field(mandatory=True)  # type: State
+    adoption_pointers = field(mandatory=True)  # type: PSet[Pointer[AbstractObject]]
+    release_pointers = field(mandatory=True)  # type: PSet[Pointer[AbstractObject]]
 
 
-@attr.s(frozen=True)
 class BatchChange(AbstractChange):
-    name = attr.ib()  # type: str
-    kwargs = attr.ib()  # type: PMap[str, Any]
+    name = field(mandatory=True)  # type: str
+    kwargs = field(mandatory=True)  # type: PMap[str, Any]
 
 
-@attr.s(frozen=True)
 class FrozenChange(AbstractChange):
-    objects = attr.ib()  # type: Tuple[AbstractObject, ...]
+    objects = field(mandatory=True)  # type: Tuple[AbstractObject, ...]
 
 
-@attr.s(frozen=True)
-class Action(object):
-    uuid = attr.ib()  # type: UUID
-    app = attr.ib()  # type: Application
-    sender = attr.ib()  # type: Optional[AbstractObject]
-    source = attr.ib()  # type: AbstractObject
-    change = attr.ib()  # type: AbstractChange
-    locations = attr.ib()  # type: Tuple[Hashable, ...]
+class Action(PClass):
+    uuid = field(mandatory=True)  # type: UUID
+    app = field(mandatory=True)  # type: Application
+    sender = field(mandatory=True)  # type: Optional[AbstractObject]
+    source = field(mandatory=True)  # type: AbstractObject
+    change = field(mandatory=True)  # type: AbstractChange
+    locations = field(mandatory=True)  # type: Tuple[Hashable, ...]
 
 
-@attr.s(frozen=True)
-class Store(object):
-    state = attr.ib()  # type: State
-    parent_ref = attr.ib()  # type: Optional[ReferenceType[AbstractObject]]
-    history_provider_ref = attr.ib()  # type: Optional[ReferenceType[AbstractObject]]
-    last_parent_history_ref = attr.ib(
-
+class Store(PClass):
+    state = field(mandatory=True)  # type: State
+    parent_ref = field(mandatory=True)  # type: Optional[ReferenceType[AbstractObject]]
+    history_provider_ref = field(
+        mandatory=True
+    )  # type: Optional[ReferenceType[AbstractObject]]
+    last_parent_history_ref = field(
+        mandatory=True
     )  # type: Optional[ReferenceType[AbstractHistoryObject]]
-    history = attr.ib()  # type: Optional[AbstractHistoryObject]
-    frozen = attr.ib()  # type: bool
+    history = field(mandatory=True)  # type: Optional[AbstractHistoryObject]
+    frozen = field(mandatory=True)  # type: bool
 
 
-@attr.s(frozen=True)
-class Commit(object):
-    storage = attr.ib()  # type: Storage[Pointer[AbstractObject], Store]
-    action = attr.ib()  # type: Action
-    phase = attr.ib()  # type: Phase
+class Commit(PClass):
+    storage = field(mandatory=True)  # type: Storage[Pointer[AbstractObject], Store]
+    action = field(mandatory=True)  # type: Action
+    phase = field(mandatory=True)  # type: Phase
 
 
-@attr.s(frozen=True)
-class Snapshot(object):
-    storage = attr.ib()  # type: Storage[Pointer[AbstractObject], Store]
+class Snapshot(PClass):
+    storage = field(mandatory=True)  # type: Storage[Pointer[AbstractObject], Store]

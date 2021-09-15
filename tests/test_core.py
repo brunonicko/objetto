@@ -93,7 +93,7 @@ class ValueObject(AbstractObject):
         old_value = self.value
 
         old_state = self._get_state()
-        new_state = evolve(old_state, data=old_state.data.set("value", new_value))
+        new_state = old_state.set(data=old_state.data.set("value", new_value))
 
         self._set_state(
             new_state,

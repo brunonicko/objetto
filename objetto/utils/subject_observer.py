@@ -10,7 +10,7 @@ from types import TracebackType
 from typing import TYPE_CHECKING, TypeVar
 from weakref import WeakKeyDictionary, ref
 
-import attr
+from pyrsistent import PClass, field
 
 from .base import GenericBase, Base
 
@@ -365,11 +365,10 @@ class ObserverToken(Base):
         return self._observer_ref()
 
 
-@attr.s(frozen=True)
-class ObserverExceptionInfo(object):
+class ObserverExceptionInfo(PClass):
     """Describes an exception raised by an observer receiving a payload."""
-    observer = attr.ib()  # type:  Observer
-    payload = attr.ib()  # type:  Tuple
-    exception_type = attr.ib()  # type:  Optional[Type[BaseException]]
-    exception = attr.ib()  # type:  Optional[BaseException]
-    traceback = attr.ib()  # type:  Optional[TracebackType]
+    observer = field(mandatory=True)  # type:  Observer
+    payload = field(mandatory=True)  # type:  Tuple
+    exception_type = field(mandatory=True)  # type:  Optional[Type[BaseException]]
+    exception = field(mandatory=True)  # type:  Optional[BaseException]
+    traceback = field(mandatory=True)  # type:  Optional[TracebackType]
