@@ -1,0 +1,12 @@
+TODO:
+  - Application "context_safe" parameter
+  - Application properties
+  - Ability to lock/unlock an object (recursively or not) and give it a "reason" message
+  - Freezable relationship support
+  - Serialization design
+  - Object classes
+  - Object observer class/mixin
+  - History object class
+  - Logging object classes
+  - Status object classes
+  - Knob object classes
