@@ -76,31 +76,25 @@ class ValueObject(AbstractObject):
         )
 
     @classmethod
-    def __freeze_state__(cls, state, freeze_child):
-        value = state.data["value"]
-
-        if state.data["child"] is None:
+    def __freeze_data__(cls, data, metadata, child_freezer):
+        value = data["value"]
+        if data["child"] is None:
             child = None
         else:
-            child = freeze_child(state.data["child"])
-
-        children_pointers = pmap(
-            (freeze_child(c.obj), r) for c, r in state.children_pointers.items()
-        )
-
-        return State(
-            data=pmap({"value": value, "child": child}),
-            metadata=None,
-            children_pointers=children_pointers,
-        )
+            child = child_freezer(data["child"])
+        return pmap({"value": value, "child": child}), None
 
     @classmethod
     def __get_hash__(cls, state):
         return hash(state.data)
 
     @classmethod
+    def __get_eq__(cls, state, other_state):
+        return state.data == other_state.data
+
+    @classmethod
     def __locate_child__(cls, child, state):
-        if child is state.data.child:
+        if child is state.data["child"]:  # FIXME: need tests
             return "child"
         error = "could not locate child {}".format(child)
         raise ValueError(error)
@@ -575,16 +569,90 @@ def test_frozen(thread_safe):
         frozen_obj4.value = 10
 
     assert frozen_obj0.value == 0
+
     assert frozen_obj1.value == 1
+    assert frozen_obj1.child.value == 0
+
     assert frozen_obj2.value == 2
+    assert frozen_obj2.child.value == 1
+    assert frozen_obj2.child.child.value == 0
+
     assert frozen_obj3.value == 3
+    assert frozen_obj3.child.value == 2
+    assert frozen_obj3.child.child.value == 1
+    assert frozen_obj3.child.child.child.value == 0
+
     assert frozen_obj4.value == 4
+    assert frozen_obj4.child.value == 3
+    assert frozen_obj4.child.child.value == 2
+    assert frozen_obj4.child.child.child.value == 1
+    assert frozen_obj4.child.child.child.child.value == 0
 
     assert hash(frozen_obj0) == hash(frozen_obj0._get_state().data)
     assert hash(frozen_obj1) == hash(frozen_obj1._get_state().data)
     assert hash(frozen_obj2) == hash(frozen_obj2._get_state().data)
     assert hash(frozen_obj3) == hash(frozen_obj3._get_state().data)
     assert hash(frozen_obj4) == hash(frozen_obj4._get_state().data)
+
+    assert frozen_obj4.child.child.child.child._get_parent() is \
+           frozen_obj4.child.child.child
+    assert frozen_obj4.child.child.child._get_parent() is frozen_obj4.child.child
+    assert frozen_obj4.child.child._get_parent() is frozen_obj4.child
+    assert frozen_obj4.child._get_parent() is frozen_obj4
+
+    assert frozen_obj3.child.child.child._get_parent() is frozen_obj3.child.child
+    assert frozen_obj3.child.child._get_parent() is frozen_obj3.child
+    assert frozen_obj3.child._get_parent() is frozen_obj3
+
+    assert frozen_obj2.child.child._get_parent() is frozen_obj2.child
+    assert frozen_obj2.child._get_parent() is frozen_obj2
+
+    assert frozen_obj1.child._get_parent() is frozen_obj1
+
+    assert frozen_obj1.child == frozen_obj0
+    assert frozen_obj2.child == frozen_obj1
+    assert frozen_obj3.child == frozen_obj2
+    assert frozen_obj4.child == frozen_obj3
+    assert frozen_obj4 == frozen_obj4
+
+    with raises(RuntimeError):
+        assert frozen_obj1.child == obj0
+        assert frozen_obj2.child == obj1
+        assert frozen_obj3.child == obj2
+        assert frozen_obj4.child == obj3
+        assert frozen_obj4 == obj4
+
+    with app.read_context():
+        assert obj1.child == obj0
+        assert obj2.child == obj1
+        assert obj3.child == obj2
+        assert obj4.child == obj3
+        assert obj4 == obj4
+
+        assert obj1.child != frozen_obj0
+        assert obj2.child != frozen_obj1
+        assert obj3.child != frozen_obj2
+        assert obj4.child != frozen_obj3
+        assert obj4 != frozen_obj4
+
+    with app.write_context():
+        obj0.value = frozen_obj0.value
+        obj1.value = frozen_obj1.value
+        obj2.value = frozen_obj2.value
+        obj3.value = frozen_obj3.value
+        obj4.value = frozen_obj4.value
+
+        assert obj0 == frozen_obj0
+        assert obj1 == frozen_obj1
+        assert obj2 == frozen_obj2
+        assert obj3 == frozen_obj3
+        assert obj4 == frozen_obj4
+
+        assert obj1.child == frozen_obj0
+        assert obj2.child == frozen_obj1
+        assert obj3.child == frozen_obj2
+        assert obj4.child == frozen_obj3
+        assert obj4 == frozen_obj4
 
 
 @mark.parametrize("thread_safe", (True, False))

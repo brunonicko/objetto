@@ -238,6 +238,10 @@ class Base(with_metaclass(BaseMeta, SlottedABC)):
         # type: () -> str
         return "<{} at {}>".format(type(self).__fullname__, hex(id(self)))
 
+    def __str__(self):
+        # type: () -> str
+        return self.__repr__()
+
     def __hash__(self):
         return object.__hash__(self)
 

@@ -30,7 +30,7 @@ from ._constants import Phase
 from ._exceptions import RevertException, ObserversError, RejectException
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, List, Union, Iterator, Tuple, Hashable
+    from typing import Any, Optional, List, Union, Iterator, Tuple, Hashable, Set
 
     from pyrsistent.typing import PMap
 
@@ -334,10 +334,14 @@ class _Writer(Base):
                         error = "can't change parent while hierarchy is locked"
                         raise RuntimeError(error)
 
+            hierarchy_pointers = set()  # type: Set[Pointer[AbstractObject]]
+            if adoption_pointers:
+                hierarchy_pointers.update(o.pointer for o in hierarchy)
+
             for adoption_pointer in adoption_pointers:
                 adoption = adoption_pointer.obj
 
-                if adoption in hierarchy:
+                if adoption.pointer in hierarchy_pointers:
                     error = "parent cycle detected"
                     raise RuntimeError(error)
 

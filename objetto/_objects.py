@@ -24,6 +24,9 @@ if TYPE_CHECKING:
 
     from ._structures import Storage
 
+    T_Data = TypeVar("T_Data")
+    T_Metadata = TypeVar("T_Metadata")
+
 __all__ = [
     "AbstractObjectMeta",
     "AbstractObject",
@@ -111,7 +114,7 @@ class AbstractObjectMeta(BaseMeta):
         return cls.__namespace__.__reaction_descriptors
 
 
-_AO = TypeVar("_AO", bound="AbstractObject")
+T_AbstractObject = TypeVar("T_AbstractObject", bound="AbstractObject")
 
 
 # noinspection PyAbstractClass
@@ -132,12 +135,12 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
     __hash__ = HashDescriptor()  # type: ignore
 
     def __init__(self, app, *args, **kwargs):
-        # type: (_AO, Application, Any, Any) -> None
+        # type: (T_AbstractObject, Application, Any, Any) -> None
         assert_is_instance(app, Application, accept_subtypes=False)
 
         with app.require_write_context():
-            self.__subject = Subject(self)  # type: Subject[_AO]
-            self.__pointer = Pointer(self)  # type: Pointer[_AO]
+            self.__subject = Subject(self)  # type: Subject[T_AbstractObject]
+            self.__pointer = Pointer(self)  # type: Pointer[T_AbstractObject]
             self.__frozen_store = None  # type: Optional[FrozenStore]
             self.__frozen_hash = None  # type: Optional[int]
             self.__app = app  # type: Application
@@ -212,14 +215,25 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
 
     @classmethod
     @abstractmethod
-    def __freeze_state__(cls, state, freeze_child):
-        # type: (State, Callable[[_AO], _AO]) -> State
+    def __freeze_data__(
+        cls,
+        data,  # type: T_Data
+        metadata,  # type: T_Metadata
+        child_freezer,  # type: Callable[[T_AbstractObject], T_AbstractObject]
+    ):
+        # type: (...) -> Tuple[T_Data, T_Metadata]
         raise NotImplementedError()
 
     @classmethod
     @abstractmethod
     def __get_hash__(cls, state):
         # type: (State) -> int
+        raise NotImplementedError()
+
+    @classmethod
+    @abstractmethod
+    def __get_eq__(cls, state, other_state):
+        # type: (State, State) -> bool
         raise NotImplementedError()
 
     @classmethod
@@ -231,6 +245,36 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
     def __post_init__(self, args):
         # type: (Dict[str, Any]) -> None
         pass
+
+    def __repr__(self):
+        # type: () -> str
+        return "<{}{} at {}>".format(
+            "FROZEN " if self.__frozen_store is not None else "",
+            type(self).__fullname__,
+            hex(id(self)),
+        )
+
+    def __eq__(self, other):
+        same_type = type(self) is type(other)
+
+        if self.__frozen_store is not None:
+            if same_type:
+                assert isinstance(other, type(self))
+                state = self.__frozen_store.state
+                other_state = other._get_state()
+                return type(self).__get_eq__(state, other_state)
+            else:
+                return False
+
+        with self.app.require_context():
+            with self.app._AbstractObject__read_context() as storage:
+                if same_type:
+                    assert isinstance(other, type(self))
+                    state = self.__get_store(storage).state
+                    other_state = other._get_state()
+                    return type(self).__get_eq__(state, other_state)
+                else:
+                    return False
 
     @final
     def __get_store(self, storage):
@@ -246,18 +290,18 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
     @classmethod
     @final
     def __get_frozen(
-        cls,  # type: Type[_AO]
+        cls,  # type: Type[T_AbstractObject]
         storage,  # type: Storage[Pointer[AbstractObject], Store]
         state,  # type: State
         frozen_parent_ref,  # type: Optional[ReferenceType[AbstractObject]]
     ):
-        # type: (...) -> _AO
+        # type: (...) -> T_AbstractObject
         self = cls.__new__(cls)
         self_ref = ref(self)
 
         memo = {}  # type: Dict[int, AbstractObject]
 
-        def freeze_child(child):
+        def child_freezer(child):
             # type: (AbstractObject) -> AbstractObject
             assert child.pointer in state.children_pointers
             child_id = id(child)
@@ -269,7 +313,17 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
             )
             return frozen_child
 
-        frozen_state = cls.__freeze_state__(state, freeze_child)
+        frozen_data, frozen_metadata = cls.__freeze_data__(
+            state.data, state.metadata, child_freezer
+        )
+        frozen_children_pointers = pmap(
+            (memo[id(c.obj)], r) for c, r in iteritems(state.children_pointers)
+        )
+        frozen_state = State(
+            data=frozen_data,
+            metadata=frozen_metadata,
+            children_pointers=frozen_children_pointers,
+        )
 
         self.__pointer = Pointer(self)
         self.__frozen_store = FrozenStore(
@@ -281,7 +335,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
 
     @final
     def _get_frozen(self):
-        # type: (_AO) -> _AO
+        # type: (T_AbstractObject) -> T_AbstractObject
         if self.__frozen_store is not None:
             return self
 
@@ -303,10 +357,10 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
 
         if self.__frozen_store is not None:
             state = self.__frozen_store.state
-            self.__frozen_hash = frozen_hash = self.__get_hash__(state)
+            self.__frozen_hash = frozen_hash = type(self).__get_hash__(state)
             return frozen_hash
 
-        error = "'{}' object is not frozen and has no hash".format(
+        error = "'{}' object is not frozen and therefore not hashable".format(
             type(self).__fullname__
         )
         raise RuntimeError(error)
@@ -353,7 +407,9 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
     def _get_history(self):
         # type: () -> Optional[AbstractHistoryObject]
         if self.__frozen_store is not None:
-            error = "frozen '{}' object has no history".format(type(self).__fullname__)
+            error = "'{}' object is frozen and therefore cannot have a history".format(
+                type(self).__fullname__
+            )
             raise RuntimeError(error)
 
         with self.app.require_context():
@@ -375,7 +431,9 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
     def _set_state(self, new_state, event=None, undo_event=None):
         # type: (State, Any, Any) -> None
         if self.__frozen_store is not None:
-            error = "frozen '{}' object is immutable".format(type(self).__fullname__)
+            error = "'{}' object is frozen and therefore cannot be mutated".format(
+                type(self).__fullname__
+            )
             raise RuntimeError(error)
 
         with self.app.require_write_context():
@@ -387,7 +445,9 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
     def _batch_context(self, name="Batch", **kwargs):
         # type: (str, Any) -> Iterator
         if self.__frozen_store is not None:
-            error = "frozen '{}' object is immutable".format(type(self).__fullname__)
+            error = "'{}' object is frozen and therefore cannot be mutated".format(
+                type(self).__fullname__
+            )
             raise RuntimeError(error)
 
         with self.app.require_write_context():
@@ -403,12 +463,12 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
     @property
     @final
     def _subject(self):
-        # type: (_AO) -> Subject[_AO]
+        # type: (T_AbstractObject) -> Subject[T_AbstractObject]
         try:
             return self.__subject
         except AttributeError:
             if self.__frozen_store is not None:
-                error = "frozen '{}' object has no subject".format(
+                error = "'{}' object is frozen and therefore has no subject".format(
                     type(self).__fullname__
                 )
                 raise AttributeError(error)
@@ -417,7 +477,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
 
     @property
     def pointer(self):
-        # type: (_AO) -> Pointer[_AO]
+        # type: (T_AbstractObject) -> Pointer[T_AbstractObject]
         return self.__pointer
 
     @property
@@ -428,9 +488,10 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
             return self.__app
         except AttributeError:
             if self.__frozen_store is not None:
-                error = "frozen '{}' object is not part of an application".format(
-                    type(self).__fullname__
-                )
+                error = (
+                    "'{}' object is frozen and therefore does not belong to an "
+                    "application"
+                ).format(type(self).__fullname__)
                 raise AttributeError(error)
             else:
                 raise
@@ -455,14 +516,24 @@ class AbstractHistoryObject(AbstractObject):
         )
 
     @classmethod
-    def __freeze_state__(cls, state, freeze_child):
-        # type: (State, Callable[[_AO], _AO]) -> State
-        return state
+    def __freeze_data__(
+        cls,
+        data,  # type: T_Data
+        metadata,  # type: T_Metadata
+        child_freezer,  # type: Callable[[T_AbstractObject], T_AbstractObject]
+    ):
+        # type: (...) -> Tuple[T_Data, T_Metadata]
+        return data, metadata
 
     @classmethod
     def __get_hash__(cls, state):
         # type: (State) -> int
         return hash(state.data)
+
+    @classmethod
+    def __get_eq__(cls, state, other_state):
+        # type: (State, State) -> bool
+        return state.data == other_state.data
 
     @classmethod
     def __locate_child__(cls, child, state):
