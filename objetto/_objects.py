@@ -404,6 +404,25 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
                     return None
 
     @final
+    def _get_children(self):
+        # type: () -> Tuple[AbstractObject, ...]
+        if self.__frozen_store is not None:
+            state = self.__frozen_store.state
+            return tuple(
+                sorted((c.obj for c in state.children_pointers), key=lambda c: id(c))
+            )
+
+        with self.app.require_context():
+            with self.app._AbstractObject__read_context() as storage:
+                store = self.__get_store(storage)
+                state = store.state
+                return tuple(
+                    sorted(
+                        (c.obj for c in state.children_pointers), key=lambda c: id(c)
+                    )
+                )
+
+    @final
     def _get_history(self):
         # type: () -> Optional[AbstractHistoryObject]
         if self.__frozen_store is not None:
