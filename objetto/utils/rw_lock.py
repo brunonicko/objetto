@@ -160,3 +160,24 @@ class RWThreadingLock(AbstractRWLock):
                 yield
             finally:
                 self.__writer = previous_writer
+
+    @contextmanager
+    def require_context(self):
+        # type: () -> Iterator
+        with self.__read_ready:
+            with super(RWThreadingLock, self).require_context():
+                yield
+
+    @contextmanager
+    def require_read_context(self):
+        # type: () -> Iterator
+        with self.__read_ready:
+            with super(RWThreadingLock, self).require_read_context():
+                yield
+
+    @contextmanager
+    def require_write_context(self):
+        # type: () -> Iterator
+        with self.__read_ready:
+            with super(RWThreadingLock, self).require_write_context():
+                yield

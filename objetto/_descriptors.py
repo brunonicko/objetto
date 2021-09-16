@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 __all__ = [
     "ReactionDescriptor",
     "HistoryDescriptor",
+    "HashDescriptor",
 ]
 
 
@@ -26,8 +27,12 @@ class ReactionDescriptor(PClass):
     priority = field(mandatory=True)  # type: Optional[int]
 
     @overload
-    def __get__(self, instance, owner):
-        # type: (None, Type[AbstractObject]) -> ReactionDescriptor
+    def __get__(
+        self,
+        instance,  # type: None
+        owner,  # type: Type[AbstractObject]
+    ):
+        # type: (...) -> Callable[[AbstractObject, Action, Phase], None]
         pass
 
     @overload
@@ -41,10 +46,7 @@ class ReactionDescriptor(PClass):
 
     def __get__(self, instance, owner):
         if instance is None:
-            if owner is None:
-                return self
-            else:
-                return self.func
+            return self.func
         else:
             return lambda action, phase: self.func(instance, action, phase)
 
@@ -56,7 +58,7 @@ class HistoryDescriptor(PClass):
 
     @overload
     def __get__(self, instance, owner):
-        # type: (None, Type[AbstractObject]) -> HistoryDescriptor
+        # type: (None, Optional[Type[AbstractObject]]) -> HistoryDescriptor
         pass
 
     @overload
@@ -73,3 +75,26 @@ class HistoryDescriptor(PClass):
             return self
         else:
             return instance._get_history()
+
+
+class HashDescriptor(PClass):
+
+    @overload
+    def __get__(self, instance, owner):
+        # type: (None, Type[AbstractObject]) -> None
+        pass
+
+    @overload
+    def __get__(
+        self,
+        instance,  # type: AbstractObject
+        owner,  # type: Type[AbstractObject]
+    ):
+        # type: (...) -> Optional[Callable[[], int]]
+        pass
+
+    def __get__(self, instance, owner):
+        if instance is None or not instance._is_frozen:
+            return None
+        else:
+            return lambda: instance._get_hash()

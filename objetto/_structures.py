@@ -22,11 +22,13 @@ __all__ = [
     "ObserverError",
     "Relationship",
     "State",
+    "AbstractChange",
     "InitializedChange",
     "StateChange",
     "BatchChange",
-    "FrozenChange",
     "Action",
+    "AbstractStore",
+    "FrozenStore",
     "Store",
     "Commit",
     "Snapshot",
@@ -74,10 +76,6 @@ class BatchChange(AbstractChange):
     kwargs = field(mandatory=True)  # type: PMap[str, Any]
 
 
-class FrozenChange(AbstractChange):
-    objects = field(mandatory=True)  # type: Tuple[AbstractObject, ...]
-
-
 class Action(PClass):
     uuid = field(mandatory=True)  # type: UUID
     app = field(mandatory=True)  # type: Application
@@ -87,9 +85,16 @@ class Action(PClass):
     locations = field(mandatory=True)  # type: Tuple[Hashable, ...]
 
 
-class Store(PClass):
+class AbstractStore(PClass):
     state = field(mandatory=True)  # type: State
     parent_ref = field(mandatory=True)  # type: Optional[ReferenceType[AbstractObject]]
+
+
+class FrozenStore(AbstractStore):
+    pass
+
+
+class Store(AbstractStore):
     history_provider_ref = field(
         mandatory=True
     )  # type: Optional[ReferenceType[AbstractObject]]
@@ -97,7 +102,6 @@ class Store(PClass):
         mandatory=True
     )  # type: Optional[ReferenceType[AbstractHistoryObject]]
     history = field(mandatory=True)  # type: Optional[AbstractHistoryObject]
-    frozen = field(mandatory=True)  # type: bool
 
 
 class Commit(PClass):

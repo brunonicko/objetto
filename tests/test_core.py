@@ -4,15 +4,14 @@ from collections import namedtuple
 from threading import Thread
 from random import randint
 
-from attr import evolve
 from pyrsistent import pmap
+from six.moves import collections_abc
 
 from objetto._structures import (
     Relationship,
     InitializedChange,
     StateChange,
     BatchChange,
-    FrozenChange,
     State,
 )
 from objetto._descriptors import (
@@ -75,6 +74,29 @@ class ValueObject(AbstractObject):
             metadata=None,
             children_pointers=children_pointers,
         )
+
+    @classmethod
+    def __freeze_state__(cls, state, freeze_child):
+        value = state.data["value"]
+
+        if state.data["child"] is None:
+            child = None
+        else:
+            child = freeze_child(state.data["child"])
+
+        children_pointers = pmap(
+            (freeze_child(c.obj), r) for c, r in state.children_pointers.items()
+        )
+
+        return State(
+            data=pmap({"value": value, "child": child}),
+            metadata=None,
+            children_pointers=children_pointers,
+        )
+
+    @classmethod
+    def __get_hash__(cls, state):
+        return hash(state.data)
 
     @classmethod
     def __locate_child__(cls, child, state):
@@ -155,14 +177,6 @@ class ValueObject(AbstractObject):
                     _ = self.value
             elif phase is Phase.POST:
                 assert self.value == self.__initial_value
-        elif isinstance(action.change, FrozenChange):
-            assert action.source is self
-            assert action.sender is self
-            if phase is Phase.PRE:
-                assert not self._is_frozen()
-            elif phase is Phase.POST:
-                assert self._is_frozen()
-                assert self.app is not None
 
     @reaction
     def __batch_reaction(self, action, phase):
@@ -183,10 +197,6 @@ class ValueObject(AbstractObject):
                     )
 
 
-class AlwaysFrozenValueObject(ValueObject):
-    _ALWAYS_FROZEN = True
-
-
 class ValueObjectObserver(Observer):
 
     def __init__(self):
@@ -199,10 +209,10 @@ class ValueObjectObserver(Observer):
         if isinstance(action.change, StateChange):
             if phase is Phase.PRE:
                 assert action.source.value == action.change.event.old_value
-                self.pre_data[action.source] = action.change.event.new_value
+                self.pre_data[action.source.pointer] = action.change.event.new_value
             elif phase is Phase.POST:
                 assert action.source.value == action.change.event.new_value
-                self.post_data[action.source] = action.change.event.new_value
+                self.post_data[action.source.pointer] = action.change.event.new_value
             else:
                 raise AssertionError()
 
@@ -225,9 +235,9 @@ def test_value(thread_safe):
         obj_a = ValueObject(app, 1)
         obj_b = ValueObject(app, 2)
 
-        observer.start_observing(obj_a.subject)
-        observer.start_observing(obj_b.subject)
-        app_observer.start_observing(app.subject)
+        observer.start_observing(obj_a._subject)
+        observer.start_observing(obj_b._subject)
+        app_observer.start_observing(app._subject)
 
         assert obj_a.value == 1
         assert obj_b.value == 2
@@ -244,17 +254,17 @@ def test_value(thread_safe):
         assert not app_observer.pre_data
         assert not app_observer.post_data
 
-    assert observer.pre_data[obj_a] == 3
-    assert observer.post_data[obj_a] == 3
+    assert observer.pre_data[obj_a.pointer] == 3
+    assert observer.post_data[obj_a.pointer] == 3
 
-    assert observer.pre_data[obj_b] == 4
-    assert observer.post_data[obj_b] == 4
+    assert observer.pre_data[obj_b.pointer] == 4
+    assert observer.post_data[obj_b.pointer] == 4
 
-    assert app_observer.pre_data[obj_a] == 3
-    assert app_observer.post_data[obj_a] == 3
+    assert app_observer.pre_data[obj_a.pointer] == 3
+    assert app_observer.post_data[obj_a.pointer] == 3
 
-    assert app_observer.pre_data[obj_b] == 4
-    assert app_observer.post_data[obj_b] == 4
+    assert app_observer.pre_data[obj_b.pointer] == 4
+    assert app_observer.post_data[obj_b.pointer] == 4
 
 
 @mark.parametrize("thread_safe", (True, False))
@@ -486,56 +496,95 @@ def test_frozen(thread_safe):
         obj3 = ValueObject(app, 3, obj2)
         obj4 = ValueObject(app, 4, obj3)
 
-        assert not obj0._is_frozen()
-        assert not obj1._is_frozen()
-        assert not obj2._is_frozen()
-        assert not obj3._is_frozen()
-        assert not obj4._is_frozen()
-
-        obj4._freeze()
-
-        assert obj0._is_frozen()
-        assert obj1._is_frozen()
-        assert obj2._is_frozen()
-        assert obj3._is_frozen()
-        assert obj4._is_frozen()
-
-        assert obj0.app is app
-        assert obj1.app is app
-        assert obj2.app is app
-        assert obj3.app is app
-        assert obj4.app is app
-
-    with app.write_context():
-        with raises(RuntimeError):
-            obj0.value = 10
-        with raises(RuntimeError):
-            obj1.value = 10
-        with raises(RuntimeError):
-            obj2.value = 10
-        with raises(RuntimeError):
-            obj3.value = 10
-        with raises(RuntimeError):
-            obj4.value = 10
+        assert not obj0._is_frozen
+        assert not obj1._is_frozen
+        assert not obj2._is_frozen
+        assert not obj3._is_frozen
+        assert not obj4._is_frozen
 
     with app.read_context():
-        assert obj0._is_frozen()
-        assert obj1._is_frozen()
-        assert obj2._is_frozen()
-        assert obj3._is_frozen()
-        assert obj4._is_frozen()
+        with raises(TypeError):
+            hash(obj0)
+        with raises(TypeError):
+            hash(obj1)
+        with raises(TypeError):
+            hash(obj2)
+        with raises(TypeError):
+            hash(obj3)
+        with raises(TypeError):
+            hash(obj4)
 
-        assert obj0.app is app
-        assert obj1.app is app
-        assert obj2.app is app
-        assert obj3.app is app
-        assert obj4.app is app
+        assert type(obj0).__hash__ is None
+        assert type(obj1).__hash__ is None
+        assert type(obj2).__hash__ is None
+        assert type(obj3).__hash__ is None
+        assert type(obj4).__hash__ is None
 
-        assert obj0.value == 0
-        assert obj1.value == 1
-        assert obj2.value == 2
-        assert obj3.value == 3
-        assert obj4.value == 4
+        assert obj0.__hash__ is None
+        assert obj1.__hash__ is None
+        assert obj2.__hash__ is None
+        assert obj3.__hash__ is None
+        assert obj4.__hash__ is None
+
+        assert isinstance(obj0, collections_abc.Hashable)
+        assert isinstance(obj1, collections_abc.Hashable)
+        assert isinstance(obj2, collections_abc.Hashable)
+        assert isinstance(obj3, collections_abc.Hashable)
+        assert isinstance(obj4, collections_abc.Hashable)
+
+        frozen_obj0 = obj0._get_frozen()
+        frozen_obj1 = obj1._get_frozen()
+        frozen_obj2 = obj2._get_frozen()
+        frozen_obj3 = obj3._get_frozen()
+        frozen_obj4 = obj4._get_frozen()
+
+    assert isinstance(frozen_obj0, collections_abc.Hashable)
+    assert isinstance(frozen_obj1, collections_abc.Hashable)
+    assert isinstance(frozen_obj2, collections_abc.Hashable)
+    assert isinstance(frozen_obj3, collections_abc.Hashable)
+    assert isinstance(frozen_obj4, collections_abc.Hashable)
+
+    with app.write_context():
+        obj0.value = 10
+        obj1.value = 11
+        obj2.value = 12
+        obj3.value = 13
+        obj4.value = 14
+
+        assert obj0.value == 10
+        assert obj1.value == 11
+        assert obj2.value == 12
+        assert obj3.value == 13
+        assert obj4.value == 14
+
+    assert frozen_obj0._is_frozen
+    assert frozen_obj1._is_frozen
+    assert frozen_obj2._is_frozen
+    assert frozen_obj3._is_frozen
+    assert frozen_obj4._is_frozen
+
+    with raises(RuntimeError):
+        frozen_obj0.value = 10
+    with raises(RuntimeError):
+        frozen_obj1.value = 10
+    with raises(RuntimeError):
+        frozen_obj2.value = 10
+    with raises(RuntimeError):
+        frozen_obj3.value = 10
+    with raises(RuntimeError):
+        frozen_obj4.value = 10
+
+    assert frozen_obj0.value == 0
+    assert frozen_obj1.value == 1
+    assert frozen_obj2.value == 2
+    assert frozen_obj3.value == 3
+    assert frozen_obj4.value == 4
+
+    assert hash(frozen_obj0) == hash(frozen_obj0._get_state().data)
+    assert hash(frozen_obj1) == hash(frozen_obj1._get_state().data)
+    assert hash(frozen_obj2) == hash(frozen_obj2._get_state().data)
+    assert hash(frozen_obj3) == hash(frozen_obj3._get_state().data)
+    assert hash(frozen_obj4) == hash(frozen_obj4._get_state().data)
 
 
 @mark.parametrize("thread_safe", (True, False))
@@ -627,34 +676,6 @@ def test_reject_batch_exception(thread_safe):
 
     with app.read_context():
         assert obj1.value == 1000
-
-
-@mark.parametrize("thread_safe", (True, False))
-def test_always_frozen(thread_safe):
-    app = Application(thread_safe=thread_safe)
-
-    with app.write_context():
-        obj1 = ValueObject(app, 0)
-        assert not obj1._is_frozen()
-        assert obj1.app is app
-        obj1.value = 1
-
-        obj2 = AlwaysFrozenValueObject(app, 2, child=obj1)
-        assert obj2.child is obj1
-        assert obj2._is_frozen()
-        assert obj2.app is app
-
-        assert obj1._is_frozen()
-        assert obj1.app is app
-
-    with app.read_context():
-        assert obj2.child is obj1
-        assert obj2._is_frozen()
-        assert obj2.app is app
-
-        assert obj1._is_frozen()
-        assert obj1.app is app
-        assert obj1.value == 1
 
 
 def test_pointer():

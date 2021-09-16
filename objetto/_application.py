@@ -22,7 +22,6 @@ from ._structures import (
     AbstractChange,
     BatchChange,
     InitializedChange,
-    FrozenChange,
     StateChange,
     State,
     Commit,
@@ -31,7 +30,7 @@ from ._constants import Phase
 from ._exceptions import RevertException, ObserversError, RejectException
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, List, Union, Iterator, Tuple, Hashable, Set, Dict
+    from typing import Any, Optional, List, Union, Iterator, Tuple, Hashable
 
     from pyrsistent.typing import PMap
 
@@ -100,33 +99,33 @@ class _Writer(Base):
                     i += 1
 
             # Cache the hierarchy as a tuple.
-            frozen_hierarchy = obj._Writer__pinned_hierarchy = tuple(hierarchy)
+            pinned_hierarchy = obj._Writer__pinned_hierarchy = tuple(hierarchy)
 
             # Cache the hierarchy in the parents which didn't have it pinned.
             assert i >= 0
             while i > 0:
-                _parent = frozen_hierarchy[i]
+                _parent = pinned_hierarchy[i]
                 assert _parent is not None
                 if not _parent._Writer__pinned_count:
                     cached_parents.append(_parent)
                     _parent._Writer__pinned_count += 1
-                    _parent._Writer__pinned_hierarchy = frozen_hierarchy[i:]
+                    _parent._Writer__pinned_hierarchy = pinned_hierarchy[i:]
                 i -= 1
 
         # Not the first time, just use the cached pinned hierarchy.
         else:
             assert obj._Writer__pinned_hierarchy is not None
-            frozen_hierarchy = obj._Writer__pinned_hierarchy
+            pinned_hierarchy = obj._Writer__pinned_hierarchy
 
         # Increment the pinned count for the pinned hierarchy going up.
-        for parent in frozen_hierarchy:
+        for parent in pinned_hierarchy:
             parent._Writer__pinned_count += 1
         try:
-            yield frozen_hierarchy
+            yield pinned_hierarchy
         finally:
 
             # Decrement the pinned count for the pinned hierarchy going up.
-            for parent in frozen_hierarchy:
+            for parent in pinned_hierarchy:
                 parent._Writer__pinned_count -= 1
 
             # If previously we pinned any of the parents for caching, decrement them.
@@ -300,95 +299,12 @@ class _Writer(Base):
 
             self.__evolver.update({obj.pointer: store})
 
-    def freeze(self, obj):
-        # type: (AbstractObject) -> None
-
-        # This will fail if the object state hasn't been initialized.
-        store = self.query(obj)
-
-        # Check if already frozen.
-        if store.frozen:
-            error = "'{}' object is already frozen".format(type(obj).__fullname__)
-            raise RuntimeError(error)
-
-        # Can't have a parent.
-        if store.parent_ref is not None:
-            error = "'{}' object has a parent, can't freeze".format(
-                type(obj).__fullname__
-            )
-            raise RuntimeError(error)
-
-        # Iterate over children recursively. Freeze stores and mark as acting as we go.
-        acting_children = set()
-        try:
-            history_pointers_to_flush = set(
-
-            )  # type: Set[Pointer[AbstractHistoryObject]]
-            frozen_stores = {}  # type: Dict[Pointer[AbstractObject], Store]
-            children = [obj]
-            while children:
-                child = children.pop()
-
-                # If checking actual child (not top object).
-                if child is not obj:
-
-                    # Already acting, can't freeze.
-                    if child._Writer__acting:
-                        error = "'{}' object already acting".format(
-                            type(child).__fullname__
-                        )
-                        raise RuntimeError(error)
-
-                    # Mark as acting.
-                    child._Writer__acting = True
-                    acting_children.add(child)
-
-                # Get child store.
-                child_store = self.query(child)
-
-                # Mark histories to be flushed.
-                resolved_history = resolve_history(child, self.__evolver)
-                if resolved_history is not None:
-                    history_pointers_to_flush.add(resolved_history.pointer)
-
-                if child_store.last_parent_history_ref is not None:
-                    last_parent_history = child_store.last_parent_history_ref()
-                    if last_parent_history is not None:
-                        history_pointers_to_flush.add(last_parent_history.pointer)
-
-                # Freeze child store.
-                frozen_stores[child.pointer] = child_store.set(
-                    history_provider_ref=None,
-                    last_parent_history_ref=None,
-                    history=None,
-                    frozen=True,
-                )
-                children.extend(c.obj for c in child_store.state.children_pointers)
-
-            change = FrozenChange(objects=tuple(o.obj for o in frozen_stores))
-            with self._action_context(obj, change, True):
-
-                # Flush histories.
-                for history_pointer in history_pointers_to_flush:
-                    history_pointer.obj.flush()
-
-                # Update evolver with frozen stores.
-                self.__evolver.update(frozen_stores)
-        finally:
-            for acting_child in acting_children:
-                acting_child._Writer__acting = False
-
     def act(self, obj, new_state, event=None, undo_event=None):
         # type: (AbstractObject, State, Any, Any) -> None
         app = obj.app
 
         # This will fail if the object state hasn't been initialized.
         store = self.query(obj)
-
-        # Can't act if store is frozen.
-        if store.frozen:
-            error = "'{}' object is frozen".format(type(obj).__fullname__)
-            raise RuntimeError(error)
 
         # Pin the hierarchy.
         with self._pinned_hierarcy_context(obj) as hierarchy:
@@ -658,9 +574,9 @@ class Application(Base):
 
                             # Send from subject and collect exception information.
                             if commit.action.sender is None:
-                                subject = commit.action.app.subject
+                                subject = commit.action.app._subject
                             else:
-                                subject = commit.action.sender.subject
+                                subject = commit.action.sender._subject
                             exception_infos = subject.send(commit.action, commit.phase)
                             for exception_info in exception_infos:
                                 observer_errors.append(
@@ -735,8 +651,8 @@ class Application(Base):
                 raise RevertException()
 
     @property
-    def subject(self):
-        # type: () -> Subject
+    def _subject(self):
+        # type: () -> Subject[Application]
         return self.__subject
 
 

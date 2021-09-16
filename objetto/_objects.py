@@ -2,7 +2,7 @@
 
 import inspect
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, TypeVar
 from contextlib import contextmanager
 from weakref import ref
 
@@ -14,11 +14,13 @@ from .utils.subject_observer import Subject
 from .utils.type_checking import assert_is_instance
 from .utils.pointer import Pointer
 from ._application import Application, resolve_history
-from ._descriptors import ReactionDescriptor, HistoryDescriptor
-from ._structures import Store, State
+from ._constants import DEAD_REF
+from ._descriptors import ReactionDescriptor, HistoryDescriptor, HashDescriptor
+from ._structures import FrozenStore, Store, State
 
 if TYPE_CHECKING:
-    from typing import Any, Dict, Hashable, Optional, Iterator
+    from weakref import ReferenceType
+    from typing import Any, Dict, Callable, Optional, Iterator, Tuple, Type
 
     from ._structures import Storage
 
@@ -31,18 +33,16 @@ __all__ = [
 
 # noinspection PyAbstractClass
 class AbstractObjectMeta(BaseMeta):
+    """Metaclass for :class:`AbstractObject`."""
 
     def __init__(cls, name, bases, dct):
         super(AbstractObjectMeta, cls).__init__(name, bases, dct)
 
-        always_frozen = None  # type: Any
+        # Scan and collect members following the MRO.
         reaction_descriptors = {}  # type: Dict[str, ReactionDescriptor]
         history_descriptors = {}  # type: Dict[str, HistoryDescriptor]
         for base in reversed(inspect.getmro(cls)):
             for member_name, member in iteritems(base.__dict__):
-                if member_name == "_ALWAYS_FROZEN":
-                    always_frozen = member
-
                 history_descriptors.pop(member_name, None)
                 reaction_descriptors.pop(member_name, None)
 
@@ -51,19 +51,7 @@ class AbstractObjectMeta(BaseMeta):
                 elif isinstance(member, HistoryDescriptor):
                     history_descriptors[member_name] = member
 
-        # Verify if '_ALWAYS_FROZEN' is valid.
-        if type(always_frozen) is not bool:
-            if always_frozen is None:
-                error = "'{}._ALWAYS_FROZEN' not declared or None".format(
-                    cls.__name__
-                )
-            else:
-                error = "'{}._ALWAYS_FROZEN' has to be a boolean, not '{}'".format(
-                    cls.__name__, type(always_frozen).__name__
-                )
-            raise TypeError(error)
-
-        # Store history descriptor.
+        # Store history descriptor, ensure there's only one.
         if len(history_descriptors) > 1:
             error = "'{}' has multiple history descriptors defined as {}".format(
                 cls.__name__, ", ".join("'{}'".format(n) for n in history_descriptors)
@@ -75,6 +63,7 @@ class AbstractObjectMeta(BaseMeta):
             )
         else:
             history_descriptor_name, history_descriptor = None, None
+
         cls.__namespace__.__history_descriptor_name = history_descriptor_name
         cls.__namespace__.__history_descriptor = history_descriptor
 
@@ -96,50 +85,71 @@ class AbstractObjectMeta(BaseMeta):
     @property
     @final
     def _history_descriptor_name(cls):
+        # type: () -> Optional[str]
+        """History descriptor's name."""
         return cls.__namespace__.__history_descriptor_name
 
     @property
     @final
     def _history_descriptor(cls):
+        # type: () -> Optional[HistoryDescriptor]
+        """History descriptor."""
         return cls.__namespace__.__history_descriptor
 
     @property
     @final
     def _reaction_descriptor_names(cls):
+        # type: () -> Tuple[str, ...]
+        """Reaction descriptors' names."""
         return cls.__namespace__.__reaction_descriptor_names
 
     @property
     @final
     def _reaction_descriptors(cls):
+        # type: () -> Tuple[ReactionDescriptor, ...]
+        """Reaction descriptors."""
         return cls.__namespace__.__reaction_descriptors
+
+
+_AO = TypeVar("_AO", bound="AbstractObject")
 
 
 # noinspection PyAbstractClass
 class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
 
-    _ALWAYS_FROZEN = False
-
     __slots__ = (
         "__weakref__",
-        "__pointer",
         "__subject",
+        "__pointer",
+        "__frozen_store",
+        "__frozen_hash",
         "__app",
         "_Writer__acting",
         "_Writer__pinned_count",
         "_Writer__pinned_hierarchy",
     )
 
+    __hash__ = HashDescriptor()  # type: ignore
+
     def __init__(self, app, *args, **kwargs):
+        # type: (_AO, Application, Any, Any) -> None
         assert_is_instance(app, Application, accept_subtypes=False)
 
         with app.require_write_context():
-            self.__pointer = Pointer(self)
-            self.__subject = Subject(self)
-            self.__app = app
+            self.__subject = Subject(self)  # type: Subject[_AO]
+            self.__pointer = Pointer(self)  # type: Pointer[_AO]
+            self.__frozen_store = None  # type: Optional[FrozenStore]
+            self.__frozen_hash = None  # type: Optional[int]
+            self.__app = app  # type: Application
 
-            self._Writer__acting = False
-            self._Writer__pinned_count = 0
-            self._Writer__pinned_hierarchy = None
+            self._Writer__acting = False  # type: bool
+            self._Writer__pinned_count = 0  # type: int
+            self._Writer__pinned_hierarchy = (
+                None
+            )  # type: Optional[Tuple[AbstractObject, ...]]
+
+            # Get init args.
+            init_args = {"app": app}  # type: Dict[str, Any]
 
             try:
                 arg_spec = type(self).__namespace__.__init_arg_spec  # type: ignore
@@ -153,7 +163,6 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
 
             arg_names = arg_spec.args[2:]
             arg_names_len = len(arg_names)
-            init_args = {"app": app}  # type: Dict[str, Any]
             if arg_spec.varargs is not None:
                 init_args[arg_spec.varargs] = ()
             for i, arg in enumerate(args):
@@ -165,15 +174,23 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
                     break
             init_args.update(kwargs)
 
+            # Initialize under a write context.
             with app._AbstractObject__write_context() as writer:
+
+                # Init history if has a descriptor.
                 history_descriptor = type(self)._history_descriptor
                 if history_descriptor is not None:
-                    history_provider_ref = ref(self)
-                    history = history_descriptor.type(app, history_descriptor)
+                    history_provider_ref = ref(
+                        self
+                    )  # type: Optional[ReferenceType[AbstractObject]]
+                    history = history_descriptor.type(
+                        app, history_descriptor
+                    )  # type: Optional[AbstractHistoryObject]
                 else:
                     history_provider_ref = None
                     history = None
 
+                # Init store.
                 state = type(self).__init_state__(init_args)
                 store = Store(
                     state=state,
@@ -181,19 +198,11 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
                     history_provider_ref=history_provider_ref,
                     last_parent_history_ref=None,
                     history=history,
-                    frozen=False,
                 )
                 writer.init_store(self, store)
 
+                # Run post-init under the same write context.
                 self.__post_init__(init_args)
-
-                if type(self)._ALWAYS_FROZEN:
-                    self._freeze()
-
-    @abstractmethod
-    def __getitem__(self, location):
-        # type: (Hashable) -> Any
-        raise NotImplementedError()
 
     @classmethod
     @abstractmethod
@@ -203,8 +212,20 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
 
     @classmethod
     @abstractmethod
+    def __freeze_state__(cls, state, freeze_child):
+        # type: (State, Callable[[_AO], _AO]) -> State
+        raise NotImplementedError()
+
+    @classmethod
+    @abstractmethod
+    def __get_hash__(cls, state):
+        # type: (State) -> int
+        raise NotImplementedError()
+
+    @classmethod
+    @abstractmethod
     def __locate_child__(cls, child, state):
-        # type: (AbstractObject, State) -> Hashable
+        # type: (AbstractObject, State) -> Any
         raise NotImplementedError()
 
     def __post_init__(self, args):
@@ -217,25 +238,107 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
         try:
             return storage.query(self.pointer)
         except KeyError:
-            error = "'{}' object not initialized".format(
-                type(self).__fullname__
-            )
+            error = "'{}' object not initialized".format(type(self).__fullname__)
             exc = RuntimeError(error)
             raise_from(exc, None)
             raise exc
 
+    @classmethod
     @final
-    def _freeze(self):
-        # type: () -> None
-        with self.__app.require_write_context():
-            with self.__app._AbstractObject__write_context() as writer:
-                writer.freeze(self)
+    def __get_frozen(
+        cls,  # type: Type[_AO]
+        storage,  # type: Storage[Pointer[AbstractObject], Store]
+        state,  # type: State
+        frozen_parent_ref,  # type: Optional[ReferenceType[AbstractObject]]
+    ):
+        # type: (...) -> _AO
+        self = cls.__new__(cls)
+        self_ref = ref(self)
+
+        memo = {}  # type: Dict[int, AbstractObject]
+
+        def freeze_child(child):
+            # type: (AbstractObject) -> AbstractObject
+            assert child.pointer in state.children_pointers
+            child_id = id(child)
+            if child_id in memo:
+                return memo[child_id]
+            child_state = child.__get_store(storage).state
+            memo[child_id] = frozen_child = type(child).__get_frozen(
+                storage, child_state, self_ref
+            )
+            return frozen_child
+
+        frozen_state = cls.__freeze_state__(state, freeze_child)
+
+        self.__pointer = Pointer(self)
+        self.__frozen_store = FrozenStore(
+            state=frozen_state, parent_ref=frozen_parent_ref
+        )
+        self.__frozen_hash = None
+
+        return self
+
+    @final
+    def _get_frozen(self):
+        # type: (_AO) -> _AO
+        if self.__frozen_store is not None:
+            return self
+
+        with self.app.require_context():
+            with self.app._AbstractObject__read_context() as storage:
+                store = self.__get_store(storage)
+                if store.parent_ref is not None:
+                    parent_ref = DEAD_REF  # type: Optional[ReferenceType]
+                else:
+                    parent_ref = None
+                state = store.state
+                return self.__get_frozen(storage, state, parent_ref)
+
+    @final
+    def _get_hash(self):
+        # type: () -> int
+        if self.__frozen_hash is not None:
+            return self.__frozen_hash
+
+        if self.__frozen_store is not None:
+            state = self.__frozen_store.state
+            self.__frozen_hash = frozen_hash = self.__get_hash__(state)
+            return frozen_hash
+
+        error = "'{}' object is not frozen and has no hash".format(
+            type(self).__fullname__
+        )
+        raise RuntimeError(error)
+
+    @final
+    def _get_location(self, child):
+        # type: (AbstractObject) -> Any
+        if self.__frozen_store is not None:
+            state = self.__frozen_store.state
+            return type(self).__locate_child__(child, state)
+
+        with self.app.require_context():
+            with self.app._AbstractObject__read_context() as storage:
+                store = self.__get_store(storage)
+                state = store.state
+                return type(self).__locate_child__(child, state)
 
     @final
     def _get_parent(self):
         # type: () -> Optional[AbstractObject]
-        with self.__app.require_context():
-            with self.__app._AbstractObject__read_context() as storage:
+        if self.__frozen_store is not None:
+            if self.__frozen_store.parent_ref is not None:
+                parent = self.__frozen_store.parent_ref()
+                if parent is None:
+                    error = "frozen parent object is no longer in memory"
+                    raise ReferenceError(error)
+                return parent
+            else:
+                return None
+
+        with self.app.require_context():
+            with self.app._AbstractObject__read_context() as storage:
                 store = self.__get_store(storage)
                 if store.parent_ref is not None:
                     parent = store.parent_ref()
@@ -249,64 +352,88 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
     @final
     def _get_history(self):
         # type: () -> Optional[AbstractHistoryObject]
-        with self.__app.require_context():
-            with self.__app._AbstractObject__read_context() as storage:
+        if self.__frozen_store is not None:
+            error = "frozen '{}' object has no history".format(type(self).__fullname__)
+            raise RuntimeError(error)
+
+        with self.app.require_context():
+            with self.app._AbstractObject__read_context() as storage:
                 return resolve_history(self, storage)
-
-    @final
-    def _get_location(self, child):
-        # type: (AbstractObject) -> Hashable
-        with self.__app.require_context():
-            return type(self).__locate_child__(child, self._get_state())
-
-    @final
-    def _is_frozen(self):
-        # type: (AbstractObject) -> bool
-        with self.__app.require_context():
-            with self.__app._AbstractObject__read_context() as storage:
-                store = self.__get_store(storage)
-                return store.frozen
 
     @final
     def _get_state(self):
         # type: () -> State
-        with self.__app.require_context():
-            with self.__app._AbstractObject__read_context() as storage:
+        if self.__frozen_store is not None:
+            return self.__frozen_store.state
+
+        with self.app.require_context():
+            with self.app._AbstractObject__read_context() as storage:
                 store = self.__get_store(storage)
                 return store.state
 
     @final
     def _set_state(self, new_state, event=None, undo_event=None):
         # type: (State, Any, Any) -> None
-        with self.__app.require_write_context():
-            with self.__app._AbstractObject__write_context() as writer:
+        if self.__frozen_store is not None:
+            error = "frozen '{}' object is immutable".format(type(self).__fullname__)
+            raise RuntimeError(error)
+
+        with self.app.require_write_context():
+            with self.app._AbstractObject__write_context() as writer:
                 writer.act(self, new_state, event=event, undo_event=undo_event)
 
     @final
     @contextmanager
     def _batch_context(self, name="Batch", **kwargs):
         # type: (str, Any) -> Iterator
-        with self.__app.require_write_context():
-            with self.__app._AbstractObject__write_context() as writer:
+        if self.__frozen_store is not None:
+            error = "frozen '{}' object is immutable".format(type(self).__fullname__)
+            raise RuntimeError(error)
+
+        with self.app.require_write_context():
+            with self.app._AbstractObject__write_context() as writer:
                 with writer.batch_context(self, name, pmap(kwargs)):
                     yield
 
     @property
-    def pointer(self):
-        # type: () -> Pointer
-        return self.__pointer
+    def _is_frozen(self):
+        # type: () -> bool
+        return self.__frozen_store is not None
 
     @property
     @final
-    def subject(self):
-        # type: () -> Subject
-        return self.__subject
+    def _subject(self):
+        # type: (_AO) -> Subject[_AO]
+        try:
+            return self.__subject
+        except AttributeError:
+            if self.__frozen_store is not None:
+                error = "frozen '{}' object has no subject".format(
+                    type(self).__fullname__
+                )
+                raise AttributeError(error)
+            else:
+                raise
+
+    @property
+    def pointer(self):
+        # type: (_AO) -> Pointer[_AO]
+        return self.__pointer
 
     @property
     @final
     def app(self):
         # type: () -> Application
-        return self.__app
+        try:
+            return self.__app
+        except AttributeError:
+            if self.__frozen_store is not None:
+                error = "frozen '{}' object is not part of an application".format(
+                    type(self).__fullname__
+                )
+                raise AttributeError(error)
+            else:
+                raise
 
 
 # noinspection PyAbstractClass
@@ -319,9 +446,6 @@ class AbstractHistoryObject(AbstractObject):
         assert_is_instance(descriptor, HistoryDescriptor, accept_subtypes=False)
         self.__descriptor = descriptor
 
-    def __getitem__(self, location):
-        return self.commands[location]
-
     @classmethod
     def __init_state__(cls, args):
         return State(
@@ -329,6 +453,16 @@ class AbstractHistoryObject(AbstractObject):
             metadata=None,
             children_pointers=pmap(),
         )
+
+    @classmethod
+    def __freeze_state__(cls, state, freeze_child):
+        # type: (State, Callable[[_AO], _AO]) -> State
+        return state
+
+    @classmethod
+    def __get_hash__(cls, state):
+        # type: (State) -> int
+        return hash(state.data)
 
     @classmethod
     def __locate_child__(cls, child, state):
