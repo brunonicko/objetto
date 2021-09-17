@@ -359,15 +359,15 @@ class _Writer(Base):
                     error = "can't change parent while hierarchy is locked"
                     raise RuntimeError(error)
 
-            # Get old and new historied children, and adoptions.
-            old_historied_pointers = set(
-                cp for cp, r in iteritems(old_state.children_pointers) if r.historied
+            # Get old and new historical children, and adoptions.
+            old_historical_pointers = set(
+                cp for cp, r in iteritems(old_state.children_pointers) if r.historical
             )
-            new_historied_pointers = set(
-                cp for cp, r in iteritems(new_state.children_pointers) if r.historied
+            new_historical_pointers = set(
+                cp for cp, r in iteritems(new_state.children_pointers) if r.historical
             )
-            historied_adoption_pointers = new_historied_pointers.difference(
-                old_historied_pointers
+            historical_adoption_pointers = new_historical_pointers.difference(
+                old_historical_pointers
             )
 
             # Prepare state change.
@@ -395,15 +395,15 @@ class _Writer(Base):
                     if child_last_parent_history is not history:
                         history_pointers_to_flush.add(child_last_parent_history.pointer)
 
-                # Mark the historied adoptions' old history to be flushed.
-                true_historied_adoption_pointers = set()
-                for historied_adoption_pointer in historied_adoption_pointers:
-                    adoption_store = self.__evolver.query(historied_adoption_pointer)
+                # Mark the historical adoptions' old history to be flushed.
+                true_historical_adoption_pointers = set()
+                for historical_adoption_pointer in historical_adoption_pointers:
+                    adoption_store = self.__evolver.query(historical_adoption_pointer)
 
                     # Historied adoption has its own history, skip it.
                     if adoption_store.history is not None:
                         continue
-                    true_historied_adoption_pointers.add(historied_adoption_pointer)
+                    true_historical_adoption_pointers.add(historical_adoption_pointer)
 
                     # Historied adoption has a provided history, mark to flush it.
                     adoption_old_history = resolve_history(
@@ -437,12 +437,12 @@ class _Writer(Base):
                     })
 
                 # History propagation.
-                for historied_adoption_pointer in true_historied_adoption_pointers:
-                    historied_adoption_store = self.__evolver.query(
-                        historied_adoption_pointer
+                for historical_adoption_pointer in true_historical_adoption_pointers:
+                    historical_adoption_store = self.__evolver.query(
+                        historical_adoption_pointer
                     )
                     self.__evolver.update({
-                        historied_adoption_pointer: historied_adoption_store.set(
+                        historical_adoption_pointer: historical_adoption_store.set(
                             history_provider_ref=obj_ref
                         )
                     })

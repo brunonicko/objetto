@@ -1,7 +1,6 @@
 TODO:
   - Application properties
   - Ability to lock/unlock an object (recursively or not) and give it a "reason" message
-  - Freezable relationship support
   - Serialization design
   - Object classes
   - Object observer class/mixin
@@ -12,3 +11,4 @@ TODO:
 
 DONE:
   - Application 'context_safe' parameter
+  - Freezable relationship support

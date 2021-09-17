@@ -61,9 +61,11 @@ class ValueObject(AbstractObject):
         if child is not None:
             assert isinstance(child, ValueObject)
             if child.app is args["app"]:
-                children_pointers = pmap(
-                    {child.pointer: Relationship(historied=True, serialized=True)}
-                )
+                children_pointers = pmap({
+                    child.pointer: Relationship(
+                        historical=True, serializable=True, freezable=True
+                    )
+                })
             else:
                 error = "child app mismatch"
                 raise RuntimeError(error)
@@ -76,12 +78,12 @@ class ValueObject(AbstractObject):
         )
 
     @classmethod
-    def __freeze_data__(cls, data, metadata, child_freezer):
+    def __freeze_data__(cls, data, metadata, freeze):
         value = data["value"]
         if data["child"] is None:
             child = None
         else:
-            child = child_freezer(data["child"])
+            child = freeze(data["child"])
         return pmap({"value": value, "child": child}), None
 
     @classmethod
@@ -124,9 +126,11 @@ class ValueObject(AbstractObject):
     def child(self, new_child):
         if new_child is not None:
             assert isinstance(new_child, ValueObject)
-            children_pointers = pmap(
-                {new_child.pointer: Relationship(historied=True, serialized=True)}
-            )
+            children_pointers = pmap({
+                new_child.pointer: Relationship(
+                    historical=True, serializable=True, freezable=True
+                )
+            })
         else:
             children_pointers = pmap()
         old_state = self._get_state()

@@ -219,7 +219,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
         cls,
         data,  # type: T_Data
         metadata,  # type: T_Metadata
-        child_freezer,  # type: Callable[[T_AbstractObject], T_AbstractObject]
+        freeze,  # type: Callable[[T_AbstractObject], T_AbstractObject]
     ):
         # type: (...) -> Tuple[T_Data, T_Metadata]
         raise NotImplementedError()
@@ -301,9 +301,10 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
 
         memo = {}  # type: Dict[int, AbstractObject]
 
-        def child_freezer(child):
+        def freeze(child):
             # type: (AbstractObject) -> AbstractObject
-            assert child.pointer in state.children_pointers
+            relationship = state.children_pointers[child.pointer]
+            assert relationship.freezable
             child_id = id(child)
             if child_id in memo:
                 return memo[child_id]
@@ -314,7 +315,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
             return frozen_child
 
         frozen_data, frozen_metadata = cls.__freeze_data__(
-            state.data, state.metadata, child_freezer
+            state.data, state.metadata, freeze
         )
         frozen_children_pointers = pmap(
             (memo[id(c.obj)], r) for c, r in iteritems(state.children_pointers)
@@ -539,7 +540,7 @@ class AbstractHistoryObject(AbstractObject):
         cls,
         data,  # type: T_Data
         metadata,  # type: T_Metadata
-        child_freezer,  # type: Callable[[T_AbstractObject], T_AbstractObject]
+        freeze,  # type: Callable[[T_AbstractObject], T_AbstractObject]
     ):
         # type: (...) -> Tuple[T_Data, T_Metadata]
         return data, metadata

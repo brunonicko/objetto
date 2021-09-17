@@ -42,8 +42,9 @@ class ObserverError(PClass):
 
 
 class Relationship(PClass):
-    historied = field(mandatory=True)  # type: bool
-    serialized = field(mandatory=True)  # type: bool
+    historical = field(mandatory=True)  # type: bool
+    serializable = field(mandatory=True)  # type: bool
+    freezable = field(mandatory=True)  # type: bool
 
 
 class State(PClass):
