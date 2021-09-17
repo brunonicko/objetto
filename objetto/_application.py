@@ -466,10 +466,11 @@ class Application(Base):
 
     __slots__ = (
         "__weakref__",
-        "__type_safe",
         "__lock",
         "__local",
+        "__type_safe",
         "__thread_safe",
+        "__context_safe",
         "__storage",
         "__evolver",
         "__commits",
@@ -477,18 +478,22 @@ class Application(Base):
         "__subject",
     )
 
-    def __init__(self, type_safe=True, thread_safe=False):
-        # type: (bool, bool) -> None
-        self.__type_safe = bool(type_safe)
+    def __init__(self, type_safe=True, thread_safe=False, context_safe=True):
+        # type: (bool, bool, bool) -> None
 
         if thread_safe:
+            if not context_safe:
+                error = "application has to be context safe in order to be thread safe"
+                raise ValueError(error)
             self.__lock = RWThreadingLock()  # type: AbstractRWLock
             self.__local = local()  # type: Union[local, Namespace]
         else:
             self.__lock = RWLock()
             self.__local = Namespace()
 
+        self.__type_safe = bool(type_safe)  # type: bool
         self.__thread_safe = bool(thread_safe)  # type: bool
+        self.__context_safe = bool(context_safe)  # type: bool
         self.__storage = Storage()  # type: Storage[Pointer[AbstractObject], Store]
         self.__evolver = None  # type: Optional[Evolver[Pointer[AbstractObject], Store]]
         self.__commits = []  # type: List[Commit]
@@ -622,23 +627,40 @@ class Application(Base):
         # type: () -> bool
         return self.__thread_safe
 
+    @property
+    def context_safe(self):
+        # type: () -> bool
+        return self.__context_safe
+
     @contextmanager
     def require_context(self):
         # type: () -> Iterator
-        with self.__lock.require_context():
-            yield
+        if self.__context_safe:
+            with self.__lock.require_context():
+                yield
+        else:
+            with self.__lock.read_context():
+                yield
 
     @contextmanager
     def require_read_context(self):
         # type: () -> Iterator
-        with self.__lock.require_read_context():
-            yield
+        if self.__context_safe:
+            with self.__lock.require_read_context():
+                yield
+        else:
+            with self.__lock.read_context():
+                yield
 
     @contextmanager
     def require_write_context(self):
         # type: () -> Iterator
-        with self.__lock.require_write_context():
-            yield
+        if self.__context_safe:
+            with self.__lock.require_write_context():
+                yield
+        else:
+            with self.__lock.write_context():
+                yield
 
     @contextmanager
     def read_context(self, snapshot=None):

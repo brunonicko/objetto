@@ -615,12 +615,12 @@ def test_frozen(thread_safe):
     assert frozen_obj4.child == frozen_obj3
     assert frozen_obj4 == frozen_obj4
 
-    with raises(RuntimeError):
-        assert frozen_obj1.child == obj0
-        assert frozen_obj2.child == obj1
-        assert frozen_obj3.child == obj2
-        assert frozen_obj4.child == obj3
-        assert frozen_obj4 == obj4
+    with app.read_context():
+        assert frozen_obj1.child != obj0
+        assert frozen_obj2.child != obj1
+        assert frozen_obj3.child != obj2
+        assert frozen_obj4.child != obj3
+        assert frozen_obj4 != obj4
 
     with app.read_context():
         assert obj1.child == obj0

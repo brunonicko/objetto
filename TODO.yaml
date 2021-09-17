@@ -1,5 +1,4 @@
 TODO:
-  - Application "context_safe" parameter
   - Application properties
   - Ability to lock/unlock an object (recursively or not) and give it a "reason" message
   - Freezable relationship support
@@ -10,3 +9,6 @@ TODO:
   - Logging object classes
   - Status object classes
   - Knob object classes
+
+DONE:
+  - Application 'context_safe' parameter
