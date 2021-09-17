@@ -280,7 +280,7 @@ class _Writer(Base):
             children_pointers = store.state.children_pointers
             if children_pointers:
                 obj_ref = ref(obj)
-                for child_pointer in children_pointers:
+                for child_pointer, relationship in iteritems(children_pointers):
                     child = child_pointer.obj
                     child_app = child.app
                     if child_app is not obj.app:
@@ -292,9 +292,20 @@ class _Writer(Base):
                         error = "{} already parented".format(child)
                         raise RuntimeError(error)
 
-                    child_store = self.__evolver.query(child_pointer)
+                    if child_store.history is not None and relationship.historical:
+                        child_history_provider_ref = obj_ref
+                    else:
+                        child_history_provider_ref = None
+
+                    # FIXME: Flush last parent histories, unify child logic with act()
+                    child_last_parent_history_ref = None
+
                     self.__evolver.update({
-                        child_pointer: child_store.set(parent_ref=obj_ref)
+                        child_pointer: child_store.set(
+                            parent_ref=obj_ref,
+                            history_provider_ref=child_history_provider_ref,
+                            child_last_parent_history_ref=child_last_parent_history_ref,
+                        )
                     })
 
             self.__evolver.update({obj.pointer: store})

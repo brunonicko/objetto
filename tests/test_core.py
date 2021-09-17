@@ -434,13 +434,31 @@ def test_history_descriptor(thread_safe):
     app = Application(thread_safe=thread_safe)
     with app.write_context():
         obj_a = ValueObject(app, 1)
-        assert isinstance(obj_a.history_a, AbstractObject)
-        assert isinstance(obj_a._get_history(), AbstractObject)
+        assert isinstance(obj_a.history_a, AbstractHistoryObject)
+        assert isinstance(obj_a._get_history(), AbstractHistoryObject)
         assert obj_a._get_history() is obj_a.history_a
 
         obj_b = GoodObject(app, 2)
         assert obj_b.history_a is None
         assert obj_b._get_history() is None
+
+    with app.write_context():
+        obj_a = GoodObject(app, 1)
+        obj_b = GoodObject(app, 2, obj_a)
+        obj_c = GoodObject(app, 3, obj_b)
+        obj_d = ValueObject(app, 4, obj_c)
+        obj_e = GoodObject(app, 4, obj_d)
+
+        assert isinstance(obj_d._get_history(), AbstractHistoryObject)
+        assert isinstance(obj_c._get_history(), AbstractHistoryObject)
+        assert isinstance(obj_b._get_history(), AbstractHistoryObject)
+        assert isinstance(obj_a._get_history(), AbstractHistoryObject)
+
+        assert obj_a._get_history() is obj_d.history_a
+        assert obj_b._get_history() is obj_d.history_a
+        assert obj_c._get_history() is obj_d.history_a
+        assert obj_d._get_history() is obj_d.history_a
+        assert obj_e._get_history() is None
 
 
 def test_thread_safety():
