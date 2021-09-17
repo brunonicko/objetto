@@ -246,6 +246,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
         # type: (Dict[str, Any]) -> None
         pass
 
+    @final
     def __repr__(self):
         # type: () -> str
         return "<{}{} at {}>".format(
@@ -254,6 +255,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
             hex(id(self)),
         )
 
+    @final
     def __eq__(self, other):
         same_type = type(self) is type(other)
 
@@ -476,6 +478,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
                     yield
 
     @property
+    @final
     def _is_frozen(self):
         # type: () -> bool
         return self.__frozen_store is not None
@@ -496,6 +499,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
                 raise
 
     @property
+    @final
     def pointer(self):
         # type: (T_AbstractObject) -> Pointer[T_AbstractObject]
         return self.__pointer

@@ -1,8 +1,8 @@
 TODO:
-  - Application properties
   - Ability to lock/unlock an object (recursively or not) and give it a "reason" message
-  - Serialization design
-  - Object classes
+  - Serialization design, ability to serialize/deserialize to/from frozen if desired
+  - Application properties/global variables or how to retrieve objects from registry
+  - Object classes (Object, ContainerObject, ListObject, DictObject)
   - Object observer class/mixin
   - History object class
   - Logging object classes
