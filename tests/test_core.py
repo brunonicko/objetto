@@ -447,7 +447,7 @@ def test_history_descriptor(thread_safe):
         obj_b = GoodObject(app, 2, obj_a)
         obj_c = GoodObject(app, 3, obj_b)
         obj_d = ValueObject(app, 4, obj_c)
-        obj_e = GoodObject(app, 4, obj_d)
+        obj_e = GoodObject(app, 5, obj_d)
 
         assert isinstance(obj_d._get_history(), AbstractHistoryObject)
         assert isinstance(obj_c._get_history(), AbstractHistoryObject)
@@ -459,6 +459,28 @@ def test_history_descriptor(thread_safe):
         assert obj_c._get_history() is obj_d.history_a
         assert obj_d._get_history() is obj_d.history_a
         assert obj_e._get_history() is None
+
+        obj_d.child = None
+
+        assert isinstance(obj_d._get_history(), AbstractHistoryObject)
+        assert isinstance(obj_c._get_history(), AbstractHistoryObject)
+        assert isinstance(obj_b._get_history(), AbstractHistoryObject)
+        assert isinstance(obj_a._get_history(), AbstractHistoryObject)
+
+        obj_f = GoodObject(app, 6, obj_c)
+
+        assert obj_f._get_history() is None
+        assert obj_c._get_history() is None
+        assert obj_b._get_history() is None
+        assert obj_a._get_history() is None
+
+        obj_f.child = None
+        obj_d.child = obj_c
+
+        assert obj_a._get_history() is obj_d.history_a
+        assert obj_b._get_history() is obj_d.history_a
+        assert obj_c._get_history() is obj_d.history_a
+        assert obj_d._get_history() is obj_d.history_a
 
 
 def test_thread_safety():

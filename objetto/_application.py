@@ -40,6 +40,8 @@ if TYPE_CHECKING:
     from ._structures import Store
     from ._objects import AbstractObject, AbstractHistoryObject
 
+    ObjPointer = Pointer[AbstractObject]
+
 __all__ = ["Application", "resolve_history"]
 
 
@@ -244,6 +246,159 @@ class _Writer(Base):
                 if set_acting_flag:
                     obj._Writer__acting = False
 
+    def _prepare_parent(
+        self,
+        obj,  # type: AbstractObject
+        new_state,  # type: State
+        old_state=None,  # type: Optional[State]
+        hierarchy=None,  # type: Optional[Tuple[AbstractObject, ...]]
+    ):
+        # type: (...) -> Tuple[Set[ObjPointer], Set[ObjPointer], Set[ObjPointer]]
+        app = obj.app
+
+        # No hierarchy provided, consider the obj only.
+        if hierarchy is None:
+            hierarchy = (obj,)
+
+        # Get old and new children, releases and adoptions.
+        if old_state is not None:
+            old_children_pointers = set(old_state.children_pointers)
+        else:
+            old_children_pointers = set()
+        new_children_pointers = set(new_state.children_pointers)
+        release_pointers = old_children_pointers.difference(new_children_pointers)
+        adoption_pointers = new_children_pointers.difference(old_children_pointers)
+
+        # Check if hierarchy changes are allowed.
+        if release_pointers:
+            for release_pointer in release_pointers:
+                release = release_pointer.obj
+                if release._Writer__pinned_count:
+                    error = "can't change parent while hierarchy is locked"
+                    raise RuntimeError(error)
+
+        hierarchy_pointers = set()  # type: Set[Pointer[AbstractObject]]
+        if adoption_pointers:
+            hierarchy_pointers.update(o.pointer for o in hierarchy)
+
+        for adoption_pointer in adoption_pointers:
+            adoption = adoption_pointer.obj
+
+            if adoption.pointer in hierarchy_pointers:
+                error = "parent cycle detected"
+                raise RuntimeError(error)
+
+            child_app = adoption.app
+            if child_app is not app:
+                error = "child/parent app mismatch"
+                raise RuntimeError(error)
+
+            child_store = self.query(adoption)
+            if child_store.parent_ref is not None:
+                error = "{} already parented".format(adoption)
+                raise RuntimeError(error)
+
+            if adoption._Writer__pinned_count:
+                error = "can't change parent while hierarchy is locked"
+                raise RuntimeError(error)
+
+        # Get old and new historical children, and adoptions.
+        if old_state is not None:
+            old_historical_pointers = set(
+                cp for cp, r in iteritems(old_state.children_pointers) if r.historical
+            )
+        else:
+            old_historical_pointers = set()
+        new_historical_pointers = set(
+            cp for cp, r in iteritems(new_state.children_pointers) if r.historical
+        )
+        historical_adoption_pointers = new_historical_pointers.difference(
+            old_historical_pointers
+        )
+
+        return adoption_pointers, release_pointers, historical_adoption_pointers
+
+    def _parent(
+        self,
+        obj,  # type: AbstractObject
+        history,  # type: Optional[AbstractHistoryObject]
+        adoption_pointers,  # type: Set[Pointer[AbstractObject]]
+        release_pointers,  # type: Set[Pointer[AbstractObject]]
+        historical_adoption_pointers,  # type: Set[Pointer[AbstractObject]]
+    ):
+        # type: (...) -> None
+
+        # Get weak references to obj and history.
+        obj_ref = ref(obj)
+        if history is None:
+            history_ref = None
+        else:
+            history_ref = ref(history)
+
+        # For new adoptions, mark their last parents' histories to be flushed.
+        history_pointers_to_flush = set()
+        for adoption_pointer in adoption_pointers:
+            child_store = self.__evolver.query(adoption_pointer)
+            if child_store.last_parent_history_ref is None:
+                continue
+            child_last_parent_history = child_store.last_parent_history_ref()
+            if child_last_parent_history is None:
+                continue
+            if child_last_parent_history is not history:
+                history_pointers_to_flush.add(child_last_parent_history.pointer)
+
+        # Mark the historical adoptions' old history to be flushed.
+        true_historical_adoption_pointers = set()
+        for historical_adoption_pointer in historical_adoption_pointers:
+            adoption_store = self.__evolver.query(historical_adoption_pointer)
+
+            # Historied adoption has its own history, skip it.
+            if adoption_store.history is not None:
+                continue
+            true_historical_adoption_pointers.add(historical_adoption_pointer)
+
+            # Historied adoption has a provided history, mark to flush it.
+            adoption_old_history = resolve_history(
+                historical_adoption_pointer.obj, self.__evolver
+            )
+            if adoption_old_history is None:
+                continue
+            if adoption_old_history is not history:
+                history_pointers_to_flush.add(adoption_old_history.pointer)
+
+        # Flush histories.
+        for history_pointer_to_flush in history_pointers_to_flush:
+            history_to_flush = history_pointer_to_flush.obj
+            history_to_flush.flush()
+
+        # Update reference to parent in releases and adoptions.
+        for release_pointer in release_pointers:
+            adoption_store = self.__evolver.query(release_pointer)
+            self.__evolver.update({
+                release_pointer: adoption_store.set(
+                    parent_ref=None,
+                )
+            })
+        for adoption_pointer in adoption_pointers:
+            adoption_store = self.__evolver.query(adoption_pointer)
+            self.__evolver.update({
+                adoption_pointer: adoption_store.set(
+                    parent_ref=obj_ref,
+                    last_parent_history_ref=history_ref,
+                )
+            })
+
+        # History propagation.
+        for historical_adoption_pointer in true_historical_adoption_pointers:
+            historical_adoption_store = self.__evolver.query(
+                historical_adoption_pointer
+            )
+            self.__evolver.update({
+                historical_adoption_pointer: historical_adoption_store.set(
+                    history_provider_ref=obj_ref
+                )
+            })
+
     @contextmanager
     def batch_context(self, obj, name, kwargs):
         # type: (AbstractObject, str, PMap[str, Any]) -> Iterator
@@ -277,44 +432,26 @@ class _Writer(Base):
 
         change = InitializedChange(state=store.state)
         with self._action_context(obj, change, True):
-            children_pointers = store.state.children_pointers
-            if children_pointers:
-                obj_ref = ref(obj)
-                for child_pointer, relationship in iteritems(children_pointers):
-                    child = child_pointer.obj
-                    child_app = child.app
-                    if child_app is not obj.app:
-                        error = "child/parent app mismatch"
-                        raise RuntimeError(error)
 
-                    child_store = self.query(child)
-                    if child_store.parent_ref is not None:
-                        error = "{} already parented".format(child)
-                        raise RuntimeError(error)
+            # Parent.
+            adoption_pointers, release_pointers, historical_adoption_pointers = (
+                self._prepare_parent(obj, store.state)
+            )
+            self._parent(
+                obj,
+                store.history,
+                adoption_pointers,
+                release_pointers,
+                historical_adoption_pointers,
+            )
 
-                    if child_store.history is not None and relationship.historical:
-                        child_history_provider_ref = obj_ref
-                    else:
-                        child_history_provider_ref = None
-
-                    # FIXME: Flush last parent histories, unify child logic with act()
-                    child_last_parent_history_ref = None
-
-                    self.__evolver.update({
-                        child_pointer: child_store.set(
-                            parent_ref=obj_ref,
-                            history_provider_ref=child_history_provider_ref,
-                            child_last_parent_history_ref=child_last_parent_history_ref,
-                        )
-                    })
-
+            # Update evolver.
             self.__evolver.update({obj.pointer: store})
 
     def act(self, obj, new_state, event=None, undo_event=None):
         # type: (AbstractObject, State, Any, Any) -> None
-        app = obj.app
 
-        # This will fail if the object state hasn't been initialized.
+        # Get store.
         store = self.query(obj)
 
         # Pin the hierarchy.
@@ -324,61 +461,14 @@ class _Writer(Base):
             history = resolve_history(obj, self.__evolver)
             old_state = store.state
 
-            # Get weak references to obj and history.
-            obj_ref = ref(obj)
-            if history is None:
-                history_ref = None
-            else:
-                history_ref = ref(history)
-
-            # Get old and new children, releases and adoptions.
-            old_children_pointers = set(old_state.children_pointers)
-            new_children_pointers = set(new_state.children_pointers)
-            release_pointers = old_children_pointers.difference(new_children_pointers)
-            adoption_pointers = new_children_pointers.difference(old_children_pointers)
-
-            # Check if hierarchy changes are allowed.
-            if release_pointers:
-                for release_pointer in release_pointers:
-                    release = release_pointer.obj
-                    if release._Writer__pinned_count:
-                        error = "can't change parent while hierarchy is locked"
-                        raise RuntimeError(error)
-
-            hierarchy_pointers = set()  # type: Set[Pointer[AbstractObject]]
-            if adoption_pointers:
-                hierarchy_pointers.update(o.pointer for o in hierarchy)
-
-            for adoption_pointer in adoption_pointers:
-                adoption = adoption_pointer.obj
-
-                if adoption.pointer in hierarchy_pointers:
-                    error = "parent cycle detected"
-                    raise RuntimeError(error)
-
-                child_app = adoption.app
-                if child_app is not app:
-                    error = "child/parent app mismatch"
-                    raise RuntimeError(error)
-
-                child_store = self.query(adoption)
-                if child_store.parent_ref is not None:
-                    error = "{} already parented".format(adoption)
-                    raise RuntimeError(error)
-
-                if adoption._Writer__pinned_count:
-                    error = "can't change parent while hierarchy is locked"
-                    raise RuntimeError(error)
-
-            # Get old and new historical children, and adoptions.
-            old_historical_pointers = set(
-                cp for cp, r in iteritems(old_state.children_pointers) if r.historical
-            )
-            new_historical_pointers = set(
-                cp for cp, r in iteritems(new_state.children_pointers) if r.historical
-            )
-            historical_adoption_pointers = new_historical_pointers.difference(
-                old_historical_pointers
+            # Prepare parent.
+            adoption_pointers, release_pointers, historical_adoption_pointers = (
+                self._prepare_parent(
+                    obj,
+                    new_state,
+                    old_state=old_state,
+                    hierarchy=hierarchy,
+                )
             )
 
             # Prepare state change.
@@ -394,69 +484,14 @@ class _Writer(Base):
             # Enter an action context.
             with self._action_context(obj, change, True):
 
-                # For new adoptions, mark their last parents' histories to be flushed.
-                history_pointers_to_flush = set()
-                for adoption_pointer in adoption_pointers:
-                    child_store = self.__evolver.query(adoption_pointer)
-                    if child_store.last_parent_history_ref is None:
-                        continue
-                    child_last_parent_history = child_store.last_parent_history_ref()
-                    if child_last_parent_history is None:
-                        continue
-                    if child_last_parent_history is not history:
-                        history_pointers_to_flush.add(child_last_parent_history.pointer)
-
-                # Mark the historical adoptions' old history to be flushed.
-                true_historical_adoption_pointers = set()
-                for historical_adoption_pointer in historical_adoption_pointers:
-                    adoption_store = self.__evolver.query(historical_adoption_pointer)
-
-                    # Historied adoption has its own history, skip it.
-                    if adoption_store.history is not None:
-                        continue
-                    true_historical_adoption_pointers.add(historical_adoption_pointer)
-
-                    # Historied adoption has a provided history, mark to flush it.
-                    adoption_old_history = resolve_history(
-                        adoption_pointer.obj, self.__evolver
-                    )
-                    if adoption_old_history is None:
-                        continue
-                    if adoption_old_history is not history:
-                        history_pointers_to_flush.add(adoption_old_history.pointer)
-
-                # Flush histories.
-                for history_pointer_to_flush in history_pointers_to_flush:
-                    history_to_flush = history_pointer_to_flush.obj
-                    history_to_flush.flush()
-
-                # Update reference to parent in releases and adoptions.
-                for release_pointer in release_pointers:
-                    adoption_store = self.__evolver.query(release_pointer)
-                    self.__evolver.update({
-                        release_pointer: adoption_store.set(
-                            parent_ref=None,
-                        )
-                    })
-                for adoption_pointer in adoption_pointers:
-                    adoption_store = self.__evolver.query(adoption_pointer)
-                    self.__evolver.update({
-                        adoption_pointer: adoption_store.set(
-                            parent_ref=obj_ref,
-                            last_parent_history_ref=history_ref,
-                        )
-                    })
-
-                # History propagation.
-                for historical_adoption_pointer in true_historical_adoption_pointers:
-                    historical_adoption_store = self.__evolver.query(
-                        historical_adoption_pointer
-                    )
-                    self.__evolver.update({
-                        historical_adoption_pointer: historical_adoption_store.set(
-                            history_provider_ref=obj_ref
-                        )
-                    })
+                # Perform parenting.
+                self._parent(
+                    obj,
+                    history,
+                    adoption_pointers,
+                    release_pointers,
+                    historical_adoption_pointers,
+                )
 
                 # Update object store.
                 self.__evolver.update({obj.pointer: store.set(state=new_state)})
