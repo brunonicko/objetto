@@ -2,7 +2,7 @@
 
 import inspect
 from abc import abstractmethod
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, cast
 from contextlib import contextmanager
 from weakref import ref
 
@@ -16,13 +16,13 @@ from .utils.pointer import Pointer
 from ._application import Application, resolve_history
 from ._constants import DEAD_REF
 from ._descriptors import ReactionDescriptor, HistoryDescriptor, HashDescriptor
-from ._structures import FrozenStore, Store, State
+from ._structures import FrozenStore, Store, State, HistoryData, HistoryCommand
 
 if TYPE_CHECKING:
     from weakref import ReferenceType
     from typing import Any, Dict, Callable, Optional, Iterator, Tuple, Type
 
-    from ._structures import Storage
+    from ._structures import Storage, Action, StateChange
 
     T_Data = TypeVar("T_Data")
     T_Metadata = TypeVar("T_Metadata")
@@ -534,7 +534,7 @@ class AbstractHistoryObject(AbstractObject):
     @classmethod
     def __init_state__(cls, args):
         return State(
-            data=pmap({"index": 0, "commands": pvector([None])}),
+            data=HistoryData(index=0, commands=pvector([None]), executing=False),
             metadata=None,
             children_pointers=pmap(),
         )
@@ -564,15 +564,43 @@ class AbstractHistoryObject(AbstractObject):
         error = "could not locate child {}".format(child)
         raise ValueError(error)
 
-    def __push_change__(self, change):
+    def __push_action__(self, action):
+        # type: (Action) -> None
         # TODO: ignore when initializing context
-        assert self
-        assert change
-        # print(change)  # TODO
+        old_state = self._get_state()
+        new_commands = old_state.data.commands.append(
+            HistoryCommand(actions=pvector([action]))
+        )
+        new_state = State(
+            data=old_state.data.set(
+                "commands", new_commands
+            ).set(
+                "index", old_state.data.index + 1
+            ),
+            metadata=None,
+            children_pointers=pmap(),
+        )
+        self._set_state(new_state)
 
     def flush(self):
-        assert self
-        # print("FLUSH!")  # TODO
+        self._set_state(type(self).__init_state__({}))
+
+    def undo(self):
+        with self.app._AbstractObject__write_context() as writer:
+            old_state = self._get_state()
+            command = old_state.data.commands[
+                old_state.data.index
+            ]  # type: HistoryCommand
+            assert command is not None
+            for action in reversed(command.actions):
+                change = cast("StateChange", action.change)
+                writer.act(action.source, change.old_state, from_history=True)
+            new_state = State(
+                data=old_state.data.set("index", old_state.data.index - 1),
+                metadata=None,
+                children_pointers=pmap(),
+            )
+            self._set_state(new_state)
 
     @property
     @final
@@ -581,8 +609,8 @@ class AbstractHistoryObject(AbstractObject):
 
     @property
     def index(self):
-        return self._get_state().data["index"]
+        return self._get_state().data.index
 
     @property
     def commands(self):
-        return self._get_state().data["commands"]
+        return self._get_state().data.commands

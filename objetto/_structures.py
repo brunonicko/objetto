@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from weakref import ReferenceType
     from typing import Any, Optional, Tuple, Hashable
 
-    from pyrsistent.typing import PMap, PSet
+    from pyrsistent.typing import PMap, PSet, PVector
 
     from .utils.pointer import Pointer
     from .utils.storage import Storage
@@ -22,6 +22,8 @@ __all__ = [
     "ObserverError",
     "Relationship",
     "State",
+    "HistoryData",
+    "HistoryCommand",
     "AbstractChange",
     "InitializedChange",
     "StateChange",
@@ -53,6 +55,16 @@ class State(PClass):
     children_pointers = field(
         mandatory=True
     )  # type: PMap[Pointer[AbstractObject], Relationship]
+
+
+class HistoryCommand(PClass):
+    actions = field(mandatory=True)  # type: PVector[Action]
+
+
+class HistoryData(PClass):
+    index = field(mandatory=True)  # type: int
+    commands = field(mandatory=True)  # type: PVector[Optional[HistoryCommand]]
+    executing = field(mandatory=True)  # type: bool
 
 
 class AbstractChange(PClass):

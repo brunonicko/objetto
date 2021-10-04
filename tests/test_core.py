@@ -4,7 +4,7 @@ from collections import namedtuple
 from threading import Thread
 from random import randint
 
-from pyrsistent import pmap
+from pyrsistent import pmap, pset
 from six.moves import collections_abc
 
 from objetto._structures import (
@@ -204,6 +204,8 @@ class ValueObjectObserver(Observer):
         self.post_snapshots = []
 
     def __observe__(self, action, phase):
+        if isinstance(action.source, AbstractHistoryObject):
+            return
         if isinstance(action.change, StateChange):
             if phase is Phase.PRE:
                 assert action.source.value == action.change.event.old_value
@@ -441,6 +443,13 @@ def test_history_descriptor(thread_safe):
         obj_b = GoodObject(app, 2)
         assert obj_b.history_a is None
         assert obj_b._get_history() is None
+
+    with app.write_context():
+        assert obj_a._get_history().commands == [None]
+        obj_a.value = 100
+        assert obj_a._get_history().commands
+        obj_a._get_history().flush()
+        assert obj_a._get_history().commands == [None]
 
     with app.write_context():
         obj_a = GoodObject(app, 1)
@@ -790,8 +799,9 @@ def test_reject_batch_exception(thread_safe):
         assert obj1.value == 1000
 
 
-def test_pointer():
-    app = Application()
+@mark.parametrize("thread_safe", (True, False))
+def test_pointer(thread_safe):
+    app = Application(thread_safe=thread_safe)
 
     with app.write_context():
         obj1 = ValueObject(app, 1)
@@ -799,6 +809,28 @@ def test_pointer():
 
     assert obj1.pointer.obj is obj1
     assert obj2.pointer.obj is obj2
+
+
+@mark.parametrize("thread_safe", (True, False))
+def test_undo(thread_safe):
+    app = Application(thread_safe=thread_safe)
+
+    with app.write_context():
+        obj1 = ValueObject(app, 1)
+
+        assert obj1.value == 1
+        assert obj1.history_a.commands == [None]
+        assert obj1.history_a.index == 0
+
+        obj1.value = 2
+        assert len(obj1.history_a.commands) == 2
+        assert obj1.history_a.index == 1
+
+        obj1.history_a.undo()
+
+        assert obj1.value == 1
+        assert len(obj1.history_a.commands) == 2
+        assert obj1.history_a.index == 0
 
 
 if __name__ == "__main__":

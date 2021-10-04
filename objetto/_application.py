@@ -52,7 +52,7 @@ class _Writer(Base):
     __slots__ = ("__evolver", "__commits")
 
     def __init__(self, evolver, commits):
-        # type: (Evolver[Pointer[AbstractObject], Store], List[Commit]) -> None
+        # type: (Evolver[ObjPointer, Store], List[Commit]) -> None
         self.__evolver = evolver
         self.__commits = commits
 
@@ -145,7 +145,7 @@ class _Writer(Base):
 
     @contextmanager
     def _action_context(self, obj, change, set_acting_flag):
-        # type: (AbstractObject, AbstractChange, bool) -> Iterator
+        # type: (AbstractObject, AbstractChange, bool) -> Iterator[Action]
 
         # Can't act if already acting.
         if obj._Writer__acting:
@@ -211,7 +211,7 @@ class _Writer(Base):
                     self.__commits.append(commit)
 
                 # Perform changes.
-                yield
+                yield app_action
 
                 # Store POST commits.
                 post_storage = self.__evolver.storage()
@@ -277,7 +277,7 @@ class _Writer(Base):
                     error = "can't change parent while hierarchy is locked"
                     raise RuntimeError(error)
 
-        hierarchy_pointers = set()  # type: Set[Pointer[AbstractObject]]
+        hierarchy_pointers = set()  # type: Set[ObjPointer]
         if adoption_pointers:
             hierarchy_pointers.update(o.pointer for o in hierarchy)
 
@@ -322,9 +322,9 @@ class _Writer(Base):
         self,
         obj,  # type: AbstractObject
         history,  # type: Optional[AbstractHistoryObject]
-        adoption_pointers,  # type: Set[Pointer[AbstractObject]]
-        release_pointers,  # type: Set[Pointer[AbstractObject]]
-        historical_adoption_pointers,  # type: Set[Pointer[AbstractObject]]
+        adoption_pointers,  # type: Set[ObjPointer]
+        release_pointers,  # type: Set[ObjPointer]
+        historical_adoption_pointers,  # type: Set[ObjPointer]
     ):
         # type: (...) -> None
 
@@ -448,8 +448,8 @@ class _Writer(Base):
             # Update evolver.
             self.__evolver.update({obj.pointer: store})
 
-    def act(self, obj, new_state, event=None, undo_event=None):
-        # type: (AbstractObject, State, Any, Any) -> None
+    def act(self, obj, new_state, event=None, undo_event=None, from_history=False):
+        # type: (AbstractObject, State, Any, Any, bool) -> None
 
         # Get store.
         store = self.query(obj)
@@ -482,7 +482,7 @@ class _Writer(Base):
             )
 
             # Enter an action context.
-            with self._action_context(obj, change, True):
+            with self._action_context(obj, change, True) as app_action:
 
                 # Perform parenting.
                 self._parent(
@@ -496,9 +496,9 @@ class _Writer(Base):
                 # Update object store.
                 self.__evolver.update({obj.pointer: store.set(state=new_state)})
 
-            # Push changes to history.
-            if history is not None:
-                history.__push_change__(change)
+                # Push action to history.
+                if not from_history and history is not None:
+                    history.__push_action__(app_action)
 
 
 @final
@@ -540,8 +540,8 @@ class Application(Base):
         self.__type_safe = bool(type_safe)  # type: bool
         self.__thread_safe = bool(thread_safe)  # type: bool
         self.__context_safe = bool(context_safe)  # type: bool
-        self.__storage = Storage()  # type: Storage[Pointer[AbstractObject], Store]
-        self.__evolver = None  # type: Optional[Evolver[Pointer[AbstractObject], Store]]
+        self.__storage = Storage()  # type: Storage[ObjPointer, Store]
+        self.__evolver = None  # type: Optional[Evolver[ObjPointer, Store]]
         self.__commits = []  # type: List[Commit]
         self.__snapshot_storages = WeakSet()  # type: WeakSet[Storage]
         self.__subject = Subject(self)  # type: Subject[Application]
@@ -551,7 +551,7 @@ class Application(Base):
         self,
         snapshot=None,  # type: Optional[Snapshot]
     ):
-        # type: (...) -> Iterator[Storage[Pointer[AbstractObject], Store]]
+        # type: (...) -> Iterator[Storage[ObjPointer, Store]]
         with self.__lock.read_context():
             try:
                 previous_snapshot = self.__local.snapshot  # type: Optional[Snapshot]
@@ -565,7 +565,7 @@ class Application(Base):
                 self.__local.snapshot = snapshot
                 storage = (
                     snapshot.storage
-                )  # type: Storage[Pointer[AbstractObject], Store]
+                )  # type: Storage[ObjPointer, Store]
             elif previous_snapshot is not None:
                 storage = previous_snapshot.storage
             elif self.__evolver is not None:
@@ -730,7 +730,7 @@ class Application(Base):
 
 def resolve_history(
     obj,  # type: AbstractObject
-    storage,  # type: AbstractStorage[Pointer[AbstractObject], Store]
+    storage,  # type: AbstractStorage[ObjPointer, Store]
 ):
     # type: (...) -> Optional[AbstractHistoryObject]
     store = storage.query(obj.pointer)
