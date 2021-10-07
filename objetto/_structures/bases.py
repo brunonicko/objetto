@@ -613,7 +613,6 @@ class UniqueDescriptor(Base):
         return self
 
 
-# noinspection PyAbstractClass
 def unique_descriptor():
     # type: () -> UniqueDescriptor
     """

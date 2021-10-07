@@ -17,7 +17,6 @@ from .utils.type_checking import assert_is_instance
 if TYPE_CHECKING:
     from typing import Any
 
-    from .data import DataAttribute
 
 __all__ = ["ActionObserver", "ActionObserverToken", "ActionObserverExceptionData"]
 
@@ -220,23 +219,21 @@ class ActionObserverExceptionData(Data):
       - :class:`objetto.data.Data`
     """
 
-    observer = data_attribute(
-        ActionObserver, checked=False
-    )  # type: DataAttribute[ActionObserver]
+    observer = data_attribute(ActionObserver, checked=False)  # type: ActionObserver
     """
     Action observer.
 
     :type: objetto.observers.ActionObserver
     """
 
-    action = data_attribute(Action, checked=False)  # type: DataAttribute[Action]
+    action = data_attribute(Action, checked=False)  # type: Action
     """
     Action.
 
     :type: objetto.objects.Action
     """
 
-    phase = data_attribute(Phase, checked=False)  # type: DataAttribute[Phase]
+    phase = data_attribute(Phase, checked=False)  # type: Phase
     """
     Phase.
 
@@ -245,7 +242,7 @@ class ActionObserverExceptionData(Data):
 
     exception_type = data_attribute(
         (type(BaseException), None), checked=False
-    )  # type: DataAttribute[Optional[Type[BaseException]]]
+    )  # type: Optional[Type[BaseException]]
     """
     Exception type.
 
@@ -254,7 +251,7 @@ class ActionObserverExceptionData(Data):
 
     exception = data_attribute(
         (BaseException, None), checked=False
-    )  # type: DataAttribute[Optional[BaseException]]
+    )  # type: Optional[BaseException]
     """
     Exception.
 
@@ -263,7 +260,7 @@ class ActionObserverExceptionData(Data):
 
     traceback = data_attribute(
         (TracebackType, None), checked=False
-    )  # type: DataAttribute[Optional[TracebackType]]
+    )  # type: Optional[TracebackType]
     """
     Traceback.
 

@@ -59,6 +59,7 @@ autoflake --remove-all-unused-imports --in-place --recursive .\tests
 isort objetto tests .\docs\source\conf.py setup.py -m 3 -l 88 --up --tc --lbt 0 --color
 rem # black .\objetto .\tests .\docs\source\conf.py setup.py
 forfiles /p .\objetto /s /m *.py /c "cmd /c start /b black @path"
+forfiles /p .\objetto /s /m *.pyi /c "cmd /c start /b black @path"
 forfiles /p .\tests /s /m *.py /c "cmd /c start /b black @path"
 black .\docs\source\conf.py
 black setup.py
