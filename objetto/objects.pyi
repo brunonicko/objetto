@@ -22,7 +22,6 @@ from ._objects import Relationship as Relationship
 from ._objects import SetObject as SetObject
 from ._objects import SetObjectMeta as SetObjectMeta
 from ._structures import KeyRelationship as KeyRelationship
-from ._structures import UniqueDescriptor as UniqueDescriptor
 from ._structures import unique_descriptor as unique_descriptor
 from .utils.factoring import LazyFactory
 from .utils.type_checking import LazyTypes

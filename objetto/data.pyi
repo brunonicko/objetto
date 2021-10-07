@@ -15,8 +15,6 @@ from ._data import ListData as ListData
 from ._data import ListDataMeta as ListDataMeta
 from ._data import SetData as SetData
 from ._data import SetDataMeta as SetDataMeta
-from ._structures import KeyRelationship as KeyRelationship
-from ._structures import UniqueDescriptor as UniqueDescriptor
 from ._structures import unique_descriptor as unique_descriptor
 from .utils.factoring import LazyFactory
 
