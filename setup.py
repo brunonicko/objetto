@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="objetto",
-    version="1.28.0",
+    version="1.29.0",
     author="Bruno Nicko",
     author_email="brunonicko@gmail.com",
     description="Object-oriented framework for building smart applications and APIs",
@@ -16,9 +16,7 @@ setuptools.setup(
     package_data={"objetto": ["py.typed"]},
     install_requires=[
         "enum34; python_version < '3.4'",
-        "decorator",
         "pyrsistent",
-        "qualname",
         "six",
         "slotted",
         "typing; python_version < '3.5'",

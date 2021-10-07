@@ -65,6 +65,9 @@ __all__ = [
     "data_dict_cls",
     "data_list_cls",
     "data_set_cls",
+    "data_protected_dict_cls",
+    "data_protected_list_cls",
+    "data_protected_set_cls",
 ]
 
 
@@ -204,6 +207,7 @@ def data_attribute(
 
 def data_constant_attribute(
     value,  # type: T
+    subtypes=False,  # type: bool
     checked=True,  # type: bool
     serialized=False,  # type: bool
     serializer=None,  # type: LazyFactory
@@ -219,6 +223,9 @@ def data_constant_attribute(
     Make constant data attribute.
 
     :param value: Constant value.
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
 
     :param checked: Whether to type check when overriding this constant attribute.
     :type checked: bool
@@ -257,7 +264,7 @@ def data_constant_attribute(
     with ReraiseContext((TypeError, ValueError), "defining 'data_constant_attribute'"):
         relationship = DataRelationship(
             types=type(value),
-            subtypes=False,
+            subtypes=subtypes,
             checked=checked,
             serialized=serialized,
             serializer=serializer,

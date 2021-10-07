@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Base classes and metaclasses."""
 
+from functools import wraps
 from abc import abstractmethod
 from contextlib import contextmanager
 from inspect import getmro
@@ -24,8 +25,6 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from decorator import decorator
-from qualname import qualname  # type: ignore
 from six import iteritems, with_metaclass
 from slotted import (
     SlottedABC,
@@ -36,6 +35,9 @@ from slotted import (
     SlottedIterable,
     SlottedSized,
 )
+
+from ..utils.qualname import qualname
+from ..utils.simplify_exceptions import simplify_exceptions
 
 if TYPE_CHECKING:
     from typing import (
@@ -82,6 +84,7 @@ __all__ = [
 # noinspection PyTypeChecker
 F = TypeVar("F", Callable, Type)  # Callable type.
 T = TypeVar("T")  # Any type.
+RT = TypeVar("RT")  # Return type.
 KT = TypeVar("KT")  # Key type.
 VT = TypeVar("VT")  # Value type.
 T_co = TypeVar("T_co", covariant=True)  # Any type covariant containers.
@@ -162,14 +165,13 @@ def _final(obj):
         return __final(obj)
     else:
 
-        @decorator
-        def final_(obj_, *args, **kwargs):
-            """Decorator for final methods."""
-            return obj_(*args, **kwargs)
+        @wraps(obj)
+        @simplify_exceptions
+        def _decorated(*args, **kwargs):
+            return obj(*args, **kwargs)
 
-        decorated = final_(obj)
-        object.__setattr__(decorated, FINAL_METHOD_TAG, True)
-        return __final(decorated)
+        object.__setattr__(_decorated, FINAL_METHOD_TAG, True)
+        return __final(_decorated)
 
 
 # Replace typing.final with our custom decorator for runtime checking.
@@ -235,9 +237,8 @@ def init_context(obj, flag=True):
         object.__setattr__(obj, INITIALIZING_TAG, previous)
 
 
-@decorator
-def init(func, *args, **kwargs):
-    # type: (F, Any, Any) -> F
+def init(func):
+    # type: (Callable[..., RT]) -> Callable[..., RT]
     """
     Method decorator that sets the initializing tag for :class:`objetto.bases.Base`
     objects.
@@ -270,10 +271,16 @@ def init(func, *args, **kwargs):
     :return: Decorated method function.
     :rtype: function
     """
-    self = args[0]
-    with init_context(self):
-        result = func(*args, **kwargs)
-    return result
+
+    @wraps(func)
+    @simplify_exceptions
+    def _decorated(*args, **kwargs):
+        self = args[0]
+        with init_context(self):
+            result = func(*args, **kwargs)
+        return result
+
+    return _decorated
 
 
 # noinspection PyTypeChecker

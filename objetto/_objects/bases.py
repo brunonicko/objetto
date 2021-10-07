@@ -12,12 +12,12 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from six import iteritems, itervalues, with_metaclass
+from six import iteritems, itervalues, with_metaclass, string_types
 
 from .._applications import Application
 from .._bases import Base, BaseHashable, BaseMutableCollection, final
 from .._changes import Batch
-from .._constants import BASE_STRING_TYPES, INTEGER_TYPES
+from .._constants import INTEGER_TYPES
 from .._data import BaseAuxiliaryData, BaseData, DataRelationship
 from .._states import BaseState, DictState
 from .._structures import (
@@ -292,7 +292,7 @@ class Relationship(BaseRelationship):
             types = set()  # type: Set[Union[Type, str]]
             for lazy, typ in zip(self.types, import_types(self.types)):
                 if issubclass(typ, BaseObject):
-                    if isinstance(lazy, BASE_STRING_TYPES):
+                    if isinstance(lazy, string_types):
                         types.add(lazy + ".Data")
                     else:
                         types.add(typ.Data)

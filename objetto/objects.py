@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """Objects."""
 
+from functools import wraps
 from typing import TYPE_CHECKING, Callable, TypeVar, cast
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc  # type: ignore
-
-from decorator import decorator
 
 from ._applications import Action
 from ._bases import MISSING
@@ -46,6 +45,7 @@ from ._structures import (
 from .utils.caller_module import get_caller_module
 from .utils.factoring import import_factory
 from .utils.reraise_context import ReraiseContext
+from .utils.simplify_exceptions import simplify_exceptions
 from .utils.type_checking import assert_is_instance
 
 if TYPE_CHECKING:
@@ -104,6 +104,7 @@ __all__ = [
 
 
 T = TypeVar("T")  # Any type.
+RT = TypeVar("RT")  # Return type.
 KT = TypeVar("KT")  # Any key type.
 VT = TypeVar("VT")  # Any value type.
 
@@ -121,9 +122,8 @@ if TYPE_CHECKING:
     ProxySetAttribute = Attribute[ProxySetObject[T]]
 
 
-# noinspection PyAbstractClass
 def data_method(func):
-    # type: (Callable) -> Callable
+    # type: (Callable[..., RT]) -> Callable[..., RT]
     """
     Decorate object methods by tagging them as data methods.
     The generated data class will have the decorated methods in them.
@@ -155,12 +155,11 @@ def data_method(func):
     :rtype: function
     """
 
-    @decorator
-    def data_method_(func_, *args, **kwargs):
-        """Data method decorator."""
-        return func_(*args, **kwargs)
+    @wraps(func)
+    @simplify_exceptions
+    def decorated(*args, **kwargs):
+        return func(*args, **kwargs)
 
-    decorated = data_method_(func)
     setattr(decorated, DATA_METHOD_TAG, True)
     return decorated
 
@@ -433,6 +432,7 @@ objetto.objects.Attribute or None
 
 def constant_attribute(
     value,  # type: T
+    subtypes=False,  # type: bool
     checked=True,  # type: bool
     serialized=False,  # type: bool
     serializer=None,  # type: LazyFactory
@@ -448,6 +448,9 @@ def constant_attribute(
     Make constant attribute.
 
     :param value: Constant value.
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
 
     :param checked: Whether to type check when overriding this constant attribute.
     :type checked: bool
@@ -486,7 +489,7 @@ def constant_attribute(
     with ReraiseContext((TypeError, ValueError), "defining 'constant_attribute'"):
         relationship = Relationship(
             types=type(value),
-            subtypes=False,
+            subtypes=subtypes,
             checked=checked,
             serialized=serialized,
             serializer=serializer,

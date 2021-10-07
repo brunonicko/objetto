@@ -48,6 +48,7 @@ def get_factory_name(factory):
     elif factory is None:
         return "None"
     else:
+        assert not isinstance(factory, str)
         return factory.__name__
 
 

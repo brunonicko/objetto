@@ -21,6 +21,7 @@ from .._structures import (
     BaseInteractiveAttributeStructure,
 )
 from ..utils.type_checking import assert_is_instance
+from ..utils.reraise_context import ReraiseContext
 from .bases import BaseData, BaseDataMeta, BaseInteractiveData, DataRelationship
 
 if TYPE_CHECKING:
@@ -278,16 +279,26 @@ class Data(with_metaclass(DataMeta, BaseAttributeStructure, BaseData[str])):
 
         for name, value in iteritems(input_values):
             attribute = cls._get_attribute(name)
-            initial[name] = attribute.relationship.fabricate_value(
-                value, factory=factory
-            )
+            with ReraiseContext(
+                Exception,
+                "initial attribute value for '{}.{}'".format(cls.__fullname__, name),
+            ):
+                initial[name] = attribute.relationship.fabricate_value(
+                    value, factory=factory
+                )
 
         missing_attributes = set()  # type: Set[str]
         for name, attribute in iteritems(cls._attributes):
             if name not in initial:
                 if attribute.has_default:
                     if not missing_attributes:
-                        initial[name] = attribute.fabricate_default_value()
+                        with ReraiseContext(
+                            Exception,
+                            "initial attribute value for '{}.{}'".format(
+                                cls.__fullname__, name
+                            ),
+                        ):
+                            initial[name] = attribute.fabricate_default_value()
                 elif attribute.required:
                     missing_attributes.add(name)
 
