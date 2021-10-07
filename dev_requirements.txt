@@ -6,4 +6,6 @@ mypy
 pytest
 sphinx
 sphinx-rtd-theme
+typing-extensions
+types-six
 tox

@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 """Objects."""
 
-from typing import TYPE_CHECKING, Callable, TypeVar, cast
+from functools import wraps
 
 try:
     import collections.abc as collections_abc
 except ImportError:
     import collections as collections_abc  # type: ignore
-
-from decorator import decorator
 
 from ._applications import Action
 from ._bases import MISSING
@@ -46,16 +44,8 @@ from ._structures import (
 from .utils.caller_module import get_caller_module
 from .utils.factoring import import_factory
 from .utils.reraise_context import ReraiseContext
+from .utils.simplify_exceptions import simplify_exceptions
 from .utils.type_checking import assert_is_instance
-
-if TYPE_CHECKING:
-    from typing import Any, Dict, Iterable, Optional, Tuple, Type, Union
-
-    from .utils.factoring import LazyFactory
-    from .utils.type_checking import LazyTypes
-
-    ReactionType = Union[LazyFactory, BaseReaction]
-    ReactionsType = Union[ReactionType, Iterable[ReactionType]]
 
 __all__ = [
     "ObjectMeta",
@@ -103,27 +93,7 @@ __all__ = [
 ]
 
 
-T = TypeVar("T")  # Any type.
-KT = TypeVar("KT")  # Any key type.
-VT = TypeVar("VT")  # Any value type.
-
-
-if TYPE_CHECKING:
-    NT = Union[Type[None], None]
-    MutableDictAttribute = Attribute[MutableDictObject[KT, VT]]
-    MutableListAttribute = Attribute[MutableListObject[T]]
-    MutableSetAttribute = Attribute[MutableSetObject[T]]
-    DictAttribute = Attribute[DictObject[KT, VT]]
-    ListAttribute = Attribute[ListObject[T]]
-    SetAttribute = Attribute[SetObject[T]]
-    ProxyDictAttribute = Attribute[ProxyDictObject[KT, VT]]
-    ProxyListAttribute = Attribute[ProxyListObject[T]]
-    ProxySetAttribute = Attribute[ProxySetObject[T]]
-
-
-# noinspection PyAbstractClass
 def data_method(func):
-    # type: (Callable) -> Callable
     """
     Decorate object methods by tagging them as data methods.
     The generated data class will have the decorated methods in them.
@@ -155,29 +125,27 @@ def data_method(func):
     :rtype: function
     """
 
-    @decorator
-    def data_method_(func_, *args, **kwargs):
-        """Data method decorator."""
-        return func_(*args, **kwargs)
+    @wraps(func)
+    @simplify_exceptions
+    def decorated(*args, **kwargs):
+        return func(*args, **kwargs)
 
-    decorated = data_method_(func)
     setattr(decorated, DATA_METHOD_TAG, True)
     return decorated
 
 
 def data_relationship(
-    types=(),  # type: LazyTypes
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
 ):
-    # type: (...) -> DataRelationship
     """
     Make custom relationship between a data structure and its values.
 
@@ -231,9 +199,8 @@ def data_relationship(
     )
 
 
-# noinspection PyAbstractClass
 def history_descriptor(size=None):
-    # type: (Optional[int]) -> HistoryDescriptor
+
     """
     Descriptor to be used when declaring an :class:`objetto.objects.Object` class.
 
@@ -267,33 +234,33 @@ def history_descriptor(size=None):
 
 
 def attribute(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=True,  # type: bool
-    changeable=None,  # type: Optional[bool]
-    deletable=None,  # type: Optional[bool]
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    delegated=False,  # type: bool
-    dependencies=None,  # type: Optional[Union[Iterable[Attribute], Attribute]]
-    deserialize_to=None,  # type: Optional[Attribute]
-    batch_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    required=True,
+    changeable=None,
+    deletable=None,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    delegated=False,
+    dependencies=None,
+    deserialize_to=None,
+    batch_name=None,
 ):
-    # type: (...) -> Attribute[T]
+
     """
     Make attribute.
 
@@ -426,28 +393,32 @@ objetto.objects.Attribute or None
             dependencies=dependencies,
             deserialize_to=deserialize_to,
             batch_name=batch_name,
-        )  # type: Attribute[T]
+        )
 
     return attribute_
 
 
 def constant_attribute(
-    value,  # type: T
-    checked=True,  # type: bool
-    serialized=False,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=False,  # type: bool
-    data=True,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
+    value,
+    subtypes=False,
+    checked=True,
+    serialized=False,
+    serializer=None,
+    deserializer=None,
+    represented=False,
+    data=True,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
 ):
-    # type: (...) -> Attribute[T]
+
     """
     Make constant attribute.
 
     :param value: Constant value.
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
 
     :param checked: Whether to type check when overriding this constant attribute.
     :type checked: bool
@@ -486,7 +457,7 @@ def constant_attribute(
     with ReraiseContext((TypeError, ValueError), "defining 'constant_attribute'"):
         relationship = Relationship(
             types=type(value),
-            subtypes=False,
+            subtypes=subtypes,
             checked=checked,
             serialized=serialized,
             serializer=serializer,
@@ -510,36 +481,36 @@ def constant_attribute(
             finalized=finalized,
             abstracted=abstracted,
             metadata=metadata,
-        )  # type: Attribute[T]
+        )
 
     return attribute_
 
 
 def protected_attribute_pair(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    changeable=None,  # type: Optional[bool]
-    deletable=None,  # type: Optional[bool]
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    protected_metadata=None,  # type: Any
-    batch_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    changeable=None,
+    deletable=None,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    protected_metadata=None,
+    batch_name=None,
 ):
-    # type: (...) -> Tuple[Attribute[T], Attribute[T]]
+
     """
     Make protected-public attribute pair.
 
@@ -671,36 +642,36 @@ def protected_attribute_pair(
 
 
 def dict_attribute(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
-    key_subtypes=False,  # type: bool
-    key_factory=None,  # type: LazyFactory
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_update_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    key_types=(),
+    key_subtypes=False,
+    key_factory=None,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_update_name=None,
 ):
-    # type: (...) -> MutableDictAttribute[KT, VT]
+
     """
     Make mutable dictionary attribute.
 
@@ -820,7 +791,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             unique=unique,
             reactions=reactions,
             batch_update_name=batch_update_name,
-        )  # type: Type[MutableDictObject[KT, VT]]
+        )
 
     # Factory for dict object relationship.
     def dict_factory(initial=(), app=None, **_):
@@ -868,42 +839,42 @@ collections.abc.Iterable[str or collections.abc.Callable]
             delegated=False,
             dependencies=None,
             deserialize_to=None,
-        )  # type: Attribute[MutableDictObject[KT, VT]]
+        )
 
     return attribute_
 
 
 def protected_dict_attribute(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
-    key_subtypes=False,  # type: bool
-    key_factory=None,  # type: LazyFactory
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_update_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    key_types=(),
+    key_subtypes=False,
+    key_factory=None,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_update_name=None,
 ):
-    # type: (...) -> DictAttribute[KT, VT]
+
     """
     Make protected dictionary attribute.
 
@@ -1023,7 +994,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             unique=unique,
             reactions=reactions,
             batch_update_name=batch_update_name,
-        )  # type: Type[DictObject[KT, VT]]
+        )
 
     # Factory for dict object relationship.
     def dict_factory(initial=(), app=None, **_):
@@ -1071,40 +1042,40 @@ collections.abc.Iterable[str or collections.abc.Callable]
             delegated=False,
             dependencies=None,
             deserialize_to=None,
-        )  # type: Attribute[DictObject[KT, VT]]
+        )
 
     return attribute_
 
 
 def protected_dict_attribute_pair(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
-    key_subtypes=False,  # type: bool
-    key_factory=None,  # type: LazyFactory
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    protected_metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_update_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    key_types=(),
+    key_subtypes=False,
+    key_factory=None,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    protected_metadata=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_update_name=None,
 ):
-    # type: (...) -> Tuple[ProxyDictAttribute[KT, VT], DictAttribute[KT, VT]]
+
     """
     Make protected-public dictionary attribute pair.
 
@@ -1228,25 +1199,22 @@ objetto.objects.Attribute[objetto.objects.DictObject]]
         unique=unique,
         reactions=reactions,
         batch_update_name=batch_update_name,
-    )  # type: DictAttribute[KT, VT]
+    )
 
     # Make protected attribute.
-    protected_attribute = cast(
-        "ProxyDictAttribute[KT, VT]",
-        attribute(
-            types=ProxyDictObject,
-            subtypes=False,
-            checked=False,
-            module=module,
-            represented=False,
-            child=False,
-            required=False,
-            finalized=finalized,
-            abstracted=abstracted,
-            metadata=metadata,
-            delegated=True,
-            dependencies=(public_attribute,),
-        ),
+    protected_attribute = attribute(
+        types=ProxyDictObject,
+        subtypes=False,
+        checked=False,
+        module=module,
+        represented=False,
+        child=False,
+        required=False,
+        finalized=finalized,
+        abstracted=abstracted,
+        metadata=metadata,
+        delegated=True,
+        dependencies=(public_attribute,),
     )
 
     def getter(iobj):
@@ -1260,36 +1228,36 @@ objetto.objects.Attribute[objetto.objects.DictObject]]
 
 
 def list_attribute(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_insert_name=None,  # type: Optional[str]
-    batch_delete_name=None,  # type: Optional[str]
-    batch_update_name=None,  # type: Optional[str]
-    batch_move_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_insert_name=None,
+    batch_delete_name=None,
+    batch_update_name=None,
+    batch_move_name=None,
 ):
-    # type: (...) -> MutableListAttribute[T]
+
     """
     Make mutable list attribute.
 
@@ -1409,7 +1377,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             batch_delete_name=batch_delete_name,
             batch_update_name=batch_update_name,
             batch_move_name=batch_move_name,
-        )  # type: Type[MutableListObject[T]]
+        )
 
     # Factory for list object relationship.
     def list_factory(initial=(), app=None, **_):
@@ -1457,42 +1425,42 @@ collections.abc.Iterable[str or collections.abc.Callable]
             delegated=False,
             dependencies=None,
             deserialize_to=None,
-        )  # type: Attribute[MutableListObject[T]]
+        )
 
     return attribute_
 
 
 def protected_list_attribute(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_insert_name=None,  # type: Optional[str]
-    batch_delete_name=None,  # type: Optional[str]
-    batch_update_name=None,  # type: Optional[str]
-    batch_move_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_insert_name=None,
+    batch_delete_name=None,
+    batch_update_name=None,
+    batch_move_name=None,
 ):
-    # type: (...) -> ListAttribute[T]
+
     """
     Make protected list attribute.
 
@@ -1612,7 +1580,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             batch_delete_name=batch_delete_name,
             batch_update_name=batch_update_name,
             batch_move_name=batch_move_name,
-        )  # type: Type[ListObject[T]]
+        )
 
     # Factory for list object relationship.
     def list_factory(initial=(), app=None, **_):
@@ -1660,40 +1628,40 @@ collections.abc.Iterable[str or collections.abc.Callable]
             delegated=False,
             dependencies=None,
             deserialize_to=None,
-        )  # type: Attribute[ListObject[T]]
+        )
 
     return attribute_
 
 
 def protected_list_attribute_pair(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    protected_metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_insert_name=None,  # type: Optional[str]
-    batch_delete_name=None,  # type: Optional[str]
-    batch_update_name=None,  # type: Optional[str]
-    batch_move_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    protected_metadata=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_insert_name=None,
+    batch_delete_name=None,
+    batch_update_name=None,
+    batch_move_name=None,
 ):
-    # type: (...) -> Tuple[ProxyListAttribute[T], ListAttribute[T]]
+
     """
     Make protected-public list attribute pair.
 
@@ -1817,25 +1785,22 @@ objetto.objects.Attribute[objetto.objects.ListObject]]
         batch_delete_name=batch_delete_name,
         batch_update_name=batch_update_name,
         batch_move_name=batch_move_name,
-    )  # type: ListAttribute[T]
+    )
 
     # Make protected attribute.
-    protected_attribute = cast(
-        "ProxyListAttribute[T]",
-        attribute(
-            types=ProxyListObject,
-            subtypes=False,
-            checked=False,
-            module=module,
-            represented=False,
-            child=False,
-            required=False,
-            finalized=finalized,
-            abstracted=abstracted,
-            metadata=metadata,
-            delegated=True,
-            dependencies=(public_attribute,),
-        ),
+    protected_attribute = attribute(
+        types=ProxyListObject,
+        subtypes=False,
+        checked=False,
+        module=module,
+        represented=False,
+        child=False,
+        required=False,
+        finalized=finalized,
+        abstracted=abstracted,
+        metadata=metadata,
+        delegated=True,
+        dependencies=(public_attribute,),
     )
 
     def getter(iobj):
@@ -1849,34 +1814,34 @@ objetto.objects.Attribute[objetto.objects.ListObject]]
 
 
 def set_attribute(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_update_name=None,  # type: Optional[str]
-    batch_remove_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_update_name=None,
+    batch_remove_name=None,
 ):
-    # type: (...) -> MutableSetAttribute[T]
+
     """
     Make mutable set attribute.
 
@@ -1988,7 +1953,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             reactions=reactions,
             batch_update_name=batch_update_name,
             batch_remove_name=batch_remove_name,
-        )  # type: Type[MutableSetObject[T]]
+        )
 
     # Factory for set object relationship.
     def set_factory(initial=(), app=None, **_):
@@ -2036,40 +2001,40 @@ collections.abc.Iterable[str or collections.abc.Callable]
             delegated=False,
             dependencies=None,
             deserialize_to=None,
-        )  # type: Attribute[MutableSetObject[T]]
+        )
 
     return attribute_
 
 
 def protected_set_attribute(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_update_name=None,  # type: Optional[str]
-    batch_remove_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_update_name=None,
+    batch_remove_name=None,
 ):
-    # type: (...) -> SetAttribute[T]
+
     """
     Make protected set attribute.
 
@@ -2181,7 +2146,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
             reactions=reactions,
             batch_update_name=batch_update_name,
             batch_remove_name=batch_remove_name,
-        )  # type: Type[SetObject[T]]
+        )
 
     # Factory for set object relationship.
     def set_factory(initial=(), app=None, **_):
@@ -2229,38 +2194,38 @@ collections.abc.Iterable[str or collections.abc.Callable]
             delegated=False,
             dependencies=None,
             deserialize_to=None,
-        )  # type: Attribute[SetObject[T]]
+        )
 
     return attribute_
 
 
 def protected_set_attribute_pair(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    protected_metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_update_name=None,  # type: Optional[str]
-    batch_remove_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    default=MISSING,
+    default_factory=None,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    protected_metadata=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_update_name=None,
+    batch_remove_name=None,
 ):
-    # type: (...) -> Tuple[ProxySetAttribute[T], SetAttribute[T]]
+
     """
     Make protected-public set attribute pair.
 
@@ -2376,25 +2341,22 @@ objetto.objects.Attribute[objetto.objects.SetObject]]
         reactions=reactions,
         batch_update_name=batch_update_name,
         batch_remove_name=batch_remove_name,
-    )  # type: SetAttribute[T]
+    )
 
     # Make protected attribute.
-    protected_attribute = cast(
-        "ProxySetAttribute[T]",
-        attribute(
-            types=ProxySetObject,
-            subtypes=False,
-            checked=False,
-            module=module,
-            represented=False,
-            child=False,
-            required=False,
-            finalized=finalized,
-            abstracted=abstracted,
-            metadata=metadata,
-            delegated=True,
-            dependencies=(public_attribute,),
-        ),
+    protected_attribute = attribute(
+        types=ProxySetObject,
+        subtypes=False,
+        checked=False,
+        module=module,
+        represented=False,
+        child=False,
+        required=False,
+        finalized=finalized,
+        abstracted=abstracted,
+        metadata=metadata,
+        delegated=True,
+        dependencies=(public_attribute,),
     )
 
     def getter(iobj):
@@ -2408,14 +2370,14 @@ objetto.objects.Attribute[objetto.objects.SetObject]]
 
 
 def _prepare_reactions(reactions=None):
-    # type: (ReactionsType) -> Dict[str, BaseReaction]
+
     """
     Conform reactions parameter value into a dictionary with reaction methods.
 
     :param reactions: Input reactions.
     :return: Dictionary with reaction methods.
     """
-    dct = {}  # type: Dict[str, BaseReaction]
+    dct = {}
     if reactions is None:
         return dct
     if isinstance(reactions, BASE_STRING_TYPES) or not isinstance(
@@ -2428,36 +2390,36 @@ def _prepare_reactions(reactions=None):
         elif reaction_ is None:
             continue
         else:
-            reaction_decorator = reaction(priority=i)  # type: ignore
+            reaction_decorator = reaction(priority=i)
             # noinspection PyArgumentList
-            reaction_ = reaction_decorator(import_factory(reaction_))  # type: ignore
-        dct["__reaction{}".format(i)] = cast("BaseReaction", reaction_)
+            reaction_ = reaction_decorator(import_factory(reaction_))
+        dct["__reaction{}".format(i)] = reaction_
     return dct
 
 
 def dict_cls(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
-    key_subtypes=False,  # type: bool
-    key_factory=None,  # type: LazyFactory
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_update_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    key_types=(),
+    key_subtypes=False,
+    key_factory=None,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_update_name=None,
 ):
-    # type: (...) -> Type[MutableDictObject[KT, VT]]
+
     """
     Make auxiliary mutable dictionary object class.
 
@@ -2551,7 +2513,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
         )
 
     # Prepare dct.
-    dct = {}  # type: Dict[str, Any]
+    dct = {}
 
     # Key relationship.
     with ReraiseContext((TypeError, ValueError), "defining 'dict_cls'"):
@@ -2579,35 +2541,35 @@ collections.abc.Iterable[str or collections.abc.Callable]
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
         dct=dct,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'dict_cls'"):
-        mutable_base = MutableDictObject  # type: Type[MutableDictObject[KT, VT]]
+        mutable_base = MutableDictObject
         return make_auxiliary_cls(mutable_base, **cls_kwargs)
 
 
 def protected_dict_cls(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
-    key_subtypes=False,  # type: bool
-    key_factory=None,  # type: LazyFactory
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_update_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    key_types=(),
+    key_subtypes=False,
+    key_factory=None,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_update_name=None,
 ):
-    # type: (...) -> Type[DictObject[KT, VT]]
+
     """
     Make auxiliary protected dictionary object class.
 
@@ -2701,7 +2663,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
         )
 
     # Prepare dct.
-    dct = {}  # type: Dict[str, Any]
+    dct = {}
 
     # Key relationship.
     with ReraiseContext((TypeError, ValueError), "defining 'protected_dict_cls'"):
@@ -2729,35 +2691,35 @@ collections.abc.Iterable[str or collections.abc.Callable]
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
         dct=dct,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'protected_dict_cls'"):
-        base = DictObject  # type: Type[DictObject[KT, VT]]
+        base = DictObject
         return make_auxiliary_cls(base, **cls_kwargs)
 
 
 def list_cls(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_insert_name=None,  # type: Optional[str]
-    batch_delete_name=None,  # type: Optional[str]
-    batch_update_name=None,  # type: Optional[str]
-    batch_move_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_insert_name=None,
+    batch_delete_name=None,
+    batch_update_name=None,
+    batch_move_name=None,
 ):
-    # type: (...) -> Type[MutableListObject[T]]
+
     """
     Make auxiliary mutable list object class.
 
@@ -2851,7 +2813,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
         )
 
     # Prepare dct.
-    dct = {}  # type: Dict[str, Any]
+    dct = {}
 
     # Reactions.
     with ReraiseContext((TypeError, ValueError), "defining 'list_cls'"):
@@ -2874,35 +2836,35 @@ collections.abc.Iterable[str or collections.abc.Callable]
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
         dct=dct,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'list_cls'"):
-        mutable_base = MutableListObject  # type: Type[MutableListObject[T]]
+        mutable_base = MutableListObject
         return make_auxiliary_cls(mutable_base, **cls_kwargs)
 
 
 def protected_list_cls(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_insert_name=None,  # type: Optional[str]
-    batch_delete_name=None,  # type: Optional[str]
-    batch_update_name=None,  # type: Optional[str]
-    batch_move_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_insert_name=None,
+    batch_delete_name=None,
+    batch_update_name=None,
+    batch_move_name=None,
 ):
-    # type: (...) -> Type[ListObject[T]]
+
     """
     Make auxiliary protected list object class.
 
@@ -2996,7 +2958,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
         )
 
     # Prepare dct.
-    dct = {}  # type: Dict[str, Any]
+    dct = {}
 
     # Reactions.
     with ReraiseContext((TypeError, ValueError), "defining 'protected_list_cls'"):
@@ -3019,33 +2981,33 @@ collections.abc.Iterable[str or collections.abc.Callable]
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
         dct=dct,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'protected_list_cls'"):
-        base = ListObject  # type: Type[ListObject[T]]
+        base = ListObject
         return make_auxiliary_cls(base, **cls_kwargs)
 
 
 def set_cls(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_update_name=None,  # type: Optional[str]
-    batch_remove_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_update_name=None,
+    batch_remove_name=None,
 ):
-    # type: (...) -> Type[MutableSetObject[T]]
+
     """
     Make auxiliary mutable set object class.
 
@@ -3133,7 +3095,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
         )
 
     # Prepare dct.
-    dct = {}  # type: Dict[str, Any]
+    dct = {}
 
     # Reactions.
     with ReraiseContext((TypeError, ValueError), "defining 'set_cls'"):
@@ -3152,33 +3114,33 @@ collections.abc.Iterable[str or collections.abc.Callable]
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
         dct=dct,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'set_cls'"):
-        mutable_base = MutableSetObject  # type: Type[MutableSetObject[T]]
+        mutable_base = MutableSetObject
         return make_auxiliary_cls(mutable_base, **cls_kwargs)
 
 
 def protected_set_cls(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=None,  # type: Optional[bool]
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    child=True,  # type: bool
-    history=None,  # type: Optional[bool]
-    data=None,  # type: Optional[bool]
-    custom_data_relationship=None,  # type: Optional[DataRelationship]
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
-    reactions=None,  # type: ReactionsType
-    batch_update_name=None,  # type: Optional[str]
-    batch_remove_name=None,  # type: Optional[str]
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=None,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    child=True,
+    history=None,
+    data=None,
+    custom_data_relationship=None,
+    qual_name=None,
+    unique=False,
+    reactions=None,
+    batch_update_name=None,
+    batch_remove_name=None,
 ):
-    # type: (...) -> Type[SetObject[T]]
+
     """
     Make auxiliary protected set object class.
 
@@ -3266,7 +3228,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
         )
 
     # Prepare dct.
-    dct = {}  # type: Dict[str, Any]
+    dct = {}
 
     # Reactions.
     with ReraiseContext((TypeError, ValueError), "defining 'protected_set_cls'"):
@@ -3285,7 +3247,7 @@ collections.abc.Iterable[str or collections.abc.Callable]
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
         dct=dct,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'protected_set_cls'"):
-        base = SetObject  # type: Type[SetObject[T]]
+        base = SetObject
         return make_auxiliary_cls(base, **cls_kwargs)

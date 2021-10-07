@@ -632,14 +632,26 @@ class Functions(BaseObjectFunctions):
                 exc = AttributeError(error)
                 raise_from(exc, None)
                 raise exc
-            initial[name] = attribute.relationship.fabricate_value(
-                value, factory=factory, **kwargs
-            )
+            with ReraiseContext(
+                Exception,
+                "initial attribute value for '{}.{}'".format(
+                    type(obj).__fullname__, name
+                ),
+            ):
+                initial[name] = attribute.relationship.fabricate_value(
+                    value, factory=factory, **kwargs
+                )
 
         for name, attribute in iteritems(cls._attributes):
             if name not in initial:
                 if attribute.has_default:
-                    initial[name] = attribute.fabricate_default_value(**kwargs)
+                    with ReraiseContext(
+                        Exception,
+                        "initial attribute value for '{}.{}'".format(
+                            type(obj).__fullname__, name
+                        ),
+                    ):
+                        initial[name] = attribute.fabricate_default_value(**kwargs)
 
         return initial
 

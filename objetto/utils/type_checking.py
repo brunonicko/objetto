@@ -11,6 +11,7 @@ except ImportError:
 
 from six import string_types
 
+from .._constants import INTEGER_TYPES, STRING_TYPES
 from ..utils.lazy_import import decorate_path, import_path
 
 if TYPE_CHECKING:
@@ -150,8 +151,6 @@ def import_types(types):
         ('chain',)
         >>> get_type_names(import_types(("itertools|chain", "itertools|compress")))
         ('chain', 'compress')
-        >>> get_type_names(import_types(("itertools|chain", int)))
-        ('chain', 'int')
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
@@ -159,10 +158,19 @@ def import_types(types):
     :return: Imported types.
     :rtype: tuple[type]
     """
-    return tuple(
-        cast(type, import_path(t)) if isinstance(t, string_types) else t
+    imported_types = tuple(
+        cast("Type", import_path(t)) if isinstance(t, string_types) else cast("Type", t)
         for t in flatten_types(types)
     )
+    if len(STRING_TYPES) > 1:
+        all_string_types = set(STRING_TYPES)
+        if all_string_types.intersection(imported_types):
+            imported_types += tuple(all_string_types.difference(imported_types))
+    if len(INTEGER_TYPES) > 1:
+        all_integer_types = set(INTEGER_TYPES)
+        if all_integer_types.intersection(imported_types):
+            imported_types += tuple(all_integer_types.difference(imported_types))
+    return imported_types
 
 
 def is_instance(obj, types, subtypes=True):

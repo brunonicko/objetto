@@ -42,7 +42,6 @@ __all__ = [
 _BO = TypeVar("_BO", bound="BaseObject")
 
 
-# noinspection PyAbstractClass
 def reaction(
     func=None,  # type: Optional[Callable[[_BO, Action, Phase], None]]
     priority=None,  # type: Optional[int]

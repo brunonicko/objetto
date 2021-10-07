@@ -16,7 +16,7 @@ from six import iteritems, itervalues, raise_from, with_metaclass
 from ._bases import Base, BaseMeta, Generic, final
 from ._changes import BaseChange
 from ._constants import BASE_STRING_TYPES, STRING_TYPES
-from ._data import BaseData, DataAttribute, InteractiveDictData
+from ._data import BaseData, InteractiveDictData
 from ._exceptions import BaseObjettoException
 from ._states import BaseState, DictState
 from .data import (
@@ -266,51 +266,48 @@ class ApplicationLock(Base):
 class Store(InteractiveData):
     """Holds an object's state, data, metadata, hierarchy, and history information."""
 
-    state = data_attribute(
-        BaseState, subtypes=True, checked=False
-    )  # type: DataAttribute[BaseState]
+    state = data_attribute(BaseState, subtypes=True, checked=False)  # type: BaseState
     """State."""
 
     data = data_attribute(
         (BaseData, None), subtypes=True, checked=False
-    )  # type: DataAttribute[Optional[BaseData]]
+    )  # type: Optional[BaseData]
     """Data."""
 
     metadata = data_dict_attribute(
         key_types=STRING_TYPES, checked=False
-    )  # type: DataAttribute[InteractiveDictData[str, Any]]
+    )  # type: InteractiveDictData[str, Any]
     """Metadata."""
 
     parent_ref = data_attribute(
         cast("Type[WeakReference[BaseObject]]", WeakReference),
         checked=False,
         default=WeakReference(),
-    )  # type: DataAttribute[WeakReference[BaseObject]]
+    )  # type: WeakReference[BaseObject]
     """Weak reference to the parent."""
 
     history_provider_ref = data_attribute(
         cast("Type[WeakReference[BaseObject]]", WeakReference),
         checked=False,
         default=WeakReference(),
-    )  # type: DataAttribute[WeakReference[BaseObject]]
+    )  # type: WeakReference[BaseObject]
     """Weak reference to the history provider."""
 
     last_parent_history_ref = data_attribute(
         cast("Type[WeakReference[HistoryObject]]", WeakReference),
         checked=False,
         default=WeakReference(),
-    )  # type: DataAttribute[WeakReference[HistoryObject]]
+    )  # type: WeakReference[HistoryObject]
     """Weak reference to the last history object."""
 
     history = data_attribute(
         (".._history|HistoryObject", None), checked=False, default=None
-    )  # type: DataAttribute[HistoryObject]
+    )  # type: HistoryObject
     """History object."""
 
-    children = cast(
-        "DataAttribute[InteractiveSetData[BaseObject]]",
-        data_set_attribute(".._objects|BaseObject", subtypes=True, checked=False),
-    )  # type: DataAttribute[InteractiveSetData[BaseObject]]
+    children = data_set_attribute(
+        ".._objects|BaseObject", subtypes=True, checked=False
+    )  # type: InteractiveSetData[BaseObject]
     """Children."""
 
 
@@ -325,7 +322,7 @@ class Action(Data):
 
     sender = data_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False
-    )  # type: DataAttribute[BaseObject]
+    )  # type: BaseObject
     """
     Object where the action originated from (where the change happened).
 
@@ -334,16 +331,14 @@ class Action(Data):
 
     receiver = data_attribute(
         ".._objects|BaseObject", subtypes=True, checked=False
-    )  # type: DataAttribute[BaseObject]
+    )  # type: BaseObject
     """
     Object relaying the action up the hierarchy.
 
     :type: objetto.bases.BaseObject
     """
 
-    locations = data_protected_list_attribute(
-        checked=False
-    )  # type: DataAttribute[ListData[Any]]
+    locations = data_protected_list_attribute(checked=False)  # type: ListData[Any]
     """
     List of relative locations from the receiver to the sender.
 
@@ -352,7 +347,7 @@ class Action(Data):
 
     change = data_attribute(
         BaseChange, subtypes=True, checked=False
-    )  # type: DataAttribute[BaseChange]
+    )  # type: BaseChange
     """
     Change that happened in the sender.
 
@@ -365,18 +360,15 @@ class Commit(Data):
 
     actions = data_protected_list_attribute(
         Action, checked=False, finalized=True
-    )  # type: Final[DataAttribute[ListData[Action]]]
+    )  # type: Final[ListData[Action]]
     """Actions."""
 
-    stores = cast(
-        "DataAttribute[DictData[BaseObject, Store]]",
-        data_protected_dict_attribute(
-            Store,
-            checked=False,
-            key_types=".._objects|BaseObject",
-            key_subtypes=True,
-        ),
-    )  # type: Final[DataAttribute[DictData[BaseObject, Store]]]
+    stores = data_protected_dict_attribute(
+        Store,
+        checked=False,
+        key_types=".._objects|BaseObject",
+        key_subtypes=True,
+    )  # type: Final[DictData[BaseObject, Store]]
     """Modified stores."""
 
 
@@ -384,7 +376,7 @@ class Commit(Data):
 class BatchCommit(Commit):
     """Batch commit."""
 
-    phase = data_attribute(Phase, checked=False)  # type: DataAttribute[Phase]
+    phase = data_attribute(Phase, checked=False)  # type: Phase
     """Batch phase."""
 
 

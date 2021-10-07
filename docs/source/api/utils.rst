@@ -33,6 +33,12 @@ List Operations
 .. automodule:: objetto.utils.list_operations
    :members:
 
+Qualified Name
+--------------
+
+.. automodule:: objetto.utils.qualname
+   :members:
+
 Recursive Representation
 ------------------------
 .. automodule:: objetto.utils.recursive_repr
@@ -43,6 +49,12 @@ Re-Raise Context
 ----------------
 .. automodule:: objetto.utils.reraise_context
    :members:
+
+Simplify Exceptions
+-------------------
+.. automodule:: objetto.utils.simplify_exceptions
+
+   .. autodecorator:: objetto.utils.simplify_exceptions.simplify_exceptions
 
 Storage
 -------

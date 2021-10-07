@@ -9,7 +9,6 @@ try:
 except ImportError:
     import collections as collections_abc  # type: ignore
 
-from qualname import qualname  # type: ignore
 from slotted import SlottedMutableSequence, SlottedSequence
 
 from .bases import (

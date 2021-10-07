@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from typing import Any, Optional, TypeVar, Union
 
     from ._objects import (
-        Attribute,
         DictObject,
         ListObject,
         MutableDictObject,
@@ -33,15 +32,15 @@ if TYPE_CHECKING:
     KT = TypeVar("KT")  # Any key type.
     VT = TypeVar("VT")  # Any value type.
 
-    MDA = Attribute[MutableDictObject[KT, VT]]
-    MLA = Attribute[MutableListObject[T]]
-    MSA = Attribute[MutableSetObject[T]]
-    DA = Attribute[DictObject[KT, VT]]
-    LA = Attribute[ListObject[T]]
-    SA = Attribute[SetObject[T]]
-    PDA = Attribute[ProxyDictObject[KT, VT]]
-    PLA = Attribute[ProxyListObject[T]]
-    PSA = Attribute[ProxySetObject[T]]
+    MDA = MutableDictObject[KT, VT]
+    MLA = MutableListObject[T]
+    MSA = MutableSetObject[T]
+    DA = DictObject[KT, VT]
+    LA = ListObject[T]
+    SA = SetObject[T]
+    PDA = ProxyDictObject[KT, VT]
+    PLA = ProxyListObject[T]
+    PSA = ProxySetObject[T]
     CT = Union[BaseAtomicChange, "BatchChanges"]
 
 __all__ = ["HistoryError", "BatchChanges", "HistoryObject"]
@@ -68,14 +67,14 @@ class BatchChanges(Object):
 
     __slots__ = ()
 
-    change = attribute(Batch, checked=False, changeable=False)  # type: Attribute[Batch]
+    change = attribute(Batch, checked=False, changeable=False)  # type: Batch
     """
     Batch change with name and metadata.
 
     :type: objetto.changes.Batch
     """
 
-    name = attribute(str, checked=False, changeable=False)  # type: Attribute[str]
+    name = attribute(str, checked=False, changeable=False)  # type: str
     """
     The batch change name.
 
@@ -94,7 +93,7 @@ class BatchChanges(Object):
 
     _closed, closed = protected_attribute_pair(
         bool, checked=False, default=False
-    )  # type: Attribute[bool], Attribute[bool]
+    )  # type: bool, bool
     """
     Whether the batch has already completed or is still running.
 
@@ -160,7 +159,7 @@ class HistoryObject(Object):
         default=None,
         factory=Integer(minimum=0, accepts_none=True),
         changeable=False,
-    )  # type: Attribute[int]
+    )  # type: int
     """
     How many changes to remember.
 
@@ -169,7 +168,7 @@ class HistoryObject(Object):
 
     __executing, executing = protected_attribute_pair(
         bool, checked=False, default=False
-    )  # type: Attribute[bool], Attribute[bool]
+    )  # type: bool, bool
     """
     Whether the history is undoing or redoing.
 
@@ -178,7 +177,7 @@ class HistoryObject(Object):
 
     __undoing, undoing = protected_attribute_pair(
         bool, checked=False, default=False
-    )  # type: Attribute[bool], Attribute[bool]
+    )  # type: bool, bool
     """
     Whether the history is undoing.
 
@@ -187,7 +186,7 @@ class HistoryObject(Object):
 
     __redoing, redoing = protected_attribute_pair(
         bool, checked=False, default=False
-    )  # type: Attribute[bool], Attribute[bool]
+    )  # type: bool, bool
     """
     Whether the history is redoing.
 
@@ -196,7 +195,7 @@ class HistoryObject(Object):
 
     __index, index = protected_attribute_pair(
         int, checked=False, default=0
-    )  # type: Attribute[int], Attribute[int]
+    )  # type: int, int
     """
     The index of the current change.
 

@@ -613,11 +613,11 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                                     abstract_attribute.relationship.fabricate_value(
                                         member, factory=False
                                     )
-                                except TypeError:
+                                except TypeError as e:
                                     error = (
                                         "attribute {} '{}.{}' value type '{}' is not "
                                         "compatible with {} '{}.{}' constant attribute "
-                                        "type '{}'"
+                                        "type '{}': {}"
                                     ).format(
                                         member_label,
                                         name,
@@ -627,6 +627,7 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                                         abstract_base.__name__,
                                         member_name,
                                         type(abstract_attribute.default).__name__,
+                                        e,
                                     )
                                     exc = TypeError(error)
                                     raise_from(exc, None)
@@ -763,6 +764,7 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
                                     continue
 
                                 # Match!
+                                assert not isinstance(typ, str)
                                 if issubclass(t, typ):
                                     break
 

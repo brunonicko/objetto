@@ -4,7 +4,7 @@
 from re import match as re_match
 from typing import TYPE_CHECKING
 
-from qualname import qualname  # type: ignore
+from .qualname import qualname
 
 if TYPE_CHECKING:
     from typing import Any, Optional

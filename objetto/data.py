@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 """Data."""
 
-from typing import TYPE_CHECKING, TypeVar
-
 from ._bases import MISSING
 from ._data import (
     Data,
@@ -29,11 +27,6 @@ from ._structures import (
 )
 from .utils.caller_module import get_caller_module
 from .utils.reraise_context import ReraiseContext
-
-if TYPE_CHECKING:
-    from typing import Any, Dict, Iterable, Optional, Type, Union
-
-    from .utils.factoring import LazyFactory
 
 __all__ = [
     "DataRelationship",
@@ -65,45 +58,32 @@ __all__ = [
     "data_dict_cls",
     "data_list_cls",
     "data_set_cls",
+    "data_protected_dict_cls",
+    "data_protected_list_cls",
+    "data_protected_set_cls",
 ]
 
 
-T = TypeVar("T")  # Any type.
-KT = TypeVar("KT")  # Any key type.
-VT = TypeVar("VT")  # Any value type.
-
-
-if TYPE_CHECKING:
-    NT = Union[Type[None], None]
-    InteractiveDictAttribute = DataAttribute[InteractiveDictData[KT, VT]]
-    InteractiveListAttribute = DataAttribute[InteractiveListData[T]]
-    InteractiveSetAttribute = DataAttribute[InteractiveSetData[T]]
-    DictAttribute = DataAttribute[DictData[KT, VT]]
-    ListAttribute = DataAttribute[ListData[T]]
-    SetAttribute = DataAttribute[SetData[T]]
-
-
 def data_attribute(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=True,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    default=MISSING,
+    default_factory=None,
+    required=True,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
 ):
-    # type: (...) -> DataAttribute[T]
     """
     Make data attribute.
 
@@ -197,28 +177,32 @@ def data_attribute(
             finalized=finalized,
             abstracted=abstracted,
             metadata=metadata,
-        )  # type: DataAttribute[T]
+        )
 
     return attribute
 
 
 def data_constant_attribute(
-    value,  # type: T
-    checked=True,  # type: bool
-    serialized=False,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=False,  # type: bool
-    compared=True,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
+    value,
+    subtypes=False,
+    checked=True,
+    serialized=False,
+    serializer=None,
+    deserializer=None,
+    represented=False,
+    compared=True,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
 ):
-    # type: (...) -> DataAttribute[T]
+
     """
     Make constant data attribute.
 
     :param value: Constant value.
+
+    :param subtypes: Whether to accept subtypes.
+    :type subtypes: bool
 
     :param checked: Whether to type check when overriding this constant attribute.
     :type checked: bool
@@ -257,7 +241,7 @@ def data_constant_attribute(
     with ReraiseContext((TypeError, ValueError), "defining 'data_constant_attribute'"):
         relationship = DataRelationship(
             types=type(value),
-            subtypes=False,
+            subtypes=subtypes,
             checked=checked,
             serialized=serialized,
             serializer=serializer,
@@ -278,37 +262,37 @@ def data_constant_attribute(
             finalized=finalized,
             abstracted=abstracted,
             metadata=metadata,
-        )  # type: DataAttribute[T]
+        )
 
     return attribute_
 
 
 def data_dict_attribute(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
-    key_subtypes=False,  # type: bool
-    key_factory=None,  # type: LazyFactory
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    key_types=(),
+    key_subtypes=False,
+    key_factory=None,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> InteractiveDictAttribute[KT, VT]
+
     """
     Make interactive dictionary data attribute.
 
@@ -407,7 +391,7 @@ def data_dict_attribute(
             key_factory=key_factory,
             qual_name=qual_name,
             unique=unique,
-        )  # type: Type[InteractiveDictData[KT, VT]]
+        )
 
     # Factory that forces the dictionary type.
     def dict_factory(initial=()):
@@ -448,37 +432,37 @@ def data_dict_attribute(
             finalized=finalized,
             abstracted=abstracted,
             metadata=metadata,
-        )  # type: DataAttribute[InteractiveDictData[KT, VT]]
+        )
 
     return attribute_
 
 
 def data_protected_dict_attribute(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
-    key_subtypes=False,  # type: bool
-    key_factory=None,  # type: LazyFactory
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    key_types=(),
+    key_subtypes=False,
+    key_factory=None,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> DictAttribute[KT, VT]
+
     """
     Make protected dictionary data attribute.
 
@@ -579,7 +563,7 @@ def data_protected_dict_attribute(
             key_factory=key_factory,
             qual_name=qual_name,
             unique=unique,
-        )  # type: Type[DictData[KT, VT]]
+        )
 
     # Factory that forces the dictionary type.
     def dict_factory(initial=()):
@@ -624,34 +608,34 @@ def data_protected_dict_attribute(
             finalized=finalized,
             abstracted=abstracted,
             metadata=metadata,
-        )  # type: DataAttribute[DictData[KT, VT]]
+        )
 
     return attribute_
 
 
 def data_list_attribute(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> InteractiveListAttribute[T]
+
     """
     Make interactive list data attribute.
 
@@ -738,7 +722,7 @@ def data_list_attribute(
             compared=compared,
             qual_name=qual_name,
             unique=unique,
-        )  # type: Type[InteractiveListData[T]]
+        )
 
     # Factory that forces the list type.
     def list_factory(initial=()):
@@ -779,34 +763,34 @@ def data_list_attribute(
             finalized=finalized,
             abstracted=abstracted,
             metadata=metadata,
-        )  # type: DataAttribute[InteractiveListData[T]]
+        )
 
     return attribute_
 
 
 def data_protected_list_attribute(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> ListAttribute[T]
+
     """
     Make protected list data attribute.
 
@@ -895,7 +879,7 @@ def data_protected_list_attribute(
             compared=compared,
             qual_name=qual_name,
             unique=unique,
-        )  # type: Type[ListData[T]]
+        )
 
     # Factory that forces the list type.
     def list_factory(initial=()):
@@ -940,34 +924,34 @@ def data_protected_list_attribute(
             finalized=finalized,
             abstracted=abstracted,
             metadata=metadata,
-        )  # type: DataAttribute[ListData[T]]
+        )
 
     return attribute_
 
 
 def data_set_attribute(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> InteractiveSetAttribute[T]
+
     """
     Make interactive set data attribute.
 
@@ -1054,7 +1038,7 @@ def data_set_attribute(
             compared=compared,
             qual_name=qual_name,
             unique=unique,
-        )  # type: Type[InteractiveSetData[T]]
+        )
 
     # Factory that forces the set type.
     def set_factory(initial=()):
@@ -1095,34 +1079,34 @@ def data_set_attribute(
             finalized=finalized,
             abstracted=abstracted,
             metadata=metadata,
-        )  # type: DataAttribute[InteractiveSetData[T]]
+        )
 
     return attribute_
 
 
 def data_protected_set_attribute(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    default=MISSING,  # type: Any
-    default_factory=None,  # type: LazyFactory
-    required=False,  # type: bool
-    changeable=True,  # type: bool
-    deletable=False,  # type: bool
-    finalized=False,  # type: bool
-    abstracted=False,  # type: bool
-    metadata=None,  # type: Any
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    default=MISSING,
+    default_factory=None,
+    required=False,
+    changeable=True,
+    deletable=False,
+    finalized=False,
+    abstracted=False,
+    metadata=None,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> SetAttribute[T]
+
     """
     Make protected set data attribute.
 
@@ -1211,7 +1195,7 @@ def data_protected_set_attribute(
             compared=compared,
             qual_name=qual_name,
             unique=unique,
-        )  # type: Type[SetData[T]]
+        )
 
     # Factory that forces the set type.
     def set_factory(initial=()):
@@ -1256,29 +1240,29 @@ def data_protected_set_attribute(
             finalized=finalized,
             abstracted=abstracted,
             metadata=metadata,
-        )  # type: DataAttribute[SetData[T]]
+        )
 
     return attribute_
 
 
 def data_dict_cls(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
-    key_subtypes=False,  # type: bool
-    key_factory=None,  # type: LazyFactory
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    key_types=(),
+    key_subtypes=False,
+    key_factory=None,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> Type[InteractiveDictData[KT, VT]]
+
     """
     Make auxiliary interactive dictionary data class.
 
@@ -1370,32 +1354,30 @@ def data_dict_cls(
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
         dct=dct,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'data_dict_cls'"):
-        interactive_base = (
-            InteractiveDictData
-        )  # type: Type[InteractiveDictData[KT, VT]]
+        interactive_base = InteractiveDictData
         return make_auxiliary_cls(interactive_base, **cls_kwargs)
 
 
 def data_protected_dict_cls(
-    types=(),  # type: Union[Type[VT], NT, str, Iterable[Union[Type[VT], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    key_types=(),  # type: Union[Type[KT], NT, str, Iterable[Union[Type[KT], NT, str]]]
-    key_subtypes=False,  # type: bool
-    key_factory=None,  # type: LazyFactory
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    key_types=(),
+    key_subtypes=False,
+    key_factory=None,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> Type[DictData[KT, VT]]
+
     """
     Make auxiliary protected dictionary data class.
 
@@ -1487,27 +1469,27 @@ def data_protected_dict_cls(
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
         dct=dct,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'data_protected_dict_cls'"):
-        base = DictData  # type: Type[DictData[KT, VT]]
+        base = DictData
         return make_auxiliary_cls(base, **cls_kwargs)
 
 
 def data_list_cls(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> Type[InteractiveListData[T]]
+
     """
     Make auxiliary interactive list data class.
 
@@ -1578,27 +1560,27 @@ def data_list_cls(
         qual_name=qual_name,
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'data_list_cls'"):
-        interactive_base = InteractiveListData  # type: Type[InteractiveListData[T]]
+        interactive_base = InteractiveListData
         return make_auxiliary_cls(interactive_base, **cls_kwargs)
 
 
 def data_protected_list_cls(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> Type[ListData[T]]
+
     """
     Make auxiliary protected list data class.
 
@@ -1669,27 +1651,27 @@ def data_protected_list_cls(
         qual_name=qual_name,
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'data_protected_list_cls'"):
-        base = ListData  # type: Type[ListData[T]]
+        base = ListData
         return make_auxiliary_cls(base, **cls_kwargs)
 
 
 def data_set_cls(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> Type[InteractiveSetData[T]]
+
     """
     Make auxiliary interactive set data class.
 
@@ -1760,27 +1742,27 @@ def data_set_cls(
         qual_name=qual_name,
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'data_set_cls'"):
-        interactive_base = InteractiveSetData  # type: Type[InteractiveSetData[T]]
+        interactive_base = InteractiveSetData
         return make_auxiliary_cls(interactive_base, **cls_kwargs)
 
 
 def data_protected_set_cls(
-    types=(),  # type: Union[Type[T], NT, str, Iterable[Union[Type[T], NT, str]]]
-    subtypes=False,  # type: bool
-    checked=None,  # type: Optional[bool]
-    module=None,  # type: Optional[str]
-    factory=None,  # type: LazyFactory
-    serialized=True,  # type: bool
-    serializer=None,  # type: LazyFactory
-    deserializer=None,  # type: LazyFactory
-    represented=True,  # type: bool
-    compared=True,  # type: bool
-    qual_name=None,  # type: Optional[str]
-    unique=False,  # type: bool
+    types=(),
+    subtypes=False,
+    checked=None,
+    module=None,
+    factory=None,
+    serialized=True,
+    serializer=None,
+    deserializer=None,
+    represented=True,
+    compared=True,
+    qual_name=None,
+    unique=False,
 ):
-    # type: (...) -> Type[SetData[T]]
+
     """
     Make auxiliary protected set data class.
 
@@ -1851,7 +1833,7 @@ def data_protected_set_cls(
         qual_name=qual_name,
         module=module,
         unique_descriptor_name="unique_hash" if unique else None,
-    )  # type: Dict[str, Any]
+    )
     with ReraiseContext(TypeError, "defining 'data_protected_set_cls'"):
-        base = SetData  # type: Type[SetData[T]]
+        base = SetData
         return make_auxiliary_cls(base, **cls_kwargs)
