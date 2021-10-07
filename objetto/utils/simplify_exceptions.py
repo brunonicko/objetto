@@ -73,18 +73,21 @@ def simplify_exceptions(func):
         try:
             return func(*args, **kwargs)
         except Exception as exc:
+            exc_type, exc_value, exc_traceback = exc_info()
 
             # Re-raise without change if exception has custom arguments.
             try:
-                arg_spec = inspect.getfullargspec(type(exc).__init__)  # type: ignore
+                args = inspect.getfullargspec(exc_type.__init__).args  # type: ignore
             except AttributeError:
-                # noinspection PyDeprecation
-                arg_spec = inspect.getargspec(type(exc).__init__)  # type: ignore
-            if len(arg_spec.args) != 1:
+                try:
+                    # noinspection PyDeprecation
+                    args = inspect.getargspec(exc_type.__init__).args  # type: ignore
+                except TypeError:
+                    args = ["self"]
+            if len(args) != 1:
                 raise
 
             # Chop the traceback and remove the decorated bits.
-            exc_type, exc_value, exc_traceback = exc_info()
             try:
                 exc_traceback = exc_traceback.tb_next
                 exc_traceback = exc_traceback.tb_next

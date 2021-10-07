@@ -151,8 +151,6 @@ def import_types(types):
         ('chain',)
         >>> get_type_names(import_types(("itertools|chain", "itertools|compress")))
         ('chain', 'compress')
-        >>> get_type_names(import_types(("itertools|chain", int)))
-        ('chain', 'int')
 
     :param types: Types.
     :type types: str or type or None or tuple[str or type or None]
