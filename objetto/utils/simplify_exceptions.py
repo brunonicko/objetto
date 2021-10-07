@@ -2,14 +2,14 @@
 """Decorator to simplify exception traceback when used with wrapped functions."""
 
 import inspect
-from sys import exc_info, _getframe
 from functools import wraps
+from sys import _getframe, exc_info
 from typing import TYPE_CHECKING
 
 from six import PY2
 
 if TYPE_CHECKING:
-    from typing import TypeVar, Callable
+    from typing import Callable, TypeVar
 
     RT = TypeVar("RT")  # Return type.
 

@@ -20,8 +20,8 @@ from .._structures import (
     BaseAttributeStructureMeta,
     BaseInteractiveAttributeStructure,
 )
-from ..utils.type_checking import assert_is_instance
 from ..utils.reraise_context import ReraiseContext
+from ..utils.type_checking import assert_is_instance
 from .bases import BaseData, BaseDataMeta, BaseInteractiveData, DataRelationship
 
 if TYPE_CHECKING:

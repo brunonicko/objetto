@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Recursive-ready `repr` decorator."""
 
-from functools import wraps
 from collections import Counter as ValueCounter
+from functools import wraps
 from threading import local
 from typing import TYPE_CHECKING
 

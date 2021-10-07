@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Base classes and metaclasses."""
 
-from functools import wraps
 from abc import abstractmethod
 from contextlib import contextmanager
+from functools import wraps
 from inspect import getmro
 from typing import TYPE_CHECKING, Callable, Generic, Type, TypeVar, cast
 

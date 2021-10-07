@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-
 from six import with_metaclass
 
 from objetto import Data, data_constant_attribute

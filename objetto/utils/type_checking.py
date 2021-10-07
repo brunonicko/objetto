@@ -11,7 +11,7 @@ except ImportError:
 
 from six import string_types
 
-from .._constants import STRING_TYPES, INTEGER_TYPES
+from .._constants import INTEGER_TYPES, STRING_TYPES
 from ..utils.lazy_import import decorate_path, import_path
 
 if TYPE_CHECKING:
