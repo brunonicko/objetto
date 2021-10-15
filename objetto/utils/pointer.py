@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Weak object pointer."""
 
 from weakref import ref, WeakValueDictionary

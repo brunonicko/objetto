@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Namespace/Bunch-like object."""
 
 from re import compile as re_compile

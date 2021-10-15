@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Implementation of the `Subject-Observer Pattern
 <https://en.wikipedia.org/wiki/Observer_pattern>`_.

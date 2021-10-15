@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Classes & metaclasses that offer validation, compatibility, and protection features:
   - Forced explicit declaration of `__hash__` method when `__eq__` method is declared.

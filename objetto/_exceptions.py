@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 from os import linesep
 from traceback import format_exception

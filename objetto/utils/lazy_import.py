@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Generate importable lazy paths and import from them."""
 
 from re import compile as re_compile

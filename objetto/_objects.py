@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import inspect
 from abc import abstractmethod
 from typing import TYPE_CHECKING, TypeVar, cast
@@ -22,7 +20,7 @@ if TYPE_CHECKING:
     from weakref import ReferenceType
     from typing import Any, Dict, Callable, Optional, Iterator, Tuple, Type
 
-    from ._structures import Storage, Action, StateChange
+    from ._structures import Storage, Action
 
     T_Data = TypeVar("T_Data")
     T_Metadata = TypeVar("T_Metadata")

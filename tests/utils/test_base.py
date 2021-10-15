@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 
 from pickle import loads, dumps
 from typing import TypeVar

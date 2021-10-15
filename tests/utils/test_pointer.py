@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+
 
 from gc import collect
 from pytest import main, raises

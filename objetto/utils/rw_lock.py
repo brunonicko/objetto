@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Read-write locks."""
 
 from abc import abstractmethod
