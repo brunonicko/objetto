@@ -21,6 +21,7 @@ setuptools.setup(
     package_data={"objetto": ["py.typed"]},
     install_requires=[
         "enum34; python_version < '3.4'",
+        "basicco",
         "jinja2",
         "decorator",
         "pyrsistent",

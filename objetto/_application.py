@@ -5,12 +5,13 @@ from typing import TYPE_CHECKING
 from contextlib import contextmanager
 from weakref import ref
 
+from basicco import final
+from basicco.utils.namespace import Namespace
 from six import iteritems
 from pyrsistent import pset
 
-from .utils.base import Base, final
+from .utils.slotted_base import SlottedBase
 from .utils.storage import Storage
-from .utils.namespace import Namespace
 from .utils.subject_observer import Subject
 from .utils.rw_lock import RWThreadingLock, RWLock
 from ._structures import (
@@ -39,12 +40,13 @@ if TYPE_CHECKING:
     from ._objects import AbstractObject, AbstractHistoryObject
 
     ObjPointer = Pointer[AbstractObject]
+    MultiSubject = Union[Subject["Application"], Subject[AbstractObject]]
 
 __all__ = ["Application", "resolve_history"]
 
 
 @final
-class _Writer(Base):
+class _Writer(SlottedBase):
     """Keeps track of changes to the application evolver in the form of commits."""
 
     __slots__ = ("__evolver", "__commits")
@@ -147,7 +149,7 @@ class _Writer(Base):
 
         # Can't act if already acting.
         if obj._Writer__acting:
-            error = "'{}' object already acting".format(type(obj).__fullname__)
+            error = "'{}' object already acting".format(type(obj).__name__)
             raise RuntimeError(error)
 
         with self._pinned_hierarcy_context(obj) as hierarchy:
@@ -409,7 +411,7 @@ class _Writer(Base):
         # type: (AbstractObject) -> Store
         store = self.__evolver.get(obj.pointer, None)
         if store is None:
-            error = "'{}' state not initialized".format(type(obj).__fullname__)
+            error = "'{}' state not initialized".format(type(obj).__name__)
             raise RuntimeError(error)
         return store
 
@@ -418,13 +420,13 @@ class _Writer(Base):
 
         # Already initialized.
         if self.__evolver.get(obj.pointer, None) is not None:
-            error = "'{}' state already initialized".format(type(obj).__fullname__)
+            error = "'{}' state already initialized".format(type(obj).__name__)
             raise RuntimeError(error)
 
         # Can't be acting.
         if obj._Writer__acting:
             error = "'{}' object is acting, can't initialize".format(
-                type(obj).__fullname__
+                type(obj).__name__
             )
             raise RuntimeError(error)
 
@@ -500,7 +502,7 @@ class _Writer(Base):
 
 
 @final
-class Application(Base):
+class Application(SlottedBase):
     """
     Provides contexts for reading from and writing to object's states.
 
@@ -627,7 +629,9 @@ class Application(Base):
 
                             # Send from subject and collect exception information.
                             if commit.action.sender is None:
-                                subject = commit.action.app._subject
+                                subject = (
+                                    commit.action.app._subject
+                                )  # type: MultiSubject
                             else:
                                 subject = commit.action.sender._subject
                             exception_infos = subject.send(commit.action, commit.phase)

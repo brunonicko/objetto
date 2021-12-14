@@ -1,5 +1,3 @@
-
-
 from gc import collect
 from pytest import main, raises
 from weakref import ref
@@ -56,12 +54,6 @@ def test_collect_pointer():
     pointer_a = Pointer(obj_a)
     pointer_b = Pointer(obj_b)
 
-    assert id(obj_a) in Pointer._CACHE
-    assert id(obj_b) in Pointer._CACHE
-
-    assert Pointer._CACHE[id(obj_a)] is pointer_a
-    assert Pointer._CACHE[id(obj_b)] is pointer_b
-
     pointer_a_ref = ref(pointer_a)
     pointer_b_ref = ref(pointer_b)
 
@@ -74,18 +66,11 @@ def test_collect_pointer():
     assert pointer_a_ref() is None
     assert pointer_b_ref() is pointer_b
 
-    assert id(obj_a) not in Pointer._CACHE
-    assert id(obj_b) in Pointer._CACHE
-
     del pointer_b
     collect()
 
     assert pointer_a_ref() is None
     assert pointer_b_ref() is None
-
-    assert id(obj_a) not in Pointer._CACHE
-    assert id(obj_b) not in Pointer._CACHE
-    assert not Pointer._CACHE
 
 
 if __name__ == "__main__":

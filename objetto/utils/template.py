@@ -1,4 +1,3 @@
-
 from typing import TYPE_CHECKING
 
 from jinja2 import StrictUndefined, UndefinedError, TemplateSyntaxError  # type: ignore

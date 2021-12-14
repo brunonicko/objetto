@@ -549,7 +549,7 @@ The `Data`_ instance for an `Object`_ can be accessed through its `.data` proper
     >>> class Person(Object):
     ...     hobby = attribute(Hobby)
     ...
-    >>> Person.Data.__fullname__  # access to automatically generated 'Data' class
+    >>> Person.Data.__qualname__  # access to automatically generated 'Data' class
     'Person.Data'
     >>> app = Application()
     >>> hobby = Hobby(app, description="biking")

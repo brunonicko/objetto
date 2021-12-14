@@ -1,13 +1,13 @@
-
 from abc import abstractmethod
 from copy import deepcopy
 from functools import partial
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, Generic, TypeVar, cast
 from weakref import WeakSet, ref
 
+from basicco import final
 from pyrsistent import pmap
 
-from .base import Base, GenericBase, final
+from .slotted_base import SlottedBase
 
 if TYPE_CHECKING:
     from _weakref import ReferenceType
@@ -26,7 +26,7 @@ _VT = TypeVar("_VT")
 
 
 # noinspection PyAbstractClass
-class AbstractStorage(GenericBase[_KT, _VT], Base):
+class AbstractStorage(SlottedBase, Generic[_KT, _VT]):
     """Abstract interface for storages."""
 
     __slots__ = ()
@@ -60,7 +60,7 @@ class AbstractStorage(GenericBase[_KT, _VT], Base):
 
 
 @final
-class Storage(AbstractStorage[_KT, _VT]):
+class Storage(AbstractStorage, Generic[_KT, _VT]):
     """Immutable weak key/strong value storage."""
 
     __slots__ = ("__weakref__", "__parent", "__storages", "__data")
@@ -160,7 +160,7 @@ class Storage(AbstractStorage[_KT, _VT]):
 
 
 @final
-class Evolver(AbstractStorage[_KT, _VT]):
+class Evolver(AbstractStorage, Generic[_KT, _VT]):
     """Mutable data storage evolver."""
 
     __slots__ = ("__storage", "__updates")

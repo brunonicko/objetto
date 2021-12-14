@@ -1,4 +1,3 @@
-
 from os import linesep
 from traceback import format_exception
 from typing import TYPE_CHECKING

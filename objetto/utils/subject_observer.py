@@ -6,12 +6,12 @@ Implementation of the `Subject-Observer Pattern
 from abc import abstractmethod
 from sys import exc_info
 from types import TracebackType
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar
 from weakref import WeakKeyDictionary, ref
 
 from pyrsistent import PClass, field
 
-from .base import GenericBase, Base
+from .slotted_base import SlottedBase
 
 if TYPE_CHECKING:
     from typing import Any, Dict, List, Set, Optional, Tuple, Type
@@ -21,7 +21,7 @@ T = TypeVar("T")
 __all__ = ["Subject", "Observer", "ObserverToken", "ObserverExceptionInfo"]
 
 
-class Subject(GenericBase[T]):
+class Subject(SlottedBase, Generic[T]):
     """Sends payloads to observers."""
 
     __slots__ = (
@@ -280,7 +280,7 @@ class Observer(object):
         subject.deregister_observer(self)
 
 
-class ObserverToken(Base):
+class ObserverToken(SlottedBase):
     """
     Allows control over observers' order/priority.
 

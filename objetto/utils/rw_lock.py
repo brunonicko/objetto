@@ -6,7 +6,7 @@ from collections import Counter
 from threading import Condition, RLock, current_thread
 from typing import TYPE_CHECKING
 
-from .base import Base
+from .slotted_base import SlottedBase
 
 if TYPE_CHECKING:
     from typing import Iterator, Literal
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 __all__ = ["AbstractRWLock", "RWLock", "RWThreadingLock"]
 
 
-class AbstractRWLock(Base):
+class AbstractRWLock(SlottedBase):
     """Abstract read-write lock."""
     __slots__ = ()
 

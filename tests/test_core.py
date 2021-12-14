@@ -4,7 +4,7 @@ from collections import namedtuple
 from threading import Thread
 from random import randint
 
-from pyrsistent import pmap, pset
+from pyrsistent import pmap
 from six.moves import collections_abc
 
 from objetto._structures import (

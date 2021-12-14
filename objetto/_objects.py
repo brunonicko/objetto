@@ -4,12 +4,13 @@ from typing import TYPE_CHECKING, TypeVar, cast
 from contextlib import contextmanager
 from weakref import ref
 
+from basicco import final
+from basicco.utils.type_checking import assert_is_instance
 from six import with_metaclass, iteritems, raise_from
 from pyrsistent import pmap, pvector
 
-from .utils.base import BaseMeta, Base, final
+from .utils.slotted_base import SlottedBaseMeta, SlottedBase
 from .utils.subject_observer import Subject
-from .utils.type_checking import assert_is_instance
 from .utils.pointer import Pointer
 from ._application import Application, resolve_history
 from ._constants import DEAD_REF
@@ -33,7 +34,7 @@ __all__ = [
 
 
 # noinspection PyAbstractClass
-class AbstractObjectMeta(BaseMeta):
+class AbstractObjectMeta(SlottedBaseMeta):
     """Metaclass for :class:`AbstractObject`."""
 
     def __init__(cls, name, bases, dct):
@@ -65,8 +66,8 @@ class AbstractObjectMeta(BaseMeta):
         else:
             history_descriptor_name, history_descriptor = None, None
 
-        cls.__namespace__.__history_descriptor_name = history_descriptor_name
-        cls.__namespace__.__history_descriptor = history_descriptor
+        cls._namespace.__history_descriptor_name = history_descriptor_name
+        cls._namespace.__history_descriptor = history_descriptor
 
         # Store reaction descriptors sorted by priority, then name.
         sorted_reaction_descriptor_items = sorted(
@@ -80,43 +81,43 @@ class AbstractObjectMeta(BaseMeta):
         else:
             sorted_reaction_descriptor_names, sorted_reaction_descriptors = (), ()
 
-        cls.__namespace__.__reaction_descriptor_names = sorted_reaction_descriptor_names
-        cls.__namespace__.__reaction_descriptors = sorted_reaction_descriptors
+        cls._namespace.__reaction_descriptor_names = sorted_reaction_descriptor_names
+        cls._namespace.__reaction_descriptors = sorted_reaction_descriptors
 
     @property
     @final
     def _history_descriptor_name(cls):
         # type: () -> Optional[str]
         """History descriptor's name."""
-        return cls.__namespace__.__history_descriptor_name
+        return cls._namespace.__history_descriptor_name
 
     @property
     @final
     def _history_descriptor(cls):
         # type: () -> Optional[HistoryDescriptor]
         """History descriptor."""
-        return cls.__namespace__.__history_descriptor
+        return cls._namespace.__history_descriptor
 
     @property
     @final
     def _reaction_descriptor_names(cls):
         # type: () -> Tuple[str, ...]
         """Reaction descriptors' names."""
-        return cls.__namespace__.__reaction_descriptor_names
+        return cls._namespace.__reaction_descriptor_names
 
     @property
     @final
     def _reaction_descriptors(cls):
         # type: () -> Tuple[ReactionDescriptor, ...]
         """Reaction descriptors."""
-        return cls.__namespace__.__reaction_descriptors
+        return cls._namespace.__reaction_descriptors
 
 
 T_AbstractObject = TypeVar("T_AbstractObject", bound="AbstractObject")
 
 
 # noinspection PyAbstractClass
-class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
+class AbstractObject(with_metaclass(AbstractObjectMeta, SlottedBase)):
 
     __slots__ = (
         "__weakref__",
@@ -134,7 +135,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
 
     def __init__(self, app, *args, **kwargs):
         # type: (T_AbstractObject, Application, Any, Any) -> None
-        assert_is_instance(app, Application, accept_subtypes=False)
+        assert_is_instance(app, Application, subtypes=False)
 
         with app.require_write_context():
             self.__subject = Subject(self)  # type: Subject[T_AbstractObject]
@@ -153,14 +154,14 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
             init_args = {"app": app}  # type: Dict[str, Any]
 
             try:
-                arg_spec = type(self).__namespace__.__init_arg_spec  # type: ignore
+                arg_spec = type(self)._namespace.__init_arg_spec  # type: ignore
             except AttributeError:
                 try:
                     arg_spec = inspect.getfullargspec(self.__init__)  # type: ignore
                 except AttributeError:
                     # noinspection PyDeprecation
                     arg_spec = inspect.getargspec(self.__init__)  # type: ignore
-                type(self).__namespace__.__init_arg_spec = arg_spec
+                type(self)._namespace.__init_arg_spec = arg_spec
 
             arg_names = arg_spec.args[2:]
             arg_names_len = len(arg_names)
@@ -249,7 +250,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
         # type: () -> str
         return "<{}{} at {}>".format(
             "FROZEN " if self.__frozen_store is not None else "",
-            type(self).__fullname__,
+            type(self).__name__,
             hex(id(self)),
         )
 
@@ -282,7 +283,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
         try:
             return storage.query(self.pointer)
         except KeyError:
-            error = "'{}' object not initialized".format(type(self).__fullname__)
+            error = "'{}' object not initialized".format(type(self).__name__)
             exc = RuntimeError(error)
             raise_from(exc, None)
             raise exc
@@ -362,7 +363,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
             return frozen_hash
 
         error = "'{}' object is not frozen and therefore not hashable".format(
-            type(self).__fullname__
+            type(self).__name__
         )
         raise RuntimeError(error)
 
@@ -428,7 +429,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
         # type: () -> Optional[AbstractHistoryObject]
         if self.__frozen_store is not None:
             error = "'{}' object is frozen and therefore cannot have a history".format(
-                type(self).__fullname__
+                type(self).__name__
             )
             raise RuntimeError(error)
 
@@ -452,7 +453,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
         # type: (State, Any, Any) -> None
         if self.__frozen_store is not None:
             error = "'{}' object is frozen and therefore cannot be mutated".format(
-                type(self).__fullname__
+                type(self).__name__
             )
             raise RuntimeError(error)
 
@@ -466,7 +467,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
         # type: (str, Any) -> Iterator
         if self.__frozen_store is not None:
             error = "'{}' object is frozen and therefore cannot be mutated".format(
-                type(self).__fullname__
+                type(self).__name__
             )
             raise RuntimeError(error)
 
@@ -490,7 +491,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
         except AttributeError:
             if self.__frozen_store is not None:
                 error = "'{}' object is frozen and therefore has no subject".format(
-                    type(self).__fullname__
+                    type(self).__name__
                 )
                 raise AttributeError(error)
             else:
@@ -513,7 +514,7 @@ class AbstractObject(with_metaclass(AbstractObjectMeta, Base)):
                 error = (
                     "'{}' object is frozen and therefore does not belong to an "
                     "application"
-                ).format(type(self).__fullname__)
+                ).format(type(self).__name__)
                 raise AttributeError(error)
             else:
                 raise
@@ -526,7 +527,7 @@ class AbstractHistoryObject(AbstractObject):
     def __init__(self, app, descriptor, *args, **kwargs):
         # type: (Application, HistoryDescriptor, Any, Any) -> None
         super(AbstractHistoryObject, self).__init__(app, descriptor, *args, **kwargs)
-        assert_is_instance(descriptor, HistoryDescriptor, accept_subtypes=False)
+        assert_is_instance(descriptor, HistoryDescriptor, subtypes=False)
         self.__descriptor = descriptor
 
     @classmethod

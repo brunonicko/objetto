@@ -1,8 +1,7 @@
-
 from weakref import ref
 from enum import Enum, unique
 
-from .utils.base import final
+from basicco import final
 
 __all__ = ["Phase", "DEAD_REF"]
 
