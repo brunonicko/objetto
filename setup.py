@@ -5,7 +5,7 @@ with open("README.rst", "r") as fh:
 
 setuptools.setup(
     name="objetto",
-    version="1.29.1",
+    version="1.29.2",
     author="Bruno Nicko",
     author_email="brunonicko@gmail.com",
     description="Object-oriented framework for building smart applications and APIs",
@@ -18,7 +18,7 @@ setuptools.setup(
         "enum34; python_version < '3.4'",
         "pyrsistent",
         "six",
-        "slotted",
+        "slotted<2",
         "typing; python_version < '3.5'",
     ],
     classifiers=[
@@ -31,6 +31,7 @@ setuptools.setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: Implementation :: PyPy",
     ],
     python_requires=">=2.7",

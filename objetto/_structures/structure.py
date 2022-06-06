@@ -569,7 +569,7 @@ class BaseAttributeStructureMeta(BaseStructureMeta):
 
                 # We might need to replace something in the dict for this base, copy it.
                 if base is cls:
-                    base_dict = dict(base.__dict__)
+                    base_dict = dict(base.__dict__)  # type: Mapping[str, Any]
                 else:
                     base_dict = base.__dict__
 

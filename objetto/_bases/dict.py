@@ -542,21 +542,6 @@ class BaseMutableDict(
         """
         self._set(key, value)
 
-    @overload
-    def update(self, __m, **kwargs):
-        # type: (Mapping[KT, VT], VT) -> None
-        pass
-
-    @overload
-    def update(self, __m, **kwargs):
-        # type: (Iterable[Tuple[KT, VT]], VT) -> None
-        pass
-
-    @overload
-    def update(self, **kwargs):
-        # type: (VT) -> None
-        pass
-
     @final
     def update(self, *args, **kwargs):
         """
