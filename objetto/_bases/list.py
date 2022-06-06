@@ -514,7 +514,6 @@ class BaseMutableList(
 
     @final
     def __iadd__(self, iterable):
-        # type: (Iterable[T]) -> MutableSequence[T]
         """
         In place addition.
 
