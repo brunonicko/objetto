@@ -15,7 +15,7 @@ setuptools.setup(
     url="https://github.com/brunonicko/objetto",
     packages=setuptools.find_packages(exclude=["tests", "tests.*"]),
     package_data={"objetto": ["py.typed", "*.pyi"]},
-    install_requires=["tippo", "basicco", "registtro"],
+    install_requires=["slotted", "tippo", "basicco", "registtro", "pyrsistent"],
     classifiers=[
         "Intended Audience :: Developers",
         "License :: OSI Approved :: MIT License",
