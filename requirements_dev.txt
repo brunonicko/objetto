@@ -1,11 +1,10 @@
 autoflake
 black
 flake8
+invoke
 isort
 mypy
 pytest
 sphinx
-sphinx-rtd-theme
-typing-extensions
-types-six
+sphinx_rtd_theme
 tox

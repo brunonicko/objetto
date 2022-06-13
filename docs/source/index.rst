@@ -1,15 +1,15 @@
-Welcome to Objetto's documentation!
-===================================
+Welcome to Objetto documentation!
+=================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    readme
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   api/index
+   api
 
 Indices and tables
 ==================
