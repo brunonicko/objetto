@@ -68,7 +68,7 @@ _context: contextvars.ContextVar[Optional[_Context]] = contextvars.ContextVar("_
 
 
 @contextlib.contextmanager
-def _current_context() -> Iterator[_Context]:
+def current_context() -> Iterator[_Context]:
     """Current context manager."""
     ctx: Optional[_Context] = _context.get()
     if ctx is None:
@@ -116,7 +116,7 @@ class AbstractObject(Generic[_ST], metaclass=slotted.SlottedMeta):
 
     def __init__(self, *args, **kwargs):
         self.__node__ = _Node(self)
-        with _current_context() as context:
+        with current_context() as context:
             state, adoptions = self.__init_state__(*args, **kwargs)
             context.initialize(self, state, adoptions)
             self.__post_init__(*args, **kwargs)
