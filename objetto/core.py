@@ -3,7 +3,18 @@ import collections
 import contextvars
 import contextlib
 import weakref
-from typing import Any, Optional, Iterator, Iterable, List, TypeVar, Generic, Mapping, Tuple, final
+from typing import (
+    Any,
+    Optional,
+    Iterator,
+    Iterable,
+    List,
+    TypeVar,
+    Generic,
+    Mapping,
+    Tuple,
+    final,
+)
 
 import pyrsistent
 from pyrsistent.typing import PMap, PSet
@@ -21,7 +32,16 @@ from .exceptions import (
     MultiUnparentError,
 )
 
-__all__ = ["SlottedMeta", "Slotted", "Node", "Entry", "Context", "get_context", "Store", "AbstractObject"]
+__all__ = [
+    "SlottedMeta",
+    "Slotted",
+    "Node",
+    "Entry",
+    "Context",
+    "get_context",
+    "Store",
+    "AbstractObject",
+]
 
 T = TypeVar("T")
 
@@ -73,6 +93,7 @@ class Node(Slotted):
 @final
 class Entry(pyrsistent.PClass):
     """Holds an object's state and metadata."""
+
     state: Any = pyrsistent.field()
     children: PSet[Node] = pyrsistent.pset_field(Node)
     parent_ref: Optional[weakref.ref[Node]] = pyrsistent.field()

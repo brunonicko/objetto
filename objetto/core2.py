@@ -3,7 +3,18 @@ import collections
 import weakref
 import contextvars
 import contextlib
-from typing import Any, Optional, Generic, Iterator, List, Iterable, TypeVar, Tuple, NamedTuple, final
+from typing import (
+    Any,
+    Optional,
+    Generic,
+    Iterator,
+    List,
+    Iterable,
+    TypeVar,
+    Tuple,
+    NamedTuple,
+    final,
+)
 
 import slotted
 from pyrsistent.typing import PSet
@@ -18,6 +29,7 @@ _ST = TypeVar("_ST")
 @final
 class _Entry(NamedTuple):
     """Holds an object's state, children, and weak reference to parent node."""
+
     state: Any
     children: PSet["_Node"]
     parent_ref: Optional[weakref.ref["_Node"]]
@@ -54,7 +66,12 @@ class _Context:
         """Get current store."""
         return self.__stores[-1]
 
-    def initialize(self, obj: "AbstractObject[_ST]", state: _ST, adoptions: Iterable["AbstractObject"]):
+    def initialize(
+        self,
+        obj: "AbstractObject[_ST]",
+        state: _ST,
+        adoptions: Iterable["AbstractObject"],
+    ):
         """Initialize object with state and children."""
 
     @property
