@@ -12,6 +12,7 @@ import basicco.runtime_final
 import pyrsistent
 from pyrsistent.typing import PMap, PSet
 from tippo import (
+    Any,
     TypeVar,
     Counter,
     Dict,
@@ -36,16 +37,16 @@ _ST = TypeVar("_ST")  # state type
 @final
 @dataclasses.dataclass(frozen=True)
 class _Entry(Generic[_ST]):
-    """Entry for a node in a registry."""
+    """Entry for a node in the registry."""
 
     state: _ST
     """State."""
 
     all_child_nodes: PMap[Hierarchy, PSet[Node]]
-    """Child nodes per hierarchy."""
+    """Child nodes mapped by hierarchy."""
 
     all_parent_node_refs: PMap[Hierarchy, ref[Node]]
-    """Parent node weak reference per hierarchy."""
+    """Parent node weak reference mapped by hierarchy."""
 
     def get_child_nodes(self, hierarchy: Hierarchy) -> PSet[Node]:
         """Get child nodes in a specific hierarchy."""
@@ -56,15 +57,21 @@ class _Entry(Generic[_ST]):
         try:
             parent_node_ref = self.all_parent_node_refs[hierarchy]
         except KeyError:
+
+            # If hierarchy is not present, there's no parent.
             return None
+
         else:
             parent_node = parent_node_ref()
             if parent_node is None:
+
+                # We have a weak reference, but it is dead.
                 raise ReferenceError("parent is no longer in memory")
+
             return parent_node
 
     def get_all_parent_nodes(self) -> PMap[Hierarchy, Node]:
-        """Get all parent nodes mapped by each hierarchy."""
+        """Get all parent nodes mapped by hierarchy."""
         all_parent_nodes: Dict[Hierarchy, Node] = {}
         for hierarchy in self.all_parent_node_refs:
             parent_node = self.get_parent_node(hierarchy)
@@ -74,12 +81,12 @@ class _Entry(Generic[_ST]):
 
 
 @dataclasses.dataclass(frozen=True)
-class Event:
+class Event(Generic[_ST]):
     """Base event dataclass."""
 
 
 @dataclasses.dataclass(frozen=True)
-class ObjectInitialized(Event):
+class ObjectInitialized(Event[_ST]):
     """Event: object initialized."""
 
 
@@ -91,7 +98,7 @@ class Action(Generic[_ST]):
     obj: AbstractObject[_ST]
     """Object that changed."""
 
-    event: Event
+    event: Event[_ST]
     """Event data."""
 
     all_adoptions: PMap[Hierarchy, Tuple[AbstractObject, ...]]
@@ -125,7 +132,7 @@ class Snapshot:
         self.__action: Optional[Action] = None  # action that generated this snapshot
         self.__registry: registtro.Registry[Node, _Entry] = registtro.Registry()  # registry of entries
         self.__previous_ref: Optional[ref[Snapshot]] = None  # weak reference to the snapshot that generated this one
-        self.__followings: Set[Snapshot] = set()  # snapshots generated from this one
+        self.__followings: List[Snapshot] = []  # snapshots generated from this one
 
     def __evolve__(self, action: Action, registry: registtro.Registry[Node, _Entry]) -> Snapshot:
         """Evolve into a new snapshot."""
@@ -135,14 +142,14 @@ class Snapshot:
         snapshot.__action = action
         snapshot.__registry = registry
         snapshot.__previous_ref = ref(self)
-        snapshot.__followings = set()
+        snapshot.__followings = []
 
-        # Keep track of it in this one.
-        self.__followings.add(snapshot)
+        # Keep track of the new snapshot in this one.
+        self.__followings.append(snapshot)
 
         return snapshot
 
-    def __get_entry(self, node: Node) -> _Entry:
+    def __get_entry__(self, node: Node) -> _Entry:
         """Get entry in the registry for a node."""
         try:
             return self.__registry.query(node)
@@ -151,30 +158,30 @@ class Snapshot:
 
     def get_state(self, obj: AbstractObject[_ST]) -> _ST:
         """Get state."""
-        return self.__get_entry(obj.__node__).state
+        return self.__get_entry__(Node(obj)).state
 
     def get_children(self, obj: AbstractObject, hierarchy: Hierarchy) -> Tuple[AbstractObject, ...]:
         """Get children in a specific hierarchy."""
-        child_nodes = self.__get_entry(obj.__node__).get_child_nodes(hierarchy)
+        child_nodes = self.__get_entry__(Node(obj)).get_child_nodes(hierarchy)
         return tuple(sorted((n.obj for n in child_nodes), key=lambda o: id(o)))
 
     def get_parent(self, obj: AbstractObject, hierarchy: Hierarchy) -> Optional[AbstractObject]:
         """Get parent in a specific hierarchy."""
-        parent_node = self.__get_entry(obj.__node__).get_parent_node(hierarchy)
+        parent_node = self.__get_entry__(Node(obj)).get_parent_node(hierarchy)
         if parent_node is None:
             return None
         else:
             return parent_node.obj
 
     def get_all_parents(self, obj: AbstractObject) -> PMap[Hierarchy, AbstractObject]:
-        """Get all parents mapped by each hierarchy."""
-        all_parent_nodes = self.__get_entry(obj.__node__).get_all_parent_nodes()
+        """Get all parents mapped by hierarchy."""
+        all_parent_nodes = self.__get_entry__(Node(obj)).get_all_parent_nodes()
         all_parents: Dict[Hierarchy, AbstractObject] = {h: pn.obj for h, pn in all_parent_nodes.items()}
         return pyrsistent.pmap(all_parents)
 
     def get_all_children(self, obj: AbstractObject) -> PMap[Hierarchy, Tuple[AbstractObject, ...]]:
-        """Get all children mapped by each hierarchy."""
-        all_child_nodes = self.__get_entry(obj.__node__).all_child_nodes
+        """Get all children mapped by hierarchy."""
+        all_child_nodes = self.__get_entry__(Node(obj)).all_child_nodes
         all_children: Dict[Hierarchy, Tuple[AbstractObject, ...]] = {
             h: tuple(sorted((cn.obj for cn in cns), key=lambda o: id(o))) for h, cns in all_child_nodes.items()
         }
@@ -199,11 +206,11 @@ class Snapshot:
 
     def is_child(self, child: AbstractObject, parent: AbstractObject, hierarchy: Hierarchy) -> bool:
         """Whether an object is a child of another object in a specific hierarchy."""
-        return Node(child) in self.__get_entry(Node(parent)).all_child_nodes.get(hierarchy, pyrsistent.pset())
+        return Node(child) in self.__get_entry__(Node(parent)).all_child_nodes.get(hierarchy, pyrsistent.pset())
 
     def has_children(self, obj: AbstractObject, hierarchy: Hierarchy) -> bool:
         """Whether object has children in a specific hierarchy."""
-        return bool(self.__get_entry(Node(obj)).all_child_nodes.get(hierarchy, pyrsistent.pset()))
+        return bool(self.__get_entry__(Node(obj)).all_child_nodes.get(hierarchy, pyrsistent.pset()))
 
     def has_parent(self, obj: AbstractObject, hierarchy: Hierarchy) -> bool:
         """Whether object has a parent in a specific hierarchy."""
@@ -212,11 +219,24 @@ class Snapshot:
     def has_state(self, obj: AbstractObject) -> bool:
         """Whether an object has state (was initialized)."""
         try:
-            self.__get_entry(obj.__node__)
+            self.__get_entry__(Node(obj))
         except NotInitializedError:
             return False
         else:
             return True
+
+    def get_previous(self) -> Optional[Snapshot]:
+        """Get previous snapshot (which generated this one)."""
+        if self.__previous_ref is None:
+            return None
+        previous = self.__previous_ref()
+        if previous is None:
+            raise ReferenceError("previous snapshot is no longer in memory")
+        return previous
+
+    def get_followings(self) -> Tuple[Snapshot, ...]:
+        """Get following snapshots (generated from this one)."""
+        return tuple(self.__followings)
 
     @property
     def action(self) -> Optional[Action]:
@@ -231,8 +251,11 @@ class Context:
     __slots__ = ("__snapshots", "__frozen", "__pinned", "__acting")
 
     def __init__(self, initial_snapshot: Optional[Snapshot] = None, frozen: bool = False):
+
+        # Start with blank snapshot if not specified.
         if initial_snapshot is None:
             initial_snapshot = Snapshot()
+
         self.__snapshots: List[Snapshot] = [initial_snapshot]
         self.__pinned: Counter[Node] = Counter()
         self.__acting: WeakSet[Node] = WeakSet()
@@ -240,86 +263,112 @@ class Context:
 
     @contextlib.contextmanager
     def __acting_context(self, node: Node) -> Iterator[PMap[Hierarchy, Tuple[Node, ...]]]:
+        """Context manager that marks a node as acting (errors out if already acting) and pins its parent nodes."""
 
-        # Mark node as acting.
+        # Check if node is already acting.
         if node in self.__acting:
             raise AlreadyActingError(f"{node.obj} is already acting")
-        self.__acting.add(node)
 
-        # Pin hierarchy above the node in all of its hierarchies.
-        nodes: List[Node] = [node]
-        pinned_nodes: Dict[Hierarchy, List[Node]] = {}
+        # Get the current snapshot and entry for the node.
         snapshot = self.get_snapshot()
-        while nodes:
-            child = nodes.pop()
-            pinned_nodes.append(child)
-            self.__pinned[child] += 1
-            child_obj = child.obj
-            if not snapshot.has_state(child_obj):
-                break
-            parent_objs = snapshot.get_all_parents(child_obj)
-            for hierarchy, parent_obj in parent_objs.items():
-                if parent_obj is not None:
-                    nodes.append(parent_obj.__node__)
+        try:
+            entry: Optional[_Entry] = snapshot.__get_entry__(node)
+        except NotInitializedError:
+            entry = None
+
+        # Mark node as acting and pin it.
+        self.__acting.add(node)
+        self.__pinned[node] += 1
+
+        # Node is initialized, get its hierarchies.
+        hierarchies: Set[Hierarchy] = set()
+        if entry is not None:
+            hierarchies.update(entry.all_parent_node_refs.keys())
+
+        # Pin the node itself and its parent nodes for all of its hierarchies.
+        nodes: Dict[Hierarchy, List[Node]] = {h: [node] for h in hierarchies}
+        pinned_nodes: Dict[Hierarchy, List[Node]] = {}
+        for hierarchy in hierarchies:
+            while nodes[hierarchy]:
+                child = nodes[hierarchy].pop()
+                if child is not node:
+                    pinned_nodes.setdefault(hierarchy, []).append(child)
+                    self.__pinned[child] += 1
+                try:
+                    child_entry: _Entry = snapshot.__get_entry__(child)
+                except NotInitializedError:
+                    break
+                parent_node = child_entry.get_parent_node(hierarchy)
+                if parent_node is not None:
+                    nodes[hierarchy].append(parent_node)
+
+        # Freeze pinned nodes.
+        frozen_pinned_nodes: PMap[Hierarchy, Tuple[Node, ...]] = pyrsistent.pmap(
+            {h: tuple(ns) for h, ns in pinned_nodes.items()}
+        )
 
         try:
 
-            # Yield the flattened hierarchies as tuples (node, parent node, grandparent node, ...).
-            yield tuple(hierarchy)
+            # Yield the pinned nodes.
+            yield frozen_pinned_nodes
 
         finally:
 
-            # Unmark node as acting.
+            # Unmark node as acting and unpin it.
             self.__acting.remove(node)
+            self.__pinned[node] -= 1
 
             # Unpin the hierarchy above the node in all hierarchies.
-            while hierarchy:
-                child = hierarchy.pop()
-                self.__pinned[child] -= 1
-                assert self.__pinned[child] >= 0
-                if not self.__pinned[child]:
-                    del self.__pinned[child]
+            for hierarchy, parents in pinned_nodes.items():
+                while parents:
+                    child = parents.pop()
+                    self.__pinned[child] -= 1
+                    assert self.__pinned[child] >= 0
+                    if not self.__pinned[child]:
+                        del self.__pinned[child]
 
     def __act(
         self,
         obj: AbstractObject[_ST],
         state: _ST,
         event: Event,
-        adoptions: Dict[Hierarchy, Tuple[AbstractObject, ...]],
-        releases: Dict[Hierarchy, Tuple[AbstractObject, ...]],
+        all_adoptions: Dict[Hierarchy, Tuple[AbstractObject, ...]],
+        all_releases: Dict[Hierarchy, Tuple[AbstractObject, ...]],
     ) -> None:
 
         # Can't act if context is frozen.
         if self.frozen:
             raise ContextError("context is frozen")
 
-        # Get node and enter pinned hierarchy context.
-        node = obj.__node__
-        with self.__acting_context(node) as hierarchy:
+        # Get node and enter acting context.
+        node = Node(obj)
+        with self.__acting_context(node) as pinned_nodes:
 
             # Get previous snapshot and whether object has state in it already.
             previous_snapshot = self.get_snapshot()
             has_state = previous_snapshot.has_state(obj)
 
             # Check whether object has been initialized already depending on the event type.
-            initializing = isinstance(event, InitializeEvent)
+            initializing = isinstance(event, ObjectInitialized)
             if initializing:
                 if has_state:
                     raise AlreadyInitializedError(f"{obj} already initialized")
-                assert not releases
+                assert not all_releases
             elif not has_state:
                 raise NotInitializedError(f"{obj} not initialized")
 
             # Count child changes.
-            child_changes: collections.Counter[Node] = collections.Counter()
-            for adoption in adoptions:
-                child_changes[adoption.__node__] += 1
-            for release in releases:
-                child_changes[release.__node__] -= 1
+            child_changes: Dict[Hierarchy, Counter[Node]] = {}
+            for hierarchy, adoptions in all_adoptions.items():
+                for adoption in adoptions:
+                    child_changes.setdefault(hierarchy, Counter())[Node(adoption)] += 1
+            for hierarchy, releases in all_releases.items():
+                for release in releases:
+                    child_changes.setdefault(hierarchy, Counter())[Node(release)] -= 1
 
-        children = pyrsistent.pmap({h: pyrsistent.pset(o.__node__ for o in os) for h, os in adoptions.items()})
-        entry = Entry(state=state, children=children, parent_refs=pyrsistent.pmap())
-        updates: Dict[Node, Entry] = {obj.__node__: entry}
+        all_child_nodes = pyrsistent.pmap({h: pyrsistent.pset(Node(o) for o in os) for h, os in all_adoptions.items()})
+        entry = _Entry(state=state, all_child_nodes=all_child_nodes, all_parent_node_refs=pyrsistent.pmap())
+        updates: Dict[Node, _Entry] = {Node(obj): entry}
 
         registry = self.__registry.update(updates)
         event = InitializeEvent()
@@ -348,7 +397,7 @@ class Context:
         """Initialize object with state and children."""
 
         # Get node.
-        node = obj.__node__
+        node = Node(obj)
 
         # Mark node as acting.
         if node in self.__acting:
