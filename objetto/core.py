@@ -4,6 +4,7 @@ import abc
 import contextvars
 import contextlib
 import dataclasses
+import inspect
 
 import slotted
 import registtro
@@ -12,7 +13,7 @@ import basicco.runtime_final
 import pyrsistent
 from pyrsistent.typing import PMap, PSet
 from tippo import (
-    Any,
+    Type,
     TypeVar,
     Counter,
     Dict,
@@ -43,6 +44,13 @@ from .exceptions import (
 
 
 _ST = TypeVar("_ST")  # state type
+
+_REACTION_TAG = "__isreactionmethod__"
+
+
+def reaction(func):
+    setattr(func, _REACTION_TAG, True)
+    return func
 
 
 @final
@@ -390,6 +398,8 @@ class Context:
                 all_parent_node_refs = pyrsistent.pmap()
 
             # Perform parenting checks.
+            all_compiled_adoption_nodes: Dict[Hierarchy, Set[Node]] = {}
+            all_compiled_release_nodes: Dict[Hierarchy, Set[Node]] = {}
             all_compiled_adoptions: Dict[Hierarchy, Tuple[AbstractObject, ...]] = {}
             all_compiled_releases: Dict[Hierarchy, Tuple[AbstractObject, ...]] = {}
             all_compiled_child_nodes: Dict[Hierarchy, PSet[Node]] = {}
@@ -448,13 +458,15 @@ class Context:
                             )
 
                     # Compile child changes for this hierarchy.
-                    release_nodes = pyrsistent.pset(c for c in child_counter if child_counter[c] == -1)
-                    adopt_nodes = pyrsistent.pset(c for c in child_counter if child_counter[c] == 1)
+                    release_nodes = {c for c in child_counter if child_counter[c] == -1}
+                    adopt_nodes = {c for c in child_counter if child_counter[c] == 1}
                     all_compiled_child_nodes[hierarchy] = (
                         previous_all_child_nodes.get(hierarchy, pyrsistent.pset())
                         .difference(release_nodes)
                         .union(adopt_nodes)
                     )
+                    all_compiled_adoption_nodes[hierarchy] = adopt_nodes
+                    all_compiled_release_nodes[hierarchy] = release_nodes
                     all_compiled_adoptions[hierarchy] = tuple(a.obj for a in adopt_nodes)
                     all_compiled_releases[hierarchy] = tuple(r.obj for r in release_nodes)
 
@@ -467,18 +479,44 @@ class Context:
                 old_state=previous_state,
                 new_state=state,
             )
-            print(action)
 
             # TODO: Pre reactions
+            for hierarchy, reaction_nodes in pinned_nodes.items():
+                for reacting_node in reaction_nodes:
+                    reacting_obj = reacting_node.obj
+                    for reaction_name in reactions(type(reacting_obj)):
+                        getattr(reacting_obj, reaction_name)(action, "PRE")
 
             # Commit new entry as a new snapshot.
             all_child_nodes = pyrsistent.pmap({h: pyrsistent.pset(ns) for h, ns in all_compiled_child_nodes.items()})
             entry = _Entry(state=state, all_child_nodes=all_child_nodes, all_parent_node_refs=all_parent_node_refs)
+
+            current_snapshot = self.get_snapshot()
             updates: Dict[Node, _Entry] = {Node(obj): entry}
+            for hierarchy, release_nodes in all_compiled_release_nodes.items():
+                for release_node in release_nodes:
+                    release_entry = current_snapshot.__get_entry__(release_node)
+                    updates[release_node] = dataclasses.replace(
+                        release_entry,
+                        all_parent_node_refs=release_entry.all_parent_node_refs.discard(hierarchy),
+                    )
+            for hierarchy, adoption_nodes in all_compiled_adoption_nodes.items():
+                for adoption_node in adoption_nodes:
+                    adoption_entry = current_snapshot.__get_entry__(adoption_node)
+                    updates[adoption_node] =  dataclasses.replace(
+                        adoption_entry,
+                        all_parent_node_refs=adoption_entry.all_parent_node_refs.set(hierarchy, ref(node)),
+                    )
+
             new_snapshot = self.get_snapshot().__evolve__(action, updates)
             self.__snapshots.append(new_snapshot)
 
             # TODO: Post reactions
+            for hierarchy, reaction_nodes in pinned_nodes.items():
+                for reacting_node in reaction_nodes:
+                    reacting_obj = reacting_node.obj
+                    for reaction_name in reactions(type(reacting_obj)):
+                        getattr(reacting_obj, reaction_name)(action, "POST")
 
     def get_snapshot(self) -> Snapshot:
         """Get current snapshot."""
@@ -578,7 +616,19 @@ class AbstractObjectMeta(
     basicco.explicit_hash.ExplicitHashMeta,
     basicco.runtime_final.FinalizedMeta,
 ):
-    pass
+
+    def __init__(cls, name, bases, dct, **kwargs):
+        super().__init__(name, bases, dct, **kwargs)
+
+        # Look for reaction methods.
+        reaction_names = {}
+        for base in reversed(inspect.getmro(cls)):
+            for member_name, member in base.__dict__.items():
+                reaction_names.pop(member_name, None)
+                if callable(member) and getattr(member, _REACTION_TAG, None) is True:
+                    reaction_names[member_name] = member
+
+        cls.__reactionmethods__ = tuple(reaction_names)
 
 
 class AbstractObject(slotted.SlottedABC, Generic[_ST], metaclass=AbstractObjectMeta):
@@ -612,6 +662,10 @@ class AbstractObject(slotted.SlottedABC, Generic[_ST], metaclass=AbstractObjectM
         Takes same arguments as `__init__`.
         """
         pass
+
+
+def reactions(cls: Type[AbstractObject]) -> Tuple[str, ...]:
+    return cls.__reactionmethods__
 
 
 def objs_only(values: Iterable) -> Tuple[AbstractObject, ...]:

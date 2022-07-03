@@ -18,13 +18,24 @@ class ValueObject(AbstractObject[T]):
     __slots__ = ("__hierarchy",)
 
     @classmethod
-    def __init_state__(cls, value):
-        adoptions = {}
+    def __init_state__(cls, value, hierarchy):
+        if hierarchy:
+            adoptions = {hierarchy: objs_only((value,))}
+        else:
+            adoptions = {}
         return value, adoptions
 
     def __init__(self, value: T, hierarchy: Optional[Hierarchy] = None):
         self.__hierarchy = hierarchy
-        super().__init__(value)
+        super().__init__(value, hierarchy)
+
+    def __repr__(self):
+        try:
+            with require_context():
+                hierarchy_repr = "" if self.__hierarchy is None else f", hierarchy=...)"
+                return f"{type(self).__name__}(value={self.value!r}{hierarchy_repr})"
+        except Exception:
+            return super().__repr__()
 
     @property
     def value(self) -> T:
