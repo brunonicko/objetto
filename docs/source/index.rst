@@ -1,17 +1,22 @@
-Welcome to Objetto's documentation!
-===================================
+Introduction
+============
+
+.. include:: ../../README.rst
 
 .. toctree::
-   :maxdepth: 2
+   :hidden:
 
-   readme
+   self
+
+Documentation
+=============
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
-   api/index
+   api/objetto
 
-Indices and tables
+Indices and Tables
 ==================
 
 * :ref:`genindex`

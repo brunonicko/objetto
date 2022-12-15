@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-"""Serializers."""
+from estruttura.serializers import EnumSerializer, Serializer, TypedSerializer
 
-from ._serializers import EnumSerializer
-
-__all__ = [
-    "EnumSerializer",
-]
+__all__ = ["Serializer", "TypedSerializer", "EnumSerializer"]

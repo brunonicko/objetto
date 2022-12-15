@@ -1,0 +1,10 @@
+black
+flake8
+invoke
+isort
+mypy
+pytest
+sphinx
+sphinx_rtd_theme
+types-six
+tox

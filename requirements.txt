@@ -1,5 +1,6 @@
+basicco>=8.7,<9
 enum34; python_version < "3.4"
+estruttura
 pyrsistent
 six
-slotted<2
-typing; python_version < "3.5"
+tippo>=3.9,<4
