@@ -12,17 +12,17 @@ from pyrsistent import pmap
 from pyrsistent.typing import PMap
 
 from ._bases import (
-    ObjectCollection,
-    PrivateObjectCollection,
-    ProxyObjectCollection,
-    ProxyPrivateObjectCollection,
+    CollectionObject,
+    PrivateCollectionObject,
+    ProxyCollectionObject,
+    ProxyPrivateCollectionObject,
 )
 
 KT = TypeVar("KT")
 VT = TypeVar("VT")
 
 
-class PrivateDictObject(PrivateObjectCollection[KT], MutableDictStructure[KT, VT]):
+class PrivateDictObject(PrivateCollectionObject[KT], MutableDictStructure[KT, VT]):
     """Private dictionary object."""
 
     __slots__ = ("_state",)
@@ -59,10 +59,13 @@ class PrivateDictObject(PrivateObjectCollection[KT], MutableDictStructure[KT, VT
 PDD = TypeVar("PDD", bound=PrivateDictObject)  # private dictionary object self type
 
 
-class DictObject(PrivateDictObject[KT, VT], ObjectCollection[KT], UserMutableDictStructure[KT, VT]):
+class DictObject(PrivateDictObject[KT, VT], CollectionObject[KT], UserMutableDictStructure[KT, VT]):
     """Dictionary object."""
 
     __slots__ = ()
+
+    def _do_clear(self):  # FIXME
+        return self
 
     def _do_update(self, inserts, deletes, updates_old, updates_new, updates_and_inserts, all_updates):
         new_state = self._state.update(updates_and_inserts)
@@ -80,7 +83,7 @@ DD = TypeVar("DD", bound=DictObject)  # dictionary object self type
 
 
 class ProxyPrivateDictObject(
-    ProxyPrivateObjectCollection[PDD, KT],
+    ProxyPrivateCollectionObject[PDD, KT],
     ProxyMutableDictStructure[PDD, KT, VT],
     PrivateDictObject[KT, VT],
 ):
@@ -90,7 +93,7 @@ class ProxyPrivateDictObject(
 
 
 class ProxyDictObject(
-    ProxyObjectCollection[DD, KT],
+    ProxyCollectionObject[DD, KT],
     ProxyPrivateDictObject[DD, KT, VT],
     ProxyUserMutableDictStructure[DD, KT, VT],
     DictObject[KT, VT],

@@ -12,16 +12,16 @@ from pyrsistent import pvector
 from pyrsistent.typing import PVector
 
 from ._bases import (
-    ObjectCollection,
-    PrivateObjectCollection,
-    ProxyObjectCollection,
-    ProxyPrivateObjectCollection,
+    CollectionObject,
+    PrivateCollectionObject,
+    ProxyCollectionObject,
+    ProxyPrivateCollectionObject,
 )
 
 T = TypeVar("T")
 
 
-class PrivateListObject(PrivateObjectCollection[T], MutableListStructure[T]):
+class PrivateListObject(PrivateCollectionObject[T], MutableListStructure[T]):
     """Private dictionary object."""
 
     __slots__ = ("_state",)
@@ -72,7 +72,7 @@ class PrivateListObject(PrivateObjectCollection[T], MutableListStructure[T]):
 PLD = TypeVar("PLD", bound=PrivateListObject)  # private dictionary object self type
 
 
-class ListObject(PrivateListObject[T], ObjectCollection[T], UserMutableListStructure[T]):
+class ListObject(PrivateListObject[T], CollectionObject[T], UserMutableListStructure[T]):
     """List object."""
 
     __slots__ = ()
@@ -118,7 +118,7 @@ LD = TypeVar("LD", bound=ListObject)  # dictionary object self type
 
 
 class ProxyPrivateListObject(
-    ProxyPrivateObjectCollection[PLD, T],
+    ProxyPrivateCollectionObject[PLD, T],
     ProxyMutableListStructure[PLD, T],
     PrivateListObject[T],
 ):
@@ -128,7 +128,7 @@ class ProxyPrivateListObject(
 
 
 class ProxyListObject(
-    ProxyObjectCollection[LD, T],
+    ProxyCollectionObject[LD, T],
     ProxyPrivateListObject[LD, T],
     ProxyUserMutableListStructure[LD, T],
     ListObject[T],

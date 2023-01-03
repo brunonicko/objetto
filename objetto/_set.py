@@ -11,16 +11,16 @@ from pyrsistent import pset
 from pyrsistent.typing import PSet
 
 from ._bases import (
-    ObjectCollection,
-    PrivateObjectCollection,
-    ProxyObjectCollection,
-    ProxyPrivateObjectCollection,
+    CollectionObject,
+    PrivateCollectionObject,
+    ProxyCollectionObject,
+    ProxyPrivateCollectionObject,
 )
 
 T = TypeVar("T")
 
 
-class PrivateSetObject(PrivateObjectCollection[T], MutableSetStructure[T]):
+class PrivateSetObject(PrivateCollectionObject[T], MutableSetStructure[T]):
     """Private set object."""
 
     __slots__ = ("_state",)
@@ -81,7 +81,7 @@ class PrivateSetObject(PrivateObjectCollection[T], MutableSetStructure[T]):
 PSD = TypeVar("PSD", bound=PrivateSetObject)  # private set object self type
 
 
-class SetObject(PrivateSetObject[T], ObjectCollection[T], UserMutableSetStructure[T]):
+class SetObject(PrivateSetObject[T], CollectionObject[T], UserMutableSetStructure[T]):
     """Set object."""
 
     __slots__ = ()
@@ -103,7 +103,7 @@ SD = TypeVar("SD", bound=SetObject)  # set object self type
 
 
 class ProxyPrivateSetObject(
-    ProxyPrivateObjectCollection[PSD, T],
+    ProxyPrivateCollectionObject[PSD, T],
     ProxyMutableSetStructure[PSD, T],
     PrivateSetObject[T],
 ):
@@ -113,7 +113,7 @@ class ProxyPrivateSetObject(
 
 
 class ProxySetObject(
-    ProxyObjectCollection[SD, T],
+    ProxyCollectionObject[SD, T],
     ProxyPrivateSetObject[SD, T],
     ProxyUserMutableSetStructure[SD, T],
     SetObject[T],
