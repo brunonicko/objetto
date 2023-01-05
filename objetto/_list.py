@@ -1,6 +1,5 @@
-import copy
 import itertools
-from typing import Iterable, TypeVar
+from typing import TypeVar
 
 from estruttura import (
     MutableListStructure,
@@ -12,6 +11,9 @@ from pyrsistent import pvector
 from pyrsistent.typing import PVector
 
 from ._bases import (
+    require_context,
+    objs_only,
+    BaseEvent,
     CollectionObject,
     PrivateCollectionObject,
     ProxyCollectionObject,
@@ -21,10 +23,26 @@ from ._bases import (
 T = TypeVar("T")
 
 
-class PrivateListObject(PrivateCollectionObject[T], MutableListStructure[T]):
-    """Private dictionary object."""
+class ListUpdated(BaseEvent):
+    """Event: list object updated."""
 
-    __slots__ = ("_state",)
+
+class ListInserted(BaseEvent):
+    """Event: list object inserted."""
+
+
+class ListMoved(BaseEvent):
+    """Event: list object moved."""
+
+
+class ListDeleted(BaseEvent):
+    """Event: list object deleted."""
+
+
+class PrivateListObject(PrivateCollectionObject[T], MutableListStructure[T]):
+    """Private list object."""
+
+    __slots__ = ()
 
     def __iter__(self):
         return iter(self._state)
@@ -39,19 +57,27 @@ class PrivateListObject(PrivateCollectionObject[T], MutableListStructure[T]):
         return hash(self._state)
 
     def _eq(self, other):
-        if isinstance(other, dict):
+        if isinstance(other, list):
             return self._state == other
         else:
             return isinstance(other, type(self)) and self._state == other._state
 
     def _do_init(self, initial_values):
-        # type: (Iterable[T]) -> None
-        self._state = pvector(initial_values)  # type: PVector[T]
+        with require_context() as ctx:
+            state = pvector(initial_values)
+            adoptions = ()
+            if self.relationship.parent:
+                adoptions += objs_only(state)
+            ctx.initialize(
+                obj=self,
+                state=state,
+                adoptions=adoptions,
+            )
 
     @classmethod
     def _do_deserialize(cls, values):
         self = cls.__new__(cls)
-        self._state = pvector(values)
+        self._do_init(values)
         return self
 
     def count(self, value):
@@ -68,8 +94,13 @@ class PrivateListObject(PrivateCollectionObject[T], MutableListStructure[T]):
             error = "provided 'stop' but did not provide 'start'"
             raise TypeError(error)
 
+    @property
+    def _state(self):
+        # type: () -> PVector[T]
+        return super(PrivateListObject, self)._state
 
-PLD = TypeVar("PLD", bound=PrivateListObject)  # private dictionary object self type
+
+PLO = TypeVar("PLO", bound=PrivateListObject)  # private list object self type
 
 
 class ListObject(PrivateListObject[T], CollectionObject[T], UserMutableListStructure[T]):
@@ -77,62 +108,111 @@ class ListObject(PrivateListObject[T], CollectionObject[T], UserMutableListStruc
 
     __slots__ = ()
 
+    def _do_clear(self):
+        with require_context() as ctx:
+            releases = ()
+            if self.relationship.parent:
+                releases += objs_only(self._state)
+            ctx.update(
+                obj=self,
+                state=pvector(),
+                event=ListUpdated(),
+                adoptions=(),
+                releases=releases,
+            )
+        return self
+
     def _do_update(self, index, stop, old_values, new_values):
-        pairs = itertools.chain.from_iterable(zip(range(index, stop), new_values))
-        new_state = self._state.mset(*pairs)  # type: ignore
-        new_self = copy.copy(self)
-        new_self._state = new_state
-        return new_self
+        with require_context() as ctx:
+            pairs = itertools.chain.from_iterable(zip(range(index, stop), new_values))
+            state = self._state.mset(*pairs)  # type: ignore
+            adoptions = ()
+            releases = ()
+            if self.relationship.parent:
+                adoptions += objs_only(new_values)
+                releases += objs_only(old_values)
+            ctx.update(
+                obj=self,
+                state=state,
+                event=ListUpdated(),
+                adoptions=adoptions,
+                releases=releases,
+            )
+        return self
 
     def _do_insert(self, index, new_values):
-        if index == len(self._state):
-            new_state = self._state.extend(new_values)
-        elif index == 0:
-            new_state = pvector(new_values) + self._state
-        else:
-            new_state = self._state[:index] + pvector(new_values) + self._state[index:]
-        new_self = copy.copy(self)
-        new_self._state = new_state
-        return new_self
+        with require_context() as ctx:
+            if index == len(self._state):
+                state = self._state.extend(new_values)
+            elif index == 0:
+                state = pvector(new_values) + self._state
+            else:
+                state = self._state[:index] + pvector(new_values) + self._state[index:]
+            adoptions = ()
+            if self.relationship.parent:
+                adoptions += objs_only(new_values)
+            ctx.update(
+                obj=self,
+                state=state,
+                event=ListInserted(),
+                adoptions=adoptions,
+                releases=(),
+            )
+        return self
 
     def _do_move(self, target_index, index, stop, post_index, post_stop, values):
-        state = self._state.delete(index, stop)
-        if post_index == len(state):
-            new_state = state.extend(values)
-        elif post_index == 0:
-            new_state = pvector(values) + state
-        else:
-            new_state = state[:post_index] + pvector(values) + state[post_index:]
-        new_self = copy.copy(self)
-        new_self._state = new_state
-        return new_self
+        with require_context() as ctx:
+            state = self._state.delete(index, stop)
+            if post_index == len(state):
+                state = state.extend(values)
+            elif post_index == 0:
+                state = pvector(values) + state
+            else:
+                state = state[:post_index] + pvector(values) + state[post_index:]
+            ctx.update(
+                obj=self,
+                state=state,
+                event=ListMoved(),
+                adoptions=(),
+                releases=(),
+            )
+        return self
 
     def _do_delete(self, index, stop, old_values):
-        new_state = self._state.delete(index, stop)
-        new_self = copy.copy(self)
-        new_self._state = new_state
-        return new_self
+        with require_context() as ctx:
+            state = self._state.delete(index, stop)
+            releases = ()
+            if self.relationship.parent:
+                releases += objs_only(old_values)
+            ctx.update(
+                obj=self,
+                state=state,
+                event=ListDeleted(),
+                adoptions=(),
+                releases=releases,
+            )
+        return self
 
 
-LD = TypeVar("LD", bound=ListObject)  # dictionary object self type
+LO = TypeVar("LO", bound=ListObject)  # list object self type
 
 
 class ProxyPrivateListObject(
-    ProxyPrivateCollectionObject[PLD, T],
-    ProxyMutableListStructure[PLD, T],
+    ProxyPrivateCollectionObject[PLO, T],
+    ProxyMutableListStructure[PLO, T],
     PrivateListObject[T],
 ):
-    """Proxy private dictionary object."""
+    """Proxy private list object."""
 
     __slots__ = ()
 
 
 class ProxyListObject(
-    ProxyCollectionObject[LD, T],
-    ProxyPrivateListObject[LD, T],
-    ProxyUserMutableListStructure[LD, T],
+    ProxyCollectionObject[LO, T],
+    ProxyPrivateListObject[LO, T],
+    ProxyUserMutableListStructure[LO, T],
     ListObject[T],
 ):
-    """Proxy dictionary object."""
+    """Proxy list object."""
 
     __slots__ = ()

@@ -1,9 +1,11 @@
-import copy
-from typing import TypeVar
+from typing import Any, Type, TypeVar
 
 import six
-from basicco import mangling, mapping_proxy, obj_state
+from basicco import mangling
+from pyrsistent import pmap
+from pyrsistent.typing import PMap
 from estruttura import (
+    AttributeMap,
     MutableStructure,
     ProxyMutableStructure,
     ProxyStructureMeta,
@@ -14,6 +16,9 @@ from estruttura import (
 
 from ._attribute import Attribute
 from ._bases import (
+    require_context,
+    objs_only,
+    BaseEvent,
     BaseObject,
     BaseObjectMeta,
     BasePrivateObject,
@@ -26,18 +31,12 @@ KT = TypeVar("KT")
 VT = TypeVar("VT")
 
 
+class ObjectUpdated(BaseEvent):
+    """Event: object updated."""
+
+
 class ObjectMeta(StructureMeta, BaseObjectMeta):
-    @staticmethod
-    def __edit_dct__(this_attribute_map, attribute_map, name, bases, dct, **kwargs):  # noqa
-        slots = list(dct.get("__slots__", ()))
-        for attribute_name, attribute in six.iteritems(this_attribute_map):
-            if attribute.constant:
-                dct[attribute_name] = attribute.default
-            else:
-                slots.append(mangling.mangle(attribute_name, name))
-                del dct[attribute_name]
-        dct["__slots__"] = tuple(slots)
-        return dct
+    """Metaclass for :class:`PrivateObject`."""
 
 
 class PrivateObject(six.with_metaclass(ObjectMeta, BasePrivateObject, MutableStructure)):
@@ -45,36 +44,37 @@ class PrivateObject(six.with_metaclass(ObjectMeta, BasePrivateObject, MutableStr
 
     __slots__ = ()
 
-    __attribute_type__ = Attribute
-
-    def __copy__(self):
-        cls = type(self)
-        new_self = cls.__new__(cls)
-        obj_state.update_state(new_self, obj_state.get_state(self))
-        return new_self
+    __attribute_type__ = Attribute  # type: Type[Attribute[Any]]
+    __attribute_map__ = AttributeMap()  # type: AttributeMap[str, Attribute[Any]]
 
     def __getitem__(self, name):
-        return getattr(self, name)
+        return self._state[name]
 
     def __contains__(self, name):
-        return isinstance(name, six.string_types) and name in type(self).__attribute_map__ and hasattr(self, name)
-
-    def __setattr__(self, name, value):
-        if name in type(self).__attribute_map__:
-            error = "{!r} objects are immutable".format(type(self).__name__)
-            raise AttributeError(error)
-        super(PrivateObject, self).__setattr__(name, value)
+        return name in self._state
 
     def _do_init(self, initial_values):
-        # type: (mapping_proxy.MappingProxyType) -> None
-        for name, value in six.iteritems(initial_values):
-            object.__setattr__(self, name, value)
+        with require_context() as ctx:
+            state = pmap(initial_values)
+            adoptions = objs_only(
+                v for n, v in six.iteritems(initial_values) if type(self).__attribute_map__[n].relationship.parent
+            )
+            ctx.initialize(
+                obj=self,
+                state=state,
+                adoptions=adoptions,
+            )
 
     @classmethod
     def _do_deserialize(cls, values):
         self = cls.__new__(cls)
         self._do_init(values)
         return self
+
+    @property
+    def _state(self):
+        # type: () -> PMap[KT, VT]
+        return super(PrivateObject, self)._state
 
 
 PO = TypeVar("PO", bound=PrivateObject)  # private object self type
@@ -85,10 +85,42 @@ class Object(PrivateObject, BaseObject, UserMutableStructure):
 
     __slots__ = ()
 
+    def _do_clear(self):
+        with require_context() as ctx:
+            releases = objs_only(
+                v for n, v in six.iteritems(self._state) if type(self).__attribute_map__[n].relationship.parent
+            )
+            ctx.update(
+                obj=self,
+                state=pmap(),
+                event=ObjectUpdated(),
+                adoptions=(),
+                releases=releases,
+            )
+        return self
+
     def _do_update(self, inserts, deletes, updates_old, updates_new, updates_and_inserts, all_updates):
-        new_self = copy.copy(self)
-        new_self._do_init(updates_and_inserts)
-        return new_self
+        with require_context() as ctx:
+            state = self._state.update(updates_and_inserts)
+            if deletes:
+                state_evolver = state.evolver()
+                for key in deletes:
+                    del state_evolver[key]
+                state = state_evolver.persistent()
+            adoptions = objs_only(
+                v for n, v in six.iteritems(updates_and_inserts) if type(self).__attribute_map__[n].relationship.parent
+            )
+            releases = objs_only(
+                v for n, v in six.iteritems(deletes) if type(self).__attribute_map__[n].relationship.parent
+            )
+            ctx.update(
+                obj=self,
+                state=state,
+                event=ObjectUpdated(),
+                adoptions=adoptions,
+                releases=releases,
+            )
+        return self
 
 
 D = TypeVar("D", bound=Object)  # object self type

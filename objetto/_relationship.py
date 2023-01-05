@@ -59,8 +59,10 @@ class Relationship(estruttura.Relationship[T]):
 
     @property
     def parent(self):
+        # type: () -> bool
         return self._parent
 
     @property
     def history(self):
+        # type: () -> bool
         return self._history

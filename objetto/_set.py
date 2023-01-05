@@ -1,5 +1,4 @@
-import copy
-from typing import Iterable, TypeVar
+from typing import TypeVar
 
 from estruttura import (
     MutableSetStructure,
@@ -11,6 +10,9 @@ from pyrsistent import pset
 from pyrsistent.typing import PSet
 
 from ._bases import (
+    require_context,
+    objs_only,
+    BaseEvent,
     CollectionObject,
     PrivateCollectionObject,
     ProxyCollectionObject,
@@ -20,10 +22,18 @@ from ._bases import (
 T = TypeVar("T")
 
 
+class SetAdded(BaseEvent):
+    """Event: set object added."""
+
+
+class SetRemoved(BaseEvent):
+    """Event: set object removed."""
+
+
 class PrivateSetObject(PrivateCollectionObject[T], MutableSetStructure[T]):
     """Private set object."""
 
-    __slots__ = ("_state",)
+    __slots__ = ()
 
     def __iter__(self):
         return iter(self._state)
@@ -38,19 +48,27 @@ class PrivateSetObject(PrivateCollectionObject[T], MutableSetStructure[T]):
         return hash(self._state)
 
     def _eq(self, other):
-        if isinstance(other, dict):
+        if isinstance(other, set):
             return self._state == other
         else:
             return isinstance(other, type(self)) and self._state == other._state
 
     def _do_init(self, initial_values):
-        # type: (Iterable[T]) -> None
-        self._state = pset(initial_values)  # type: PSet[T]
+        with require_context() as ctx:
+            state = pset(initial_values)
+            adoptions = ()
+            if self.relationship.parent:
+                adoptions += objs_only(state)
+            ctx.initialize(
+                obj=self,
+                state=state,
+                adoptions=adoptions,
+            )
 
     @classmethod
     def _do_deserialize(cls, values):
         self = cls.__new__(cls)
-        self._state = pset(values)
+        self._do_init(values)
         return self
 
     def isdisjoint(self, iterable):
@@ -77,6 +95,11 @@ class PrivateSetObject(PrivateCollectionObject[T], MutableSetStructure[T]):
     def inverse_difference(self, iterable):
         return pset(iterable).difference(self._state)
 
+    @property
+    def _state(self):
+        # type: () -> PSet[T]
+        return super(PrivateSetObject, self)._state
+
 
 PSD = TypeVar("PSD", bound=PrivateSetObject)  # private set object self type
 
@@ -86,17 +109,49 @@ class SetObject(PrivateSetObject[T], CollectionObject[T], UserMutableSetStructur
 
     __slots__ = ()
 
+    def _do_clear(self):
+        with require_context() as ctx:
+            releases = ()
+            if self.relationship.parent:
+                releases += objs_only(self._state)
+            ctx.update(
+                obj=self,
+                state=pset(),
+                event=SetRemoved(),
+                adoptions=(),
+                releases=releases,
+            )
+        return self
+
     def _do_remove(self, old_values):
-        new_state = self._state.difference(old_values)
-        new_self = copy.copy(self)
-        new_self._state = new_state
-        return new_self
+        with require_context() as ctx:
+            state = self._state.difference(old_values)
+            releases = ()
+            if self.relationship.parent:
+                releases += objs_only(old_values)
+            ctx.update(
+                obj=self,
+                state=state,
+                event=SetAdded(),
+                adoptions=(),
+                releases=releases,
+            )
+        return self
 
     def _do_update(self, new_values):
-        new_state = self._state.update(new_values)
-        new_self = copy.copy(self)
-        new_self._state = new_state
-        return new_self
+        with require_context() as ctx:
+            state = self._state.update(new_values)
+            adoptions = ()
+            if self.relationship.parent:
+                adoptions += objs_only(new_values)
+            ctx.update(
+                obj=self,
+                state=state,
+                event=SetAdded(),
+                adoptions=adoptions,
+                releases=(),
+            )
+        return self
 
 
 SD = TypeVar("SD", bound=SetObject)  # set object self type

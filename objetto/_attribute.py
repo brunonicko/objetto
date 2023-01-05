@@ -1,6 +1,6 @@
 import estruttura
 from basicco.namespace import Namespace
-from tippo import Any, Callable, Iterable, Mapping, TypeVar
+from tippo import Any, Callable, Iterable, Mapping, TypeVar, cast
 
 from ._constants import MISSING, MissingType
 from ._relationship import Relationship
@@ -64,6 +64,11 @@ class Attribute(estruttura.MutableAttribute[T]):
             extra_paths=extra_paths,
             builtin_paths=builtin_paths,
         )
+
+    @property
+    def relationship(self):
+        # type: () -> Relationship[T]
+        return cast(Relationship, super(Attribute, self).relationship)
 
 
 A = TypeVar("A", bound=Attribute)

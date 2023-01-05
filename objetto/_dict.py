@@ -1,7 +1,5 @@
-import copy
 from typing import TypeVar
 
-from basicco import mapping_proxy
 from estruttura import (
     MutableDictStructure,
     ProxyMutableDictStructure,
@@ -11,7 +9,11 @@ from estruttura import (
 from pyrsistent import pmap
 from pyrsistent.typing import PMap
 
+from ._relationship import Relationship
 from ._bases import (
+    require_context,
+    objs_only,
+    BaseEvent,
     CollectionObject,
     PrivateCollectionObject,
     ProxyCollectionObject,
@@ -22,10 +24,14 @@ KT = TypeVar("KT")
 VT = TypeVar("VT")
 
 
+class DictUpdated(BaseEvent):
+    """Event: dictionary object updated."""
+
+
 class PrivateDictObject(PrivateCollectionObject[KT], MutableDictStructure[KT, VT]):
     """Private dictionary object."""
 
-    __slots__ = ("_state",)
+    value_relationship = Relationship()  # type: Relationship[VT]
 
     def __iter__(self):
         return iter(self._state)
@@ -46,17 +52,32 @@ class PrivateDictObject(PrivateCollectionObject[KT], MutableDictStructure[KT, VT
             return isinstance(other, type(self)) and self._state == other._state
 
     def _do_init(self, initial_values):
-        # type: (mapping_proxy.MappingProxyType[KT, VT]) -> None
-        self._state = pmap(initial_values)  # type: PMap[KT, VT]
+        with require_context() as ctx:
+            state = pmap(initial_values)
+            adoptions = ()
+            if self.relationship.parent:
+                adoptions += objs_only(state.keys())
+            if self.value_relationship.parent:
+                adoptions += objs_only(state.values())
+            ctx.initialize(
+                obj=self,
+                state=state,
+                adoptions=adoptions,
+            )
 
     @classmethod
     def _do_deserialize(cls, values):
         self = cls.__new__(cls)
-        self._state = pmap(values)
+        self._do_init(values)
         return self
 
+    @property
+    def _state(self):
+        # type: () -> PMap[KT, VT]
+        return super(PrivateDictObject, self)._state
 
-PDD = TypeVar("PDD", bound=PrivateDictObject)  # private dictionary object self type
+
+PDO = TypeVar("PDO", bound=PrivateDictObject)  # private dictionary object self type
 
 
 class DictObject(PrivateDictObject[KT, VT], CollectionObject[KT], UserMutableDictStructure[KT, VT]):
@@ -64,27 +85,54 @@ class DictObject(PrivateDictObject[KT, VT], CollectionObject[KT], UserMutableDic
 
     __slots__ = ()
 
-    def _do_clear(self):  # FIXME
+    def _do_clear(self):
+        with require_context() as ctx:
+            releases = ()
+            if self.relationship.parent:
+                releases += objs_only(self._state.keys())
+            if self.value_relationship.parent:
+                releases += objs_only(self._state.values())
+            ctx.update(
+                obj=self,
+                state=pmap(),
+                event=DictUpdated(),
+                adoptions=(),
+                releases=releases,
+            )
         return self
 
     def _do_update(self, inserts, deletes, updates_old, updates_new, updates_and_inserts, all_updates):
-        new_state = self._state.update(updates_and_inserts)
-        if deletes:
-            new_state_evolver = new_state.evolver()
-            for key in deletes:
-                del new_state_evolver[key]
-            new_state = new_state_evolver.persistent()
-        new_self = copy.copy(self)
-        new_self._state = new_state
-        return new_self
+        with require_context() as ctx:
+            state = self._state.update(updates_and_inserts)
+            if deletes:
+                state_evolver = state.evolver()
+                for key in deletes:
+                    del state_evolver[key]
+                state = state_evolver.persistent()
+            adoptions = ()
+            releases = ()
+            if self.relationship.parent:
+                adoptions += objs_only(inserts.keys())
+                releases += objs_only(deletes.keys())
+            if self.value_relationship.parent:
+                adoptions += objs_only(updates_new.values()) + objs_only(inserts.values())
+                releases += objs_only(updates_old.values()) + objs_only(deletes.values())
+            ctx.update(
+                obj=self,
+                state=state,
+                event=DictUpdated(),
+                adoptions=adoptions,
+                releases=releases,
+            )
+        return self
 
 
-DD = TypeVar("DD", bound=DictObject)  # dictionary object self type
+DO = TypeVar("DO", bound=DictObject)  # dictionary object self type
 
 
 class ProxyPrivateDictObject(
-    ProxyPrivateCollectionObject[PDD, KT],
-    ProxyMutableDictStructure[PDD, KT, VT],
+    ProxyPrivateCollectionObject[PDO, KT],
+    ProxyMutableDictStructure[PDO, KT, VT],
     PrivateDictObject[KT, VT],
 ):
     """Proxy private dictionary object."""
@@ -93,9 +141,9 @@ class ProxyPrivateDictObject(
 
 
 class ProxyDictObject(
-    ProxyCollectionObject[DD, KT],
-    ProxyPrivateDictObject[DD, KT, VT],
-    ProxyUserMutableDictStructure[DD, KT, VT],
+    ProxyCollectionObject[DO, KT],
+    ProxyPrivateDictObject[DO, KT, VT],
+    ProxyUserMutableDictStructure[DO, KT, VT],
     DictObject[KT, VT],
 ):
     """Proxy dictionary object."""
